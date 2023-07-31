@@ -1,7 +1,7 @@
 
 <div align="center">
 <img src="images/Icon1.png" height="150px" width="auto">
-<h1>TextControlBox-UWP</h1>
+<h1>TextControlBox-WinUI</h1>
 </div>
 
 <div align="center">
