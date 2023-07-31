@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "TextControlBox-TestApp (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "TextControlBox-TestApp (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
