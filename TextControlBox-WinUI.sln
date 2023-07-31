@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.33424.131
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TextControlBox-TestApp", "TextControlBox-TestApp\TextControlBox-TestApp.csproj", "{AC81D971-BF36-46ED-87E8-63916096934D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TextControlBox.UI", "TextControlBox\TextControlBox.UI.csproj", "{9737DA03-1E5F-4820-84A1-54A359CD79A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TextControlBox", "TextControlBox\TextControlBox.csproj", "{9737DA03-1E5F-4820-84A1-54A359CD79A9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

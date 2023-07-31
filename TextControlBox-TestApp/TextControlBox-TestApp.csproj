@@ -37,7 +37,7 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\TextControlBox\TextControlBox.UI.csproj" />
+    <ProjectReference Include="..\TextControlBox\TextControlBox.csproj" />
   </ItemGroup>
 
   <!-- 
