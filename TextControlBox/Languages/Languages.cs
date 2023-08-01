@@ -100,7 +100,7 @@
                 new SyntaxHighlights("\"[^\\n]*?\"", "#ff5500", "#00FF00"),
                 new SyntaxHighlights("'[^\\n]*?'", "#00CA00", "#00FF00"),
                 new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
-                new SyntaxHighlights("\\/\\/[^\\n\\r]+?(?:\\*\\)|[\\n\\r])", "#888888", "#646464"),
+                new SyntaxHighlights("/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/", "#888888", "#646464"),
             };
         }
     }
