@@ -590,7 +590,7 @@ namespace TextControlBoxNS
 
             canvasHelper.UpdateCursor();
             inputHandler.Focus(FocusState.Programmatic);
-            //TODO: ChangeCursor(InputSystemCursorShape.IBeam);
+            ChangeCursor(InputSystemCursorShape.IBeam);
         }
         private void RemoveFocus()
         {
@@ -2257,6 +2257,16 @@ namespace TextControlBoxNS
         }
 
         /// <summary>
+        /// Selects the CodeLanguage based on the specified identifier.
+        /// </summary>
+        /// <param name="languageId">The identifier of the CodeLanguage to select.</param>
+        public void SelectCodeLanguage(CodeLanguageId languageId)
+        {
+            if (CodeLanguages.TryGetValue(languageId, out CodeLanguage codelanguage))
+                CodeLanguage = codelanguage;
+        }
+
+        /// <summary>
         /// Gets or sets a value indicating whether syntax highlighting is enabled in the textbox.
         /// </summary>
         public bool SyntaxHighlighting { get; set; } = true;
@@ -2633,14 +2643,14 @@ namespace TextControlBoxNS
             { CodeLanguageId.QSharp, new QSharp() },
             { CodeLanguageId.TOML, new TOML() },
             { CodeLanguageId.XML, new XML() },
+            { CodeLanguageId.None, null },
         };
 
         /// <summary>
         /// Retrieves a CodeLanguage object based on the specified identifier.
         /// </summary>
-        /// <param name="Identifier">The identifier of the CodeLanguage to retrieve.</param>
+        /// <param name="languageId">The identifier of the CodeLanguage to retrieve.</param>
         /// <returns>The CodeLanguage object corresponding to the provided identifier, or null if not found.</returns>
-
         public static CodeLanguage GetCodeLanguageFromId(CodeLanguageId languageId)
         {
             if (CodeLanguages.TryGetValue(languageId, out CodeLanguage codelanguage))

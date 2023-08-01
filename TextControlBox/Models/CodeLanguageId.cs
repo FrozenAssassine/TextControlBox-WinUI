@@ -106,5 +106,10 @@ namespace TextControlBoxNS
         /// Identifier for XML code language.
         /// </summary>
         XML,
+
+        /// <summary>
+        /// Identifier for no code language.
+        /// </summary>
+        None,
     }
 }
