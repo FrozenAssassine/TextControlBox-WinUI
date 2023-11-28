@@ -1,11 +1,8 @@
-using Collections.Pooled;
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using TextControlBox.Extensions;
 using TextControlBox.Helper;
-using TextControlBox.Renderer;
 using TextControlBox_WinUI.Helper;
 using TextControlBox_WinUI.Models;
 
@@ -25,8 +22,8 @@ namespace TextControlBox.Text
         //Order the selection that StartPosition is always smaller than EndPosition
         public static TextSelection OrderTextSelection(TextSelection selection)
         {
-            if (selection == null)
-                return selection;
+            if (selection.HasSelection())
+                return null;
 
             int startLine = Math.Min(selection.StartPosition.LineNumber, selection.EndPosition.LineNumber);
             int endLine = Math.Max(selection.StartPosition.LineNumber, selection.EndPosition.LineNumber);
@@ -56,7 +53,7 @@ namespace TextControlBox.Text
 
         public static bool WholeTextSelected(TextManager textManager, TextSelection selection)
         {
-            if (selection == null)
+            if (selection.HasSelection())
                 return false;
             var sel = OrderTextSelection(selection);
             return Utils.CursorPositionsAreEqual(sel.StartPosition, new CursorPosition(0, 0)) &&
@@ -65,7 +62,7 @@ namespace TextControlBox.Text
         //returns whether the selection starts at character zero and ends 
         public static bool WholeLinesAreSelected(TextSelection selection, TextManager textManager)
         {
-            if (selection == null)
+            if (selection.HasSelection())
                 return false;
             var sel = OrderTextSelection(selection);
             return Utils.CursorPositionsAreEqual(sel.StartPosition, new CursorPosition(0, sel.StartPosition.LineNumber)) &&
@@ -366,7 +363,7 @@ namespace TextControlBox.Text
         public static string GetSelectedText(TextManager textManager, TextControlBoxProperties textBoxProps, TextSelection textSelection, int currentLineIndex)
         {
             //return the current line, if no text is selected:
-            if (textSelection == null)
+            if (textSelection.HasSelection())
             {
                 return textManager.Lines.GetLineText(currentLineIndex) + textBoxProps.NewLineCharacter;
             }
@@ -475,7 +472,7 @@ namespace TextControlBox.Text
         public static bool MoveLinesUp(TextManager textManager, TextSelection selection, CursorPosition cursorposition)
         {
             //Move single line
-            if (selection == null)
+            if (selection.HasSelection())
             {
                 if (cursorposition.LineNumber > 0)
                 {
@@ -509,7 +506,7 @@ namespace TextControlBox.Text
         public static bool MoveLinesDown(TextManager textManager, TextSelection selection, CursorPosition cursorposition)
         {
             //Move single line
-            if (selection == null || selection.StartPosition.LineNumber == selection.EndPosition.LineNumber)
+            if (selection.HasSelection() || selection.StartPosition.LineNumber == selection.EndPosition.LineNumber)
             {
                 if (cursorposition.LineNumber < textManager.Lines.Count)
                 {

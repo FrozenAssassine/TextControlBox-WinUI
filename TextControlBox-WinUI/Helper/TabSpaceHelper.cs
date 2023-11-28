@@ -7,7 +7,7 @@ namespace TextControlBox.Helper
     internal class TabSpaceHelper
     {
         private int _NumberOfSpaces = 4;
-        private string OldSpaces = "    ";
+        private string oldSpaces = "    ";
 
         public int NumberOfSpaces
         {
@@ -16,58 +16,58 @@ namespace TextControlBox.Helper
             {
                 if (value != _NumberOfSpaces)
                 {
-                    OldSpaces = Spaces;
+                    oldSpaces = spaces;
                     _NumberOfSpaces = value;
-                    Spaces = new string(' ', _NumberOfSpaces);
+                    spaces = new string(' ', _NumberOfSpaces);
                 }
             }
         }
         public bool UseSpacesInsteadTabs = false;
-        public string TabCharacter { get => UseSpacesInsteadTabs ? Spaces : Tab; }
-        private string Spaces = "    ";
-        private string Tab = "\t";
+        public string TabCharacter { get => UseSpacesInsteadTabs ? spaces : tab; }
+        private string spaces = "    ";
+        private string tab = "\t";
 
-        public void UpdateNumberOfSpaces(PooledList<string> TotalLines)
+        public void UpdateNumberOfSpaces(PooledList<string> lines)
         {
-            ReplaceSpacesToSpaces(TotalLines);
+            ReplaceSpacesToSpaces(lines);
         }
 
-        public void UpdateTabs(PooledList<string> TotalLines)
+        public void UpdateTabs(PooledList<string> lines)
         {
             if (UseSpacesInsteadTabs)
             {
-                ReplaceTabsToSpaces(TotalLines);
+                ReplaceTabsToSpaces(lines);
             }
             else
-                ReplaceSpacesToTabs(TotalLines);
+                ReplaceSpacesToTabs(lines);
         }
         public string UpdateTabs(string input)
         {
             if (UseSpacesInsteadTabs)
-                return Replace(input, Tab, Spaces);
-            return Replace(input, Spaces, Tab);
+                return Replace(input, tab, spaces);
+            return Replace(input, spaces, tab);
         }
 
-        private void ReplaceSpacesToSpaces(PooledList<string> TotalLines)
+        private void ReplaceSpacesToSpaces(PooledList<string> lines)
         {
-            Debug.WriteLine("START:" + OldSpaces + ":" + Spaces + ":");
-            for (int i = 0; i < TotalLines.Count; i++)
+            Debug.WriteLine("START:" + oldSpaces + ":" + spaces + ":");
+            for (int i = 0; i < lines.Count; i++)
             {
-                TotalLines[i] = Replace(TotalLines[i], OldSpaces, Spaces);
+                lines[i] = Replace(lines[i], oldSpaces, spaces);
             }
         }
-        private void ReplaceSpacesToTabs(PooledList<string> TotalLines)
+        private void ReplaceSpacesToTabs(PooledList<string> lines)
         {
-            for (int i = 0; i < TotalLines.Count; i++)
+            for (int i = 0; i < lines.Count; i++)
             {
-                TotalLines[i] = Replace(TotalLines[i], Spaces, Tab);
+                lines[i] = Replace(lines[i], spaces, tab);
             }
         }
-        private void ReplaceTabsToSpaces(PooledList<string> TotalLines)
+        private void ReplaceTabsToSpaces(PooledList<string> lines)
         {
-            for (int i = 0; i < TotalLines.Count; i++)
+            for (int i = 0; i < lines.Count; i++)
             {
-                TotalLines[i] = Replace(TotalLines[i], "\t", Spaces);
+                lines[i] = Replace(lines[i], "\t", spaces);
             }
         }
         public string Replace(string input, string find, string replace)

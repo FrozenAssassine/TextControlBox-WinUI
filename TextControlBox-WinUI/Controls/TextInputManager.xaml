@@ -45,5 +45,5 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    <TextBox Style="{StaticResource TextBoxStyle1}" Opacity="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" x:Name="inputTextbox" TextChanged="InputTextbox_TextChanged"/>
+    <TextBox PreviewKeyDown="inputTextbox_PreviewKeyDown" LostFocus="inputTextbox_LostFocus" GotFocus="inputTextbox_GotFocus" Style="{StaticResource TextBoxStyle1}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" x:Name="inputTextbox" TextChanged="InputTextbox_TextChanged"/>
 </UserControl>

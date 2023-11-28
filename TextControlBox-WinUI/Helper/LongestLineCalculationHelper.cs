@@ -36,10 +36,11 @@ namespace TextControlBox_WinUI.Helper
                 NeedsRecalculate();
         }
 
-        public void NeedsRecalculate()
+        public void NeedsRecalculate(bool needsRecalculate = true)
         {
-            _NeedsRecalculate = true;
+            _NeedsRecalculate = needsRecalculate;
         }
+
 
         public int GetLongestLineIndex()
         {

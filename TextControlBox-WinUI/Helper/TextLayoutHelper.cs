@@ -25,7 +25,7 @@ namespace TextControlBox_WinUI.Helper
                 FontSize = textboxProperties.ZoomedFontSize,
                 HorizontalAlignment = CanvasHorizontalAlignment.Left,
                 VerticalAlignment = CanvasVerticalAlignment.Top,
-                WordWrapping = CanvasWordWrapping.NoWrap,
+                WordWrapping = CanvasWordWrapping.WholeWord,
                 LineSpacing = textboxProperties.ZoomedFontSize + 2,
             };
             textFormat.IncrementalTabStop = textboxProperties.ZoomedFontSize * 3; //default 137px

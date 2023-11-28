@@ -1,5 +1,4 @@
-﻿using Collections.Pooled;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using TextControlBox.Extensions;
 using TextControlBox.Helper;

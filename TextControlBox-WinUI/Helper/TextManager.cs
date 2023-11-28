@@ -1,4 +1,5 @@
 ﻿using Collections.Pooled;
+using System;
 using System.Collections.Generic;
 using TextControlBox.Extensions;
 using TextControlBox.Helper;
@@ -48,6 +49,12 @@ namespace TextControlBox_WinUI.Helper
         {
             ListHelper.Clear(Lines);
             Lines.AddRange(lines);
+        }
+
+        public void AddLineIfEmpty(string text = "")
+        {
+            if (Lines.Count == 0)
+                Lines.Add(text);
         }
     }
 }

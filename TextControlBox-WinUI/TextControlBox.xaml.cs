@@ -1,8 +1,6 @@
-using Microsoft.Graphics.Canvas;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using System;
 using System.Collections.Generic;
 using TextControlBox.Extensions;
 using TextControlBox.Helper;
@@ -10,7 +8,6 @@ using TextControlBox.Renderer;
 using TextControlBox.Text;
 using TextControlBox_WinUI.Helper;
 using TextControlBox_WinUI.Models;
-using Windows.Foundation;
 using Windows.System;
 
 namespace TextControlBox
@@ -32,7 +29,7 @@ namespace TextControlBox
         private readonly PointerManager pointerManager;
         private readonly SelectionRenderer selectionRenderer;
         private readonly SelectionManager selectionManager;
-
+        private readonly TabSpaceHelper tabSpaceHelper;
         public TextControlBox()
         {
             this.InitializeComponent();
@@ -45,7 +42,7 @@ namespace TextControlBox
             selectionManager = new SelectionManager();
             designHelper = new DesignHelper(textboxProperties);
             canvasUpdater = new CanvasUpdateHelper(Canvas_Text, Canvas_Selection, Canvas_Cursor, Canvas_LineNumber);
-            workingLine = new CurrentWorkingLine(Canvas_Text, textRenderer);
+            workingLine = new CurrentWorkingLine(Canvas_Text, textRenderer, textManager);
             cursorRenderer = new CursorRenderer();
             scrollBarManager = new ScrollBarManager(Scroll, textManager, textboxProperties);
             longestLineCalcHelper = new LongestLineCalculationHelper(textManager, textRenderer);
@@ -53,6 +50,7 @@ namespace TextControlBox
             textActionsManager = new TextActionsManager(this, longestLineCalcHelper, undoRedoManager, selectionManager, workingLine, canvasUpdater, textManager, textboxProperties);
             pointerManager = new PointerManager();
             selectionRenderer = new SelectionRenderer(textRenderer, textboxProperties);
+            tabSpaceHelper = new TabSpaceHelper();
             Setup();
         }
 
@@ -214,7 +212,12 @@ namespace TextControlBox
         /// Gets or sets the size of the cursor in the textbox.
         /// </summary>
         public CursorSize CursorSize { get => textboxProperties._CursorSize; set { textboxProperties._CursorSize = value; canvasUpdater.UpdateCursor(); } }
-        
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the textbox is in readonly mode.
+        /// </summary>
+        public bool IsReadonly { get; set; } = false;
+
         /// <summary>
         /// Loads the specified lines into the textbox, resetting all content and undo history.
         /// </summary>
@@ -235,13 +238,34 @@ namespace TextControlBox
 
             canvasUpdater.UpdateSelection().UpdateCursor();
         }
+        /// <summary>
+        /// Deletes the line from the textbox
+        /// </summary>
+        /// <param name="line">The line to delete</param>
+        /// <returns>Returns true if the line was deleted successfully and false if not</returns>
+        public bool DeleteLine(int line)
+        {
+            if (line >= textManager.Lines.Count || line < 0)
+                return false;
+
+            if (line == longestLineCalcHelper.LongestLineIndex)
+                longestLineCalcHelper.NeedsRecalculate();
+
+            undoRedoManager.RecordUndoAction(() =>
+            {
+                textManager.Lines.RemoveAt(line);
+            }, line, 2, 1);
+
+            textManager.AddLineIfEmpty();
+            canvasUpdater.UpdateText();
+            return true;
+        }
         #endregion
 
         private void HorizontalScrollbar_Scroll(object sender, Microsoft.UI.Xaml.Controls.Primitives.ScrollEventArgs e)
         {
             canvasUpdater.UpdateAll();
         }
-
         private void VerticalScrollbar_Scroll(object sender, Microsoft.UI.Xaml.Controls.Primitives.ScrollEventArgs e)
         {
             //only update when a line was scrolled
@@ -252,7 +276,6 @@ namespace TextControlBox
         }
 
 
-
         private void Canvas_Selection_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
             var point = e.GetCurrentPoint(Canvas_Selection);
@@ -261,83 +284,71 @@ namespace TextControlBox
                 pointerManager.LeftDown();
             }
 
-            if (pointerManager.PointerClickCount == 3)
+            //Left click x-times:
+            if (pointerManager.LeftPointerClickCount == 3)
             {
                 SelectLine(selectionManager.Cursor.LineNumber);
                 pointerManager.ResetClicks();
                 return;
             }
-            else if(pointerManager.PointerClickCount == 2)
+            else if (pointerManager.LeftPointerClickCount == 2)
             {
                 CursorHelper.UpdateCursorVariable(this, point.Position, textboxProperties, selectionManager, textRenderer, textManager, workingLine);
                 Selection.SelectSingleWord(canvasUpdater, selectionManager, workingLine, selectionManager.Cursor);
+                return;
             }
-            else
+
+            //right clicked:
+            if (point.Properties.IsRightButtonPressed)
             {
-                if (point.Properties.IsRightButtonPressed)
+                //Context Menu
+            }
+
+            if (point.Properties.IsLeftButtonPressed)
+            {
+                if (Utils.IsKeyPressed(VirtualKey.Shift))
                 {
-                    //Context Menu
-                }
-
-                if (point.Properties.IsLeftButtonPressed)
-                {
-                    if (Utils.IsKeyPressed(VirtualKey.Shift))
-                    {
-                        if (selectionManager.Selection.StartPosition == null)
-                            selectionManager.SetSelectionStart(new CursorPosition(selectionManager.Cursor));
-
-                        CursorHelper.UpdateCursorVariable(this, point.Position, textboxProperties, selectionManager, textRenderer, textManager, workingLine);
-                        selectionManager.SetSelectionEnd(new CursorPosition(selectionManager.Cursor));
-                        
-                        Canvas_Selection.ReleasePointerCaptures();
-
-                        canvasUpdater.UpdateSelection().UpdateCursor();
-
-                        return;
-                    }
+                    if (selectionManager.Selection.StartPosition == null)
+                        selectionManager.SetSelectionStart(new CursorPosition(selectionManager.Cursor));
 
                     CursorHelper.UpdateCursorVariable(this, point.Position, textboxProperties, selectionManager, textRenderer, textManager, workingLine);
+                    selectionManager.SetSelectionEnd(new CursorPosition(selectionManager.Cursor));
 
-                    //pressing inside the selection:
-                    if (selectionManager.HasSelection)
-                    {
-                        selectionManager.ClearSelection();
-                        canvasUpdater.UpdateSelection();
-                    }
-                    else
-                    {
-                        Canvas_Selection.CapturePointer(e.Pointer);
-                        selectionManager.SetSelectionStart(new CursorPosition(selectionManager.Cursor));
-                        selectionManager.IsSelecting = false;
-                    }
+                    Canvas_Selection.ReleasePointerCaptures();
+
+                    canvasUpdater.UpdateSelection().UpdateCursor();
+
+                    return;
+                }
+
+                CursorHelper.UpdateCursorVariable(this, point.Position, textboxProperties, selectionManager, textRenderer, textManager, workingLine);
+
+                //pressing inside the selection:
+                if (selectionManager.HasSelection)
+                {
+                    selectionManager.ClearSelection();
+                    canvasUpdater.UpdateSelection();
+                }
+                else
+                {
+                    Canvas_Selection.CapturePointer(e.Pointer);
+                    selectionManager.SetSelectionStart(new CursorPosition(selectionManager.Cursor));
+                    selectionManager.IsSelecting = true;
                 }
             }
         }
-
         private void Canvas_Selection_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
-            if (!focusManager.HasFocus)
-                return;
-
             var point = e.GetCurrentPoint(Canvas_Selection);
+
+            if (point.Properties.IsLeftButtonPressed)
+            {
+                selectionManager.IsSelecting = true;
+            }
+
             if (selectionManager.IsSelecting)
             {
-                //selection started over the linenumbers:
-                if (selectionManager.IsSelectingOverLinenumbers)
-                {
-                    Point pointerPos = point.Position;
-                    pointerPos.Y += textboxProperties.SingleLineHeight; //add one more line
-
-                    //When the selection reaches the end of the textbox select the last line completely
-                    if (selectionManager.Cursor.LineNumber == textManager.Lines.Count - 1)
-                    {
-                        pointerPos.Y -= textboxProperties.SingleLineHeight; //add one more line
-                        pointerPos.X = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.Lines.GetLineText(-1), textRenderer.textFormat).Width + 10;
-                    }
-                    CursorHelper.UpdateCursorVariable(this, pointerPos, textboxProperties, selectionManager, textRenderer, textManager, workingLine);
-                }
-                else //Default selection
-                    CursorHelper.UpdateCursorVariable(this, point.Position, textboxProperties, selectionManager, textRenderer, textManager, workingLine);
+                CursorHelper.UpdateCursorVariable(this, point.Position, textboxProperties, selectionManager, textRenderer, textManager, workingLine);
 
                 //Update:
                 canvasUpdater.UpdateCursor();
@@ -345,13 +356,72 @@ namespace TextControlBox
                 canvasUpdater.UpdateSelection();
             }
         }
-
         private void Canvas_Selection_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
+            //if (!focusManager.HasFocus)
+                //return;
+
+            selectionManager.IsSelecting = false;
+            Canvas_Selection.ReleasePointerCaptures();
+        }
+
+        private void TextInputManager_LostFocus()
+        {
+            focusManager.RemoveFocus();
+        }
+
+        private void TextInputManager_GotFocus()
+        {
+            focusManager.SetFocus();
+        }
+
+        private void TextInputManager_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Tab)
+            {
+                TextSelection selection;
+                if (Utils.IsKeyPressed(VirtualKey.Shift))
+                    selection = TabKey.MoveTabBack(textManager, selectionManager, tabSpaceHelper, undoRedoManager);
+                else
+                    selection = TabKey.MoveTab(textManager, textboxProperties, selectionManager, tabSpaceHelper, undoRedoManager);
+
+                if (selection != null)
+                {
+                    if (selection.EndPosition == null)
+                    {
+                        selectionManager.Cursor = selection.StartPosition;
+                    }
+                    else
+                    {
+                        selectionManager.SetSelection(selection);
+                        selectionManager.Cursor = selection.EndPosition;
+                    }
+                }
+                canvasUpdater.UpdateAll();
+
+                //mark as handled to not change focus
+                e.Handled = true;
+            }
+
             if (!focusManager.HasFocus)
                 return;
 
-            Canvas_Selection.ReleasePointerCaptures();
+            var ctrl = Utils.IsKeyPressed(VirtualKey.Control);
+            var shift = Utils.IsKeyPressed(VirtualKey.Shift);
+            var menu = Utils.IsKeyPressed(VirtualKey.Menu);
+
+            switch (e.Key)
+            {
+                case VirtualKey.Enter:
+                    textActionsManager.AddNewLine();
+                    break;
+                case VirtualKey.Back:
+                    textActionsManager.RemoveText(ctrl);
+                    break;
+                case VirtualKey.Delete:
+                    textActionsManager.DeleteText(ctrl, shift);
+                    break;
+            }
         }
     }
 }

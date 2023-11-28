@@ -5,7 +5,7 @@ namespace TextControlBox_WinUI.Helper
 {
     internal class PointerManager
     {
-        public int PointerClickCount { get; private set; }
+        public int LeftPointerClickCount { get; private set; }
         private DispatcherTimer PointerClickTimer = new DispatcherTimer { Interval = new TimeSpan(0, 0, 0, 0, 200) };
 
         public PointerManager()
@@ -16,12 +16,12 @@ namespace TextControlBox_WinUI.Helper
 
         public void ResetClicks()
         {
-            PointerClickCount = 0;
+            LeftPointerClickCount = 0;
             PointerClickTimer.Stop();
         }
         public void LeftDown()
         {
-            PointerClickCount++;
+            LeftPointerClickCount++;
 
             PointerClickTimer.Start();
             PointerClickTimer.Tick += PointerClickTimer_Tick;
@@ -30,7 +30,7 @@ namespace TextControlBox_WinUI.Helper
         private void PointerClickTimer_Tick(object sender, object e)
         {
             PointerClickTimer.Stop();
-            PointerClickCount = 0;
+            LeftPointerClickCount = 0;
         }
     }
 }

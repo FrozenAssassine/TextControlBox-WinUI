@@ -10,16 +10,16 @@ namespace TextControlBox.Renderer
 {
     internal class CursorRenderer
     {
-        private void DrawCursor(CanvasTextLayout TextLayout, int CharacterPosition, float XOffset, float Y, float FontSize, CursorSize CustomSize, CanvasDrawEventArgs args, CanvasSolidColorBrush CursorColorBrush)
+        private void DrawCursor(CanvasTextLayout textLayout, int characterPosition, float xOffset, float y, float fontSize, CursorSize customSize, CanvasDrawEventArgs args, CanvasSolidColorBrush cursorColorBrush)
         {
-            if (TextLayout == null)
+            if (textLayout == null)
                 return;
 
-            Vector2 vector = TextLayout.GetCaretPosition(CharacterPosition < 0 ? 0 : CharacterPosition, false);
-            if (CustomSize == null)
-                args.DrawingSession.FillRectangle(vector.X + XOffset, Y, 1, FontSize, CursorColorBrush);
+            Vector2 vector = textLayout.GetCaretPosition(characterPosition < 0 ? 0 : characterPosition, false);
+            if (customSize == null)
+                args.DrawingSession.FillRectangle(vector.X + xOffset, y, 1, fontSize, cursorColorBrush);
             else
-                args.DrawingSession.FillRectangle(vector.X + XOffset + CustomSize.OffsetX, Y + CustomSize.OffsetY, (float)CustomSize.Width, (float)CustomSize.Height, CursorColorBrush);
+                args.DrawingSession.FillRectangle(vector.X + xOffset + customSize.OffsetX, y + customSize.OffsetY, (float)customSize.Width, (float)customSize.Height, cursorColorBrush);
         }
         public void Render(TextControlBox textbox, CanvasDrawEventArgs args, CursorPosition position, TextRenderer textRenderer, TextControlBoxProperties props, TextManager textManager, CurrentWorkingLine workingLine)
         {
@@ -36,10 +36,10 @@ namespace TextControlBox.Renderer
             if (renderPosY > textRenderer.RenderLineCount * props.SingleLineHeight || renderPosY < 0)
                 return;
 
-            workingLine.UpdateTextLayout(textManager, position);
+            workingLine.UpdateTextLayout(position);
 
             int characterPos = position.CharacterPosition;
-            if (characterPos < currentLineLength)
+            if (characterPos > currentLineLength)
                 characterPos = currentLineLength;
 
             DrawCursor(workingLine.TextLayout, characterPos, (float)-textbox.HorizontalScroll, renderPosY,

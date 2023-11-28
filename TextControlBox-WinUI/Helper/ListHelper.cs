@@ -8,73 +8,73 @@ namespace TextControlBox.Helper
     {
         public struct ValueResult
         {
-            public ValueResult(int Index, int Count)
+            public ValueResult(int index, int count)
             {
-                this.Index = Index;
-                this.Count = Count;
+                this.Index = index;
+                this.Count = count;
             }
             public int Index;
             public int Count;
         }
-        public static ValueResult CheckValues(PooledList<string> TotalLines, int Index, int Count)
+        public static ValueResult CheckValues(PooledList<string> lines, int index, int count)
         {
-            if (Index >= TotalLines.Count)
+            if (index >= lines.Count)
             {
-                Index = TotalLines.Count - 1 < 0 ? 0 : TotalLines.Count - 1;
-                Count = 0;
+                index = lines.Count - 1 < 0 ? 0 : lines.Count - 1;
+                count = 0;
             }
-            if (Index + Count >= TotalLines.Count)
+            if (index + count >= lines.Count)
             {
-                int difference = TotalLines.Count - Index;
+                int difference = lines.Count - index;
                 if (difference >= 0)
-                    Count = difference;
+                    count = difference;
             }
 
-            if (Count < 0)
-                Count = 0;
-            if (Index < 0)
-                Index = 0;
+            if (count < 0)
+                count = 0;
+            if (index < 0)
+                index = 0;
 
-            return new ValueResult(Index, Count);
+            return new ValueResult(index, count);
         }
 
-        public static void GCList(PooledList<string> TotalLines)
+        public static void GCList(PooledList<string> lines)
         {
-            int identificador = GC.GetGeneration(TotalLines);
+            int identificador = GC.GetGeneration(lines);
             GC.Collect(identificador, GCCollectionMode.Forced);
         }
 
-        public static void Clear(PooledList<string> TotalLines, bool AddNewLine = false)
+        public static void Clear(PooledList<string> lines, bool addNewLine = false)
         {
-            TotalLines.Clear();
-            GCList(TotalLines);
-            if (AddNewLine)
+            lines.Clear();
+            GCList(lines);
+            if (addNewLine)
             {
-                TotalLines.Add("");
+                lines.Add("");
             }
         }
 
-        public static PooledList<string> GetLines(PooledList<string> TotalLines, int Index, int Count)
+        public static PooledList<string> GetLines(PooledList<string> lines, int index, int count)
         {
-            var res = CheckValues(TotalLines, Index, Count);
-            return TotalLines.Skip(res.Index).Take(res.Count).ToPooledList();
+            var res = CheckValues(lines, index, count);
+            return lines.Skip(res.Index).Take(res.Count).ToPooledList();
         }
-        public static string GetLinesAsString(PooledList<string> Lines, string NewLineCharacter)
+        public static string GetLinesAsString(PooledList<string> lines, string newLineCharacter)
         {
-            return string.Join(NewLineCharacter, Lines);
+            return string.Join(newLineCharacter, lines);
         }
-        public static string[] GetLinesFromString(string content, string NewLineCharacter)
+        public static string[] GetLinesFromString(string content, string newLineCharacter)
         {
-            return content.Split(NewLineCharacter);
+            return content.Split(newLineCharacter);
         }
-        public static string[] CreateLines(string[] lines, int Start, string Beginning, string End)
+        public static string[] CreateLines(string[] lines, int start, string beginning, string end)
         {
-            if (Start > 0)
-                lines = lines.Skip(Start).ToArray();
+            if (start > 0)
+                lines = lines.Skip(start).ToArray();
 
-            lines[0] = Beginning + lines[0];
+            lines[0] = beginning + lines[0];
             if (lines.Length - 1 > 0)
-                lines[lines.Length - 1] = lines[lines.Length - 1] + End;
+                lines[lines.Length - 1] = lines[lines.Length - 1] + end;
             return lines;
         }
     }

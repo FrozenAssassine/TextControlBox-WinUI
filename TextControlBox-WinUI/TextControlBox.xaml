@@ -90,7 +90,11 @@
                 VerticalAlignment="Bottom"/>
         </Grid>
         <controls:TextInputManager 
-            x:Name="TextInputManager" 
+            x:Name="TextInputManager"
+            LostFocus="TextInputManager_LostFocus"
+            GotFocus="TextInputManager_GotFocus"
+            Grid.Column="1"
+            KeyDown="TextInputManager_KeyDown"
             TextChanged="TextInputManager_TextChanged"/>
     </Grid>
 </UserControl>

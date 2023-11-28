@@ -8,17 +8,21 @@ namespace TextControlBox_WinUI.Helper
 {
     internal class CurrentWorkingLine
     {
-        public string Text;
+        private int workingLineIndex = 0;
+        private string _Text = "";
+        public string Text { get => _Text; set { _Text = value; textManager.Lines.SetLineText(workingLineIndex, value); } }
         public CanvasTextLayout TextLayout;
         private CanvasControl canvas_text;
         private TextRenderer textRenderer;
-        public CurrentWorkingLine(CanvasControl canvas_text, TextRenderer textRenderer)
+        private TextManager textManager;
+        public CurrentWorkingLine(CanvasControl canvas_text, TextRenderer textRenderer, TextManager textManager)
         {
             this.canvas_text = canvas_text;
             this.textRenderer = textRenderer;
+            this.textManager = textManager;
         }
 
-        public void UpdateTextLayout(TextManager textManager, CursorPosition position)
+        public void UpdateTextLayout(CursorPosition position)
         {
             if (textRenderer.textFormat == null)
                 return;
@@ -35,6 +39,7 @@ namespace TextControlBox_WinUI.Helper
         public void Update(TextManager textManager, CursorPosition position)
         {
             Text = textManager.Lines[position.LineNumber];
+            workingLineIndex = position.LineNumber;
         }
     }
 }

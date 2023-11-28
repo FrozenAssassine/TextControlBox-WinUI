@@ -52,14 +52,14 @@ namespace TextControlBox_WinUI.Helper
             return cursorPos.CharacterPosition;
         }
 
-        public static void UpdateCursorVariable(TextControlBox.TextControlBox textbox, Point point, TextControlBoxProperties props, SelectionManager cursorManager, TextRenderer textRenderer, TextManager textManager, CurrentWorkingLine workingLine)
+        public static void UpdateCursorVariable(TextControlBox.TextControlBox textbox, Point point, TextControlBoxProperties props, SelectionManager selectionManager, TextRenderer textRenderer, TextManager textManager, CurrentWorkingLine workingLine)
         {
             //Apply an offset to the cursorposition
             point = point.Subtract(-(props.SingleLineHeight / 4), props.SingleLineHeight / 4);
 
-            cursorManager.Cursor.LineNumber = GetCursorLineFromPoint(point, textRenderer, props);
-            workingLine.UpdateTextLayout(textManager, cursorManager.Cursor);
-            cursorManager.Cursor.CharacterPosition = GetCharacterPositionFromPoint(workingLine, point, (float)-textbox.HorizontalScroll);
+            selectionManager.Cursor.LineNumber = GetCursorLineFromPoint(point, textRenderer, props);
+            workingLine.UpdateTextLayout(selectionManager.Cursor);
+            selectionManager.Cursor.CharacterPosition = GetCharacterPositionFromPoint(workingLine, point, (float)-textbox.HorizontalScroll);
         }
 
     }

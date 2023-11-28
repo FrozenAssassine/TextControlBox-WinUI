@@ -55,6 +55,15 @@
             }
             return false;
         }
+        public bool HasSelection()
+        {
+            if (StartPosition == null || EndPosition == null)
+                return false;
+
+            if (StartPosition.LineNumber == EndPosition.LineNumber)
+                return StartPosition.CharacterPosition != EndPosition.CharacterPosition;
+            return true;
+        }
     }
 
     public class TextSelectionPosition

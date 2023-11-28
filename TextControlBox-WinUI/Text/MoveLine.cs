@@ -9,7 +9,7 @@ namespace TextControlBox.Text
             TextSelection result = null;
             if (direction == MoveDirection.Down)
             {
-                if (selection == null)
+                if (selection.HasSelection())
                 {
                     if (cursorposition.LineNumber >= textManager.Lines.Count - 1)
                         return null;
@@ -24,7 +24,7 @@ namespace TextControlBox.Text
             }
             else
             {
-                if (selection == null)
+                if (selection.HasSelection())
                 {
                     if (cursorposition.LineNumber <= 0)
                         return null;
