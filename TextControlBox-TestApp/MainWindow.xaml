@@ -8,11 +8,14 @@
     xmlns:local="using:TextControlBox_TestApp"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-    xmlns:textcontrolbox="using:TextControlBoxNS"
+    xmlns:textcontrolbox="using:TextControlBox"
     mc:Ignorable="d">
     <Window.SystemBackdrop>
         <MicaBackdrop Kind="Base"/>
     </Window.SystemBackdrop>
     
-    <textcontrolbox:TextControlBox x:Name="textbox"/>
+    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Button HorizontalAlignment="Center" VerticalAlignment="Top" Click="PickAFileButton_Click">Open</Button>
+        <textcontrolbox:TextControlBox x:Name="textbox" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,40,0,0"/>
+    </Grid>
 </Window>
