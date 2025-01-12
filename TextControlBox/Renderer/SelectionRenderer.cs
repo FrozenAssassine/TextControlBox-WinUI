@@ -19,7 +19,13 @@ namespace TextControlBoxNS.Renderer
         public CursorPosition SelectionEndPosition = null;
         public int SelectionLength = 0;
         public int SelectionStart = 0;
+        private SelectionManager selectionManager;
+        private TextRenderer textRenderer;
 
+        public SelectionRenderer(SelectionManager selectionManager)
+        {
+            this.selectionManager = selectionManager;
+        }
 
         //Draw the actual selection and return the cursorposition. Return -1 if no selection was drawn
         public TextSelection DrawSelection(
@@ -128,12 +134,12 @@ namespace TextControlBoxNS.Renderer
         }
 
         //returns whether the pointer is over a selection
-        public bool PointerIsOverSelection(Point pointerPosition, TextSelection selection, CanvasTextLayout textLayout)
+        public bool PointerIsOverSelection(Point pointerPosition)
         {
-            if (textLayout == null || selection == null)
+            if (textRenderer.DrawnTextLayout == null || selectionManager.currentTextSelection == null)
                 return false;
 
-            CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(selection.Index, selection.Length);
+            CanvasTextLayoutRegion[] regions = textRenderer.DrawnTextLayout.GetCharacterRegions(selectionManager.currentTextSelection.Index, selectionManager.currentTextSelection.Length);
             for (int i = 0; i < regions.Length; i++)
             {
                 if (regions[i].LayoutBounds.Contains(pointerPosition))
@@ -147,7 +153,7 @@ namespace TextControlBoxNS.Renderer
             if (textSelection == null)
                 return false;
 
-            textSelection = Selection.OrderTextSelection(textSelection);
+            textSelection = selectionManager.OrderTextSelection(textSelection);
 
             //Cursorposition is smaller than the start of selection
             if (textSelection.StartPosition.LineNumber > cursorPosition.LineNumber)

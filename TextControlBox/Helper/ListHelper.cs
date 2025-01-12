@@ -44,19 +44,6 @@ namespace TextControlBoxNS.Helper
             GC.Collect(id, GCCollectionMode.Forced);
         }
 
-        public static void Clear(PooledList<string> totalLines, bool addNewLine = false)
-        {
-            totalLines.Clear();
-            GCList(totalLines);
-
-            if (addNewLine)
-                totalLines.Add("");
-        }
-
-        public static string GetLinesAsString(PooledList<string> lines, string newLineCharacter)
-        {
-            return string.Join(newLineCharacter, lines);
-        }
         public static string[] GetLinesFromString(string content, string newLineCharacter)
         {
             return content.Split(newLineCharacter);

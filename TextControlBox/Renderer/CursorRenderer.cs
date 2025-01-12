@@ -3,22 +3,31 @@ using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
 using System.Numerics;
+using TextControlBoxNS.Extensions;
+using TextControlBoxNS.Text;
 using Windows.Foundation;
 
 namespace TextControlBoxNS.Renderer
 {
     internal class CursorRenderer
     {
-        public static int GetCursorLineFromPoint(Point point, float singleLineHeight, int numberOfRenderedLines, int numberOfStartLine)
+        public CursorSize _CursorSize = null;
+        private readonly TextManager textManager;
+        public CursorRenderer(TextManager textManager)
+        {
+            this.textManager = textManager;
+        }
+
+        public int GetCursorLineFromPoint(Point point, float singleLineHeight, int numberOfRenderedLines, int numberOfStartLine)
         {
             //Calculate the relative linenumber, where the pointer was pressed at
             int linenumber = (int)(point.Y / singleLineHeight);
             linenumber += numberOfStartLine;
             return Math.Clamp(linenumber, 0, numberOfStartLine + numberOfRenderedLines - 1);
         }
-        public static int GetCharacterPositionFromPoint(string currentLine, CanvasTextLayout textLayout, Point cursorPosition, float marginLeft)
+        public int GetCharacterPositionFromPoint(CanvasTextLayout textLayout, Point cursorPosition, float marginLeft)
         {
-            if (currentLine == null || textLayout == null)
+            if (textManager.totalLines.GetCurrentLineText() == null || textLayout == null)
                 return 0;
 
             textLayout.HitTest(
@@ -28,7 +37,7 @@ namespace TextControlBoxNS.Renderer
         }
 
         //Return the position in pixels of the cursor in the current line
-        public static float GetCursorPositionInLine(CanvasTextLayout currentLineTextLayout, CursorPosition cursorPosition, float xOffset)
+        public float GetCursorPositionInLine(CanvasTextLayout currentLineTextLayout, CursorPosition cursorPosition, float xOffset)
         {
             if (currentLineTextLayout == null)
                 return 0;
@@ -37,7 +46,7 @@ namespace TextControlBoxNS.Renderer
         }
 
         //Return the cursor Width
-        public static void RenderCursor(CanvasTextLayout textLayout, int characterPosition, float xOffset, float y, float fontSize, CursorSize customSize, CanvasDrawEventArgs args, CanvasSolidColorBrush cursorColorBrush)
+        public void RenderCursor(CanvasTextLayout textLayout, int characterPosition, float xOffset, float y, float fontSize, CursorSize customSize, CanvasDrawEventArgs args, CanvasSolidColorBrush cursorColorBrush)
         {
             if (textLayout == null)
                 return;

@@ -1,24 +1,38 @@
-﻿using Collections.Pooled;
-using System;
-using TextControlBoxNS.Extensions;
+﻿using System;
 using TextControlBoxNS.Helper;
 
 namespace TextControlBoxNS.Text
 {
-    internal class Cursor
+    internal class CursorManager
     {
-        private static int CheckIndex(string str, int index) => Math.Clamp(index, 0, str.Length - 1);
-        public static int CursorPositionToIndex(PooledList<string> totalLines, CursorPosition cursorPosition)
+        public CursorPosition currentCursorPosition { get; private set; }
+        public int LineNumber { get => currentCursorPosition.LineNumber; set => currentCursorPosition.LineNumber = value; }
+        public int CharacterPosition => currentCursorPosition.CharacterPosition;
+
+        private readonly TextManager textManager;
+        public CursorManager(TextManager textManager)
+        {
+            this.textManager = textManager;
+        }
+
+        public void SetCursorPosition(CursorPosition cursorPosition)
+        {
+            this.currentCursorPosition = cursorPosition;
+        }
+
+
+        private int CheckIndex(string str, int index) => Math.Clamp(index, 0, str.Length - 1);
+        public int CursorPositionToIndex(CursorPosition cursorPosition)
         {
             int cursorIndex = cursorPosition.CharacterPosition;
-            int lineNumber = cursorPosition.LineNumber < totalLines.Count ? cursorIndex : totalLines.Count - 1;
+            int lineNumber = cursorPosition.LineNumber < textManager.LinesCount ? cursorIndex : textManager.LinesCount - 1;
             for (int i = 0; i < lineNumber; i++)
             {
-                cursorIndex += totalLines.GetLineLength(i) + 1;
+                cursorIndex += textManager.GetLineLength(i) + 1;
             }
             return cursorIndex;
         }
-        public static bool Equals(CursorPosition curPos1, CursorPosition curPos2)
+        public bool Equals(CursorPosition curPos1, CursorPosition curPos2)
         {
             if (curPos1 == null || curPos2 == null)
                 return false;
@@ -29,7 +43,7 @@ namespace TextControlBoxNS.Text
         }
 
         //Calculate the number of characters from the cursorposition to the next character or digit to the left and to the right
-        public static int CalculateStepsToMoveLeft2(string currentLine, int cursorCharPosition)
+        public int CalculateStepsToMoveLeft2(string currentLine, int cursorCharPosition)
         {
             if (currentLine.Length == 0)
                 return 0;
@@ -47,7 +61,7 @@ namespace TextControlBoxNS.Text
             }
             return stepsToMove;
         }
-        public static int CalculateStepsToMoveRight2(string currentLine, int cursorCharPosition)
+        public int CalculateStepsToMoveRight2(string currentLine, int cursorCharPosition)
         {
             if (currentLine.Length == 0)
                 return 0;
@@ -68,7 +82,7 @@ namespace TextControlBoxNS.Text
 
         //Calculates how many characters the cursor needs to move if control is pressed
         //Returns 1 when control is not pressed
-        public static int CalculateStepsToMoveLeft(string currentLine, int cursorCharPosition)
+        public int CalculateStepsToMoveLeft(string currentLine, int cursorCharPosition)
         {
             if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
                 return 1;
@@ -88,7 +102,7 @@ namespace TextControlBoxNS.Text
             //return 1 if stepsToMove is 0
             return stepsToMove == 0 ? 1 : stepsToMove;
         }
-        public static int CalculateStepsToMoveRight(string currentLine, int cursorCharPosition)
+        public int CalculateStepsToMoveRight(string currentLine, int cursorCharPosition)
         {
             if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
                 return 1;
@@ -110,15 +124,15 @@ namespace TextControlBoxNS.Text
         }
 
         //Move cursor:
-        public static void MoveLeft(CursorPosition currentCursorPosition, PooledList<string> totalLines, string currentLine)
+        public void MoveLeft(CursorPosition currentCursorPosition, TextManager textManager, string currentLine)
         {
             if (currentCursorPosition.LineNumber < 0)
                 return;
 
-            int currentLineLength = totalLines.GetLineLength(currentCursorPosition.LineNumber);
+            int currentLineLength = textManager.GetLineLength(currentCursorPosition.LineNumber);
             if (currentCursorPosition.CharacterPosition == 0 && currentCursorPosition.LineNumber > 0)
             {
-                currentCursorPosition.CharacterPosition = totalLines.GetLineLength(currentCursorPosition.LineNumber - 1);
+                currentCursorPosition.CharacterPosition = textManager.GetLineLength(currentCursorPosition.LineNumber - 1);
                 currentCursorPosition.LineNumber -= 1;
             }
             else if (currentCursorPosition.CharacterPosition > currentLineLength)
@@ -126,14 +140,14 @@ namespace TextControlBoxNS.Text
             else if (currentCursorPosition.CharacterPosition > 0)
                 currentCursorPosition.CharacterPosition -= CalculateStepsToMoveLeft(currentLine, currentCursorPosition.CharacterPosition);
         }
-        public static void MoveRight(CursorPosition currentCursorPosition, PooledList<string> totalLines, string currentLine)
+        public void MoveRight(CursorPosition currentCursorPosition, TextManager textManager, string currentLine)
         {
-            int lineLength = totalLines.GetLineLength(currentCursorPosition.LineNumber);
+            int lineLength = textManager.GetLineLength(currentCursorPosition.LineNumber);
 
-            if (currentCursorPosition.LineNumber > totalLines.Count - 1)
+            if (currentCursorPosition.LineNumber > textManager.LinesCount- 1)
                 return;
 
-            if (currentCursorPosition.CharacterPosition == lineLength && currentCursorPosition.LineNumber < totalLines.Count - 1)
+            if (currentCursorPosition.CharacterPosition == lineLength && currentCursorPosition.LineNumber < textManager.LinesCount - 1)
             {
                 currentCursorPosition.CharacterPosition = 0;
                 currentCursorPosition.LineNumber += 1;
@@ -144,25 +158,25 @@ namespace TextControlBoxNS.Text
             if (currentCursorPosition.CharacterPosition > lineLength)
                 currentCursorPosition.CharacterPosition = lineLength;
         }
-        public static CursorPosition MoveDown(CursorPosition currentCursorPosition, int totalLinesLength)
+        public CursorPosition MoveDown(CursorPosition currentCursorPosition, int totalLinesLength)
         {
             CursorPosition returnValue = new CursorPosition(currentCursorPosition);
             if (currentCursorPosition.LineNumber < totalLinesLength - 1)
                 returnValue = CursorPosition.ChangeLineNumber(currentCursorPosition, currentCursorPosition.LineNumber + 1);
             return returnValue;
         }
-        public static CursorPosition MoveUp(CursorPosition currentCursorPosition)
+        public CursorPosition MoveUp(CursorPosition currentCursorPosition)
         {
             CursorPosition returnValue = new CursorPosition(currentCursorPosition);
             if (currentCursorPosition.LineNumber > 0)
                 returnValue = CursorPosition.ChangeLineNumber(returnValue, currentCursorPosition.LineNumber - 1);
             return returnValue;
         }
-        public static void MoveToLineEnd(CursorPosition cursorPosition, string currentLine)
+        public void MoveToLineEnd(CursorPosition cursorPosition, string currentLine)
         {
             cursorPosition.CharacterPosition = currentLine.Length;
         }
-        public static void MoveToLineStart(CursorPosition cursorPosition)
+        public void MoveToLineStart(CursorPosition cursorPosition)
         {
             cursorPosition.CharacterPosition = 0;
         }

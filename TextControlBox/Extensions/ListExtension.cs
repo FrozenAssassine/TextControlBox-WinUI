@@ -22,15 +22,8 @@ namespace TextControlBoxNS.Extensions
             return list[index];
         }
 
-        public static int GetLineLength(this PooledList<string> list, int index)
-        {
-            return GetLineText(list, index).Length;
-        }
 
-        public static void AddLine(this PooledList<string> list, string content = "")
-        {
-            list.Add(content);
-        }
+
         public static void SetLineText(this PooledList<string> list, int line, string text)
         {
             if (line == -1)
@@ -40,22 +33,7 @@ namespace TextControlBoxNS.Extensions
 
             list[line] = text;
         }
-        public static string GetCurrentLineText(this PooledList<string> list)
-        {
-            return list[CurrentLineIndex < list.Count ? CurrentLineIndex : list.Count - 1 < 0 ? 0 : list.Count - 1];
-        }
-        public static void SetCurrentLineText(this PooledList<string> list, string text)
-        {
-            list[CurrentLineIndex < list.Count ? CurrentLineIndex : list.Count - 1] = text;
-        }
-        public static int CurrentLineLength(this PooledList<string> list)
-        {
-            return GetCurrentLineText(list).Length;
-        }
-        public static void UpdateCurrentLine(this PooledList<string> _, int currentLine)
-        {
-            CurrentLineIndex = currentLine;
-        }
+
         public static void String_AddToEnd(this PooledList<string> list, int line, string add)
         {
             list[line] = list[line] + add;
@@ -78,34 +56,9 @@ namespace TextControlBoxNS.Extensions
         {
             list.InsertOrAdd(index, content);
         }
-        public static void DeleteAt(this PooledList<string> list, int index)
-        {
-            if (index >= list.Count)
-                index = list.Count - 1 < 0 ? list.Count - 1 : 0;
 
-            list.RemoveAt(index);
-            list.TrimExcess();
-        }
-        private static IEnumerable<string> GetLines_Small(this PooledList<string> totalLines, int start, int count)
-        {
-            var res = ListHelper.CheckValues(totalLines, start, count);
 
-            for (int i = 0; i < res.Count; i++)
-            {
-                yield return totalLines[i + res.Index];
-            }
-        }
 
-        public static IEnumerable<string> GetLines(this PooledList<string> totalLines, int start, int count)
-        {
-            //use different algorithm for small amount of lines:
-            if (start + count < 400)
-            {
-                return GetLines_Small(totalLines, start, count);
-            }
-
-            return totalLines.Skip(start).Take(count);
-        }
 
         public static string GetString(this IEnumerable<string> lines, string NewLineCharacter)
         {
@@ -127,11 +80,6 @@ namespace TextControlBoxNS.Extensions
             return lines.Skip(start).Take(count).ToArray();
         }
 
-        public static void SwapLines(this PooledList<string> lines, int originalindex, int newindex)
-        {
-            string oldLine = lines.GetLineText(originalindex);
-            lines.SetLineText(originalindex, lines.GetLineText(newindex));
-            lines.SetLineText(newindex, oldLine);
-        }
+
     }
 }

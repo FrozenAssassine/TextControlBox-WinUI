@@ -88,15 +88,7 @@ namespace TextControlBoxNS.Helper
             return new string[] { first, second };
         }
 
-        public static int CountCharacters(PooledList<string> totalLines)
-        {
-            int count = 0;
-            for (int i = 0; i < totalLines.Count; i++)
-            {
-                count += totalLines[i].Length + 1;
-            }
-            return count - 1;
-        }
+
         public static bool IsKeyPressed(VirtualKey key)
         {
             return Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(key).HasFlag(CoreVirtualKeyStates.Down);

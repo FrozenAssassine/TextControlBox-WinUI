@@ -21,7 +21,7 @@ namespace TextControlBoxNS.Text
                 return new TextSelection(cursorPosition, null);
             }
 
-            textSelection = Selection.OrderTextSelection(textSelection);
+            textSelection = SelectionManager.OrderTextSelection(textSelection);
             int selectedLinesCount = textSelection.EndPosition.LineNumber - textSelection.StartPosition.LineNumber;
 
             TextSelection tempSel = new TextSelection(textSelection);
@@ -64,11 +64,11 @@ namespace TextControlBoxNS.Text
                 return new TextSelection(cursorPosition, null);
             }
 
-            textSelection = Selection.OrderTextSelection(textSelection);
+            textSelection = SelectionManager.OrderTextSelection(textSelection);
             int selectedLinesCount = textSelection.EndPosition.LineNumber - textSelection.StartPosition.LineNumber;
 
             if (textSelection.StartPosition.LineNumber == textSelection.EndPosition.LineNumber) //Singleline
-                textSelection.StartPosition = Selection.Replace(textSelection, totalLines, tabCharacter, newLineCharacter);
+                textSelection.StartPosition = SelectionManager.Replace(textSelection, totalLines, tabCharacter, newLineCharacter);
             else
             {
                 TextSelection tempSel = new TextSelection(textSelection);
