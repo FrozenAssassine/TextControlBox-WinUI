@@ -27,7 +27,7 @@ namespace TextControlBoxNS.Text
         {
             this.currentTextSelection = textSelection;
         }
-        private void StartSelectionIfNeeded(SelectionRenderer selectionRenderer)
+        public void StartSelectionIfNeeded(SelectionRenderer selectionRenderer)
         {
             if (this.SelectionIsNull(selectionRenderer, currentTextSelection))
             {
@@ -537,15 +537,15 @@ namespace TextControlBoxNS.Text
                 return true;
             return selectionrenderer.SelectionStartPosition == null || selectionrenderer.SelectionEndPosition == null;
         }
-        public void SelectSingleWord(CanvasHelper canvashelper, SelectionRenderer selectionrenderer, CursorPosition cursorPosition, string currentLine)
+        public void SelectSingleWord(CanvasHelper canvashelper, SelectionRenderer selectionrenderer, CursorPosition cursorPosition)
         {
             int characterpos = cursorPosition.CharacterPosition;
             //Update variables
             selectionrenderer.SelectionStartPosition =
-                new CursorPosition(characterpos - cursorManager.CalculateStepsToMoveLeft2(currentLine, characterpos), cursorPosition.LineNumber);
+                new CursorPosition(characterpos - cursorManager.CalculateStepsToMoveLeft2(characterpos), cursorPosition.LineNumber);
 
             selectionrenderer.SelectionEndPosition =
-                new CursorPosition(characterpos + cursorManager.CalculateStepsToMoveRight2(currentLine, characterpos), cursorPosition.LineNumber);
+                new CursorPosition(characterpos + cursorManager.CalculateStepsToMoveRight2(characterpos), cursorPosition.LineNumber);
 
             cursorPosition.CharacterPosition = selectionrenderer.SelectionEndPosition.CharacterPosition;
             selectionrenderer.HasSelection = true;

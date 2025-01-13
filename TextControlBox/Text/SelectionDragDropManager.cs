@@ -11,7 +11,7 @@ namespace TextControlBoxNS.Text
 {
     internal class SelectionDragDropManager
     {
-        private bool DragDropSelection = false;
+        public bool isDragDropSelection = false;
 
         private readonly CursorManager cursorManager;
         private readonly SelectionManager selectionManager;
@@ -23,7 +23,7 @@ namespace TextControlBoxNS.Text
 
         }
 
-        private void DoDragDropSelection()
+        public void DoDragDropSelection()
         {
             if (selectionManager.currentTextSelection == null || textManager._IsReadonly)
                 return;
@@ -32,7 +32,7 @@ namespace TextControlBoxNS.Text
             if (cursorManager.Equals(selectionManager.currentTextSelection.StartPosition, cursorManager.currentCursorPosition) || cursorManager.Equals(selectionManager.currentTextSelection.EndPosition, cursorManager.currentCursorPosition))
             {
                 //ChangeCursor(InputSystemCursorShape.IBeam);
-                DragDropSelection = false;
+                isDragDropSelection = false;
                 return;
             }
 
@@ -47,12 +47,12 @@ namespace TextControlBoxNS.Text
             AddCharacter(textToInsert, false);
 
             ChangeCursor(InputSystemCursorShape.IBeam);
-            DragDropSelection = false;
+            isDragDropSelection = false;
             canvasHelper.UpdateAll();
         }
-        private void EndDragDropSelection(bool clearSelectedText = true)
+        public void EndDragDropSelection(bool clearSelectedText = true)
         {
-            DragDropSelection = false;
+            isDragDropSelection = false;
             if (clearSelectedText)
                 ClearSelection();
 
@@ -60,7 +60,7 @@ namespace TextControlBoxNS.Text
             selectionrenderer.IsSelecting = false;
             canvasHelper.UpdateCursor();
         }
-        private bool DragDropOverSelection(Point curPos)
+        public bool DragDropOverSelection(Point curPos)
         {
             bool res = SelectionHelper.CursorIsInSelection(selectionManager, CursorPosition, TextSelection) ||
                 SelectionHelper.PointerIsOverSelection(textRenderer, curPos, selectionManager.currentTextSelection);

@@ -136,7 +136,7 @@ namespace TextControlBoxNS.Text
         }
 
         //Move cursor:
-        public void MoveLeft(CursorPosition currentCursorPosition, TextManager textManager)
+        public void MoveLeft(CursorPosition currentCursorPosition)
         {
             if (currentCursorPosition.LineNumber < 0)
                 return;
@@ -152,7 +152,7 @@ namespace TextControlBoxNS.Text
             else if (currentCursorPosition.CharacterPosition > 0)
                 currentCursorPosition.CharacterPosition -= CalculateStepsToMoveLeft(currentCursorPosition.CharacterPosition);
         }
-        public void MoveRight(CursorPosition currentCursorPosition, TextManager textManager)
+        public void MoveRight(CursorPosition currentCursorPosition)
         {
             int lineLength = textManager.GetLineLength(currentCursorPosition.LineNumber);
 
@@ -170,19 +170,15 @@ namespace TextControlBoxNS.Text
             if (currentCursorPosition.CharacterPosition > lineLength)
                 currentCursorPosition.CharacterPosition = lineLength;
         }
-        public CursorPosition MoveDown(CursorPosition currentCursorPosition, int totalLinesLength)
+        public void MoveDown(CursorPosition currentCursorPosition, int totalLinesLength)
         {
-            CursorPosition returnValue = new CursorPosition(currentCursorPosition);
             if (currentCursorPosition.LineNumber < totalLinesLength - 1)
-                returnValue = CursorPosition.ChangeLineNumber(currentCursorPosition, currentCursorPosition.LineNumber + 1);
-            return returnValue;
+                CursorPosition.ChangeLineNumber(currentCursorPosition, currentCursorPosition.LineNumber + 1);
         }
-        public CursorPosition MoveUp(CursorPosition currentCursorPosition)
+        public void MoveUp(CursorPosition currentCursorPosition)
         {
-            CursorPosition returnValue = new CursorPosition(currentCursorPosition);
             if (currentCursorPosition.LineNumber > 0)
-                returnValue = CursorPosition.ChangeLineNumber(returnValue, currentCursorPosition.LineNumber - 1);
-            return returnValue;
+                CursorPosition.ChangeLineNumber(currentCursorPosition, currentCursorPosition.LineNumber - 1);
         }
         public void MoveToLineEnd(CursorPosition cursorPosition)
         {

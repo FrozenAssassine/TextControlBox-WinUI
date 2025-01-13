@@ -14,12 +14,12 @@ namespace TextControlBoxNS.Helper
 {
     internal class CursorHelper
     {
-        public static int GetCursorLineFromPoint(Point point, float singleLineHeight, int numberOfRenderedLines, int numberOfStartLine)
+        public static int GetCursorLineFromPoint(TextRenderer textRenderer, Point point)
         {
             //Calculate the relative linenumber, where the pointer was pressed at
-            int linenumber = (int)(point.Y / singleLineHeight);
-            linenumber += numberOfStartLine;
-            return Math.Clamp(linenumber, 0, numberOfStartLine + numberOfRenderedLines - 1);
+            int linenumber = (int)(point.Y / textRenderer.SingleLineHeight);
+            linenumber += textRenderer.NumberOfStartLine;
+            return Math.Clamp(linenumber, 0, textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines - 1);
         }
         public static int GetCharacterPositionFromPoint(CurrentLineManager currentLineManager, CanvasTextLayout textLayout, Point cursorPosition, float marginLeft)
         {

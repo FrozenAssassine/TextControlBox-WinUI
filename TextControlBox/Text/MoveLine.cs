@@ -4,7 +4,7 @@ namespace TextControlBoxNS.Text
 {
     internal class MoveLine
     {
-        public static void Move(SelectionManager selectionManager, TextManager textManager, TextSelection selection, CursorPosition cursorposition, UndoRedo undoredo, string newLineCharacter, LineMoveDirection direction)
+        public static void Move(SelectionManager selectionManager, TextManager textManager, TextSelection selection, CursorPosition cursorposition, UndoRedo undoredo, LineMoveDirection direction)
         {
             if (selection != null)
                 return;
@@ -18,7 +18,7 @@ namespace TextControlBoxNS.Text
                 undoredo.RecordUndoAction(() =>
                 {
                     selectionManager.MoveLinesDown(selection, cursorposition);
-                }, cursorposition.LineNumber, 2, 2, newLineCharacter, cursorposition);
+                }, cursorposition.LineNumber, 2, 2, cursorposition);
                 return;
             }
 
@@ -29,7 +29,7 @@ namespace TextControlBoxNS.Text
             undoredo.RecordUndoAction(() =>
             {
                 selectionManager.MoveLinesUp(selection, cursorposition);
-            }, cursorposition.LineNumber - 1, 2, 2, newLineCharacter, cursorposition);
+            }, cursorposition.LineNumber - 1, 2, 2, cursorposition);
         }
     }
 }
