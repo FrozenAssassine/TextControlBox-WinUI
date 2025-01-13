@@ -1,22 +1,42 @@
 ﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TextControlBoxNS.Helper;
+using TextControlBoxNS.Text;
 
 namespace TextControlBoxNS.Renderer
 {
     internal class LineNumberRenderer
     {
+        public CanvasTextLayout LineNumberTextLayout = null;
+        public CanvasTextFormat LineNumberTextFormat = null;
+
         public string LineNumberTextToRender;
         public string OldLineNumberTextToRender;
 
         private StringBuilder LineNumberContent = new StringBuilder();
         private bool needsUpdate = false;
+
+        private TextManager textManager;
+        private TextRenderer textRenderer;
+        private DesignHelper designHelper;
+        private LineNumberManager lineNumberManager;
+        private TextLayoutManager textLayoutManager;
+        public void Init(TextManager textManager, TextLayoutManager textLayoutManager, TextRenderer textRenderer, DesignHelper designHelper, LineNumberManager lineNumberManager)
+        {
+            this.textManager = textManager;
+            this.textRenderer = textRenderer;
+            this.designHelper = designHelper;
+            this.lineNumberManager = lineNumberManager;
+            this.textLayoutManager = textLayoutManager;
+        }
 
         public void GenerateLineNumberText(int renderedLines, int startLine)
         {
@@ -48,12 +68,13 @@ namespace TextControlBoxNS.Renderer
 
         public void Draw(CanvasControl canvas, CanvasDrawEventArgs args, float spaceBetweenCanvasAndText)
         {
-
             if (LineNumberTextToRender == null || LineNumberTextToRender.Length == 0)
                 return;
 
+            //TODO use: 'needsUpdate'
+
             //Calculate the linenumbers             
-            float lineNumberWidth = (float)Utils.MeasureTextSize(CanvasDevice.GetSharedDevice(), (TotalLines.Count).ToString(), LineNumberTextFormat).Width;
+            float lineNumberWidth = (float)Utils.MeasureTextSize(CanvasDevice.GetSharedDevice(), (textManager.LinesCount).ToString(), LineNumberTextFormat).Width;
             canvas.Width = lineNumberWidth + 10 + spaceBetweenCanvasAndText;
 
             float posX = (float)canvas.Size.Width - spaceBetweenCanvasAndText;
@@ -61,9 +82,22 @@ namespace TextControlBoxNS.Renderer
                 posX = 0;
 
             OldLineNumberTextToRender = LineNumberTextToRender;
-            LineNumberTextLayout = TextLayoutHelper.CreateTextLayout(sender, LineNumberTextFormat, LineNumberTextToRender, posX, (float)sender.Size.Height);
-            args.DrawingSession.DrawTextLayout(LineNumberTextLayout, 10, SingleLineHeight, LineNumberColorBrush);
+            LineNumberTextLayout = textLayoutManager.CreateTextLayout(canvas, LineNumberTextFormat, LineNumberTextToRender, posX, (float)canvas.Size.Height);
+            args.DrawingSession.DrawTextLayout(LineNumberTextLayout, 10, textRenderer.SingleLineHeight, designHelper.LineNumberColorBrush);
         }
 
+        public void CreateLineNumberTextFormat()
+        {
+            if (lineNumberManager._ShowLineNumbers)
+                LineNumberTextFormat = textLayoutManager.CreateLinenumberTextFormat();
+        }
+
+        public void CheckGenerateLineNumberText()
+        {
+            if (lineNumberManager._ShowLineNumbers)
+            {
+                GenerateLineNumberText(textRenderer.NumberOfRenderedLines, textRenderer.NumberOfStartLine);
+            }
+        }
     }
 }

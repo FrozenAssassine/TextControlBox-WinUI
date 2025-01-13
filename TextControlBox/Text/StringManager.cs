@@ -9,6 +9,12 @@ namespace TextControlBoxNS.Text
 
         public StringManager stringManager;
 
+        public void Init(TextManager textManager, TabSpaceHelper tabSpaceHelper)
+        {
+            this.textManager = textManager;
+            this.tabSpaceHelper = tabSpaceHelper;
+        }
+
         public string CleanUpString(string input)
         {
             //Fix tabs and lineendings

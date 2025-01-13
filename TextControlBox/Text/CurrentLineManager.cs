@@ -5,16 +5,18 @@ namespace TextControlBoxNS.Text;
 
 internal class CurrentLineManager
 {
-    private readonly CursorManager cursorManager;
-    private readonly TextManager textManager;
+    private CursorManager cursorManager;
+    private TextManager textManager;
 
-    public CurrentLineManager(CursorManager cursorManager)
+    public void Init(CursorManager cursorManager, TextManager textManager)
     {
         this.cursorManager = cursorManager;
+        this.textManager = textManager;
     }
 
     public int CurrentLineIndex { get => cursorManager.currentCursorPosition.LineNumber; set => cursorManager.currentCursorPosition.LineNumber = value; }
-    public string CurrentLine { get => GetCurrentLineText(); set => SetCurrentLineText(value); }
+    public string CurrentLine { get => GetCurrentLineText(); 
+        set => SetCurrentLineText(value); }
     public int Length => CurrentLine.Length;
 
     public string GetCurrentLineText()

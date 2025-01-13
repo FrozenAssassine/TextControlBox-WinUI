@@ -15,27 +15,48 @@ namespace TextControlBoxNS.Text
 {
     internal class TextActionManager
     {
-        private readonly CanvasHelper canvasHelper;
-        private readonly TextManager textManager;
-        private readonly SelectionRenderer selectionRenderer;
-        private readonly SelectionManager selectionManager;
-        private readonly CursorManager cursorManager;
-        private readonly TextControlBox textbox;
-        private readonly UndoRedo undoRedo;
-        private readonly LongestLineManager longestLineManager;
-        private readonly CurrentLineManager currentLineManager;
-        private readonly ScrollManager scrollManager;
-        private readonly EventsManager eventsManager;
-        private readonly TextRenderer textRenderer;
-        private readonly StringManager stringManager;
+        private CanvasUpdateManager canvasHelper;
+        private TextManager textManager;
+        private SelectionRenderer selectionRenderer;
+        private SelectionManager selectionManager;
+        private CursorManager cursorManager;
+        private CoreTextControlBox coreTextbox;
+        private UndoRedo undoRedo;
+        private LongestLineManager longestLineManager;
+        private CurrentLineManager currentLineManager;
+        private ScrollManager scrollManager;
+        private EventsManager eventsManager;
+        private TextRenderer textRenderer;
+        private StringManager stringManager;
 
-        public TextActionManager(TextControlBox textbox, TextRenderer textRenderer, UndoRedo undoRedo, CurrentLineManager currentLineManager, LongestLineManager longestLineManager, CanvasHelper canvasHelper, TextManager textManager, SelectionRenderer selectionRenderer, CursorManager cursorManager)
+        public void Init(
+            CoreTextControlBox coreTextbox,
+            TextRenderer textRenderer,
+            UndoRedo undoRedo,
+            CurrentLineManager currentLineManager,
+            LongestLineManager longestLineManager,
+            CanvasUpdateManager canvasHelper,
+            TextManager textManager,
+            SelectionRenderer selectionRenderer,
+            CursorManager cursorManager,
+            ScrollManager scrollManager,
+            EventsManager eventsManager,
+            StringManager stringManager,
+            SelectionManager selectionManager)
         {
             this.canvasHelper = canvasHelper;
             this.textManager = textManager;
             this.selectionRenderer = selectionRenderer;
             this.cursorManager = cursorManager;
-            this.textbox = textbox;
+            this.coreTextbox = coreTextbox;
+            this.undoRedo = undoRedo;
+            this.longestLineManager = longestLineManager;
+            this.currentLineManager = currentLineManager;
+            this.scrollManager = scrollManager;
+            this.eventsManager = eventsManager;
+            this.textRenderer = textRenderer;
+            this.stringManager = stringManager;
+            this.selectionManager = selectionManager;
         }
 
         public void SelectAll()
@@ -51,16 +72,16 @@ namespace TextControlBoxNS.Text
         }
         public void Undo()
         {
-            if (textbox.IsReadonly || !undoRedo.CanUndo)
+            if (coreTextbox.IsReadonly || !undoRedo.CanUndo)
                 return;
 
             //Do the Undo
-            //ChangeCursor(InputSystemCursorShape.Wait);
+            coreTextbox.ChangeCursor(InputSystemCursorShape.Wait);
             var sel = undoRedo.Undo(stringManager);
             eventsManager.CallTextChanged();
-            //ChangeCursor(InputSystemCursorShape.IBeam);
+            coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
 
-            longestLineManager.NeedsRecalculation = true;
+            longestLineManager.needsRecalculation = true;
 
             if (sel != null)
             {
@@ -81,16 +102,16 @@ namespace TextControlBoxNS.Text
         }
         public void Redo()
         {
-            if (textbox.IsReadonly || !undoRedo.CanRedo)
+            if (coreTextbox.IsReadonly || !undoRedo.CanRedo)
                 return;
 
             //Do the Redo
-            //ChangeCursor(InputSystemCursorShape.Wait);
+            coreTextbox.ChangeCursor(InputSystemCursorShape.Wait);
             var sel = undoRedo.Redo(stringManager);
             eventsManager.CallTextChanged();
-            //ChangeCursor(InputSystemCursorShape.IBeam);
+            coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
 
-            longestLineManager.NeedsRecalculation = true;
+            longestLineManager.needsRecalculation = true;
 
             if (sel != null)
             {
@@ -167,7 +188,7 @@ namespace TextControlBoxNS.Text
             try
             {
                 DataPackage dataPackage = new DataPackage();
-                dataPackage.SetText(textbox.SelectedText);
+                dataPackage.SetText(coreTextbox.SelectedText);
                 if (selectionManager.currentTextSelection == null)
                     DeleteLine(cursorManager.LineNumber); //Delete the line
                 else
@@ -193,7 +214,7 @@ namespace TextControlBoxNS.Text
             try
             {
                 DataPackage dataPackage = new DataPackage();
-                dataPackage.SetText(textbox.SelectedText);
+                dataPackage.SetText(coreTextbox.SelectedText);
                 dataPackage.RequestedOperation = DataPackageOperation.Copy;
                 Clipboard.SetContent(dataPackage);
             }
@@ -220,7 +241,7 @@ namespace TextControlBoxNS.Text
 
                 textManager._LineEnding = lineEnding;
 
-                longestLineManager.NeedsRecalculation = true;
+                longestLineManager.needsRecalculation = true;
                 canvasHelper.UpdateAll();
             }
             catch (OutOfMemoryException)
@@ -247,7 +268,7 @@ namespace TextControlBoxNS.Text
                 selectionRenderer.ClearSelection();
                 undoRedo.ClearAll();
 
-                longestLineManager.NeedsRecalculation = true;
+                longestLineManager.needsRecalculation = true;
 
                 if (text.Length == 0)
                     textManager.ClearText(true);
@@ -275,7 +296,7 @@ namespace TextControlBoxNS.Text
                     return;
 
                 selectionRenderer.ClearSelection();
-                longestLineManager.NeedsRecalculation = true;
+                longestLineManager.needsRecalculation = true;
                 undoRedo.RecordUndoAction(() =>
                 {
                     selectionManager.ReplaceLines(0, textManager.LinesCount, stringManager.CleanUpString(text).Split(textManager.NewLineCharacter));
@@ -330,7 +351,7 @@ namespace TextControlBoxNS.Text
 
             if (selectionManager.currentTextSelection== null && splittedTextLength == 1)
             {
-                var res = AutoPairing.AutoPair(textbox, text);
+                var res = AutoPairing.AutoPair(coreTextbox, text);
                 text = res.text;
 
                 undoRedo.RecordUndoAction(() =>
@@ -338,7 +359,7 @@ namespace TextControlBoxNS.Text
                     var characterPos = cursorManager.GetCurPosInLine();
 
                     if (characterPos > currentLineManager.CurrentLineLength() - 1)
-                        currentLineManager.CurrentLine.AddToEnd(text);
+                        currentLineManager.AddToEnd(text);
                     else
                         currentLineManager.AddText(text, characterPos);
                     cursorManager.CharacterPosition= res.length + characterPos;
@@ -364,7 +385,7 @@ namespace TextControlBoxNS.Text
             }
             else if (selectionManager.currentTextSelection != null)
             {
-                text = AutoPairing.AutoPairSelection(textbox, text);
+                text = AutoPairing.AutoPairSelection(coreTextbox, text);
                 if (text == null)
                     return;
 
@@ -401,7 +422,7 @@ namespace TextControlBoxNS.Text
                 if (charPos - stepsToMove >= 0)
                 {
                     if (cursorManager.LineNumber == longestLineManager.longestIndex)
-                        longestLineManager.NeedsRecalculation = true;
+                        longestLineManager.needsRecalculation = true;
 
                     undoRedo.RecordUndoAction(() =>
                     {
@@ -416,7 +437,7 @@ namespace TextControlBoxNS.Text
                         return;
 
                     if (cursorManager.LineNumber == longestLineManager.longestIndex)
-                        longestLineManager.NeedsRecalculation = true;
+                        longestLineManager.needsRecalculation = true;
 
                     undoRedo.RecordUndoAction(() =>
                     {
@@ -451,7 +472,7 @@ namespace TextControlBoxNS.Text
 
             //Shift + delete:
             if (shiftIsPressed && selectionManager.currentTextSelection == null)
-                textbox.DeleteLine(cursorManager.LineNumber);
+                coreTextbox.DeleteLine(cursorManager.LineNumber);
             else if (selectionManager.currentTextSelection != null)
                 DeleteSelection();
             else
@@ -464,7 +485,7 @@ namespace TextControlBoxNS.Text
                     if (lineToAdd != null)
                     {
                         if (cursorManager.LineNumber == longestLineManager.longestIndex)
-                            longestLineManager.NeedsRecalculation = true;
+                            longestLineManager.needsRecalculation = true;
 
                         undoRedo.RecordUndoAction(() =>
                         {
@@ -484,7 +505,7 @@ namespace TextControlBoxNS.Text
                     int stepsToMove = controlIsPressed ? cursorManager.CalculateStepsToMoveRight(characterPos) : 1;
 
                     if (cursorManager.LineNumber == longestLineManager.longestIndex)
-                        longestLineManager.NeedsRecalculation = true;
+                        longestLineManager.needsRecalculation = true;
 
                     undoRedo.RecordUndoAction(() =>
                     {
@@ -578,7 +599,7 @@ namespace TextControlBoxNS.Text
                 return false;
 
             if (line == longestLineManager.longestIndex)
-                longestLineManager.NeedsRecalculation = true;
+                longestLineManager.needsRecalculation = true;
 
             undoRedo.RecordUndoAction(() =>
             {

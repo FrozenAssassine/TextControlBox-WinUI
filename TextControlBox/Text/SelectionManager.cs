@@ -12,11 +12,12 @@ namespace TextControlBoxNS.Text
         private TextManager textManager;
         private CursorManager cursorManager;
 
-        public TextSelection currentTextSelection;
+        public TextSelection OldTextSelection = null;
+        public TextSelection currentTextSelection = null;
 
         public bool TextSelIsNull => currentTextSelection == null;
 
-        public void ForceClearSelection(SelectionRenderer selectionRenderer, CanvasHelper canvasHelper)
+        public void ForceClearSelection(SelectionRenderer selectionRenderer, CanvasUpdateManager canvasHelper)
         {
             selectionRenderer.ClearSelection();
             SetCurrentTextSelection(null);
@@ -35,7 +36,7 @@ namespace TextControlBoxNS.Text
                 currentTextSelection = new TextSelection(selectionRenderer.SelectionStartPosition, selectionRenderer.SelectionEndPosition);
             }
         }
-        public SelectionManager(TextManager textManager, CursorManager cursorManager)
+        public void Init(TextManager textManager, CursorManager cursorManager)
         {
             this.textManager = textManager;
             this.cursorManager = cursorManager;
@@ -221,6 +222,7 @@ namespace TextControlBoxNS.Text
                 //Only the startline is completely selected
                 else if (startPosition == 0 && endPosition != end_Line.Length)
                 {
+                    //TODO Out of range:
                     textManager.SetLineText(endLine, end_Line.Substring(endPosition).AddToStart(lines[lines.Length - 1]));
 
                     textManager.Safe_RemoveRange(startLine, endLine - startLine);
@@ -521,7 +523,7 @@ namespace TextControlBoxNS.Text
             }
             return false;
         }
-        public void ClearSelectionIfNeeded(TextControlBox textbox, SelectionRenderer selectionrenderer)
+        public void ClearSelectionIfNeeded(CoreTextControlBox textbox, SelectionRenderer selectionrenderer)
         {
             //If the selection is visible, but is not getting set, clear the selection
             if (selectionrenderer.HasSelection && !selectionrenderer.IsSelecting)
@@ -537,7 +539,7 @@ namespace TextControlBoxNS.Text
                 return true;
             return selectionrenderer.SelectionStartPosition == null || selectionrenderer.SelectionEndPosition == null;
         }
-        public void SelectSingleWord(CanvasHelper canvashelper, SelectionRenderer selectionrenderer, CursorPosition cursorPosition)
+        public void SelectSingleWord(CanvasUpdateManager canvashelper, SelectionRenderer selectionrenderer, CursorPosition cursorPosition)
         {
             int characterpos = cursorPosition.CharacterPosition;
             //Update variables

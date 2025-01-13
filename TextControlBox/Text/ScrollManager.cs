@@ -19,25 +19,25 @@ internal class ScrollManager
     public double VerticalScroll { get => verticalScrollBar.Value; set { verticalScrollBar.Value = value < 0 ? 0 : value; canvasHelper.UpdateAll(); } }
     public double HorizontalScroll { get => horizontalScrollBar.Value; set { horizontalScrollBar.Value = value < 0 ? 0 : value; canvasHelper.UpdateAll(); } }
 
-    private readonly ScrollBar verticalScrollBar;
-    private readonly ScrollBar horizontalScrollBar;
-    private readonly CanvasHelper canvasHelper;
-    private readonly TextRenderer textRenderer;
-    private readonly CursorManager cursorManager;
-    private readonly TextManager textManager;
-    private readonly TextControlBox textbox;
-    private readonly Grid scrollGrid;
+    public ScrollBar verticalScrollBar;
+    public ScrollBar horizontalScrollBar;
+    private CanvasUpdateManager canvasHelper;
+    private TextRenderer textRenderer;
+    private CursorManager cursorManager;
+    private TextManager textManager;
+    private CoreTextControlBox textbox;
+    private Grid scrollGrid;
 
-    public ScrollManager(CanvasHelper canvasHelper, TextControlBox textbox, TextManager textManager, TextRenderer textRenderer, CursorManager cursorManager, ScrollBar verticalScrollBar, ScrollBar horizontalScrollBar)
+    public void Init(CoreTextControlBox coreTextbox, CanvasUpdateManager canvasHelper, TextManager textManager, TextRenderer textRenderer, CursorManager cursorManager, ScrollBar verticalScrollBar, ScrollBar horizontalScrollBar)
     {
-        this.verticalScrollBar = verticalScrollBar;
-        this.horizontalScrollBar = horizontalScrollBar;
+        this.verticalScrollBar = coreTextbox.verticalScrollBar;
+        this.horizontalScrollBar = coreTextbox.horizontalScrollBar;
+        scrollGrid = coreTextbox.scrollGrid;
         this.canvasHelper = canvasHelper;
         this.textRenderer = textRenderer;
         this.cursorManager = cursorManager;
         this.textManager = textManager;
-        this.textbox = textbox;
-
+        this.textbox = coreTextbox;
         verticalScrollBar.Loaded += VerticalScrollbar_Loaded;
         verticalScrollBar.Scroll += VerticalScrollBar_Scroll;
         horizontalScrollBar.Scroll += HorizontalScrollBar_Scroll;

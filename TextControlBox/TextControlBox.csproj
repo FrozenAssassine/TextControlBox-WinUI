@@ -22,6 +22,9 @@
     <PackageIcon>Icon1.png</PackageIcon>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Text\CoreTextControlBox.xaml" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="..\images\Icon1.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
@@ -34,5 +37,11 @@
       <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.2.221109.1" />
       <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.22621.755" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Text\CoreTextControlBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 </Project>

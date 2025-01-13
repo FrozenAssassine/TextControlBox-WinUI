@@ -14,7 +14,7 @@ namespace TextControlBoxNS.Text
         private bool HasRedone = false;
         private TextManager textManager;
         private SelectionManager selectionManager;
-        public UndoRedo(TextManager textManager, SelectionManager selectionManager)
+        public void Init(TextManager textManager, SelectionManager selectionManager)
         {
             this.textManager = textManager;
             this.selectionManager = selectionManager;

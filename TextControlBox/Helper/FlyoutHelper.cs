@@ -1,5 +1,6 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 using System;
+using TextControlBoxNS.Text;
 
 namespace TextControlBoxNS.Helper
 {
@@ -7,12 +8,12 @@ namespace TextControlBoxNS.Helper
     {
         public MenuFlyout MenuFlyout;
 
-        public FlyoutHelper(TextControlBox sender)
+        public void Init(CoreTextControlBox sender)
         {
             CreateFlyout(sender);
         }
 
-        public void CreateFlyout(TextControlBox sender)
+        public void CreateFlyout(CoreTextControlBox sender)
         {
             MenuFlyout = new MenuFlyout();
             MenuFlyout.Items.Add(CreateItem(() => { sender.Copy(); }, "Copy", Symbol.Copy, "Ctrl + C"));

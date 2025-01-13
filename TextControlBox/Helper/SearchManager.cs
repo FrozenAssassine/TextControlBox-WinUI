@@ -1,5 +1,4 @@
-﻿using Collections.Pooled;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -19,9 +18,9 @@ namespace TextControlBoxNS.Helper
         public MatchCollection CurrentLineMatches = null;
         private int RegexIndexInLine = 0;
 
-        private readonly TextManager textManager;
+        private TextManager textManager;
 
-        public SearchManager(TextManager textManager)
+        public void Init(TextManager textManager)
         {
             this.textManager = textManager;
         }

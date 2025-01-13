@@ -1,5 +1,4 @@
 ﻿using System;
-using TextControlBoxNS.Helper;
 using TextControlBoxNS.Renderer;
 
 namespace TextControlBoxNS.Text;
@@ -10,20 +9,30 @@ internal class ZoomManager
     public int _ZoomFactor = 100; //%
     public int OldZoomFactor = 0;
 
-    private readonly TextManager textManager;
-    private readonly TextRenderer textRenderer;
-    private readonly ScrollManager scrollManager;
-    private readonly CanvasHelper canvasHelper;
-    private readonly LineNumberRenderer lineNumberRenderer;
-    private readonly CursorManager cursorManager;
-    private readonly EventsManager eventsManager;
+    private TextManager textManager;
+    private TextRenderer textRenderer;
+    private ScrollManager scrollManager;
+    private CanvasUpdateManager canvasHelper;
+    private LineNumberRenderer lineNumberRenderer;
+    private CursorManager cursorManager;
+    private EventsManager eventsManager;
 
-    public ZoomManager(TextManager textManager, TextRenderer textRenderer, CanvasHelper canvasHelper, LineNumberRenderer lineNumberRenderer, CursorManager cursorManager, EventsManager changedEventManager)
+    public void Init(
+        TextManager textManager,
+        TextRenderer textRenderer,
+        ScrollManager scrollManager,
+        CanvasUpdateManager canvasHelper,
+        LineNumberRenderer lineNumberRenderer,
+        CursorManager cursorManager,
+        EventsManager eventsManager)
     {
         this.textManager = textManager;
+        this.textRenderer = textRenderer;
+        this.scrollManager = scrollManager;
         this.canvasHelper = canvasHelper;
         this.lineNumberRenderer = lineNumberRenderer;
         this.cursorManager = cursorManager;
+        this.eventsManager = eventsManager;
     }
 
     public void UpdateZoom()

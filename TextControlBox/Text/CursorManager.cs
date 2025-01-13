@@ -6,13 +6,14 @@ namespace TextControlBoxNS.Text
 {
     internal class CursorManager
     {
-        public CursorPosition currentCursorPosition { get; private set; }
+        public CursorPosition oldCursorPosition = null;
+        public CursorPosition currentCursorPosition { get; private set; } = new CursorPosition(0, 0);
         public int LineNumber { get => currentCursorPosition.LineNumber; set => currentCursorPosition.LineNumber = value; }
         public int CharacterPosition { get => currentCursorPosition.CharacterPosition; set { currentCursorPosition.CharacterPosition = value; } }
 
-        private readonly TextManager textManager;
-        private readonly CurrentLineManager currentLineManager;
-        public CursorManager(TextManager textManager, CurrentLineManager currentLineManager)
+        private TextManager textManager;
+        private CurrentLineManager currentLineManager;
+        public void Init(TextManager textManager, CurrentLineManager currentLineManager)
         {
             this.textManager = textManager;
             this.currentLineManager = currentLineManager;

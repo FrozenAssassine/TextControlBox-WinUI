@@ -20,12 +20,27 @@ namespace TextControlBoxNS.Renderer
         public int SelectionLength = 0;
         public int SelectionStart = 0;
 
-        private readonly SelectionManager selectionManager;
-        private readonly TextRenderer textRenderer;
+        private SelectionManager selectionManager;
+        private TextRenderer textRenderer;
+        private EventsManager eventsManager;
+        private ScrollManager scrollManager;
+        private ZoomManager zoomManager;
+        private DesignHelper designHelper;
 
-        public SelectionRenderer(SelectionManager selectionManager)
+        public void Init(
+            SelectionManager selectionManager,
+            TextRenderer textRenderer,
+            EventsManager eventsManager,
+            ScrollManager scrollManager,
+            ZoomManager zoomManager,
+            DesignHelper designHelper)
         {
             this.selectionManager = selectionManager;
+            this.textRenderer = textRenderer;
+            this.eventsManager = eventsManager;
+            this.scrollManager = scrollManager;
+            this.zoomManager = zoomManager;
+            this.designHelper = designHelper;
         }
 
         //Draw the actual selection and return the cursorposition. Return -1 if no selection was drawn
@@ -171,6 +186,42 @@ namespace TextControlBoxNS.Renderer
             SelectionEndPosition = endPosition;
             IsSelecting = false;
             HasSelection = true;
+        }
+
+        public void Draw(CanvasControl canvasSelection, CanvasDrawEventArgs args)
+        {
+            if (SelectionStartPosition != null && SelectionEndPosition != null)
+            {
+                HasSelection =
+                    !(SelectionStartPosition.LineNumber == SelectionEndPosition.LineNumber &&
+                    SelectionStartPosition.CharacterPosition == SelectionEndPosition.CharacterPosition);
+            }
+            else
+                HasSelection = false;
+
+            if (HasSelection)
+            {
+                var selection = DrawSelection(
+                    textRenderer.DrawnTextLayout, 
+                    textRenderer.RenderedLines, 
+                    args, 
+                    (float)-scrollManager.HorizontalScroll, 
+                    textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
+                    textRenderer.NumberOfStartLine,
+                    textRenderer.NumberOfRenderedLines,
+                    zoomManager.ZoomedFontSize,
+                    designHelper._Design.SelectionColor
+                    );
+
+                selectionManager.SetCurrentTextSelection(selection);
+            }
+
+            if (!selectionManager.TextSelIsNull && !selectionManager.Equals(selectionManager.OldTextSelection, selectionManager.currentTextSelection))
+            {
+                //Update the variables
+                selectionManager.OldTextSelection = new TextSelection(selectionManager.currentTextSelection);
+                eventsManager.CallSelectionChanged();
+            }
         }
     }
 }

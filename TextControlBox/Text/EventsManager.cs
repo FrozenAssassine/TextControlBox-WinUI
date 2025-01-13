@@ -5,12 +5,10 @@ namespace TextControlBoxNS.Text
 {
     internal class EventsManager
     {
-        private readonly SearchManager searchManager;
-        private readonly CursorManager cursorManager;
-        private readonly SelectionRenderer selectionRenderer;
-        private readonly TextManager textManager;
-        private readonly TextControlBox textbox;
-        private readonly SelectionManager selectionManager;
+        private SearchManager searchManager;
+        private CursorManager cursorManager;
+        private SelectionRenderer selectionRenderer;
+        private SelectionManager selectionManager;
 
         public delegate void ZoomChangedEvent(int zoomFactor);
         public event ZoomChangedEvent ZoomChanged;
@@ -21,12 +19,18 @@ namespace TextControlBoxNS.Text
         public delegate void SelectionChangedEvent(SelectionChangedEventHandler args);
         public event SelectionChangedEvent SelectionChanged;
 
-        public EventsManager(SearchManager searchManager, SelectionManager selectionManager, CursorManager cursorManager, SelectionRenderer selectionRenderer, TextManager textManager)
+        public delegate void GotFocusEvent();
+        public event GotFocusEvent GotFocus;
+
+        public delegate void LostFocusEvent();
+        public event LostFocusEvent LostFocus;
+
+        public void Init(SearchManager searchManager, SelectionManager selectionManager, CursorManager cursorManager, SelectionRenderer selectionRenderer)
         {
             this.searchManager = searchManager;
             this.cursorManager = cursorManager;
             this.selectionRenderer = selectionRenderer;
-            this.textManager = textManager;
+            this.selectionManager = selectionManager;
         }
 
         public void CallTextChanged()
@@ -37,7 +41,7 @@ namespace TextControlBoxNS.Text
             TextChanged?.Invoke();
         }
 
-        public void CallCursorChanged()
+        public void CallSelectionChanged()
         {
             SelectionChangedEventHandler args = new SelectionChangedEventHandler
             {
@@ -61,6 +65,15 @@ namespace TextControlBoxNS.Text
         public void CallZoomChanged(int zoomFactor)
         {
             ZoomChanged?.Invoke(zoomFactor);
+        }
+
+        public void CallGotFocus()
+        {
+            GotFocus?.Invoke();
+        }
+        public void CallLostFocus()
+        {
+            LostFocus?.Invoke();
         }
     }
 }

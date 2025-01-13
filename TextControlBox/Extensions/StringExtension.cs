@@ -38,7 +38,11 @@ namespace TextControlBoxNS.Extensions
             if (count <= -1)
                 return text.Remove(start);
             else
+            {
+                if (count == text.Length)
+                    return text.Remove(start);
                 return text.Remove(start, count);
+            }
         }
         public static bool Contains(this string text, SearchParameter parameter)
         {

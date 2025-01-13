@@ -4,7 +4,7 @@ namespace TextControlBoxNS.Text
 {
     internal class AutoPairing
     {
-        public static (string text, int length) AutoPair(TextControlBox textbox, string inputtext)
+        public static (string text, int length) AutoPair(CoreTextControlBox textbox, string inputtext)
         {
             if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.HighlightLanguage == null || textbox.HighlightLanguage.AutoPairingPair == null)
                 return (inputtext, inputtext.Length);
@@ -18,7 +18,7 @@ namespace TextControlBoxNS.Text
             return (inputtext, inputtext.Length);
         }
 
-        public static string AutoPairSelection(TextControlBox textbox, string inputtext)
+        public static string AutoPairSelection(CoreTextControlBox textbox, string inputtext)
         {
             if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.HighlightLanguage == null || textbox.HighlightLanguage.AutoPairingPair == null)
                 return inputtext;

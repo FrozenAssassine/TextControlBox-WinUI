@@ -1,11 +1,7 @@
 ﻿using Microsoft.UI.Input;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Renderer;
+using Windows.Foundation;
 
 namespace TextControlBoxNS.Text
 {
@@ -13,14 +9,33 @@ namespace TextControlBoxNS.Text
     {
         public bool isDragDropSelection = false;
 
-        private readonly CursorManager cursorManager;
-        private readonly SelectionManager selectionManager;
-        private readonly TextManager textManager;
-        private readonly TextControlBox textbox;
+        private CursorManager cursorManager;
+        private SelectionManager selectionManager;
+        private TextManager textManager;
+        private CoreTextControlBox coreTextbox;
+        private TextActionManager textActionManager;
+        private CanvasUpdateManager canvasUpdateManager;
+        private SelectionRenderer selectionRenderer;
+        private TextRenderer textRenderer;
 
-        public SelectionDragDropManager()
+        public void Init(
+            CoreTextControlBox textbox,
+            CursorManager cursorManager,
+            SelectionManager selectionManager,
+            TextManager textManager,
+            TextActionManager textActionManager,
+            CanvasUpdateManager canvasUpdateManager,
+            SelectionRenderer selectionRenderer,
+            TextRenderer textRenderer)
         {
-
+            this.cursorManager = cursorManager;
+            this.selectionManager = selectionManager;
+            this.textManager = textManager;
+            this.coreTextbox = textbox;
+            this.textActionManager = textActionManager;
+            this.canvasUpdateManager = canvasUpdateManager;
+            this.selectionManager = selectionManager;
+            this.textRenderer = textRenderer;
         }
 
         public void DoDragDropSelection()
@@ -31,45 +46,43 @@ namespace TextControlBoxNS.Text
             //Position to insert is selection start or selection end -> no need to drag
             if (cursorManager.Equals(selectionManager.currentTextSelection.StartPosition, cursorManager.currentCursorPosition) || cursorManager.Equals(selectionManager.currentTextSelection.EndPosition, cursorManager.currentCursorPosition))
             {
-                //ChangeCursor(InputSystemCursorShape.IBeam);
+                coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
                 isDragDropSelection = false;
                 return;
             }
 
-            string textToInsert = textbox.SelectedText;
-            CursorPosition curpos = new CursorPosition(CursorPosition);
+            string textToInsert = coreTextbox.SelectedText;
+            CursorPosition curpos = new CursorPosition(cursorManager.currentCursorPosition);
 
             //Delete the selection
-            RemoveText();
+            textActionManager.RemoveText();
 
-            CursorPosition = curpos;
+            cursorManager.SetCursorPosition(curpos);
 
-            AddCharacter(textToInsert, false);
+            textActionManager.AddCharacter(textToInsert, false);
 
-            ChangeCursor(InputSystemCursorShape.IBeam);
+            coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
             isDragDropSelection = false;
-            canvasHelper.UpdateAll();
+            canvasUpdateManager.UpdateAll();
         }
         public void EndDragDropSelection(bool clearSelectedText = true)
         {
             isDragDropSelection = false;
             if (clearSelectedText)
-                ClearSelection();
+                selectionRenderer.ClearSelection();
 
-            ChangeCursor(InputSystemCursorShape.IBeam);
-            selectionrenderer.IsSelecting = false;
-            canvasHelper.UpdateCursor();
+            coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
+            selectionRenderer.IsSelecting = false;
+            canvasUpdateManager.UpdateCursor();
         }
         public bool DragDropOverSelection(Point curPos)
         {
-            bool res = SelectionHelper.CursorIsInSelection(selectionManager, CursorPosition, TextSelection) ||
+            bool res = SelectionHelper.CursorIsInSelection(selectionManager, cursorManager.currentCursorPosition, selectionManager.currentTextSelection) ||
                 SelectionHelper.PointerIsOverSelection(textRenderer, curPos, selectionManager.currentTextSelection);
 
-            ChangeCursor(res ? InputSystemCursorShape.UniversalNo : InputSystemCursorShape.IBeam);
+            coreTextbox.ChangeCursor(res ? InputSystemCursorShape.UniversalNo : InputSystemCursorShape.IBeam);
 
             return res;
         }
-
-
     }
 }

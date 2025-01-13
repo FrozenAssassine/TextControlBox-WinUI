@@ -1,10 +1,6 @@
 ﻿using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Renderer;
 using TextControlBoxNS.Text;
@@ -41,12 +37,12 @@ namespace TextControlBoxNS.Helper
             return currentLineTextLayout.GetCaretPosition(cursorPosition.CharacterPosition < 0 ? 0 : cursorPosition.CharacterPosition, false).X + xOffset;
         }
 
-        private void UpdateCursorPosFromPoint(CanvasControl canvasText, CurrentLineManager currentLineManager, TextRenderer textRenderer, ScrollManager scrollManager, Point point, CursorPosition cursorPos)
+        public static void UpdateCursorPosFromPoint(CanvasControl canvasText, CurrentLineManager currentLineManager, TextRenderer textRenderer, ScrollManager scrollManager, Point point, CursorPosition cursorPos)
         {
             //Apply an offset to the cursorposition
             point = point.Subtract(-(textRenderer.SingleLineHeight / 4), textRenderer.SingleLineHeight / 4);
 
-            cursorPos.LineNumber = GetCursorLineFromPoint(point, textRenderer.SingleLineHeight, textRenderer.NumberOfRenderedLines, textRenderer.NumberOfStartLine);
+            cursorPos.LineNumber = GetCursorLineFromPoint(textRenderer, point);
 
             textRenderer.UpdateCurrentLineTextLayout(canvasText);
             cursorPos.CharacterPosition = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, (float)-scrollManager.HorizontalScroll);
