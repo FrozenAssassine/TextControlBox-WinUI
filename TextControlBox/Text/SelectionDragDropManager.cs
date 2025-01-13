@@ -29,13 +29,13 @@ namespace TextControlBoxNS.Text
             TextRenderer textRenderer)
         {
             this.cursorManager = cursorManager;
-            this.selectionManager = selectionManager;
             this.textManager = textManager;
             this.coreTextbox = textbox;
             this.textActionManager = textActionManager;
             this.canvasUpdateManager = canvasUpdateManager;
             this.selectionManager = selectionManager;
             this.textRenderer = textRenderer;
+            this.selectionRenderer = selectionRenderer;
         }
 
         public void DoDragDropSelection()
@@ -69,7 +69,7 @@ namespace TextControlBoxNS.Text
         {
             isDragDropSelection = false;
             if (clearSelectedText)
-                selectionRenderer.ClearSelection();
+                selectionManager.ForceClearSelection(canvasUpdateManager);
 
             coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
             selectionRenderer.IsSelecting = false;

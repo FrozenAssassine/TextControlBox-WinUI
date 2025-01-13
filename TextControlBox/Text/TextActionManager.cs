@@ -15,7 +15,7 @@ namespace TextControlBoxNS.Text
 {
     internal class TextActionManager
     {
-        private CanvasUpdateManager canvasHelper;
+        private CanvasUpdateManager canvasUpdateHelper;
         private TextManager textManager;
         private SelectionRenderer selectionRenderer;
         private SelectionManager selectionManager;
@@ -35,7 +35,7 @@ namespace TextControlBoxNS.Text
             UndoRedo undoRedo,
             CurrentLineManager currentLineManager,
             LongestLineManager longestLineManager,
-            CanvasUpdateManager canvasHelper,
+            CanvasUpdateManager canvasUpdateHelper,
             TextManager textManager,
             SelectionRenderer selectionRenderer,
             CursorManager cursorManager,
@@ -44,7 +44,7 @@ namespace TextControlBoxNS.Text
             StringManager stringManager,
             SelectionManager selectionManager)
         {
-            this.canvasHelper = canvasHelper;
+            this.canvasUpdateHelper = canvasUpdateHelper;
             this.textManager = textManager;
             this.selectionRenderer = selectionRenderer;
             this.cursorManager = cursorManager;
@@ -67,8 +67,8 @@ namespace TextControlBoxNS.Text
 
             selectionRenderer.SetSelection(new CursorPosition(0, 0), new CursorPosition(textManager.GetLineLength(-1), textManager.LinesCount- 1));
             cursorManager.SetCursorPosition(new CursorPosition(selectionRenderer.SelectionEndPosition));
-            canvasHelper.UpdateSelection();
-            canvasHelper.UpdateCursor();
+            canvasUpdateHelper.UpdateSelection();
+            canvasUpdateHelper.UpdateCursor();
         }
         public void Undo()
         {
@@ -89,7 +89,7 @@ namespace TextControlBoxNS.Text
                 if (sel.StartPosition != null && sel.EndPosition == null)
                 {
                     cursorManager.SetCursorPosition(sel.StartPosition);
-                    canvasHelper.UpdateAll();
+                    canvasUpdateHelper.UpdateAll();
                     return;
                 }
 
@@ -97,8 +97,8 @@ namespace TextControlBoxNS.Text
                 cursorManager.SetCursorPosition(sel.EndPosition);
             }
             else
-                selectionManager.ForceClearSelection(selectionRenderer, canvasHelper);
-            canvasHelper.UpdateAll();
+                selectionManager.ForceClearSelection(canvasUpdateHelper);
+            canvasUpdateHelper.UpdateAll();
         }
         public void Redo()
         {
@@ -119,7 +119,7 @@ namespace TextControlBoxNS.Text
                 if (sel.StartPosition != null && sel.EndPosition == null)
                 {
                     cursorManager.SetCursorPosition(new CursorPosition(sel.StartPosition));
-                    canvasHelper.UpdateAll();
+                    canvasUpdateHelper.UpdateAll();
                     return;
                 }
 
@@ -127,8 +127,8 @@ namespace TextControlBoxNS.Text
                 cursorManager.SetCursorPosition(new CursorPosition(sel.EndPosition));
             }
             else
-                selectionManager.ForceClearSelection(selectionRenderer, canvasHelper);
-            canvasHelper.UpdateAll();
+                selectionManager.ForceClearSelection(canvasUpdateHelper);
+            canvasUpdateHelper.UpdateAll();
         }
 
         //Trys running the code and clears the memory if OutOfMemoryException gets thrown
@@ -196,7 +196,7 @@ namespace TextControlBoxNS.Text
 
                 dataPackage.RequestedOperation = DataPackageOperation.Move;
                 Clipboard.SetContent(dataPackage);
-                selectionRenderer.ClearSelection();
+                selectionManager.ForceClearSelection(canvasUpdateHelper);
             }
             catch (OutOfMemoryException)
             {
@@ -242,7 +242,7 @@ namespace TextControlBoxNS.Text
                 textManager._LineEnding = lineEnding;
 
                 longestLineManager.needsRecalculation = true;
-                canvasHelper.UpdateAll();
+                canvasUpdateHelper.UpdateAll();
             }
             catch (OutOfMemoryException)
             {
@@ -275,7 +275,7 @@ namespace TextControlBoxNS.Text
                 else
                     selectionManager.ReplaceLines(0, textManager.LinesCount, stringManager.CleanUpString(text).Split(textManager.NewLineCharacter));
 
-                canvasHelper.UpdateAll();
+                canvasUpdateHelper.UpdateAll();
             }
             catch (OutOfMemoryException)
             {
@@ -306,7 +306,7 @@ namespace TextControlBoxNS.Text
                     }
                 }, 0, textManager.LinesCount, Utils.CountLines(text, textManager.NewLineCharacter));
 
-                canvasHelper.UpdateAll();
+                canvasUpdateHelper.UpdateAll();
             }
             catch (OutOfMemoryException)
             {
@@ -326,18 +326,17 @@ namespace TextControlBoxNS.Text
                 return;
 
             //line gets deleted -> recalculate the longest line:
-
             longestLineManager.CheckSelection();
 
             undoRedo.RecordUndoAction(() =>
             {
                 cursorManager.SetCursorPosition(selectionManager.Remove(selectionManager.currentTextSelection));
-                selectionRenderer.ClearSelection();
+                selectionManager.ForceClearSelection(canvasUpdateHelper);
 
             }, selectionManager.currentTextSelection, 0);
 
-            canvasHelper.UpdateSelection();
-            canvasHelper.UpdateCursor();
+            canvasUpdateHelper.UpdateSelection();
+            canvasUpdateHelper.UpdateCursor();
         }
         public void AddCharacter(string text, bool ignoreSelection = false)
         {
@@ -345,7 +344,7 @@ namespace TextControlBoxNS.Text
                 return;
 
             if (ignoreSelection)
-                selectionRenderer.ClearSelection();
+                selectionManager.ForceClearSelection(canvasUpdateHelper);
 
             int splittedTextLength = text.Contains(textManager.NewLineCharacter, StringComparison.Ordinal) ? Utils.CountLines(text, textManager.NewLineCharacter) : 1;
 
@@ -394,14 +393,13 @@ namespace TextControlBoxNS.Text
                 {
                     cursorManager.SetCursorPosition(selectionManager.Replace(selectionManager.currentTextSelection, text));
 
-                    selectionRenderer.ClearSelection();
-                    canvasHelper.UpdateSelection();
+                    selectionManager.ForceClearSelection(canvasUpdateHelper);
                 }, selectionManager.currentTextSelection, splittedTextLength);
             }
 
             scrollManager.ScrollLineToCenter(cursorManager.LineNumber);
-            canvasHelper.UpdateText();
-            canvasHelper.UpdateCursor();
+            canvasUpdateHelper.UpdateText();
+            canvasUpdateHelper.UpdateCursor();
             eventsManager.CallTextChanged();
         }
         public void RemoveText(bool controlIsPressed = false)
@@ -458,12 +456,13 @@ namespace TextControlBoxNS.Text
             }
 
             scrollManager.UpdateScrollToShowCursor();
-            canvasHelper.UpdateText();
-            canvasHelper.UpdateCursor();
+            canvasUpdateHelper.UpdateText();
+            canvasUpdateHelper.UpdateCursor();
 
             eventsManager.CallTextChanged();
         }
         public void DeleteText(bool controlIsPressed = false, bool shiftIsPressed = false)
+        
         {
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
@@ -515,8 +514,8 @@ namespace TextControlBoxNS.Text
             }
 
             scrollManager.UpdateScrollToShowCursor();
-            canvasHelper.UpdateText();
-            canvasHelper.UpdateCursor();
+            canvasUpdateHelper.UpdateText();
+            canvasUpdateHelper.UpdateCursor();
 
             eventsManager.CallTextChanged();
         }
@@ -542,8 +541,8 @@ namespace TextControlBoxNS.Text
                     textManager.totalLines.InsertNewLine(-1);
                     cursorManager.SetCursorPosition(new CursorPosition(0, 1));
                 }, 0, textManager.LinesCount, 2);
-                selectionManager.ForceClearSelection(selectionRenderer, canvasHelper);
-                canvasHelper.UpdateAll();
+                selectionManager.ForceClearSelection(canvasUpdateHelper);
+                canvasUpdateHelper.UpdateAll();
                 eventsManager.CallTextChanged();
                 return;
             }
@@ -580,7 +579,7 @@ namespace TextControlBoxNS.Text
                 }, selectionManager.currentTextSelection, remove);
             }
 
-            selectionRenderer.ClearSelection();
+            selectionManager.ForceClearSelection(canvasUpdateHelper);
             cursorManager.LineNumber += 1;
             cursorManager.CharacterPosition = 0;
 
@@ -589,7 +588,7 @@ namespace TextControlBoxNS.Text
             else
                 scrollManager.UpdateScrollToShowCursor();
 
-            canvasHelper.UpdateAll();
+            canvasUpdateHelper.UpdateAll();
             eventsManager.CallTextChanged();
         }
 
@@ -611,7 +610,7 @@ namespace TextControlBoxNS.Text
                 textManager.AddLine();
             }
 
-            canvasHelper.UpdateText();
+            canvasUpdateHelper.UpdateText();
             return true;
         }
 
@@ -629,7 +628,7 @@ namespace TextControlBoxNS.Text
 
             }, line, 1, 2);
 
-            canvasHelper.UpdateText();
+            canvasUpdateHelper.UpdateText();
             return true;
         }
 
@@ -645,7 +644,7 @@ namespace TextControlBoxNS.Text
             {
                 textManager.SetLineText(line, stringManager.CleanUpString(text));
             }, line, 1, 1);
-            canvasHelper.UpdateText();
+            canvasUpdateHelper.UpdateText();
             return true;
         }
 
@@ -660,8 +659,8 @@ namespace TextControlBoxNS.Text
             if (textRenderer.OutOfRenderedArea(line))
                 scrollManager.ScrollBottomIntoView();
 
-            canvasHelper.UpdateText();
-            canvasHelper.UpdateCursor();
+            canvasUpdateHelper.UpdateText();
+            canvasUpdateHelper.UpdateCursor();
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using TextControlBoxNS.Extensions;
@@ -11,13 +12,22 @@ namespace TextControlBoxNS.Text
     {
         private TextManager textManager;
         private CursorManager cursorManager;
+        private SelectionRenderer selectionRenderer;
 
         public TextSelection OldTextSelection = null;
-        public TextSelection currentTextSelection = null;
+        public TextSelection currentTextSelection { get => _textSel; set { _textSel = value; Debug.WriteLine(_textSel == null ? "NULL" : (_textSel.StartPosition.LineNumber + ":" + _textSel.StartPosition.CharacterPosition + " || " + _textSel.EndPosition.LineNumber + ":" + _textSel.EndPosition.CharacterPosition)); } }
+
+        private TextSelection _textSel;
 
         public bool TextSelIsNull => currentTextSelection == null;
+        public void Init(TextManager textManager, CursorManager cursorManager, SelectionRenderer selectionRenderer)
+        {
+            this.textManager = textManager;
+            this.cursorManager = cursorManager;
+            this.selectionRenderer = selectionRenderer;
+        }
 
-        public void ForceClearSelection(SelectionRenderer selectionRenderer, CanvasUpdateManager canvasHelper)
+        public void ForceClearSelection(CanvasUpdateManager canvasHelper)
         {
             selectionRenderer.ClearSelection();
             SetCurrentTextSelection(null);
@@ -28,18 +38,13 @@ namespace TextControlBoxNS.Text
         {
             this.currentTextSelection = textSelection;
         }
-        public void StartSelectionIfNeeded(SelectionRenderer selectionRenderer)
+        public void StartSelectionIfNeeded()
         {
-            if (this.SelectionIsNull(selectionRenderer, currentTextSelection))
+            if (this.SelectionIsNull(currentTextSelection))
             {
                 selectionRenderer.SelectionStartPosition = selectionRenderer.SelectionEndPosition = new CursorPosition(cursorManager.currentCursorPosition.CharacterPosition, cursorManager.currentCursorPosition.LineNumber);
                 currentTextSelection = new TextSelection(selectionRenderer.SelectionStartPosition, selectionRenderer.SelectionEndPosition);
             }
-        }
-        public void Init(TextManager textManager, CursorManager cursorManager)
-        {
-            this.textManager = textManager;
-            this.cursorManager = cursorManager;
         }
 
         public bool Equals(TextSelection sel1, TextSelection sel2)
@@ -222,7 +227,7 @@ namespace TextControlBoxNS.Text
                 //Only the startline is completely selected
                 else if (startPosition == 0 && endPosition != end_Line.Length)
                 {
-                    //TODO Out of range:
+                    //TODO Out of range -> multiline text => Ctrl + A => new text:
                     textManager.SetLineText(endLine, end_Line.Substring(endPosition).AddToStart(lines[lines.Length - 1]));
 
                     textManager.Safe_RemoveRange(startLine, endLine - startLine);
@@ -275,11 +280,12 @@ namespace TextControlBoxNS.Text
 
             if (startLine == endLine)
             {
-                textManager.SetLineText(startLine,
-                    (startPosition == 0 && endPosition == end_Line.Length ?
+                string text =
+                    startPosition == 0 && endPosition == end_Line.Length ?
                     "" :
-                    start_Line.SafeRemove(startPosition, endPosition - startPosition))
-                );
+                    start_Line.SafeRemove(startPosition, endPosition - startPosition);
+
+                textManager.SetLineText(startLine, text);
             }
             else if (this.WholeTextSelected(selection))
             {
@@ -523,34 +529,34 @@ namespace TextControlBoxNS.Text
             }
             return false;
         }
-        public void ClearSelectionIfNeeded(CoreTextControlBox textbox, SelectionRenderer selectionrenderer)
+        public void ClearSelectionIfNeeded(CoreTextControlBox textbox)
         {
             //If the selection is visible, but is not getting set, clear the selection
-            if (selectionrenderer.HasSelection && !selectionrenderer.IsSelecting)
+            if (selectionRenderer.HasSelection && !selectionRenderer.IsSelecting)
             {
                 textbox.ClearSelection();
             }
         }
 
 
-        public bool SelectionIsNull(SelectionRenderer selectionrenderer, TextSelection selection)
+        public bool SelectionIsNull(TextSelection selection)
         {
             if (selection == null)
                 return true;
-            return selectionrenderer.SelectionStartPosition == null || selectionrenderer.SelectionEndPosition == null;
+            return selectionRenderer.SelectionStartPosition == null || selectionRenderer.SelectionEndPosition == null;
         }
-        public void SelectSingleWord(CanvasUpdateManager canvashelper, SelectionRenderer selectionrenderer, CursorPosition cursorPosition)
+        public void SelectSingleWord(CanvasUpdateManager canvashelper, CursorPosition cursorPosition)
         {
             int characterpos = cursorPosition.CharacterPosition;
             //Update variables
-            selectionrenderer.SelectionStartPosition =
+            selectionRenderer.SelectionStartPosition =
                 new CursorPosition(characterpos - cursorManager.CalculateStepsToMoveLeft2(characterpos), cursorPosition.LineNumber);
 
-            selectionrenderer.SelectionEndPosition =
+            selectionRenderer.SelectionEndPosition =
                 new CursorPosition(characterpos + cursorManager.CalculateStepsToMoveRight2(characterpos), cursorPosition.LineNumber);
 
-            cursorPosition.CharacterPosition = selectionrenderer.SelectionEndPosition.CharacterPosition;
-            selectionrenderer.HasSelection = true;
+            cursorPosition.CharacterPosition = selectionRenderer.SelectionEndPosition.CharacterPosition;
+            selectionRenderer.HasSelection = true;
 
             //Render it
             canvashelper.UpdateSelection();

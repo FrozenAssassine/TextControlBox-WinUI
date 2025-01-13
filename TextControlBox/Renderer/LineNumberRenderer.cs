@@ -51,7 +51,7 @@ namespace TextControlBoxNS.Renderer
 
         public bool CanUpdateCanvas()
         {
-            return OldLineNumberTextToRender == null ||
+            return needsUpdate || OldLineNumberTextToRender == null ||
                 LineNumberTextToRender == null ||
                 !OldLineNumberTextToRender.Equals(LineNumberTextToRender, StringComparison.OrdinalIgnoreCase);
         }
@@ -70,8 +70,6 @@ namespace TextControlBoxNS.Renderer
         {
             if (LineNumberTextToRender == null || LineNumberTextToRender.Length == 0)
                 return;
-
-            //TODO use: 'needsUpdate'
 
             //Calculate the linenumbers             
             float lineNumberWidth = (float)Utils.MeasureTextSize(CanvasDevice.GetSharedDevice(), (textManager.LinesCount).ToString(), LineNumberTextFormat).Width;

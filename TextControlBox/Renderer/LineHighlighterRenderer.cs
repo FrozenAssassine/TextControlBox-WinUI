@@ -8,12 +8,10 @@ namespace TextControlBoxNS.Renderer
     {
         private LineHighlighterManager lineHighlighterManager;
         private SelectionManager selectionManager;
-        private SelectionRenderer selectionRenderer;
         private TextRenderer textRenderer;
-        public void Init(LineHighlighterManager lineHighlighterManager, SelectionManager selectionManager, SelectionRenderer selectionRenderer, TextRenderer textRenderer)
+        public void Init(LineHighlighterManager lineHighlighterManager, SelectionManager selectionManager, TextRenderer textRenderer)
         {
             this.selectionManager = selectionManager;
-            this.selectionRenderer = selectionRenderer;
             this.lineHighlighterManager = lineHighlighterManager;
             this.textRenderer = textRenderer;
         }
@@ -28,7 +26,7 @@ namespace TextControlBoxNS.Renderer
 
         public bool CanRender()
         {
-            return lineHighlighterManager._ShowLineHighlighter && selectionManager.SelectionIsNull(selectionRenderer, selectionManager.currentTextSelection);
+            return lineHighlighterManager._ShowLineHighlighter && selectionManager.SelectionIsNull(selectionManager.currentTextSelection);
         }
     }
 }
