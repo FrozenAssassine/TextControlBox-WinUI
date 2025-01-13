@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using TextControlBoxNS.Extensions;
@@ -15,9 +14,7 @@ namespace TextControlBoxNS.Text
         private SelectionRenderer selectionRenderer;
 
         public TextSelection OldTextSelection = null;
-        public TextSelection currentTextSelection { get => _textSel; set { _textSel = value; Debug.WriteLine(_textSel == null ? "NULL" : (_textSel.StartPosition.LineNumber + ":" + _textSel.StartPosition.CharacterPosition + " || " + _textSel.EndPosition.LineNumber + ":" + _textSel.EndPosition.CharacterPosition)); } }
-
-        private TextSelection _textSel;
+        public TextSelection currentTextSelection = null;
 
         public bool TextSelIsNull => currentTextSelection == null;
         public void Init(TextManager textManager, CursorManager cursorManager, SelectionRenderer selectionRenderer)
@@ -518,7 +515,7 @@ namespace TextControlBoxNS.Text
         public bool MoveLinesDown(TextSelection selection, CursorPosition cursorposition)
         {
             //Move single line
-            if (selection != null || selection.StartPosition.LineNumber != selection.EndPosition.LineNumber)
+            if (selection != null)
                 return false;
 
             if (cursorposition.LineNumber < textManager.LinesCount)

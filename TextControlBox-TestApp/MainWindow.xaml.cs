@@ -8,7 +8,7 @@ namespace TextControlBox_TestApp
         public MainWindow()
         {
             this.InitializeComponent();
-            textbox.HighlightLanguage = TextControlBox.GetCodeLanguageFromId(CodeLanguageId.GCode);
+            textbox.HighlightLanguage = TextControlBox.GetCodeLanguageFromId(CodeLanguageId.CSharp);
         }
     }
 }

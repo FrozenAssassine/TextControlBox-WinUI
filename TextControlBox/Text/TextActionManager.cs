@@ -424,7 +424,7 @@ namespace TextControlBoxNS.Text
 
                     undoRedo.RecordUndoAction(() =>
                     {
-                        currentLineManager.CurrentLine.SafeRemove(charPos - stepsToMove, stepsToMove);
+                        currentLineManager.SafeRemove(charPos - stepsToMove, stepsToMove);
                         cursorManager.CharacterPosition -= stepsToMove;
 
                     }, cursorManager.LineNumber, 1, 1);
