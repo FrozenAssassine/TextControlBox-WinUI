@@ -1,5 +1,6 @@
 ﻿using Collections.Pooled;
 using System;
+using TextControlBoxNS.Text;
 
 namespace TextControlBoxNS.Helper
 {
@@ -26,17 +27,19 @@ namespace TextControlBoxNS.Helper
         private string Spaces = "    ";
         private string Tab = "\t";
 
-        public void UpdateNumberOfSpaces(PooledList<string> totalLines)
+        private readonly TextManager textManager;
+
+        public void UpdateNumberOfSpaces()
         {
-            ReplaceSpacesToSpaces(totalLines);
+            ReplaceSpacesToSpaces();
         }
 
-        public void UpdateTabs(PooledList<string> totalLines)
+        public void UpdateTabs()
         {
             if (UseSpacesInsteadTabs)
-                ReplaceTabsToSpaces(totalLines);
+                ReplaceTabsToSpaces();
             else
-                ReplaceSpacesToTabs(totalLines);
+                ReplaceSpacesToTabs();
         }
         public string UpdateTabs(string input)
         {
@@ -45,25 +48,25 @@ namespace TextControlBoxNS.Helper
             return Replace(input, Spaces, Tab);
         }
 
-        private void ReplaceSpacesToSpaces(PooledList<string> totalLines)
+        private void ReplaceSpacesToSpaces()
         {
-            for (int i = 0; i < totalLines.Count; i++)
+            for (int i = 0; i < textManager.LinesCount; i++)
             {
-                totalLines[i] = Replace(totalLines[i], OldSpaces, Spaces);
+                textManager.totalLines[i] = Replace(textManager.totalLines[i], OldSpaces, Spaces);
             }
         }
-        private void ReplaceSpacesToTabs(PooledList<string> TotalLines)
+        private void ReplaceSpacesToTabs()
         {
-            for (int i = 0; i < TotalLines.Count; i++)
+            for (int i = 0; i < textManager.LinesCount; i++)
             {
-                TotalLines[i] = Replace(TotalLines[i], Spaces, Tab);
+                textManager.totalLines[i] = Replace(textManager.totalLines[i], Spaces, Tab);
             }
         }
-        private void ReplaceTabsToSpaces(PooledList<string> totalLines)
+        private void ReplaceTabsToSpaces()
         {
-            for (int i = 0; i < totalLines.Count; i++)
+            for (int i = 0; i < textManager.LinesCount; i++)
             {
-                totalLines[i] = Replace(totalLines[i], "\t", Spaces);
+                textManager.totalLines[i] = Replace(textManager.totalLines[i], "\t", Spaces);
             }
         }
         public string Replace(string input, string find, string replace)

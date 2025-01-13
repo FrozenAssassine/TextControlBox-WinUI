@@ -13,7 +13,7 @@ namespace TextControlBoxNS.Renderer
         public static FontWeight BoldFont = new FontWeight { Weight = 600 };
         public static FontStyle ItalicFont = FontStyle.Italic;
 
-        public static void UpdateSyntaxHighlighting(CanvasTextLayout drawnTextLayout, ApplicationTheme theme, CodeLanguage codeLanguage, bool syntaxHighlighting, string renderedText)
+        public static void UpdateSyntaxHighlighting(CanvasTextLayout drawnTextLayout, ApplicationTheme theme, SyntaxHighlightLanguage codeLanguage, bool syntaxHighlighting, string renderedText)
         {
             if (codeLanguage == null || !syntaxHighlighting)
                 return;
@@ -50,7 +50,7 @@ namespace TextControlBoxNS.Renderer
             {
                 var jsonCodeLanguage = JsonConvert.DeserializeObject<JsonCodeLanguage>(json);
                 //Apply the filter as an array
-                var codelanguage = new CodeLanguage
+                var codelanguage = new SyntaxHighlightLanguage
                 {
                     Author = jsonCodeLanguage.Author,
                     Description = jsonCodeLanguage.Description,

@@ -8,7 +8,7 @@ using TextControlBoxNS.Text;
 
 namespace TextControlBoxNS.Helper
 {
-    internal class SearchHelper
+    internal class SearchManager
     {
         public int CurrentSearchLine = 0;
         public int CurrentSearchArrayIndex = 0;
@@ -19,12 +19,19 @@ namespace TextControlBoxNS.Helper
         public MatchCollection CurrentLineMatches = null;
         private int RegexIndexInLine = 0;
 
+        private readonly TextManager textManager;
+
+        public SearchManager(TextManager textManager)
+        {
+            this.textManager = textManager;
+        }
+
         private int CheckIndexValue(int i)
         {
             return i >= MatchingSearchLines.Length ? MatchingSearchLines.Length - 1 : i < 0 ? 0 : i;
         }
 
-        public InternSearchResult FindNext(PooledList<string> totalLines, CursorPosition cursorPosition)
+        public InternSearchResult FindNext(CursorPosition cursorPosition)
         {
             if (IsSearchOpen && MatchingSearchLines != null && MatchingSearchLines.Length > 0)
             {
@@ -63,7 +70,7 @@ namespace TextControlBoxNS.Helper
                     {
                         CurrentSearchArrayIndex++;
                         CurrentSearchLine = cursorPosition.LineNumber = MatchingSearchLines[CurrentSearchArrayIndex];
-                        CurrentLineMatches = Regex.Matches(totalLines[CurrentSearchLine], SearchParameter.SearchExpression);
+                        CurrentLineMatches = Regex.Matches(textManager.totalLines[CurrentSearchLine], SearchParameter.SearchExpression);
                     }
                     else
                         return new InternSearchResult(SearchResult.ReachedEnd, null);
@@ -81,7 +88,7 @@ namespace TextControlBoxNS.Helper
             }
             return new InternSearchResult(SearchResult.NotFound, null);
         }
-        public InternSearchResult FindPrevious(PooledList<string> totalLines, CursorPosition cursorPosition)
+        public InternSearchResult FindPrevious(CursorPosition cursorPosition)
         {
             if (IsSearchOpen && MatchingSearchLines != null)
             {
@@ -124,7 +131,7 @@ namespace TextControlBoxNS.Helper
                     if (CurrentSearchLine < MatchingSearchLines[MatchingSearchLines.Length - 1])
                     {
                         CurrentSearchLine = cursorPosition.LineNumber = MatchingSearchLines[CheckIndexValue(CurrentSearchArrayIndex - 1)];
-                        CurrentLineMatches = Regex.Matches(totalLines[CurrentSearchLine], SearchParameter.SearchExpression);
+                        CurrentLineMatches = Regex.Matches(textManager.totalLines[CurrentSearchLine], SearchParameter.SearchExpression);
                         RegexIndexInLine = CurrentLineMatches.Count - 1;
                         CurrentSearchArrayIndex--;
                     }
@@ -146,15 +153,15 @@ namespace TextControlBoxNS.Helper
             return new InternSearchResult(SearchResult.NotFound, null);
         }
 
-        public void UpdateSearchLines(PooledList<string> totalLines)
+        public void UpdateSearchLines()
         {
-            MatchingSearchLines = FindIndexes(totalLines);
+            MatchingSearchLines = FindIndexes();
         }
 
-        public SearchResult BeginSearch(PooledList<string> totalLines, string word, bool matchCase, bool wholeWord)
+        public SearchResult BeginSearch(string word, bool matchCase, bool wholeWord)
         {
             SearchParameter = new SearchParameter(word, wholeWord, matchCase);
-            UpdateSearchLines(totalLines);
+            UpdateSearchLines();
 
             if (word == "" || word == null)
                 return SearchResult.InvalidInput;
@@ -173,12 +180,12 @@ namespace TextControlBoxNS.Helper
             MatchingSearchLines = null;
         }
 
-        private int[] FindIndexes(PooledList<string> totalLines)
+        private int[] FindIndexes()
         {
             List<int> results = new List<int>();
-            for (int i = 0; i < totalLines.Count; i++)
+            for (int i = 0; i < textManager.totalLines.Count; i++)
             {
-                if (totalLines[i].Contains(SearchParameter))
+                if (textManager.totalLines[i].Contains(SearchParameter))
                     results.Add(i);
             };
             return results.ToArray();

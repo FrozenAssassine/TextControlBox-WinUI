@@ -1,5 +1,6 @@
 ﻿using System;
 using TextControlBoxNS.Helper;
+using TextControlBoxNS.Renderer;
 
 namespace TextControlBoxNS.Text
 {
@@ -7,17 +8,28 @@ namespace TextControlBoxNS.Text
     {
         public CursorPosition currentCursorPosition { get; private set; }
         public int LineNumber { get => currentCursorPosition.LineNumber; set => currentCursorPosition.LineNumber = value; }
-        public int CharacterPosition => currentCursorPosition.CharacterPosition;
+        public int CharacterPosition { get => currentCursorPosition.CharacterPosition; set { currentCursorPosition.CharacterPosition = value; } }
 
         private readonly TextManager textManager;
-        public CursorManager(TextManager textManager)
+        private readonly CurrentLineManager currentLineManager;
+        public CursorManager(TextManager textManager, CurrentLineManager currentLineManager)
         {
             this.textManager = textManager;
+            this.currentLineManager = currentLineManager;
         }
 
         public void SetCursorPosition(CursorPosition cursorPosition)
         {
             this.currentCursorPosition = cursorPosition;
+        }
+
+        public int GetCurPosInLine()
+        {
+            int curLineLength = currentLineManager.Length;
+
+            if (CharacterPosition > curLineLength)
+                return curLineLength;
+            return CharacterPosition;
         }
 
 
@@ -43,15 +55,15 @@ namespace TextControlBoxNS.Text
         }
 
         //Calculate the number of characters from the cursorposition to the next character or digit to the left and to the right
-        public int CalculateStepsToMoveLeft2(string currentLine, int cursorCharPosition)
+        public int CalculateStepsToMoveLeft2(int cursorCharPosition)
         {
-            if (currentLine.Length == 0)
+            if (currentLineManager.Length == 0)
                 return 0;
 
             int stepsToMove = 0;
             for (int i = cursorCharPosition - 1; i >= 0; i--)
             {
-                char currentCharacter = currentLine[CheckIndex(currentLine, i)];
+                char currentCharacter = currentLineManager.CurrentLine[CheckIndex(currentLineManager.CurrentLine, i)];
                 if (char.IsLetterOrDigit(currentCharacter) || currentCharacter == '_')
                     stepsToMove++;
                 else if (i == cursorCharPosition - 1 && char.IsWhiteSpace(currentCharacter))
@@ -61,15 +73,15 @@ namespace TextControlBoxNS.Text
             }
             return stepsToMove;
         }
-        public int CalculateStepsToMoveRight2(string currentLine, int cursorCharPosition)
+        public int CalculateStepsToMoveRight2(int cursorCharPosition)
         {
-            if (currentLine.Length == 0)
+            if (currentLineManager.Length == 0)
                 return 0;
 
             int stepsToMove = 0;
-            for (int i = cursorCharPosition; i < currentLine.Length; i++)
+            for (int i = cursorCharPosition; i < currentLineManager.Length; i++)
             {
-                char currentCharacter = currentLine[CheckIndex(currentLine, i)];
+                char currentCharacter = currentLineManager.CurrentLine[CheckIndex(currentLineManager.CurrentLine, i)];
                 if (char.IsLetterOrDigit(currentCharacter) || currentCharacter == '_')
                     stepsToMove++;
                 else if (i == cursorCharPosition && char.IsWhiteSpace(currentCharacter))
@@ -82,7 +94,7 @@ namespace TextControlBoxNS.Text
 
         //Calculates how many characters the cursor needs to move if control is pressed
         //Returns 1 when control is not pressed
-        public int CalculateStepsToMoveLeft(string currentLine, int cursorCharPosition)
+        public int CalculateStepsToMoveLeft(int cursorCharPosition)
         {
             if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
                 return 1;
@@ -90,7 +102,7 @@ namespace TextControlBoxNS.Text
             int stepsToMove = 0;
             for (int i = cursorCharPosition - 1; i >= 0; i--)
             {
-                char CurrentCharacter = currentLine[CheckIndex(currentLine, i)];
+                char CurrentCharacter = currentLineManager.CurrentLine[CheckIndex(currentLineManager.CurrentLine, i)];
                 if (char.IsLetterOrDigit(CurrentCharacter) || CurrentCharacter == '_')
                     stepsToMove++;
                 else if (i == cursorCharPosition - 1 && char.IsWhiteSpace(CurrentCharacter))
@@ -102,15 +114,15 @@ namespace TextControlBoxNS.Text
             //return 1 if stepsToMove is 0
             return stepsToMove == 0 ? 1 : stepsToMove;
         }
-        public int CalculateStepsToMoveRight(string currentLine, int cursorCharPosition)
+        public int CalculateStepsToMoveRight(int cursorCharPosition)
         {
             if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
                 return 1;
 
             int stepsToMove = 0;
-            for (int i = cursorCharPosition; i < currentLine.Length; i++)
+            for (int i = cursorCharPosition; i < currentLineManager.Length; i++)
             {
-                char CurrentCharacter = currentLine[CheckIndex(currentLine, i)];
+                char CurrentCharacter = currentLineManager.CurrentLine[CheckIndex(currentLineManager.CurrentLine, i)];
                 if (char.IsLetterOrDigit(CurrentCharacter) || CurrentCharacter == '_')
                     stepsToMove++;
                 else if (i == cursorCharPosition && char.IsWhiteSpace(CurrentCharacter))
@@ -124,7 +136,7 @@ namespace TextControlBoxNS.Text
         }
 
         //Move cursor:
-        public void MoveLeft(CursorPosition currentCursorPosition, TextManager textManager, string currentLine)
+        public void MoveLeft(CursorPosition currentCursorPosition, TextManager textManager)
         {
             if (currentCursorPosition.LineNumber < 0)
                 return;
@@ -138,9 +150,9 @@ namespace TextControlBoxNS.Text
             else if (currentCursorPosition.CharacterPosition > currentLineLength)
                 currentCursorPosition.CharacterPosition = currentLineLength - 1;
             else if (currentCursorPosition.CharacterPosition > 0)
-                currentCursorPosition.CharacterPosition -= CalculateStepsToMoveLeft(currentLine, currentCursorPosition.CharacterPosition);
+                currentCursorPosition.CharacterPosition -= CalculateStepsToMoveLeft(currentCursorPosition.CharacterPosition);
         }
-        public void MoveRight(CursorPosition currentCursorPosition, TextManager textManager, string currentLine)
+        public void MoveRight(CursorPosition currentCursorPosition, TextManager textManager)
         {
             int lineLength = textManager.GetLineLength(currentCursorPosition.LineNumber);
 
@@ -153,7 +165,7 @@ namespace TextControlBoxNS.Text
                 currentCursorPosition.LineNumber += 1;
             }
             else if (currentCursorPosition.CharacterPosition < lineLength)
-                currentCursorPosition.CharacterPosition += CalculateStepsToMoveRight(currentLine, currentCursorPosition.CharacterPosition);
+                currentCursorPosition.CharacterPosition += CalculateStepsToMoveRight(currentCursorPosition.CharacterPosition);
 
             if (currentCursorPosition.CharacterPosition > lineLength)
                 currentCursorPosition.CharacterPosition = lineLength;
@@ -172,9 +184,9 @@ namespace TextControlBoxNS.Text
                 returnValue = CursorPosition.ChangeLineNumber(returnValue, currentCursorPosition.LineNumber - 1);
             return returnValue;
         }
-        public void MoveToLineEnd(CursorPosition cursorPosition, string currentLine)
+        public void MoveToLineEnd(CursorPosition cursorPosition)
         {
-            cursorPosition.CharacterPosition = currentLine.Length;
+            cursorPosition.CharacterPosition = currentLineManager.Length;
         }
         public void MoveToLineStart(CursorPosition cursorPosition)
         {

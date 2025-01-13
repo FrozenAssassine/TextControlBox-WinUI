@@ -1,9 +1,10 @@
 ﻿
+using TextControlBoxNS.Extensions;
+
 namespace TextControlBoxNS.Text;
 
 internal class CurrentLineManager
 {
-
     private readonly CursorManager cursorManager;
     private readonly TextManager textManager;
 
@@ -14,6 +15,7 @@ internal class CurrentLineManager
 
     public int CurrentLineIndex { get => cursorManager.currentCursorPosition.LineNumber; set => cursorManager.currentCursorPosition.LineNumber = value; }
     public string CurrentLine { get => GetCurrentLineText(); set => SetCurrentLineText(value); }
+    public int Length => CurrentLine.Length;
 
     public string GetCurrentLineText()
     {
@@ -30,5 +32,26 @@ internal class CurrentLineManager
     public void UpdateCurrentLine(int currentLine)
     {
         CurrentLineIndex = currentLine;
+    }
+
+    public void AddToEnd(string add)
+    {
+        CurrentLine = CurrentLine + add;
+    }
+
+    public void AddText(string add, int position)
+    {
+        if (position < 0)
+            position = 0;
+
+        if (position >= CurrentLine.Length || CurrentLine.Length <= 0)
+            CurrentLine = CurrentLine + add;
+        else
+            CurrentLine = CurrentLine.Insert(position, add);
+    }
+
+    public void SafeRemove(int start, int count = -1)
+    {
+        CurrentLine = CurrentLine.SafeRemove(start, count);
     }
 }

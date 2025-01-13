@@ -12,8 +12,8 @@ namespace TextControlBoxNS.Renderer
 {
     internal class LineNumberRenderer
     {
-        private string LineNumberTextToRender;
-        private string OldLineNumberTextToRender;
+        public string LineNumberTextToRender;
+        public string OldLineNumberTextToRender;
 
         private StringBuilder LineNumberContent = new StringBuilder();
         private bool needsUpdate = false;

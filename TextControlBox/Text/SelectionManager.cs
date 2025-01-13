@@ -1,4 +1,3 @@
-using Collections.Pooled;
 using System;
 using System.Linq;
 using System.Text;
@@ -14,6 +13,15 @@ namespace TextControlBoxNS.Text
         private CursorManager cursorManager;
 
         public TextSelection currentTextSelection;
+
+        public bool TextSelIsNull => currentTextSelection == null;
+
+        public void ForceClearSelection(SelectionRenderer selectionRenderer, CanvasHelper canvasHelper)
+        {
+            selectionRenderer.ClearSelection();
+            SetCurrentTextSelection(null);
+            canvasHelper.UpdateSelection();
+        }
 
         public void SetCurrentTextSelection(TextSelection textSelection)
         {

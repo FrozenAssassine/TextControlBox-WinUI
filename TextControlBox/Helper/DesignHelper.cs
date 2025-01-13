@@ -1,13 +1,15 @@
 ﻿using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml;
 using Windows.UI;
+using Microsoft.Graphics.Canvas.Brushes;
+using Microsoft.Graphics.Canvas;
 
 namespace TextControlBoxNS.Helper
 {
     internal class DesignHelper
     {
         public bool UseDefaultDesign = true;
-
+        public bool ColorResourcesCreated = false;
         public TextControlBoxDesign _Design { get; set; }
         public ElementTheme _RequestedTheme = ElementTheme.Default;
         public ApplicationTheme _AppTheme = ApplicationTheme.Light;
@@ -31,5 +33,25 @@ namespace TextControlBoxNS.Helper
             Color.FromArgb(0, 0, 0, 0),
             Color.FromArgb(100, 160, 80, 0)
             );
+
+        //Colors:
+        CanvasSolidColorBrush TextColorBrush;
+        CanvasSolidColorBrush CursorColorBrush;
+        CanvasSolidColorBrush LineNumberColorBrush;
+        CanvasSolidColorBrush LineHighlighterBrush;
+
+        private void CreateColorResources(ICanvasResourceCreatorWithDpi resourceCreator)
+        {
+            if (ColorResourcesCreated)
+                return;
+
+            Canvas_LineNumber.ClearColor = _Design.LineNumberBackground;
+            MainGrid.Background = _Design.Background;
+            TextColorBrush = new CanvasSolidColorBrush(resourceCreator, _Design.TextColor);
+            CursorColorBrush = new CanvasSolidColorBrush(resourceCreator, _Design.CursorColor);
+            LineNumberColorBrush = new CanvasSolidColorBrush(resourceCreator, _Design.LineNumberColor);
+            LineHighlighterBrush = new CanvasSolidColorBrush(resourceCreator, _Design.LineHighlighterColor);
+            ColorResourcesCreated = true;
+        }
     }
 }

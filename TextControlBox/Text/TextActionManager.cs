@@ -1,10 +1,12 @@
 ﻿using Microsoft.UI.Input;
+using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Renderer;
 using Windows.ApplicationModel.DataTransfer;
@@ -13,14 +15,21 @@ namespace TextControlBoxNS.Text
 {
     internal class TextActionManager
     {
-        public CanvasHelper canvasHelper;
-        private TextManager textManager;
-        private SelectionRenderer selectionRenderer;
-        private SelectionManager selectionManager;
-        private CursorManager cursorManager;
-        private TextControlBox textbox;
-        private UndoRedo undoRedo;
-        public TextActionManager(TextControlBox textbox, UndoRedo undoRedo, CanvasHelper canvasHelper, TextManager textManager, SelectionRenderer selectionRenderer, CursorManager cursorManager)
+        private readonly CanvasHelper canvasHelper;
+        private readonly TextManager textManager;
+        private readonly SelectionRenderer selectionRenderer;
+        private readonly SelectionManager selectionManager;
+        private readonly CursorManager cursorManager;
+        private readonly TextControlBox textbox;
+        private readonly UndoRedo undoRedo;
+        private readonly LongestLineManager longestLineManager;
+        private readonly CurrentLineManager currentLineManager;
+        private readonly ScrollManager scrollManager;
+        private readonly EventsManager eventsManager;
+        private readonly TextRenderer textRenderer;
+        private readonly StringManager stringManager;
+
+        public TextActionManager(TextControlBox textbox, TextRenderer textRenderer, UndoRedo undoRedo, CurrentLineManager currentLineManager, LongestLineManager longestLineManager, CanvasHelper canvasHelper, TextManager textManager, SelectionRenderer selectionRenderer, CursorManager cursorManager)
         {
             this.canvasHelper = canvasHelper;
             this.textManager = textManager;
@@ -36,7 +45,7 @@ namespace TextControlBoxNS.Text
                 return;
 
             selectionRenderer.SetSelection(new CursorPosition(0, 0), new CursorPosition(textManager.GetLineLength(-1), textManager.LinesCount- 1));
-             = selectionRenderer.SelectionEndPosition;
+            cursorManager.SetCursorPosition(new CursorPosition(selectionRenderer.SelectionEndPosition));
             canvasHelper.UpdateSelection();
             canvasHelper.UpdateCursor();
         }
@@ -46,12 +55,12 @@ namespace TextControlBoxNS.Text
                 return;
 
             //Do the Undo
-            textbox.ChangeCursor(InputSystemCursorShape.Wait);
-            var sel = undoRedo.Undo(stringManager, NewLineCharacter);
-            Internal_TextChanged();
-            ChangeCursor(InputSystemCursorShape.IBeam);
+            //ChangeCursor(InputSystemCursorShape.Wait);
+            var sel = undoRedo.Undo(stringManager);
+            eventsManager.CallTextChanged();
+            //ChangeCursor(InputSystemCursorShape.IBeam);
 
-            NeedsRecalculateLongestLineIndex = true;
+            longestLineManager.NeedsRecalculation = true;
 
             if (sel != null)
             {
@@ -67,7 +76,7 @@ namespace TextControlBoxNS.Text
                 cursorManager.SetCursorPosition(sel.EndPosition);
             }
             else
-                ForceClearSelection();
+                selectionManager.ForceClearSelection(selectionRenderer, canvasHelper);
             canvasHelper.UpdateAll();
         }
         public void Redo()
@@ -76,39 +85,33 @@ namespace TextControlBoxNS.Text
                 return;
 
             //Do the Redo
-            ChangeCursor(InputSystemCursorShape.Wait);
-            var sel = undoRedo.Redo(TotalLines, stringManager, NewLineCharacter);
-            Internal_TextChanged();
-            ChangeCursor(InputSystemCursorShape.IBeam);
+            //ChangeCursor(InputSystemCursorShape.Wait);
+            var sel = undoRedo.Redo(stringManager);
+            eventsManager.CallTextChanged();
+            //ChangeCursor(InputSystemCursorShape.IBeam);
 
-            NeedsRecalculateLongestLineIndex = true;
+            longestLineManager.NeedsRecalculation = true;
 
             if (sel != null)
             {
                 //only set cursorposition
                 if (sel.StartPosition != null && sel.EndPosition == null)
                 {
-                    CursorPosition = sel.StartPosition;
+                    cursorManager.SetCursorPosition(new CursorPosition(sel.StartPosition));
                     canvasHelper.UpdateAll();
                     return;
                 }
 
-                selectionrenderer.SetSelection(sel);
-                CursorPosition = sel.EndPosition;
+                selectionRenderer.SetSelection(sel);
+                cursorManager.SetCursorPosition(new CursorPosition(sel.EndPosition));
             }
             else
-                ForceClearSelection();
+                selectionManager.ForceClearSelection(selectionRenderer, canvasHelper);
             canvasHelper.UpdateAll();
         }
 
-        public void ForceClearSelection()
-        {
-            selectionRenderer.ClearSelection();
-            selectionManager.SetCurrentTextSelection(null);
-            canvasHelper.UpdateSelection();
-        }
         //Trys running the code and clears the memory if OutOfMemoryException gets thrown
-        private async void Safe_Paste(bool handleException = true)
+        public async void Safe_Paste(bool handleException = true)
         {
             try
             {
@@ -136,18 +139,18 @@ namespace TextControlBoxNS.Text
             {
                 if (handleException)
                 {
-                    CleanUp();
+                    textManager.CleanUp();
                     Safe_Paste(false);
                     return;
                 }
                 throw new OutOfMemoryException();
             }
         }
-        private string Safe_Gettext(bool handleException = true)
+        public string Safe_Gettext(bool handleException = true)
         {
             try
             {
-                return textManager.totalLines.GetString(NewLineCharacter);
+                return textManager.totalLines.GetString(textManager.NewLineCharacter);
             }
             catch (OutOfMemoryException)
             {
@@ -159,38 +162,38 @@ namespace TextControlBoxNS.Text
                 throw new OutOfMemoryException();
             }
         }
-        private void Safe_Cut(bool handleException = true)
+        public void Safe_Cut(bool handleException = true)
         {
             try
             {
                 DataPackage dataPackage = new DataPackage();
-                dataPackage.SetText(SelectedText);
-                if (TextSelection == null)
-                    DeleteLine(CursorPosition.LineNumber); //Delete the line
+                dataPackage.SetText(textbox.SelectedText);
+                if (selectionManager.currentTextSelection == null)
+                    DeleteLine(cursorManager.LineNumber); //Delete the line
                 else
                     DeleteText(); //Delete the selected text
 
                 dataPackage.RequestedOperation = DataPackageOperation.Move;
                 Clipboard.SetContent(dataPackage);
-                ClearSelection();
+                selectionRenderer.ClearSelection();
             }
             catch (OutOfMemoryException)
             {
                 if (handleException)
                 {
-                    CleanUp();
+                    textManager.CleanUp();
                     Safe_Cut(false);
                     return;
                 }
                 throw new OutOfMemoryException();
             }
         }
-        private void Safe_Copy(bool handleException = true)
+        public void Safe_Copy(bool handleException = true)
         {
             try
             {
                 DataPackage dataPackage = new DataPackage();
-                dataPackage.SetText(SelectedText);
+                dataPackage.SetText(textbox.SelectedText);
                 dataPackage.RequestedOperation = DataPackageOperation.Copy;
                 Clipboard.SetContent(dataPackage);
             }
@@ -198,40 +201,40 @@ namespace TextControlBoxNS.Text
             {
                 if (handleException)
                 {
-                    CleanUp();
+                    textManager.CleanUp();
                     Safe_Copy(false);
                     return;
                 }
                 throw new OutOfMemoryException();
             }
         }
-        private void Safe_LoadLines(IEnumerable<string> lines, LineEnding lineEnding = LineEnding.CRLF, bool HandleException = true)
+        public void Safe_LoadLines(IEnumerable<string> lines, LineEnding lineEnding = LineEnding.CRLF, bool HandleException = true)
         {
             try
             {
-                selectionrenderer.ClearSelection();
+                selectionRenderer.ClearSelection();
                 undoRedo.ClearAll();
 
-                ListHelper.Clear(textManager.totalLines);
+                textManager.ClearText();
                 textManager.totalLines.AddRange(lines);
 
-                this.LineEnding = lineEnding;
+                textManager._LineEnding = lineEnding;
 
-                NeedsRecalculateLongestLineIndex = true;
+                longestLineManager.NeedsRecalculation = true;
                 canvasHelper.UpdateAll();
             }
             catch (OutOfMemoryException)
             {
                 if (HandleException)
                 {
-                    CleanUp();
+                    textManager.CleanUp();
                     Safe_LoadLines(lines, lineEnding, false);
                     return;
                 }
                 throw new OutOfMemoryException();
             }
         }
-        private async void Safe_LoadText(string text, bool handleException = true)
+        public async void Safe_LoadText(string text, bool handleException = true)
         {
             try
             {
@@ -239,17 +242,17 @@ namespace TextControlBoxNS.Text
                     return;
 
                 //Get the LineEnding
-                LineEnding = LineEndings.FindLineEnding(text);
+                textManager._LineEnding = LineEndings.FindLineEnding(text);
 
-                selectionrenderer.ClearSelection();
+                selectionRenderer.ClearSelection();
                 undoRedo.ClearAll();
 
-                NeedsRecalculateLongestLineIndex = true;
+                longestLineManager.NeedsRecalculation = true;
 
                 if (text.Length == 0)
                     textManager.ClearText(true);
                 else
-                    selectionManager.ReplaceLines(0, textManager.LinesCount, stringManager.CleanUpString(text).Split(NewLineCharacter));
+                    selectionManager.ReplaceLines(0, textManager.LinesCount, stringManager.CleanUpString(text).Split(textManager.NewLineCharacter));
 
                 canvasHelper.UpdateAll();
             }
@@ -257,30 +260,30 @@ namespace TextControlBoxNS.Text
             {
                 if (handleException)
                 {
-                    CleanUp();
+                    textManager.CleanUp();
                     Safe_LoadText(text, false);
                     return;
                 }
                 throw new OutOfMemoryException();
             }
         }
-        private async void Safe_SetText(string text, bool handleException = true)
+        public async void Safe_SetText(string text, bool handleException = true)
         {
             try
             {
                 if (await Utils.IsOverTextLimit(text.Length))
                     return;
 
-                selectionrenderer.ClearSelection();
-                NeedsRecalculateLongestLineIndex = true;
+                selectionRenderer.ClearSelection();
+                longestLineManager.NeedsRecalculation = true;
                 undoRedo.RecordUndoAction(() =>
                 {
-                    SelectionManager.ReplaceLines(textManager.totalLines, 0, textManager.LinesCount, stringManager.CleanUpString(text).Split(NewLineCharacter));
+                    selectionManager.ReplaceLines(0, textManager.LinesCount, stringManager.CleanUpString(text).Split(textManager.NewLineCharacter));
                     if (text.Length == 0) //Create a new line when the text gets cleared
                     {
-                        textManager.totalLines.AddLine();
+                        textManager.AddLine();
                     }
-                }, textManager.totalLines, 0, textManager.LinesCount, Utils.CountLines(text, NewLineCharacter), NewLineCharacter);
+                }, 0, textManager.LinesCount, Utils.CountLines(text, textManager.NewLineCharacter));
 
                 canvasHelper.UpdateAll();
             }
@@ -288,12 +291,356 @@ namespace TextControlBoxNS.Text
             {
                 if (handleException)
                 {
-                    CleanUp();
+                    textManager.CleanUp();
                     Safe_SetText(text, false);
                     return;
                 }
                 throw new OutOfMemoryException();
             }
+        }
+
+        public void DeleteSelection()
+        {
+            if (selectionManager.currentTextSelection == null)
+                return;
+
+            //line gets deleted -> recalculate the longest line:
+
+            longestLineManager.CheckSelection();
+
+            undoRedo.RecordUndoAction(() =>
+            {
+                cursorManager.SetCursorPosition(selectionManager.Remove(selectionManager.currentTextSelection));
+                selectionRenderer.ClearSelection();
+
+            }, selectionManager.currentTextSelection, 0);
+
+            canvasHelper.UpdateSelection();
+            canvasHelper.UpdateCursor();
+        }
+        public void AddCharacter(string text, bool ignoreSelection = false)
+        {
+            if (textManager._IsReadonly)
+                return;
+
+            if (ignoreSelection)
+                selectionRenderer.ClearSelection();
+
+            int splittedTextLength = text.Contains(textManager.NewLineCharacter, StringComparison.Ordinal) ? Utils.CountLines(text, textManager.NewLineCharacter) : 1;
+
+            if (selectionManager.currentTextSelection== null && splittedTextLength == 1)
+            {
+                var res = AutoPairing.AutoPair(textbox, text);
+                text = res.text;
+
+                undoRedo.RecordUndoAction(() =>
+                {
+                    var characterPos = cursorManager.GetCurPosInLine();
+
+                    if (characterPos > currentLineManager.CurrentLineLength() - 1)
+                        currentLineManager.CurrentLine.AddToEnd(text);
+                    else
+                        currentLineManager.AddText(text, characterPos);
+                    cursorManager.CharacterPosition= res.length + characterPos;
+
+                }, cursorManager.LineNumber, 1, 1);
+
+                if (currentLineManager.GetCurrentLineText().Length > longestLineManager.longestLineLength)
+                {
+                    longestLineManager.longestIndex = cursorManager.LineNumber;
+                }
+            }
+            else if (selectionManager.currentTextSelection == null && splittedTextLength > 1)
+            {
+                longestLineManager.CheckRecalculateLongestLine(text);
+                undoRedo.RecordUndoAction(() =>
+                {
+                    cursorManager.SetCursorPosition(selectionManager.InsertText(selectionManager.currentTextSelection, cursorManager.currentCursorPosition, text));
+                }, cursorManager.LineNumber, 1, splittedTextLength);
+            }
+            else if (text.Length == 0) //delete selection
+            {
+                DeleteSelection();
+            }
+            else if (selectionManager.currentTextSelection != null)
+            {
+                text = AutoPairing.AutoPairSelection(textbox, text);
+                if (text == null)
+                    return;
+
+                longestLineManager.CheckRecalculateLongestLine(text);
+                undoRedo.RecordUndoAction(() =>
+                {
+                    cursorManager.SetCursorPosition(selectionManager.Replace(selectionManager.currentTextSelection, text));
+
+                    selectionRenderer.ClearSelection();
+                    canvasHelper.UpdateSelection();
+                }, selectionManager.currentTextSelection, splittedTextLength);
+            }
+
+            scrollManager.ScrollLineToCenter(cursorManager.LineNumber);
+            canvasHelper.UpdateText();
+            canvasHelper.UpdateCursor();
+            eventsManager.CallTextChanged();
+        }
+        public void RemoveText(bool controlIsPressed = false)
+        {
+            currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
+
+            if (textManager._IsReadonly)
+                return;
+
+            if (selectionManager.currentTextSelection != null)
+                DeleteSelection();
+            else
+            {
+                string curLine = currentLineManager.CurrentLine;
+                var charPos = cursorManager.GetCurPosInLine();
+                var stepsToMove = controlIsPressed ? cursorManager.CalculateStepsToMoveLeft(charPos) : 1;
+
+                if (charPos - stepsToMove >= 0)
+                {
+                    if (cursorManager.LineNumber == longestLineManager.longestIndex)
+                        longestLineManager.NeedsRecalculation = true;
+
+                    undoRedo.RecordUndoAction(() =>
+                    {
+                        currentLineManager.CurrentLine.SafeRemove(charPos - stepsToMove, stepsToMove);
+                        cursorManager.CharacterPosition -= stepsToMove;
+
+                    }, cursorManager.LineNumber, 1, 1);
+                }
+                else if (charPos - stepsToMove < 0) //remove lines
+                {
+                    if (cursorManager.LineNumber <= 0)
+                        return;
+
+                    if (cursorManager.LineNumber == longestLineManager.longestIndex)
+                        longestLineManager.NeedsRecalculation = true;
+
+                    undoRedo.RecordUndoAction(() =>
+                    {
+                        int curpos = textManager.GetLineLength(cursorManager.LineNumber - 1);
+
+                        //line still has text:
+                        if (curLine.Length > 0)
+                            textManager.totalLines.String_AddToEnd(cursorManager.LineNumber - 1, curLine);
+
+                        textManager.DeleteAt(cursorManager.LineNumber);
+
+                        //update the cursorposition
+                        cursorManager.LineNumber -= 1;
+                        cursorManager.CharacterPosition = curpos;
+
+                    }, cursorManager.LineNumber - 1, 3, 2);
+                }
+            }
+
+            scrollManager.UpdateScrollToShowCursor();
+            canvasHelper.UpdateText();
+            canvasHelper.UpdateCursor();
+
+            eventsManager.CallTextChanged();
+        }
+        public void DeleteText(bool controlIsPressed = false, bool shiftIsPressed = false)
+        {
+            currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
+
+            if (textManager._IsReadonly)
+                return;
+
+            //Shift + delete:
+            if (shiftIsPressed && selectionManager.currentTextSelection == null)
+                textbox.DeleteLine(cursorManager.LineNumber);
+            else if (selectionManager.currentTextSelection != null)
+                DeleteSelection();
+            else
+            {
+                int characterPos = cursorManager.GetCurPosInLine();
+                //delete lines if cursor is at position 0 and the line is emty OR the cursor is at the end of a line and the line has content
+                if (characterPos == currentLineManager.Length)
+                {
+                    string lineToAdd = cursorManager.LineNumber + 1 < textManager.LinesCount ? textManager.totalLines.GetLineText(cursorManager.LineNumber + 1) : null;
+                    if (lineToAdd != null)
+                    {
+                        if (cursorManager.LineNumber == longestLineManager.longestIndex)
+                            longestLineManager.NeedsRecalculation = true;
+
+                        undoRedo.RecordUndoAction(() =>
+                        {
+                            int curpos = textManager.GetLineLength(cursorManager.LineNumber);
+                            currentLineManager.CurrentLine += lineToAdd;
+                            textManager.DeleteAt(cursorManager.LineNumber + 1);
+
+                            //update the cursorposition
+                            cursorManager.CharacterPosition = curpos;
+
+                        }, cursorManager.LineNumber, 2, 1);
+                    }
+                }
+                //delete text in line
+                else if (textManager.LinesCount > cursorManager.LineNumber)
+                {
+                    int stepsToMove = controlIsPressed ? cursorManager.CalculateStepsToMoveRight(characterPos) : 1;
+
+                    if (cursorManager.LineNumber == longestLineManager.longestIndex)
+                        longestLineManager.NeedsRecalculation = true;
+
+                    undoRedo.RecordUndoAction(() =>
+                    {
+                        currentLineManager.SafeRemove(characterPos, stepsToMove);
+                    }, cursorManager.LineNumber, 1, 1);
+                }
+            }
+
+            scrollManager.UpdateScrollToShowCursor();
+            canvasHelper.UpdateText();
+            canvasHelper.UpdateCursor();
+
+            eventsManager.CallTextChanged();
+        }
+        public void AddNewLine()
+        {
+            if (textManager._IsReadonly)
+                return;
+
+            if (textManager.LinesCount == 0)
+            {
+                textManager.AddLine();
+                return;
+            }
+
+            CursorPosition startLinePos = new CursorPosition(selectionManager.TextSelIsNull ? CursorPosition.ChangeLineNumber(cursorManager.currentCursorPosition, cursorManager.LineNumber) : selectionManager.GetMin(selectionManager.currentTextSelection));
+
+            //If the whole text is selected
+            if (selectionManager.WholeTextSelected(selectionManager.currentTextSelection))
+            {
+                undoRedo.RecordUndoAction(() =>
+                {
+                    textManager.ClearText(true);
+                    textManager.totalLines.InsertNewLine(-1);
+                    cursorManager.SetCursorPosition(new CursorPosition(0, 1));
+                }, 0, textManager.LinesCount, 2);
+                selectionManager.ForceClearSelection(selectionRenderer, canvasHelper);
+                canvasHelper.UpdateAll();
+                eventsManager.CallTextChanged();
+                return;
+            }
+
+            if (selectionManager.TextSelIsNull) //No selection
+            {
+                string startLine = textManager.totalLines.GetLineText(startLinePos.LineNumber);
+
+                undoRedo.RecordUndoAction(() =>
+                {
+                    string[] splittedLine = Utils.SplitAt(textManager.totalLines.GetLineText(startLinePos.LineNumber), startLinePos.CharacterPosition);
+
+                    textManager.SetLineText(startLinePos.LineNumber, splittedLine[1]);
+                    textManager.InsertOrAdd(startLinePos.LineNumber, splittedLine[0]);
+
+                }, startLinePos.LineNumber, 1, 2);
+            }
+            else //Any kind of selection
+            {
+                int remove = 2;
+                if (selectionManager.currentTextSelection.StartPosition.LineNumber == selectionManager.currentTextSelection.EndPosition.LineNumber)
+                {
+                    //line is selected completely: remove = 1
+                    if (selectionManager.GetMax(selectionManager.currentTextSelection.StartPosition, selectionManager.currentTextSelection.EndPosition).CharacterPosition == textManager.GetLineLength(cursorManager.LineNumber) &&
+                        selectionManager.GetMin(selectionManager.currentTextSelection.StartPosition, selectionManager.currentTextSelection.EndPosition).CharacterPosition == 0)
+                    {
+                        remove = 1;
+                    }
+                }
+
+                undoRedo.RecordUndoAction(() =>
+                {
+                    cursorManager.SetCursorPosition(selectionManager.Replace(selectionManager.currentTextSelection, textManager.NewLineCharacter));
+                }, selectionManager.currentTextSelection, remove);
+            }
+
+            selectionRenderer.ClearSelection();
+            cursorManager.LineNumber += 1;
+            cursorManager.CharacterPosition = 0;
+
+            if (selectionManager.currentTextSelection == null && cursorManager.LineNumber == textRenderer.NumberOfRenderedLines + textRenderer.NumberOfStartLine)
+                scrollManager.ScrollOneLineDown();
+            else
+                scrollManager.UpdateScrollToShowCursor();
+
+            canvasHelper.UpdateAll();
+            eventsManager.CallTextChanged();
+        }
+
+        public bool DeleteLine(int line)
+        {
+            if (line >= textManager.LinesCount || line < 0)
+                return false;
+
+            if (line == longestLineManager.longestIndex)
+                longestLineManager.NeedsRecalculation = true;
+
+            undoRedo.RecordUndoAction(() =>
+            {
+                textManager.totalLines.RemoveAt(line);
+            }, line, 2, 1);
+
+            if (textManager.LinesCount == 0)
+            {
+                textManager.AddLine();
+            }
+
+            canvasHelper.UpdateText();
+            return true;
+        }
+
+        public bool AddLine(int line, string text)
+        {
+            if (line > textManager.LinesCount || line < 0)
+                return false;
+
+            if (text.Length > longestLineManager.longestLineLength)
+                longestLineManager.longestIndex = line;
+
+            undoRedo.RecordUndoAction(() =>
+            {
+                textManager.InsertOrAdd(line, stringManager.CleanUpString(text));
+
+            }, line, 1, 2);
+
+            canvasHelper.UpdateText();
+            return true;
+        }
+
+        public bool SetLineText(int line, string text)
+        {
+            if (line >= textManager.LinesCount || line < 0)
+                return false;
+
+            if (text.Length > longestLineManager.longestLineLength)
+                longestLineManager.longestIndex = line;
+
+            undoRedo.RecordUndoAction(() =>
+            {
+                textManager.SetLineText(line, stringManager.CleanUpString(text));
+            }, line, 1, 1);
+            canvasHelper.UpdateText();
+            return true;
+        }
+
+        public void DuplicateLine(int line)
+        {
+            undoRedo.RecordUndoAction(() =>
+            {
+                textManager.InsertOrAdd(line, textManager.GetLineText(line));
+                cursorManager.LineNumber += 1;
+            }, line, 1, 2);
+
+            if (textRenderer.OutOfRenderedArea(line))
+                scrollManager.ScrollBottomIntoView();
+
+            canvasHelper.UpdateText();
+            canvasHelper.UpdateCursor();
         }
     }
 }

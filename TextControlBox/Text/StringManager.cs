@@ -4,17 +4,15 @@ namespace TextControlBoxNS.Text
 {
     internal class StringManager
     {
+        private TextManager textManager;
         private TabSpaceHelper tabSpaceHelper;
-        public LineEnding lineEnding;
 
-        public StringManager(TabSpaceHelper tabSpaceHelper)
-        {
-            this.tabSpaceHelper = tabSpaceHelper;
-        }
+        public StringManager stringManager;
+
         public string CleanUpString(string input)
         {
             //Fix tabs and lineendings
-            return tabSpaceHelper.UpdateTabs(LineEndings.CleanLineEndings(input, lineEnding));
+            return tabSpaceHelper.UpdateTabs(LineEndings.CleanLineEndings(input, textManager._LineEnding));
         }
     }
 }

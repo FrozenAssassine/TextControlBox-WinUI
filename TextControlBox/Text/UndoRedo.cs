@@ -1,7 +1,5 @@
-﻿using Collections.Pooled;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
@@ -52,7 +50,7 @@ namespace TextControlBoxNS.Text
             AddUndoItem(null, startline, lineBefore, lineAfter, 1, 1);
         }
 
-        public void RecordUndoAction(Action action, int startline, int undocount, int redoCount, string newLineCharacter, CursorPosition cursorposition = null)
+        public void RecordUndoAction(Action action, int startline, int undocount, int redoCount, CursorPosition cursorposition = null)
         {
             if (undocount == redoCount && redoCount == 1)
             {
@@ -60,13 +58,13 @@ namespace TextControlBoxNS.Text
                 return;
             }
 
-            var linesBefore = textManager.GetLines(startline, undocount).GetString(newLineCharacter);
+            var linesBefore = textManager.GetLines(startline, undocount).GetString(textManager.NewLineCharacter);
             action.Invoke();
-            var linesAfter = textManager.GetLines(startline, redoCount).GetString(newLineCharacter);
+            var linesAfter = textManager.GetLines(startline, redoCount).GetString(textManager.NewLineCharacter);
 
             AddUndoItem(cursorposition == null ? null : new TextSelection(new CursorPosition(cursorposition), null), startline, linesBefore, linesAfter, undocount, redoCount);
         }
-        public void RecordUndoAction(Action action, TextSelection selection, int numberOfAddedLines, string newLineCharacter)
+        public void RecordUndoAction(Action action, TextSelection selection, int numberOfAddedLines)
         {
             var orderedSel = selectionManager.OrderTextSelection(selection);
             if (orderedSel.StartPosition.LineNumber == orderedSel.EndPosition.LineNumber && orderedSel.StartPosition.LineNumber == 1)
@@ -81,9 +79,9 @@ namespace TextControlBoxNS.Text
                 orderedSel.StartPosition.LineNumber == orderedSel.EndPosition.LineNumber && orderedSel.Length == textManager.GetLineLength(orderedSel.StartPosition.LineNumber))
                 numberOfAddedLines += 1;
 
-            var linesBefore = textManager.GetLines(orderedSel.StartPosition.LineNumber, numberOfRemovedLines).GetString(newLineCharacter);
+            var linesBefore = textManager.GetLines(orderedSel.StartPosition.LineNumber, numberOfRemovedLines).GetString(textManager.NewLineCharacter);
             action.Invoke();
-            var linesAfter = textManager.GetLines(orderedSel.StartPosition.LineNumber, numberOfAddedLines).GetString(newLineCharacter);
+            var linesAfter = textManager.GetLines(orderedSel.StartPosition.LineNumber, numberOfAddedLines).GetString(textManager.NewLineCharacter);
 
             AddUndoItem(
                 selection,
@@ -95,7 +93,7 @@ namespace TextControlBoxNS.Text
                 );
         }
 
-        public TextSelection Undo(StringManager stringManager, string newLineCharacter)
+        public TextSelection Undo(StringManager stringManager)
         {
             if (UndoStack.Count < 1)
                 return null;
@@ -122,13 +120,13 @@ namespace TextControlBoxNS.Text
             {
                 textManager.Safe_RemoveRange(item.StartLine, item.RedoCount);
                 if (item.UndoCount > 0)
-                    textManager.InsertOrAddRange(ListHelper.GetLinesFromString(stringManager.CleanUpString(item.UndoText), newLineCharacter), item.StartLine);
+                    textManager.InsertOrAddRange(ListHelper.GetLinesFromString(stringManager.CleanUpString(item.UndoText), textManager.NewLineCharacter), item.StartLine);
             }
 
             return item.Selection;
         }
 
-        public TextSelection Redo(StringManager stringmanager, string newLineCharacter)
+        public TextSelection Redo(StringManager stringmanager)
         {
             if (RedoStack.Count < 1)
                 return null;
@@ -146,7 +144,7 @@ namespace TextControlBoxNS.Text
             {
                 textManager.Safe_RemoveRange(item.StartLine, item.UndoCount);
                 if (item.RedoCount > 0)
-                    textManager.InsertOrAddRange(ListHelper.GetLinesFromString(stringmanager.CleanUpString(item.RedoText), newLineCharacter), item.StartLine);
+                    textManager.InsertOrAddRange(ListHelper.GetLinesFromString(stringmanager.CleanUpString(item.RedoText), textManager.NewLineCharacter), item.StartLine);
             }
             return null;
         }

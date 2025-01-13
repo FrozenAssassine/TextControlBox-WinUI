@@ -1,46 +1,47 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Renderer;
 
-namespace TextControlBoxNS.Text
+namespace TextControlBoxNS.Text;
+
+internal class ZoomManager
 {
-    internal class ZoomManager
+    public float ZoomedFontSize = 0;
+    public int _ZoomFactor = 100; //%
+    public int OldZoomFactor = 0;
+
+    private readonly TextManager textManager;
+    private readonly TextRenderer textRenderer;
+    private readonly ScrollManager scrollManager;
+    private readonly CanvasHelper canvasHelper;
+    private readonly LineNumberRenderer lineNumberRenderer;
+    private readonly CursorManager cursorManager;
+    private readonly EventsManager eventsManager;
+
+    public ZoomManager(TextManager textManager, TextRenderer textRenderer, CanvasHelper canvasHelper, LineNumberRenderer lineNumberRenderer, CursorManager cursorManager, EventsManager changedEventManager)
     {
-        public float ZoomedFontSize = 0;
-        public int _ZoomFactor = 100; //%
-        public int OldZoomFactor = 0;
+        this.textManager = textManager;
+        this.canvasHelper = canvasHelper;
+        this.lineNumberRenderer = lineNumberRenderer;
+        this.cursorManager = cursorManager;
+    }
 
-        public delegate void ZoomChangedEvent(int zoomFactor);
-        public event ZoomChangedEvent ZoomChanged;
+    public void UpdateZoom()
+    {
+        ZoomedFontSize = Math.Clamp(textManager._FontSize * (float)_ZoomFactor / 100, textManager.MinFontSize, textManager.MaxFontsize);
+        _ZoomFactor = Math.Clamp(_ZoomFactor, 4, 400);
 
-        private readonly TextManager textManager;
-        private readonly TextRenderer textRenderer;
-        public ZoomManager(TextManager textManager, TextRenderer textRenderer)
+        if (_ZoomFactor != OldZoomFactor)
         {
-            this.textManager = textManager;
+            textRenderer.NeedsUpdateTextLayout = true;
+            OldZoomFactor = _ZoomFactor;
+            eventsManager.CallZoomChanged(_ZoomFactor);
         }
 
-        private void UpdateZoom()
-        {
-            ZoomedFontSize = Math.Clamp(textManager._FontSize * (float)_ZoomFactor / 100, textManager.MinFontSize, textManager.MaxFontsize);
-            _ZoomFactor = Math.Clamp(_ZoomFactor, 4, 400);
+        textRenderer.NeedsTextFormatUpdate = true;
 
-            if (_ZoomFactor != OldZoomFactor)
-            {
-                textRenderer.NeedsUpdateTextLayout = true;
-                OldZoomFactor = _ZoomFactor;
-                ZoomChanged?.Invoke(_ZoomFactor);
-            }
-
-            textRenderer.NeedsTextFormatUpdate = true;
-
-            ScrollLineIntoView(CursorPosition.LineNumber);
-            lineNumberRenderer.NeedsUpdateLineNumbers();
-            canvasHelper.UpdateAll();
-        }
+        scrollManager.ScrollLineIntoView(cursorManager.LineNumber);
+        lineNumberRenderer.NeedsUpdateLineNumbers();
+        canvasHelper.UpdateAll();
     }
 }

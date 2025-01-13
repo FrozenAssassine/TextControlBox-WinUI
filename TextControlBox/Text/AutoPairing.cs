@@ -6,10 +6,10 @@ namespace TextControlBoxNS.Text
     {
         public static (string text, int length) AutoPair(TextControlBox textbox, string inputtext)
         {
-            if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.CodeLanguage == null || textbox.CodeLanguage.AutoPairingPair == null)
+            if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.HighlightLanguage == null || textbox.HighlightLanguage.AutoPairingPair == null)
                 return (inputtext, inputtext.Length);
 
-            var res = textbox.CodeLanguage.AutoPairingPair.Where(x => x.Matches(inputtext));
+            var res = textbox.HighlightLanguage.AutoPairingPair.Where(x => x.Matches(inputtext));
             if (res.Count() == 0)
                 return (inputtext, inputtext.Length);
 
@@ -20,10 +20,10 @@ namespace TextControlBoxNS.Text
 
         public static string AutoPairSelection(TextControlBox textbox, string inputtext)
         {
-            if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.CodeLanguage == null || textbox.CodeLanguage.AutoPairingPair == null)
+            if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.HighlightLanguage == null || textbox.HighlightLanguage.AutoPairingPair == null)
                 return inputtext;
 
-            var res = textbox.CodeLanguage.AutoPairingPair.Where(x => x.Value.Equals(inputtext));
+            var res = textbox.HighlightLanguage.AutoPairingPair.Where(x => x.Value.Equals(inputtext));
             if (res.Count() == 0)
                 return inputtext;
 

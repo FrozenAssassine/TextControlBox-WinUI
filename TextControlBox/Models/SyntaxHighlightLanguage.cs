@@ -3,7 +3,7 @@
     /// <summary>
     /// Represents a code language configuration used for syntax highlighting and auto-pairing in the text content.
     /// </summary>
-    public class CodeLanguage
+    public class SyntaxHighlightLanguage
     {
         /// <summary>
         /// Gets or sets the name of the code language.
