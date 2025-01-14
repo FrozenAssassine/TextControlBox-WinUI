@@ -1,10 +1,12 @@
 ﻿using Collections.Pooled;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Xml.Schema;
 using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Helper;
@@ -44,9 +46,49 @@ internal class TextManager
         line = line >= totalLines.Count ? totalLines.Count - 1 : line > 0 ? line : 0;
         return totalLines[line];
     }
+
     public string GetLinesAsString()
     {
-        return string.Join(NewLineCharacter, totalLines);
+        //not directly faster than string.join, but 3 times more memory efficient:
+        if (totalLines.Count == 0)
+            return string.Empty;
+
+        var builder = new System.Text.StringBuilder();
+
+        var span = totalLines.Span;
+
+        for (int i = 0; i < span.Length; i++)
+        {
+            builder.Append(span[i].AsSpan());
+            builder.Append(NewLineCharacter.AsSpan());
+        }
+
+        if (builder.Length > 0)
+            builder.Length -= NewLineCharacter.Length;
+
+        return builder.ToString();
+    }
+    public string GetLinesAsString(int start, int count)
+    {
+        if (start < 0 || count < 0 || start >= totalLines.Count)
+            return string.Empty;
+
+        int end = Math.Min(totalLines.Count, start + count);
+
+        var builder = new System.Text.StringBuilder();
+
+        var span = totalLines.Span.Slice(start, end - start);
+
+        foreach (var line in span)
+        {
+            builder.Append(line.AsSpan());
+            builder.Append(NewLineCharacter.AsSpan());
+        }
+
+        if (builder.Length > 0)
+            builder.Length -= NewLineCharacter.Length;
+
+        return builder.ToString();
     }
 
     public void SetLineText(int line, string text)
@@ -56,9 +98,12 @@ internal class TextManager
 
         line = Math.Clamp(line, 0, totalLines.Count - 1);
 
-        totalLines[line] = text;
+        totalLines.Span[line] = text;
     }
-
+    public void String_AddToEnd(int line, string add)
+    {
+        totalLines.Span[line] += add;
+    }
     public void DeleteAt(int index)
     {
         if (index >= totalLines.Count)
@@ -82,7 +127,6 @@ internal class TextManager
         else
             totalLines.Insert(index, lineText);
     }
-
 
     public void ClearText(bool addNewLine = false)
     {
@@ -110,47 +154,36 @@ internal class TextManager
 
     public IEnumerable<string> GetLines(int start, int count)
     {
-        //use different algorithm for small amount of lines:
-        if (start + count < 400)
+        if (start < 0 || count < 0 || start >= totalLines.Count)
+            yield break;
+
+        int end = Math.Min(totalLines.Count, start + count);
+        for (int i = start; i < end; i++)
         {
-            return GetLines_Small(start, count);
-        }
-
-        return totalLines.Skip(start).Take(count);
-    }
-
-    private IEnumerable<string> GetLines_Small(int start, int count)
-    {
-        var res = ListHelper.CheckValues(totalLines, start, count);
-
-        for (int i = 0; i < res.Count; i++)
-        {
-            yield return totalLines[i + res.Index];
+            yield return totalLines[i];
         }
     }
+
     public void AddLine(string content = "")
     {
         totalLines.Add(content);
     }
-    public void SwapLines(int originalindex, int newindex)
+    public void SwapLines(int originalIndex, int newIndex)
     {
-        string oldLine = totalLines.GetLineText(originalindex);
-        totalLines.SetLineText(originalindex, totalLines.GetLineText(newindex));
-        totalLines.SetLineText(newindex, oldLine);
+        if (originalIndex < 0 || originalIndex >= totalLines.Count ||
+            newIndex < 0 || newIndex >= totalLines.Count)
+            return;
+
+        (totalLines[originalIndex], totalLines[newIndex]) = (totalLines[newIndex], totalLines[originalIndex]);
     }
 
     public int CountCharacters()
     {
         int count = 0;
-        for (int i = 0; i < totalLines.Count; i++)
+        foreach (var line in totalLines)
         {
-            count += totalLines[i].Length + 1;
+            count += line.AsSpan().Length + 1;
         }
-        return count - 1;
-    }
-
-    public string GetString()
-    {
-        return totalLines.GetString(NewLineCharacter);
+        return count > 0 ? count - 1 : 0;
     }
 }

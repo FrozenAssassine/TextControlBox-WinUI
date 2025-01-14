@@ -886,10 +886,10 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public string GetLinesText(int startLine, int length)
     {
-        if (startLine + length >= textManager.LinesCount)
-            return textManager.GetString();
+        //if (startLine + length >= textManager.LinesCount)
+          //  return textManager.GetLinesAsString();
 
-        return textManager.GetLines(startLine, length).GetString(textManager.NewLineCharacter);
+        return textManager.GetLinesAsString(startLine, length);
     }
 
     public bool SetLineText(int line, string text)

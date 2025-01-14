@@ -29,10 +29,6 @@ internal class CurrentLineManager
     {
         textManager.totalLines[CurrentLineIndex < textManager.LinesCount ? CurrentLineIndex : textManager.LinesCount - 1] = text;
     }
-    public int CurrentLineLength()
-    {
-        return GetCurrentLineText().Length;
-    }
     public void UpdateCurrentLine(int currentLine)
     {
         CurrentLineIndex = currentLine;

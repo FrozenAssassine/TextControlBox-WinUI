@@ -172,7 +172,7 @@ namespace TextControlBoxNS.Core.Text
         {
             try
             {
-                return textManager.totalLines.GetString(textManager.NewLineCharacter);
+                return textManager.GetLinesAsString();
             }
             catch (OutOfMemoryException)
             {
@@ -358,7 +358,7 @@ namespace TextControlBoxNS.Core.Text
                 {
                     var characterPos = cursorManager.GetCurPosInLine();
 
-                    if (characterPos > currentLineManager.CurrentLineLength() - 1)
+                    if (characterPos > currentLineManager.Length - 1)
                         currentLineManager.AddToEnd(text);
                     else
                         currentLineManager.AddText(text, characterPos);
@@ -366,7 +366,7 @@ namespace TextControlBoxNS.Core.Text
 
                 }, cursorManager.LineNumber, 1, 1);
 
-                if (currentLineManager.GetCurrentLineText().Length > longestLineManager.longestLineLength)
+                if (currentLineManager.Length > longestLineManager.longestLineLength)
                 {
                     longestLineManager.longestIndex = cursorManager.LineNumber;
                 }
@@ -444,7 +444,7 @@ namespace TextControlBoxNS.Core.Text
 
                         //line still has text:
                         if (curLine.Length > 0)
-                            textManager.totalLines.String_AddToEnd(cursorManager.LineNumber - 1, curLine);
+                            textManager.String_AddToEnd(cursorManager.LineNumber - 1, curLine);
 
                         textManager.DeleteAt(cursorManager.LineNumber);
 
@@ -539,7 +539,7 @@ namespace TextControlBoxNS.Core.Text
                 undoRedo.RecordUndoAction(() =>
                 {
                     textManager.ClearText(true);
-                    textManager.totalLines.InsertNewLine(-1);
+                    textManager.InsertOrAdd(-1, "");
                     cursorManager.SetCursorPosition(new CursorPosition(0, 1));
                 }, 0, textManager.LinesCount, 2);
                 selectionManager.ForceClearSelection(canvasUpdateHelper);

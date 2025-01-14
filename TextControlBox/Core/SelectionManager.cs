@@ -166,7 +166,7 @@ namespace TextControlBoxNS.Core
         public CursorPosition Replace(TextSelection selection, string text)
         {
             //Just delete the text if the string is emty
-            if (text == "")
+            if (text.Length == 0)
                 return this.Remove(selection);
 
             selection = OrderTextSelection(selection);
@@ -428,7 +428,7 @@ namespace TextControlBoxNS.Core
 
                 //Other lines
                 if (endLine - startLine > 1)
-                    stringBuilder.Append(textManager.GetLines(startLine + 1, endLine - startLine - 1).GetString(textManager.NewLineCharacter) + textManager.NewLineCharacter);
+                    stringBuilder.Append(textManager.GetLinesAsString(startLine + 1, endLine - startLine - 1) + textManager.NewLineCharacter);
 
                 //Endline
                 string currentLine = textManager.GetLineText(endLine);
