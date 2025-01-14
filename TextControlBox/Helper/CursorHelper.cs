@@ -2,9 +2,10 @@
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
 using TextControlBoxNS.Extensions;
-using TextControlBoxNS.Renderer;
-using TextControlBoxNS.Text;
+using TextControlBoxNS.Core.Renderer;
+using TextControlBoxNS.Core;
 using Windows.Foundation;
+using TextControlBoxNS.Core.Text;
 
 namespace TextControlBoxNS.Helper
 {

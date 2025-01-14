@@ -22,7 +22,7 @@
     <PackageIcon>Icon1.png</PackageIcon>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Text\CoreTextControlBox.xaml" />
+    <None Remove="Core\CoreTextControlBox.xaml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\images\Icon1.png">

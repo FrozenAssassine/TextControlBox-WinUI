@@ -1,6 +1,8 @@
 ﻿using System;
 using TextControlBoxNS.Extensions;
-using TextControlBoxNS.Text;
+using TextControlBoxNS.Core;
+using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Models;
 
 namespace TextControlBoxNS.Helper
 {

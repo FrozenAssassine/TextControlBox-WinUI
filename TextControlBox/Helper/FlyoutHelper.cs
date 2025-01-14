@@ -1,6 +1,6 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 using System;
-using TextControlBoxNS.Text;
+using TextControlBoxNS.Core;
 
 namespace TextControlBoxNS.Helper
 {

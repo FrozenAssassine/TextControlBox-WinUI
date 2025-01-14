@@ -4,9 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TextControlBoxNS.Renderer;
-using TextControlBoxNS.Text;
+using TextControlBoxNS.Core.Renderer;
+using TextControlBoxNS.Core;
 using Windows.Foundation;
+using TextControlBoxNS.Models;
 
 namespace TextControlBoxNS.Helper
 {

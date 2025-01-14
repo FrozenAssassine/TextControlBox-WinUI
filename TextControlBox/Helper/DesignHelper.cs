@@ -5,8 +5,8 @@ using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using TextControlBoxNS.Renderer;
-using TextControlBoxNS.Text;
+using TextControlBoxNS.Core.Renderer;
+using TextControlBoxNS.Core;
 
 namespace TextControlBoxNS.Helper;
 

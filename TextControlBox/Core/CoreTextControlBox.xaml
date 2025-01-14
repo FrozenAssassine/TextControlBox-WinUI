@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="TextControlBoxNS.Core.CoreTextControlBox"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:TextControlBoxNS.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:xaml="using:Microsoft.Graphics.Canvas.UI.Xaml" 
+    mc:Ignorable="d"
+    TabIndex="0" IsTabStop="True" AllowFocusOnInteraction="false"
+    PointerWheelChanged="Canvas_Selection_PointerWheelChanged"
+    PointerEntered="UserControl_PointerEntered" 
+    PointerExited="UserControl_PointerExited"
+    Tapped="UserControl_Tapped"
+    AllowDrop="True"
+    Drop="UserControl_Drop"
+    DragOver="UserControl_DragOver"
+    GotFocus="UserControl_GotFocus"
+    LostFocus="UserControl_LostFocus"
+    LosingFocus="UserControl_LosingFocus"
+    >
+    <Grid x:Name="MainGrid">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <xaml:CanvasControl
+                    Grid.Column="0"
+                    x:Name="Canvas_LineNumber"
+                    Draw="Canvas_LineNumber_Draw"
+                    HorizontalAlignment="Left"
+                    Width="100"
+                    PointerEntered="Canvas_LineNumber_PointerEntered"
+                    PointerExited="Canvas_LineNumber_PointerExited"
+                    PointerPressed="Canvas_LineNumber_PointerPressed"
+                    PointerReleased="Canvas_Selection_PointerReleased"
+                    PointerWheelChanged="Canvas_Selection_PointerWheelChanged"
+                    VerticalAlignment="Stretch"/>
+
+        <Grid Grid.Column="1" x:Name="ScrollGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+            <xaml:CanvasControl Grid.Column="0" x:Name="Canvas_Cursor"
+                        Draw="Canvas_Cursor_Draw"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"/>
+
+            <xaml:CanvasControl Grid.Column="0" x:Name="Canvas_Text"
+                        Draw="Canvas_Text_Draw"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"/>
+
+            <xaml:CanvasControl Grid.Column="0" x:Name="Canvas_Selection"
+                        Draw="Canvas_Selection_Draw"
+                        PointerPressed="Canvas_Selection_PointerPressed"
+                        PointerMoved="Canvas_Selection_PointerMoved"
+                        PointerReleased="Canvas_Selection_PointerReleased"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"/>
+
+            <ScrollBar Grid.Column="2" PointerEntered="Scrollbar_PointerEntered" PointerExited="Scrollbar_PointerExited" SmallChange="10" Maximum="0" LargeChange="100" Minimum="0" x:Name="VerticalScrollbar" Value="0" IndicatorMode="MouseIndicator" Background="Transparent" HorizontalAlignment="Right" Orientation="Vertical" VerticalAlignment="Stretch"/>
+            <ScrollBar PointerEntered="Scrollbar_PointerEntered" PointerExited="Scrollbar_PointerExited" SmallChange="10" LargeChange="100" Minimum="0" Maximum="0" x:Name="HorizontalScrollbar" Value="0" IndicatorMode="MouseIndicator" Background="Transparent" HorizontalAlignment="Stretch" Orientation="Horizontal" VerticalAlignment="Bottom"/>
+        </Grid>
+        <controls:InputHandlerControl x:Name="inputHandler" GotFocus="UserControl_GotFocus" LostFocus="UserControl_LostFocus" PreviewKeyDown="InputHandler_KeyDown" TextEntered="InputHandler_TextEntered" Grid.Column="1" Opacity="0" Width="0" Height="0"/>
+    </Grid>
+</UserControl>
