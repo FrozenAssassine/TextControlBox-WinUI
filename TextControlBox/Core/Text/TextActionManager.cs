@@ -89,7 +89,7 @@ namespace TextControlBoxNS.Core.Text
                 //only set cursorposition
                 if (sel.StartPosition != null && sel.EndPosition == null)
                 {
-                    cursorManager.SetCursorPosition(sel.StartPosition);
+                    cursorManager.currentCursorPosition.SetChangeValues(sel.StartPosition);
                     canvasUpdateHelper.UpdateAll();
                     return;
                 }
@@ -119,7 +119,7 @@ namespace TextControlBoxNS.Core.Text
                 //only set cursorposition
                 if (sel.StartPosition != null && sel.EndPosition == null)
                 {
-                    cursorManager.SetCursorPosition(new CursorPosition(sel.StartPosition));
+                    cursorManager.currentCursorPosition.SetChangeValues(sel.StartPosition);
                     canvasUpdateHelper.UpdateAll();
                     return;
                 }

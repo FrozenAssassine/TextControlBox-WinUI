@@ -43,6 +43,11 @@ public class CursorPosition
         if (CharacterPosition < 0)
             CharacterPosition = 0;
     }
+    internal void SetChangeValues(CursorPosition curPos)
+    {
+        this.LineNumber = curPos.LineNumber;
+        this.CharacterPosition = curPos.CharacterPosition;
+    }
     internal static CursorPosition ChangeLineNumber(CursorPosition currentCursorPosition, int lineNumber)
     {
         return new CursorPosition(currentCursorPosition.CharacterPosition, lineNumber);

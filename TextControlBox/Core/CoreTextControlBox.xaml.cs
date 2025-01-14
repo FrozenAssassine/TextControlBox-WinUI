@@ -283,7 +283,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
-                        cursorManager.MoveLeft(cursorManager.currentCursorPosition);
+                        cursorManager.MoveLeft();
                         selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition);
                     }
                     else
@@ -292,7 +292,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                         if (selectionRenderer.HasSelection && selectionManager.currentTextSelection != null)
                             cursorManager.SetCursorPositionCopyValues(selectionManager.GetMin(selectionManager.currentTextSelection));
                         else
-                            cursorManager.MoveLeft(CursorPosition);
+                            cursorManager.MoveLeft();
 
                         selectionManager.ClearSelectionIfNeeded(this);
                     }
@@ -306,7 +306,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
-                        cursorManager.MoveRight(cursorManager.currentCursorPosition);
+                        cursorManager.MoveRight();
                         selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition);
                     }
                     else
@@ -315,7 +315,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                         if (selectionRenderer.HasSelection && selectionManager.currentTextSelection != null)
                             cursorManager.SetCursorPositionCopyValues(selectionManager.GetMax(selectionManager.currentTextSelection));
                         else
-                            cursorManager.MoveRight(cursorManager.currentCursorPosition);
+                            cursorManager.MoveRight();
 
                         selectionManager.ClearSelectionIfNeeded(this);
                     }
@@ -329,13 +329,13 @@ internal sealed partial class CoreTextControlBox : UserControl
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
-                        cursorManager.MoveDown(cursorManager.currentCursorPosition);
+                        cursorManager.MoveDown();
                         selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition);
                     }
                     else
                     {
                         selectionManager.ClearSelectionIfNeeded(this);
-                        cursorManager.MoveDown(cursorManager.currentCursorPosition);
+                        cursorManager.MoveDown();
                     }
 
                     scrollManager.UpdateScrollToShowCursor(false);
@@ -347,13 +347,13 @@ internal sealed partial class CoreTextControlBox : UserControl
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
-                        cursorManager.MoveUp(cursorManager.currentCursorPosition);
+                        cursorManager.MoveUp();
                         selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition);
                     }
                     else
                     {
                         selectionManager.ClearSelectionIfNeeded(this);
-                        cursorManager.MoveUp(cursorManager.currentCursorPosition);
+                        cursorManager.MoveUp();
                     }
 
                     scrollManager.UpdateScrollToShowCursor(false);

@@ -144,49 +144,49 @@ internal class CursorManager
     }
 
     //Move cursor:
-    public void MoveLeft(CursorPosition currentCursorPosition)
+    public void MoveLeft()
     {
-        if (currentCursorPosition.LineNumber < 0)
+        if (LineNumber < 0)
             return;
 
-        int currentLineLength = textManager.GetLineLength(currentCursorPosition.LineNumber);
-        if (currentCursorPosition.CharacterPosition == 0 && currentCursorPosition.LineNumber > 0)
+        int currentLineLength = textManager.GetLineLength(LineNumber);
+        if (CharacterPosition == 0 && LineNumber > 0)
         {
-            currentCursorPosition.CharacterPosition = textManager.GetLineLength(currentCursorPosition.LineNumber - 1);
-            currentCursorPosition.LineNumber -= 1;
+            CharacterPosition = textManager.GetLineLength(LineNumber - 1);
+            LineNumber -= 1;
         }
-        else if (currentCursorPosition.CharacterPosition > currentLineLength)
-            currentCursorPosition.CharacterPosition = currentLineLength - 1;
-        else if (currentCursorPosition.CharacterPosition > 0)
-            currentCursorPosition.CharacterPosition -= CalculateStepsToMoveLeft(currentCursorPosition.CharacterPosition);
+        else if (CharacterPosition > currentLineLength)
+            CharacterPosition = currentLineLength - 1;
+        else if (CharacterPosition > 0)
+            CharacterPosition -= CalculateStepsToMoveLeft(CharacterPosition);
     }
-    public void MoveRight(CursorPosition currentCursorPosition)
+    public void MoveRight()
     {
-        int lineLength = textManager.GetLineLength(currentCursorPosition.LineNumber);
+        int lineLength = textManager.GetLineLength(LineNumber);
 
-        if (currentCursorPosition.LineNumber > textManager.LinesCount- 1)
+        if (LineNumber > textManager.LinesCount- 1)
             return;
 
-        if (currentCursorPosition.CharacterPosition == lineLength && currentCursorPosition.LineNumber < textManager.LinesCount - 1)
+        if (CharacterPosition == lineLength && LineNumber < textManager.LinesCount - 1)
         {
-            currentCursorPosition.CharacterPosition = 0;
-            currentCursorPosition.LineNumber += 1;
+            CharacterPosition = 0;
+            LineNumber += 1;
         }
-        else if (currentCursorPosition.CharacterPosition < lineLength)
-            currentCursorPosition.CharacterPosition += CalculateStepsToMoveRight(currentCursorPosition.CharacterPosition);
+        else if (CharacterPosition < lineLength)
+            CharacterPosition += CalculateStepsToMoveRight(CharacterPosition);
 
-        if (currentCursorPosition.CharacterPosition > lineLength)
-            currentCursorPosition.CharacterPosition = lineLength;
+        if (CharacterPosition > lineLength)
+            CharacterPosition = lineLength;
     }
-    public void MoveDown(CursorPosition currentCursorPosition)
+    public void MoveDown()
     {
-        if (currentCursorPosition.LineNumber < textManager.LinesCount - 1)
-            currentCursorPosition.LineNumber += 1;
+        if (LineNumber < textManager.LinesCount - 1)
+            LineNumber += 1;
     }
-    public void MoveUp(CursorPosition currentCursorPosition)
+    public void MoveUp()
     {
-        if (currentCursorPosition.LineNumber > 0)
-            currentCursorPosition.LineNumber -= 1;
+        if (LineNumber > 0)
+            LineNumber -= 1;
     }
     public void MoveToLineEnd(CursorPosition cursorPosition)
     {
