@@ -2,9 +2,7 @@
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System.Collections.Generic;
 using TextControlBoxNS.Core.Text;
-using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Helper;
 using Windows.Foundation;
 
@@ -37,7 +35,6 @@ internal class TextRenderer
     private SearchManager searchManager;
     private CoreTextControlBox coreTextbox;
     private CanvasUpdateManager canvasUpdateManager;
-
     public void Init(
         CursorManager cursorManager,
         DesignHelper designHelper,
@@ -48,7 +45,8 @@ internal class TextRenderer
         LongestLineManager longestLineManager,
         CoreTextControlBox textbox,
         SearchManager searchManager,
-        CanvasUpdateManager canvasUpdateManager)
+        CanvasUpdateManager canvasUpdateManager,
+        ZoomManager zoomManager)
     {
         this.cursorManager = cursorManager;
         this.textManager = textManager;
@@ -97,16 +95,14 @@ internal class TextRenderer
         scrollManager.verticalScrollBar.ViewportSize = canvasText.ActualHeight;
 
         //Calculate number of lines that needs to be rendered
-        NumberOfRenderedLines = (int)(canvasText.ActualHeight / SingleLineHeight);
+        int linesToRenderCount = (int)(canvasText.ActualHeight / SingleLineHeight);
+
         NumberOfStartLine = (int)((scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity) / SingleLineHeight);
 
-        //Get all the lines, that need to be rendered, from the list
-        NumberOfRenderedLines = NumberOfRenderedLines + NumberOfStartLine > textManager.LinesCount ? textManager.LinesCount : NumberOfRenderedLines;
-
+        NumberOfRenderedLines = linesToRenderCount + NumberOfStartLine > textManager.LinesCount ? textManager.LinesCount : linesToRenderCount;
         RenderedText = textManager.GetLinesAsString(NumberOfStartLine, NumberOfRenderedLines);
 
         lineNumberRenderer.CheckGenerateLineNumberText();
-
         longestLineManager.CheckRecalculateLongestLine();
 
         string longestLineText = textManager.GetLineText(longestLineManager.longestIndex);

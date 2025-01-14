@@ -12,10 +12,8 @@ internal class ZoomManager
 
     private TextManager textManager;
     private TextRenderer textRenderer;
-    private ScrollManager scrollManager;
     private CanvasUpdateManager canvasHelper;
     private LineNumberRenderer lineNumberRenderer;
-    private CursorManager cursorManager;
     private EventsManager eventsManager;
 
     public void Init(
@@ -24,15 +22,12 @@ internal class ZoomManager
         ScrollManager scrollManager,
         CanvasUpdateManager canvasHelper,
         LineNumberRenderer lineNumberRenderer,
-        CursorManager cursorManager,
         EventsManager eventsManager)
     {
         this.textManager = textManager;
         this.textRenderer = textRenderer;
-        this.scrollManager = scrollManager;
         this.canvasHelper = canvasHelper;
         this.lineNumberRenderer = lineNumberRenderer;
-        this.cursorManager = cursorManager;
         this.eventsManager = eventsManager;
     }
 
@@ -49,9 +44,7 @@ internal class ZoomManager
         }
 
         textRenderer.NeedsTextFormatUpdate = true;
-
-        scrollManager.ScrollLineIntoView(cursorManager.LineNumber);
         lineNumberRenderer.NeedsUpdateLineNumbers();
-        canvasHelper.UpdateAll();
+        canvasHelper.UpdateText();
     }
 }

@@ -114,7 +114,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         flyoutHelper.Init(this);
         canvasUpdateManager.Init(this);
         textActionManager.Init(this, textRenderer, undoRedo, currentLineManager, longestLineManager, canvasUpdateManager, textManager, selectionRenderer, cursorManager, scrollManager, eventsManager, stringManager, selectionManager);
-        textRenderer.Init(cursorManager, designHelper, textLayoutManager, textManager, scrollManager, lineNumberRenderer, longestLineManager, this, searchManager, canvasUpdateManager);
+        textRenderer.Init(cursorManager, designHelper, textLayoutManager, textManager, scrollManager, lineNumberRenderer, longestLineManager, this, searchManager, canvasUpdateManager, zoomManager);
         cursorRenderer.Init(cursorManager, currentLineManager, textRenderer, focusManager, textManager, scrollManager, zoomManager, designHelper, lineHighlighterRenderer, eventsManager);
         scrollManager.Init(this, canvasUpdateManager, textManager, textRenderer, cursorManager, VerticalScrollbar, HorizontalScrollbar);
         currentLineManager.Init(cursorManager, textManager);
@@ -124,7 +124,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         searchManager.Init(textManager);
         eventsManager.Init(searchManager, selectionManager, cursorManager, selectionRenderer);
         lineNumberRenderer.Init(textManager, textLayoutManager, textRenderer, designHelper, lineNumberManager);
-        zoomManager.Init(textManager, textRenderer, scrollManager, canvasUpdateManager, lineNumberRenderer, cursorManager, eventsManager);
+        zoomManager.Init(textManager, textRenderer, scrollManager, canvasUpdateManager, lineNumberRenderer, eventsManager);
         selectionDragDropManager.Init(this, cursorManager, selectionManager, textManager, textActionManager, canvasUpdateManager, selectionRenderer, textRenderer);
         focusManager.Init(this, canvasUpdateManager, inputHandler, eventsManager);
         pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, selectionDragDropManager, currentLineManager);
@@ -384,14 +384,14 @@ internal sealed partial class CoreTextControlBox : UserControl
                         cursorManager.MoveToLineEnd(CursorPosition);
                         selectionRenderer.SelectionEndPosition = CursorPosition;
                         canvasUpdateManager.UpdateSelection();
-                        canvasUpdateManager.UpdateCursor();
                     }
                     else
                     {
                         cursorManager.MoveToLineEnd(CursorPosition);
-                        canvasUpdateManager.UpdateCursor();
                         canvasUpdateManager.UpdateText();
                     }
+                    canvasUpdateManager.UpdateCursor();
+
                     break;
                 }
             case VirtualKey.Home:
@@ -406,14 +406,13 @@ internal sealed partial class CoreTextControlBox : UserControl
                         selectionRenderer.SelectionEndPosition = CursorPosition;
 
                         canvasUpdateManager.UpdateSelection();
-                        canvasUpdateManager.UpdateCursor();
                     }
                     else
                     {
                         cursorManager.MoveToLineStart(CursorPosition);
-                        canvasUpdateManager.UpdateCursor();
                         canvasUpdateManager.UpdateText();
                     }
+                    canvasUpdateManager.UpdateCursor();
                     break;
                 }
         }
@@ -840,7 +839,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public void ScrollLineToCenter(int line)
     {
-        scrollManager.ScrollLineToCenter(line);
+        scrollManager.ScrollLineIntoViewIfOutside(line);
     }
 
     public void ScrollOneLineUp()

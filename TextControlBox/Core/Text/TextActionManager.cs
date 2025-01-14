@@ -398,7 +398,7 @@ namespace TextControlBoxNS.Core.Text
                 }, selectionManager.currentTextSelection, splittedTextLength);
             }
 
-            scrollManager.ScrollLineToCenter(cursorManager.LineNumber);
+            scrollManager.ScrollLineIntoViewIfOutside(cursorManager.LineNumber);
             canvasUpdateHelper.UpdateText();
             canvasUpdateHelper.UpdateCursor();
             eventsManager.CallTextChanged();

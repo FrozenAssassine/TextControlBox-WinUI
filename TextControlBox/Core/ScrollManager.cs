@@ -6,7 +6,6 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Text;
-using System.Diagnostics;
 using System;
 
 namespace TextControlBoxNS.Core;
@@ -73,13 +72,11 @@ internal class ScrollManager
         }
     }
 
-
-    public void ScrollLineToCenter(int line)
+    public void ScrollLineIntoViewIfOutside(int line)
     {
         if (textRenderer.OutOfRenderedArea(line))
             ScrollLineIntoView(line);
     }
-
 
     public void ScrollOneLineUp()
     {
