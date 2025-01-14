@@ -97,7 +97,7 @@ namespace TextControlBoxNS.Core.Renderer
                     {
                         if (i < numberOfRenderedLines)
                         {
-                            lenghtToLine += renderedLines.ElementAt(i).Length + 1;
+                            lenghtToLine += textManager.GetLineLength(textRenderer.NumberOfStartLine + i) + 2;
                         }
                     }
 
@@ -110,8 +110,9 @@ namespace TextControlBoxNS.Core.Renderer
                     {
                         if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
                             break;
-                        selStartIndex += renderedLines.ElementAt(i).Length + 1;
+                        selStartIndex += textManager.GetLineLength(textRenderer.NumberOfStartLine + i) + 2;
                     }
+
                     selStartIndex += characterPosStart;
 
                     for (int i = 0; i < SelectionEndPosition.LineNumber - unrenderedLinesToRenderStart; i++)
@@ -119,8 +120,9 @@ namespace TextControlBoxNS.Core.Renderer
                         if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
                             break;
 
-                        selEndIndex += renderedLines.ElementAt(i).Length + 1;
+                        selEndIndex += textManager.GetLineLength(textRenderer.NumberOfStartLine + i) + 2;
                     }
+
                     selEndIndex += characterPosEnd;
                 }
 

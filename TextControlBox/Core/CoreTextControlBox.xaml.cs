@@ -1152,21 +1152,6 @@ internal sealed partial class CoreTextControlBox : UserControl
     public IEnumerable<string> Lines => textManager.totalLines;
     public bool DoAutoPairing { get; set; } = true;
 
-    public delegate void TextChangedEvent();
-    public event TextChangedEvent TextChanged;
-
-    public delegate void SelectionChangedEvent(SelectionChangedEventHandler args);
-    public event SelectionChangedEvent SelectionChanged;
-
-    public delegate void ZoomChangedEvent(int zoomFactor);
-    public event ZoomChangedEvent ZoomChanged;
-
-    public delegate void GotFocusEvent();
-    public new event GotFocusEvent GotFocus;
-
-    public delegate void LostFocusEvent();
-    public new event LostFocusEvent LostFocus;
-
 
     public static Dictionary<CodeLanguageId, SyntaxHighlightLanguage> CodeLanguages => new Dictionary<CodeLanguageId, SyntaxHighlightLanguage>()
         {

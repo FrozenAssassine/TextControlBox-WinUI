@@ -1,16 +1,9 @@
 ﻿using Collections.Pooled;
-using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Xml.Schema;
-using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Helper;
-using TextControlBoxNS.Models.Enums;
 
 namespace TextControlBoxNS.Core.Text;
 
