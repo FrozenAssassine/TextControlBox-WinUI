@@ -91,6 +91,11 @@ public enum CodeLanguageId
     QSharp,
 
     /// <summary>
+    /// Identifier for SQL language.
+    /// </summary>
+    SQL,
+
+    /// <summary>
     /// Identifier for TOML code language.
     /// </summary>
     TOML,

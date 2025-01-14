@@ -2,7 +2,9 @@
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
 using Windows.Foundation;
@@ -26,14 +28,16 @@ namespace TextControlBoxNS.Core.Renderer
         private ScrollManager scrollManager;
         private ZoomManager zoomManager;
         private DesignHelper designHelper;
-
+        private TextManager textManager;
         public void Init(
             SelectionManager selectionManager,
             TextRenderer textRenderer,
             EventsManager eventsManager,
             ScrollManager scrollManager,
             ZoomManager zoomManager,
-            DesignHelper designHelper)
+            DesignHelper designHelper,
+            TextManager textManager
+            )
         {
             this.selectionManager = selectionManager;
             this.textRenderer = textRenderer;
@@ -41,12 +45,12 @@ namespace TextControlBoxNS.Core.Renderer
             this.scrollManager = scrollManager;
             this.zoomManager = zoomManager;
             this.designHelper = designHelper;
+            this.textManager = textManager;
         }
 
         //Draw the actual selection and return the cursorposition. Return -1 if no selection was drawn
         public TextSelection DrawSelection(
             CanvasTextLayout textLayout,
-            IEnumerable<string> renderedLines,
             CanvasDrawEventArgs args,
             float marginLeft,
             float marginTop,
@@ -203,7 +207,6 @@ namespace TextControlBoxNS.Core.Renderer
             {
                 var selection = DrawSelection(
                     textRenderer.DrawnTextLayout, 
-                    textRenderer.RenderedLines, 
                     args, 
                     (float)-scrollManager.HorizontalScroll, 
                     textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,

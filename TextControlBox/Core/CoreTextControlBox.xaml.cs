@@ -110,7 +110,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         cursorManager.Init(textManager, currentLineManager);
         selectionManager.Init(textManager, cursorManager, selectionRenderer);
         undoRedo.Init(textManager, selectionManager);
-        selectionRenderer.Init(selectionManager, textRenderer, eventsManager, scrollManager, zoomManager, designHelper);
+        selectionRenderer.Init(selectionManager, textRenderer, eventsManager, scrollManager, zoomManager, designHelper, textManager);
         flyoutHelper.Init(this);
         canvasUpdateManager.Init(this);
         textActionManager.Init(this, textRenderer, undoRedo, currentLineManager, longestLineManager, canvasUpdateManager, textManager, selectionRenderer, cursorManager, scrollManager, eventsManager, stringManager, selectionManager);
@@ -1006,7 +1006,6 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         //Dispose and null larger objects
         textManager.totalLines.Dispose();
-        textRenderer.RenderedLines = null;
         lineNumberRenderer.LineNumberTextToRender = lineNumberRenderer.OldLineNumberTextToRender = null;
         undoRedo.NullAll();
     }
@@ -1190,6 +1189,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             { CodeLanguageId.QSharp, new QSharp() },
             { CodeLanguageId.TOML, new TOML() },
             { CodeLanguageId.XML, new XML() },
+            { CodeLanguageId.SQL, new SQL() },
             { CodeLanguageId.None, null },
         };
 

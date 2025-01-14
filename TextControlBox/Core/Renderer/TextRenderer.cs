@@ -23,7 +23,6 @@ internal class TextRenderer
 
     public int NumberOfStartLine = 0;
     public int NumberOfRenderedLines = 0;
-    public IEnumerable<string> RenderedLines;
     public string RenderedText = "";
     public string OldRenderedText = null;
 
@@ -104,14 +103,13 @@ internal class TextRenderer
         //Get all the lines, that need to be rendered, from the list
         NumberOfRenderedLines = NumberOfRenderedLines + NumberOfStartLine > textManager.LinesCount ? textManager.LinesCount : NumberOfRenderedLines;
 
-        RenderedLines = textManager.GetLines(NumberOfStartLine, NumberOfRenderedLines);
-        RenderedText = RenderedLines.GetString("\n");
+        RenderedText = textManager.GetLinesAsString(NumberOfStartLine, NumberOfRenderedLines);
 
         lineNumberRenderer.CheckGenerateLineNumberText();
 
         longestLineManager.CheckRecalculateLongestLine();
 
-        string longestLineText = textManager.totalLines.GetLineText(longestLineManager.longestIndex);
+        string longestLineText = textManager.GetLineText(longestLineManager.longestIndex);
         longestLineManager.longestLineLength = longestLineText.Length;
         Size lineLength = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), longestLineText, TextFormat);
 
@@ -151,6 +149,4 @@ internal class TextRenderer
             canvasUpdateManager.UpdateLineNumbers();
         }
     }
-
-
 }

@@ -481,7 +481,7 @@ namespace TextControlBoxNS.Core.Text
                 //delete lines if cursor is at position 0 and the line is emty OR the cursor is at the end of a line and the line has content
                 if (characterPos == currentLineManager.Length)
                 {
-                    string lineToAdd = cursorManager.LineNumber + 1 < textManager.LinesCount ? textManager.totalLines.GetLineText(cursorManager.LineNumber + 1) : null;
+                    string lineToAdd = cursorManager.LineNumber + 1 < textManager.LinesCount ? textManager.GetLineText(cursorManager.LineNumber + 1) : null;
                     if (lineToAdd != null)
                     {
                         if (cursorManager.LineNumber == longestLineManager.longestIndex)
@@ -550,11 +550,11 @@ namespace TextControlBoxNS.Core.Text
 
             if (selectionManager.TextSelIsNull) //No selection
             {
-                string startLine = textManager.totalLines.GetLineText(startLinePos.LineNumber);
+                string startLine = textManager.GetLineText(startLinePos.LineNumber);
 
                 undoRedo.RecordUndoAction(() =>
                 {
-                    string[] splittedLine = Utils.SplitAt(textManager.totalLines.GetLineText(startLinePos.LineNumber), startLinePos.CharacterPosition);
+                    string[] splittedLine = Utils.SplitAt(textManager.GetLineText(startLinePos.LineNumber), startLinePos.CharacterPosition);
 
                     textManager.SetLineText(startLinePos.LineNumber, splittedLine[1]);
                     textManager.InsertOrAdd(startLinePos.LineNumber, splittedLine[0]);

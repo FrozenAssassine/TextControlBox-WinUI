@@ -481,4 +481,23 @@
             };
         }
     }
+    internal class SQL : SyntaxHighlightLanguage
+    {
+        public SQL()
+        {
+            this.Name = "SQL";
+            this.Author = "Finn Freitag";
+            this.Filter = new string[1] { ".sql" };
+            this.Description = "Syntax highlightung for SQL";
+            this.Highlights = new SyntaxHighlights[]
+            {
+                new SyntaxHighlights("\\b(ADD|ADD CONSTRAINT|ALL|ALTER|ALTER COLUMN|ALTER TABLE|AND|ANY|AS|ASC|BACKUP DATABASE|BETWEEN|CASE|CHECK|COLUMN|CONSTRAINT|CREATE|CREATE DATABASE|CREATE INDEX|CREATE OR REPLACE VIEW|CREATE TABLE|CREATE PROCEDURE|CREATE UNIQUE INDEX|CREATE VIEW|DATABASE|DEFAULT|DELETE|DESC|DISTINCT|DROP|DROP COLUMN|DROP CONSTRAINT|DROP DATABASE|DROP DEFAULT|DROP INDEX|DROP TABLE|DROP VIEW|EXEC|EXISTS|FOREIGN KEY|FROM|FULL OUTER JOIN|GROUP BY|HAVING|IN|INDEX|INNER JOIN|INSERT INTO|INSERT INTO SELECT|IS NULL|IS NOT NULL|JOIN|LEFT JOIN|LIKE|LIMIT|NOT|NOT NULL|OR|ORDER BY|OUTER JOIN|PRIMARY KEY|PROCEDURE|RIGHT JOIN|ROWNUM|SELECT|SELECT DISTINCT|SELECT INTO|SELCET TOP|SET|TABLE|TOP|TRUNCATE TABLE|UNION|UNION ALL|UNIQUE|UPDATE|USE|VALUES|VIEW|WHERE)\\b","#FF6A00","#FF6A00",true,true),
+                new SyntaxHighlights("\"[^\\n]*?\"","#42C22B","#42C22B"),
+                new SyntaxHighlights("'[^\\n]*?'","#42C22B","#42C22B"),
+                new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#2B3BFF","#2B3BFF"),
+                new SyntaxHighlights("\\b(MIN|MAX|COUNT|SUM|AVG)\\b","#11C9DB","#11C9DB",false,true),
+                new SyntaxHighlights("\\.","#901F9E","#901F9E",true)
+            };
+            }
+    }
 }

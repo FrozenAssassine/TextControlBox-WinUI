@@ -6,20 +6,6 @@ namespace TextControlBoxNS.Extensions;
 
 internal static class ListExtension
 {
-    private static int CurrentLineIndex = 0;
-
-    public static string GetLineText(this PooledList<string> list, int index)
-    {
-        if (list.Count == 0)
-            return string.Empty;
-
-        if (index == -1 && list.Count > 0)
-            return list[^1];
-
-        index = Math.Clamp(index, 0, list.Count - 1);
-        return list.Span[index];
-    }
-
     public static string GetString(this IEnumerable<string> lines, string NewLineCharacter)
     {
         return string.Join(NewLineCharacter, lines);
