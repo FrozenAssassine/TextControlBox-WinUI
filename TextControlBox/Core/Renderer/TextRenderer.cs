@@ -116,7 +116,7 @@ internal class TextRenderer
         Size lineLength = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), longestLineText, TextFormat);
 
         //Measure horizontal Width of longest line and apply to scrollbar
-        scrollManager.horizontalScrollBar.Maximum = (lineLength.Width <= canvasText.ActualWidth ? 0 : lineLength.Width - canvasText.ActualWidth + 50);
+        scrollManager.horizontalScrollBar.Maximum = (lineLength.Width <= canvasText.ActualWidth - 30 ? 0 : lineLength.Width - canvasText.ActualWidth + 30);
         scrollManager.horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
         scrollManager.ScrollIntoViewHorizontal(canvasText);
 

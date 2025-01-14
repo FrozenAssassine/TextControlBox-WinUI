@@ -6,6 +6,8 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Text;
+using System.Diagnostics;
+using System;
 
 namespace TextControlBoxNS.Core;
 
@@ -139,12 +141,26 @@ internal class ScrollManager
 
     public void ScrollIntoViewHorizontal(CanvasControl canvasText)
     {
-        float curPosInLine = CursorHelper.GetCursorPositionInLine(textRenderer.CurrentLineTextLayout, cursorManager.currentCursorPosition, 0);
+        float curPosInLine = CursorHelper.GetCursorPositionInLine(
+            textRenderer.CurrentLineTextLayout,
+            cursorManager.currentCursorPosition,
+            0
+        );
+
         if (curPosInLine == OldHorizontalScrollValue)
             return;
 
-        horizontalScrollBar.Value = curPosInLine - (canvasText.ActualWidth - 10);
+        double visibleStart = horizontalScrollBar.Value;
+        double visibleEnd = visibleStart + canvasText.ActualWidth;
+
+        if (curPosInLine < visibleStart + 20)
+        {
+            horizontalScrollBar.Value = Math.Max(curPosInLine - 20, horizontalScrollBar.Minimum);
+        }
+        else if (curPosInLine > visibleEnd - 60)
+        {
+            horizontalScrollBar.Value = Math.Min(curPosInLine - canvasText.ActualWidth + 60, horizontalScrollBar.Maximum);
+        }
         OldHorizontalScrollValue = curPosInLine;
     }
-
 }
