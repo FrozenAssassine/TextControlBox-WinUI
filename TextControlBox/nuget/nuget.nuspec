@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+	<id>TextControlBox.WinUI.JuliusKirsch</id>
+	<version>1.1.0</version>
+	<title>TextControlBox WinUI</title>
+	<authors>Julius Kirsch</authors>
+	<projectUrl>https://github.com/FrozenAssassine/TextControlBox-WinUI</projectUrl>
+	<description>A powerful textbox with syntax highlighting, line numbering and much more for WinUI3</description>
+	<releaseNotes></releaseNotes>
+	<copyright>Julius Kirsch</copyright>
+	<tags>TextControlBox Textbox WinUI C# SyntaxHighlighting LineNumbers</tags>
+	<repository url="https://github.com/FrozenAssassine/TextControlBox-WinUI" />
+	<dependencies>
+	  <group targetFramework="net8.0-windows10.0.19041.0">
+		<dependency id="Collections.Pooled" version="1.0.82" exclude="Build,Analyzers" />
+		<dependency id="Microsoft.Graphics.Win2D" version="1.3.1" exclude="Build,Analyzers" />
+		<dependency id="Microsoft.Windows.SDK.BuildTools" version="10.0.26100.1742" exclude="Build,Analyzers" />
+		<dependency id="Microsoft.WindowsAppSDK" version="1.6.241114003" exclude="Build,Analyzers" />
+		<dependency id="Newtonsoft.Json" version="13.0.3" exclude="Build,Analyzers" />
+	  </group>
+	</dependencies>
+  </metadata>
+	<files>
+		<file src="..\bin\Release\**.*" target="lib\uap10.0"/>
+	</files>
+</package>
