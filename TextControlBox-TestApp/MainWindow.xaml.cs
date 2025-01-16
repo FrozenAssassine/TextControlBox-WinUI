@@ -18,11 +18,11 @@ namespace TextControlBox_TestApp
 
             textbox.SetText(sb.ToString());
 
-            textbox.HighlightLanguage = TextControlBox.GetCodeLanguageFromId(SyntaxHighlightID.CSharp);
+            textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.CSharp);
 
             textbox.GetLinesText(0, textbox.NumberOfLines);
 
-            textbox.SyntaxHighlighting = false;
+            textbox.EnableSyntaxHighlighting = true;
         }
     }
 }
