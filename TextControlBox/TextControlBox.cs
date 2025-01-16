@@ -419,7 +419,7 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Gets or sets a value indicating whether syntax highlighting is enabled in the textbox.
     /// </summary>
-    public bool SyntaxHighlighting { get; set; } = true;
+    public bool SyntaxHighlighting { get => coreTextBox.SyntaxHighlighting; set => coreTextBox.SyntaxHighlighting = value; } 
 
     /// <summary>
     /// Gets or sets the code language to use for the syntaxhighlighting and autopairing.

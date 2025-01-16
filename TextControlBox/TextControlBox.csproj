@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+		<TargetFramework>net8.0-windows10.0.19041</TargetFramework>
 		<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
 		<RootNamespace>TextControlBoxNS</RootNamespace>
 		<RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
@@ -8,10 +8,10 @@
 		<WindowsSdkPackageVersion>10.0.19041.38</WindowsSdkPackageVersion>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<DocumentationFile></DocumentationFile>
-		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageId>TextControlBox.WinUI.JuliusKirsch</PackageId>
 		<Title>TextControlBox WinUI</Title>
-		<Version>1.0.0</Version>
+		<Version>1.1.0</Version>
 		<Authors>Julius Kirsch</Authors>
 		<Product>TextControlBox WinUI</Product>
 		<Description>A textbox for WinUI3 with syntax highlighting, line numbering, and support for a large amount of text</Description>
@@ -21,6 +21,7 @@
 		<PackageTags>TextControlBox; Textbox; WinUI; C#; SyntaxHighlighting; LineNumbers</PackageTags>
 		<PackageReleaseNotes>Migrated from UWP to WinUI.</PackageReleaseNotes>
 		<PackageIcon>Icon1.png</PackageIcon>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	</PropertyGroup>
   <ItemGroup>
     <None Remove="Core\CoreTextControlBox.xaml" />

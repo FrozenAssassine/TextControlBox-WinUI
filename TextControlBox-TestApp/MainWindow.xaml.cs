@@ -22,6 +22,8 @@ namespace TextControlBox_TestApp
             textbox.HighlightLanguage = TextControlBox.GetCodeLanguageFromId(CodeLanguageId.CSharp);
 
             textbox.GetLinesText(0, textbox.NumberOfLines);
+
+            textbox.SyntaxHighlighting = false;
         }
     }
 }
