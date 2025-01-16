@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml;
-using System.Diagnostics;
 using System.Text;
 using TextControlBoxNS;
 
@@ -19,7 +18,7 @@ namespace TextControlBox_TestApp
 
             textbox.SetText(sb.ToString());
 
-            textbox.HighlightLanguage = TextControlBox.GetCodeLanguageFromId(CodeLanguageId.CSharp);
+            textbox.HighlightLanguage = TextControlBox.GetCodeLanguageFromId(SyntaxHighlightID.CSharp);
 
             textbox.GetLinesText(0, textbox.NumberOfLines);
 

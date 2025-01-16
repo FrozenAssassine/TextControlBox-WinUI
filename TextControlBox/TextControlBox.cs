@@ -408,26 +408,26 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
-    /// Selects the CodeLanguage based on the specified identifier.
+    /// Selects the syntaxhighlighting based on the specified identifier.
     /// </summary>
-    /// <param name="languageId">The identifier of the CodeLanguage to select.</param>
-    public void SelectCodeLanguage(CodeLanguageId languageId)
+    /// <param name="languageId">The identifier of the syntaxhighlighting to select.</param>
+    public void SelectSyntaxHighlightingById(SyntaxHighlightID languageId)
     {
-        coreTextBox.SelectCodeLanguage(languageId);
+        coreTextBox.SelectSyntaxHighlightingById(languageId);
     }
 
     /// <summary>
     /// Gets or sets a value indicating whether syntax highlighting is enabled in the textbox.
     /// </summary>
-    public bool SyntaxHighlighting { get => coreTextBox.SyntaxHighlighting; set => coreTextBox.SyntaxHighlighting = value; } 
+    public bool EnableSyntaxHighlighting { get => coreTextBox.EnableSyntaxHighlighting; set => coreTextBox.EnableSyntaxHighlighting = value; } 
 
     /// <summary>
-    /// Gets or sets the code language to use for the syntaxhighlighting and autopairing.
+    /// Gets or sets the style to use for the syntaxhighlighting and auto pairing.
     /// </summary>
-    public SyntaxHighlightLanguage HighlightLanguage
+    public SyntaxHighlightLanguage SyntaxHighlighting
     {
-        get => coreTextBox.HighlightLanguage;
-        set => coreTextBox.HighlightLanguage = value;
+        get => coreTextBox.SyntaxHighlighting;
+        set => coreTextBox.SyntaxHighlighting = value;
     }
 
     /// <summary>
@@ -768,31 +768,31 @@ public partial class TextControlBox : UserControl
 
     //static functions
     /// <summary>
-    /// Gets a dictionary containing the CodeLanguages indexed by their respective identifiers.
+    /// Gets a dictionary containing the syntaxhighlightings indexed by their respective identifiers.
     /// </summary>
     /// <remarks>
-    /// The CodeLanguage dictionary provides a collection of predefined CodeLanguage objects, where each object is associated with a unique identifier (language name).
-    /// The dictionary is case-insensitive, and it allows quick access to the CodeLanguage objects based on their identifier.
+    /// The syntaxhighlightings dictionary provides a collection of predefined syntaxhighlighting objects, where each object is associated with a unique identifier (SyntaxHighlightID).
+    /// The dictionary is case-insensitive, and it allows quick access to the syntaxhighlighting objects based on their identifier.
     /// </remarks>
-    public static Dictionary<CodeLanguageId, SyntaxHighlightLanguage> CodeLanguages => CoreTextControlBox.CodeLanguages;
+    public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => CoreTextControlBox.SyntaxHighlightings;
 
     /// <summary>
-    /// Retrieves a CodeLanguage object based on the specified identifier.
+    /// Retrieves a syntaxhighlighting object based on the specified identifier.
     /// </summary>
-    /// <param name="languageId">The identifier of the CodeLanguage to retrieve.</param>
-    /// <returns>The CodeLanguage object corresponding to the provided identifier, or null if not found.</returns>
-    public static SyntaxHighlightLanguage GetCodeLanguageFromId(CodeLanguageId languageId)
+    /// <param name="languageId">The identifier of the syntaxhighlighting to retrieve.</param>
+    /// <returns>The syntaxhighlighting object corresponding to the provided identifier, or null if not found.</returns>
+    public static SyntaxHighlightLanguage GetSyntaxHighlightingFromID(SyntaxHighlightID languageId)
     {
-        return CoreTextControlBox.GetCodeLanguageFromId(languageId);
+        return CoreTextControlBox.GetSyntaxHighlightingFromID(languageId);
     }
 
     /// <summary>
-    /// Retrieves a CodeLanguage object from a JSON representation.
+    /// Retrieves a syntaxhighlighting object from a JSON representation.
     /// </summary>
-    /// <param name="json">The JSON string representing the CodeLanguage object.</param>
-    /// <returns>The deserialized CodeLanguage object obtained from the provided JSON, or null if the JSON is invalid or does not represent a valid CodeLanguage.</returns>
-    public static JsonLoadResult GetCodeLanguageFromJson(string json)
+    /// <param name="json">The JSON string representing the syntaxhighlighting object.</param>
+    /// <returns>The deserialized syntaxhighlighting object obtained from the provided JSON, or null if the JSON is invalid or does not represent a valid syntaxhighlighting.</returns>
+    public static JsonLoadResult GetSyntaxHighlightingFromJson(string json)
     {
-        return CoreTextControlBox.GetCodeLanguageFromJson(json);
+        return CoreTextControlBox.GetSyntaxHighlightingFromJson(json);
     }
 }

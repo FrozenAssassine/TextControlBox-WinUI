@@ -15,7 +15,7 @@ internal class TextManager
     public LineEnding _LineEnding = LineEnding.CRLF;
     public FontFamily _FontFamily = new FontFamily("Consolas");
     public string NewLineCharacter = "\r\n";
-    public SyntaxHighlightLanguage _CodeLanguage = null;
+    public SyntaxHighlightLanguage _SyntaxHighlighting = null;
     public int MaxFontsize = 125;
     public int MinFontSize = 3;
     public bool _IsReadonly = false;
