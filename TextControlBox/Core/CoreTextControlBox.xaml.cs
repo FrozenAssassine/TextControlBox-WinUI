@@ -1048,7 +1048,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             canvasUpdateManager.UpdateCursor();
     }
 
-    public void SelectCodeLanguage(CodeLanguageId languageId)
+    public void SelectSyntaxHighlightingById(SyntaxHighlightID languageId)
     {
         if (SyntaxHighlightings.TryGetValue(languageId, out SyntaxHighlightLanguage syntaxLanguage))
             SyntaxHighlighting = syntaxLanguage;
