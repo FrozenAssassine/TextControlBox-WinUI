@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents the unique identifiers for different code languages used for syntax highlighting.
 /// </summary>
-public enum CodeLanguageId
+public enum SyntaxHighlightID
 {
     /// <summary>
     /// Identifier for Batch code language.

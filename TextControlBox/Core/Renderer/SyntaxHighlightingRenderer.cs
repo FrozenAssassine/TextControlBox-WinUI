@@ -12,12 +12,12 @@ internal class SyntaxHighlightingRenderer
     public static FontWeight BoldFont = new FontWeight { Weight = 600 };
     public static FontStyle ItalicFont = FontStyle.Italic;
 
-    public static void UpdateSyntaxHighlighting(CanvasTextLayout drawnTextLayout, ApplicationTheme theme, SyntaxHighlightLanguage codeLanguage, bool syntaxHighlighting, string renderedText)
+    public static void UpdateSyntaxHighlighting(CanvasTextLayout drawnTextLayout, ApplicationTheme theme, SyntaxHighlightLanguage syntaxHighlightingLanguage, bool syntaxHighlighting, string renderedText)
     {
-        if (codeLanguage == null || !syntaxHighlighting)
+        if (syntaxHighlightingLanguage == null || !syntaxHighlighting)
             return;
 
-        var highlights = codeLanguage.Highlights;
+        var highlights = syntaxHighlightingLanguage.Highlights;
         for (int i = 0; i < highlights.Length; i++)
         {
             var matches = Regex.Matches(renderedText, highlights[i].Pattern, RegexOptions.Compiled);
@@ -43,21 +43,21 @@ internal class SyntaxHighlightingRenderer
         }
     }
 
-    public static JsonLoadResult GetCodeLanguageFromJson(string json)
+    public static JsonLoadResult GetSyntaxHighlightingFromJson(string json)
     {
         try
         {
-            var jsonCodeLanguage = JsonConvert.DeserializeObject<JsonCodeLanguage>(json);
+            var jsonHighlight = JsonConvert.DeserializeObject<JsonSyntaxHighlighting>(json);
             //Apply the filter as an array
-            var codelanguage = new SyntaxHighlightLanguage
+            var highlightLanguage = new SyntaxHighlightLanguage
             {
-                Author = jsonCodeLanguage.Author,
-                Description = jsonCodeLanguage.Description,
-                Highlights = jsonCodeLanguage.Highlights,
-                Name = jsonCodeLanguage.Name,
-                Filter = jsonCodeLanguage.Filter.Split("|", StringSplitOptions.RemoveEmptyEntries),
+                Author = jsonHighlight.Author,
+                Description = jsonHighlight.Description,
+                Highlights = jsonHighlight.Highlights,
+                Name = jsonHighlight.Name,
+                Filter = jsonHighlight.Filter.Split("|", StringSplitOptions.RemoveEmptyEntries),
             };
-            return new JsonLoadResult(true, codelanguage);
+            return new JsonLoadResult(true, highlightLanguage);
         }
         catch (JsonReaderException)
         {

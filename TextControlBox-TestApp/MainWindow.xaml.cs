@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml;
-using System.Diagnostics;
 using System.Text;
 using TextControlBoxNS;
 
@@ -19,7 +18,7 @@ namespace TextControlBox_TestApp
 
             textbox.SetText(sb.ToString());
 
-            textbox.HighlightLanguage = TextControlBox.GetCodeLanguageFromId(CodeLanguageId.CSharp);
+            textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.CSharp);
 
 
             textbox.Loaded += Textbox_Loaded;
@@ -28,6 +27,9 @@ namespace TextControlBox_TestApp
         private void Textbox_Loaded(object sender, RoutedEventArgs e)
         {
             textbox.SetCursorPosition(10000, 40);
+            textbox.GetLinesText(0, textbox.NumberOfLines);
+
+            textbox.EnableSyntaxHighlighting = true;
         }
     }
 }

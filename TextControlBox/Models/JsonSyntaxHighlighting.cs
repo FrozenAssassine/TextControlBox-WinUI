@@ -1,6 +1,6 @@
 ﻿namespace TextControlBoxNS
 {
-    internal class JsonCodeLanguage
+    internal class JsonSyntaxHighlighting
     {
         public string Name { get; set; }
         public string Description { get; set; }

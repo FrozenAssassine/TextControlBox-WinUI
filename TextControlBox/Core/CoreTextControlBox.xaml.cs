@@ -1050,18 +1050,18 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public void SelectCodeLanguage(CodeLanguageId languageId)
     {
-        if (CodeLanguages.TryGetValue(languageId, out SyntaxHighlightLanguage codelanguage))
-            HighlightLanguage = codelanguage;
+        if (SyntaxHighlightings.TryGetValue(languageId, out SyntaxHighlightLanguage syntaxLanguage))
+            SyntaxHighlighting = syntaxLanguage;
     }
 
-    public bool SyntaxHighlighting { get; set; } = true;
+    public bool EnableSyntaxHighlighting { get; set; } = true;
 
-    public SyntaxHighlightLanguage HighlightLanguage
+    public SyntaxHighlightLanguage SyntaxHighlighting
     {
-        get => textManager._CodeLanguage;
+        get => textManager._SyntaxHighlighting;
         set
         {
-            textManager._CodeLanguage = value;
+            textManager._SyntaxHighlighting = value;
             textRenderer.NeedsUpdateTextLayout = true;
             canvasUpdateManager.UpdateText();
         }
@@ -1177,40 +1177,40 @@ internal sealed partial class CoreTextControlBox : UserControl
     public bool DoAutoPairing { get; set; } = true;
 
 
-    public static Dictionary<CodeLanguageId, SyntaxHighlightLanguage> CodeLanguages => new Dictionary<CodeLanguageId, SyntaxHighlightLanguage>()
+    public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {
-            { CodeLanguageId.Batch, new Batch() },
-            { CodeLanguageId.Cpp, new Cpp() },
-            { CodeLanguageId.CSharp, new CSharp() },
-            { CodeLanguageId.ConfigFile, new ConfigFile() },
-            { CodeLanguageId.CSS, new CSS() },
-            { CodeLanguageId.CSV, new CSV() },
-            { CodeLanguageId.GCode, new GCode() },
-            { CodeLanguageId.HexFile, new HexFile() },
-            { CodeLanguageId.Html, new Html() },
-            { CodeLanguageId.Java, new Java() },
-            { CodeLanguageId.Javascript, new Javascript() },
-            { CodeLanguageId.Json, new Json() },
-            { CodeLanguageId.Latex, new LaTex() },
-            { CodeLanguageId.Markdown, new Markdown() },
-            { CodeLanguageId.PHP, new PHP() },
-            { CodeLanguageId.Python, new Python() },
-            { CodeLanguageId.QSharp, new QSharp() },
-            { CodeLanguageId.TOML, new TOML() },
-            { CodeLanguageId.XML, new XML() },
-            { CodeLanguageId.SQL, new SQL() },
-            { CodeLanguageId.None, null },
+            { SyntaxHighlightID.Batch, new Batch() },
+            { SyntaxHighlightID.Cpp, new Cpp() },
+            { SyntaxHighlightID.CSharp, new CSharp() },
+            { SyntaxHighlightID.ConfigFile, new ConfigFile() },
+            { SyntaxHighlightID.CSS, new CSS() },
+            { SyntaxHighlightID.CSV, new CSV() },
+            { SyntaxHighlightID.GCode, new GCode() },
+            { SyntaxHighlightID.HexFile, new HexFile() },
+            { SyntaxHighlightID.Html, new Html() },
+            { SyntaxHighlightID.Java, new Java() },
+            { SyntaxHighlightID.Javascript, new Javascript() },
+            { SyntaxHighlightID.Json, new Json() },
+            { SyntaxHighlightID.Latex, new LaTex() },
+            { SyntaxHighlightID.Markdown, new Markdown() },
+            { SyntaxHighlightID.PHP, new PHP() },
+            { SyntaxHighlightID.Python, new Python() },
+            { SyntaxHighlightID.QSharp, new QSharp() },
+            { SyntaxHighlightID.TOML, new TOML() },
+            { SyntaxHighlightID.XML, new XML() },
+            { SyntaxHighlightID.SQL, new SQL() },
+            { SyntaxHighlightID.None, null },
         };
 
-    public static SyntaxHighlightLanguage GetCodeLanguageFromId(CodeLanguageId languageId)
+    public static SyntaxHighlightLanguage GetSyntaxHighlightingFromID(SyntaxHighlightID languageId)
     {
-        if (CodeLanguages.TryGetValue(languageId, out SyntaxHighlightLanguage codelanguage))
-            return codelanguage;
+        if (SyntaxHighlightings.TryGetValue(languageId, out SyntaxHighlightLanguage syntaxLanguage))
+            return syntaxLanguage;
         return null;
     }
 
-    public static JsonLoadResult GetCodeLanguageFromJson(string Json)
+    public static JsonLoadResult GetSyntaxHighlightingFromJson(string Json)
     {
-        return SyntaxHighlightingRenderer.GetCodeLanguageFromJson(Json);
+        return SyntaxHighlightingRenderer.GetSyntaxHighlightingFromJson(Json);
     }
 }

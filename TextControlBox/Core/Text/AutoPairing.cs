@@ -6,10 +6,10 @@ internal class AutoPairing
 {
     public static (string text, int length) AutoPair(CoreTextControlBox textbox, string inputtext)
     {
-        if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.HighlightLanguage == null || textbox.HighlightLanguage.AutoPairingPair == null)
+        if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.SyntaxHighlighting == null || textbox.SyntaxHighlighting.AutoPairingPair == null)
             return (inputtext, inputtext.Length);
 
-        var res = textbox.HighlightLanguage.AutoPairingPair.Where(x => x.Matches(inputtext));
+        var res = textbox.SyntaxHighlighting.AutoPairingPair.Where(x => x.Matches(inputtext));
         if (res.Count() == 0)
             return (inputtext, inputtext.Length);
 
@@ -20,10 +20,10 @@ internal class AutoPairing
 
     public static string AutoPairSelection(CoreTextControlBox textbox, string inputtext)
     {
-        if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.HighlightLanguage == null || textbox.HighlightLanguage.AutoPairingPair == null)
+        if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.SyntaxHighlighting == null || textbox.SyntaxHighlighting.AutoPairingPair == null)
             return inputtext;
 
-        var res = textbox.HighlightLanguage.AutoPairingPair.Where(x => x.Value.Equals(inputtext));
+        var res = textbox.SyntaxHighlighting.AutoPairingPair.Where(x => x.Value.Equals(inputtext));
         if (res.Count() == 0)
             return inputtext;
 
