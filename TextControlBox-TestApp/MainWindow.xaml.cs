@@ -21,7 +21,13 @@ namespace TextControlBox_TestApp
 
             textbox.HighlightLanguage = TextControlBox.GetCodeLanguageFromId(CodeLanguageId.CSharp);
 
-            textbox.GetLinesText(0, textbox.NumberOfLines);
+
+            textbox.Loaded += Textbox_Loaded;
+        }
+
+        private void Textbox_Loaded(object sender, RoutedEventArgs e)
+        {
+            textbox.SetCursorPosition(10000, 40);
         }
     }
 }

@@ -159,5 +159,6 @@ internal class ScrollManager
             horizontalScrollBar.Value = Math.Min(curPosInLine - canvasText.ActualWidth + 60, horizontalScrollBar.Maximum);
         }
         OldHorizontalScrollValue = curPosInLine;
+        canvasHelper.UpdateAll();
     }
 }

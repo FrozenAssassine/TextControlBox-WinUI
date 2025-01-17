@@ -837,6 +837,11 @@ internal sealed partial class CoreTextControlBox : UserControl
         textActionManager.Redo();
     }
 
+    public void ScrollIntoViewHorizontally()
+    {
+        scrollManager.ScrollIntoViewHorizontal(canvasText);
+    }
+
     public void ScrollLineToCenter(int line)
     {
         scrollManager.ScrollLineIntoViewIfOutside(line);
@@ -885,9 +890,6 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public string GetLinesText(int startLine, int length)
     {
-        //if (startLine + length >= textManager.LinesCount)
-          //  return textManager.GetLinesAsString();
-
         return textManager.GetLinesAsString(startLine, length);
     }
 
@@ -1021,6 +1023,29 @@ internal sealed partial class CoreTextControlBox : UserControl
             Y = (float)((CursorPosition.LineNumber - textRenderer.NumberOfStartLine) * textRenderer.SingleLineHeight) + textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
             X = CursorHelper.GetCursorPositionInLine(textRenderer.CurrentLineTextLayout, CursorPosition, 0)
         };
+    }
+
+    public void SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true)
+    {
+        if (lineNumber > textManager.LinesCount - 1)
+            lineNumber = textManager.LinesCount - 1;
+
+        int lineLength = textManager.GetLineLength(lineNumber) - 1;
+        if (characterPos > lineLength)
+            characterPos = lineLength;
+
+        cursorManager.currentCursorPosition.LineNumber = lineNumber;
+        cursorManager.currentCursorPosition.CharacterPosition = characterPos;
+
+        if (scrollIntoView)
+        {
+            this.DispatcherQueue.TryEnqueue(() => {
+                scrollManager.ScrollLineIntoView(lineNumber);
+                scrollManager.ScrollIntoViewHorizontal(canvasText);
+            });
+        }
+        else //updates in the if condition happen on scrolling, only update cursor when not scrolling:
+            canvasUpdateManager.UpdateCursor();
     }
 
     public void SelectCodeLanguage(CodeLanguageId languageId)

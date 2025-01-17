@@ -239,6 +239,14 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Scrolls the textbox horizontally to the cursor position
+    /// </summary>
+    public void ScrollIntoViewHorizontally()
+    {
+        coreTextBox.ScrollIntoViewHorizontally();
+    }
+
+    /// <summary>
     /// Gets the content of the line specified by the index
     /// </summary>
     /// <param name="line">The index to get the content from</param>
@@ -405,6 +413,15 @@ public partial class TextControlBox : UserControl
     public Point GetCursorPosition()
     {
         return coreTextBox.GetCursorPosition();
+    }
+
+    /// <summary>
+    /// Gets the current cursor position in the textbox.
+    /// </summary>
+    /// <returns>The current cursor position represented by a Point object (X, Y).</returns>
+    public void SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true) 
+    {
+        coreTextBox.SetCursorPosition(lineNumber, characterPos, scrollIntoView);
     }
 
     /// <summary>

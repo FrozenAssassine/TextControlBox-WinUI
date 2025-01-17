@@ -8,10 +8,10 @@
 		<WindowsSdkPackageVersion>10.0.19041.38</WindowsSdkPackageVersion>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<DocumentationFile></DocumentationFile>
-		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageId>TextControlBox.WinUI.JuliusKirsch</PackageId>
 		<Title>TextControlBox WinUI</Title>
-		<Version>1.0.0</Version>
+		<Version>1.1.0</Version>
 		<Authors>Julius Kirsch</Authors>
 		<Product>TextControlBox WinUI</Product>
 		<Description>A textbox for WinUI3 with syntax highlighting, line numbering, and support for a large amount of text</Description>
