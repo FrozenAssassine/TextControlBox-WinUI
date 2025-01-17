@@ -1,5 +1,4 @@
 ﻿using TextControlBoxNS.Core.Renderer;
-using TextControlBoxNS.Models;
 
 namespace TextControlBoxNS.Core
 {
@@ -48,9 +47,10 @@ namespace TextControlBoxNS.Core
                 CharacterPositionInLine = cursorManager.GetCurPosInLine() + 1,
                 LineNumber = cursorManager.LineNumber,
             };
-            if (selectionRenderer.SelectionStartPosition != null && selectionRenderer.SelectionEndPosition != null)
+
+            if (selectionManager.currentTextSelection != null)
             {
-                var sel = selectionManager.GetIndexOfSelection(new TextSelection(selectionRenderer.SelectionStartPosition, selectionRenderer.SelectionEndPosition));
+                var sel = selectionManager.GetIndexOfSelection(selectionManager.currentTextSelection);
                 args.SelectionLength = sel.Length;
                 args.SelectionStartIndex = sel.Index;
             }

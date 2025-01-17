@@ -452,7 +452,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         Point pointerPosition = point.Position;
         bool leftButtonPressed = point.Properties.IsLeftButtonPressed;
-        bool ightButtonPressed = point.Properties.IsRightButtonPressed;
+        bool rightButtonPressed = point.Properties.IsRightButtonPressed;
 
         if (leftButtonPressed && !Utils.IsKeyPressed(VirtualKey.Shift))
             pointerActionsManager.PointerClickCount++;
@@ -479,7 +479,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             //TODO: Show the on screen keyboard if no physical keyboard is attached
 
             //Show the contextflyout
-            if (ightButtonPressed)
+            if (rightButtonPressed)
             {
                 if (!SelectionHelper.PointerIsOverSelection(textRenderer, pointerPosition, selectionManager.currentTextSelection))
                 {

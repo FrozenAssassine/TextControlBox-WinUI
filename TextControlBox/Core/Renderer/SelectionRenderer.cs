@@ -162,6 +162,7 @@ namespace TextControlBoxNS.Core.Renderer
             IsSelecting = false;
             SelectionEndPosition = null;
             SelectionStartPosition = null;
+            eventsManager.CallSelectionChanged();
         }
 
         public void SetSelection(TextSelection selection)
