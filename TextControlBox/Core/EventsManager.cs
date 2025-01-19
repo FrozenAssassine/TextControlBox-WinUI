@@ -48,16 +48,16 @@ namespace TextControlBoxNS.Core
                 LineNumber = cursorManager.LineNumber,
             };
 
-            if (selectionManager.currentTextSelection != null)
+            if (selectionManager.selection.HasSelection)
             {
-                var sel = selectionManager.GetIndexOfSelection(selectionManager.currentTextSelection);
-                args.SelectionLength = sel.Length;
-                args.SelectionStartIndex = sel.Index;
+                var sel = selectionManager.GetIndexOfSelection(selectionManager.selection);
+                args.SelectionLength = sel.length;
+                args.SelectionStartIndex = sel.start;
             }
             else
             {
                 args.SelectionLength = 0;
-                args.SelectionStartIndex = cursorManager.CursorPositionToIndex(new CursorPosition { CharacterPosition = cursorManager.GetCurPosInLine(), LineNumber = cursorManager.LineNumber });
+                args.SelectionStartIndex = cursorManager.CursorPositionToIndex(cursorManager.LineNumber, cursorManager.GetCurPosInLine());
             }
             SelectionChanged?.Invoke(args);
         }

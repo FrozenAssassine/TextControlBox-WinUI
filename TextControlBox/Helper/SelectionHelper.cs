@@ -34,26 +34,22 @@ namespace TextControlBoxNS.Helper
             if (textSelection == null)
                 return false;
 
-            textSelection = selectionManager.OrderTextSelection(textSelection);
-
             //Cursorposition is smaller than the start of selection
-            if (textSelection.StartPosition.LineNumber > cursorPosition.LineNumber)
+            if (textSelection.OrderedStartLine > cursorPosition.LineNumber)
                 return false;
 
             //Selectionend is smaller than Cursorposition -> not in selection
-            if (textSelection.EndPosition.LineNumber < cursorPosition.LineNumber)
+            if (textSelection.OrderedEndLine < cursorPosition.LineNumber)
                 return false;
 
             //Selection-start line equals Cursor line:
-            if (cursorPosition.LineNumber == textSelection.StartPosition.LineNumber)
-                return cursorPosition.CharacterPosition > textSelection.StartPosition.CharacterPosition;
+            if (cursorPosition.LineNumber == textSelection.OrderedStartLine)
+                return cursorPosition.CharacterPosition > textSelection.OrderedStartCharacterPos;
 
             //Selection-end line equals Cursor line
-            else if (cursorPosition.LineNumber == textSelection.EndPosition.LineNumber)
-                return cursorPosition.CharacterPosition < textSelection.EndPosition.CharacterPosition;
+            else if (cursorPosition.LineNumber == textSelection.OrderedEndLine)
+                return cursorPosition.CharacterPosition < textSelection.OrderedEndCharacterPos;
             return true;
         }
-
-
     }
 }

@@ -31,10 +31,13 @@ namespace TextControlBoxNS.Helper
 
         private TextManager textManager;
         private SelectionManager selectionManager;
-        public void Init(TextManager textManager, SelectionManager selectionManager)
+        private CursorManager cursorManager;
+
+        public void Init(TextManager textManager, SelectionManager selectionManager, CursorManager cursorManager)
         {
             this.textManager = textManager;
             this.selectionManager = selectionManager;
+            this.cursorManager = cursorManager;
         }
 
         public void UpdateNumberOfSpaces()
@@ -82,38 +85,38 @@ namespace TextControlBoxNS.Helper
             return input.Replace(find, replace, StringComparison.OrdinalIgnoreCase);
         }
 
-        public TextSelection MoveTabBack(TextSelection textSelection, CursorPosition cursorPosition, string tabCharacter, UndoRedo undoRedo)
+        public void MoveTabBack(string tabCharacter, UndoRedo undoRedo)
         {
-            if (textSelection == null)
+            if (selectionManager.selection.HasSelection)
             {
-                string line = textManager.GetLineText(cursorPosition.LineNumber);
-                if (line.Contains(tabCharacter, System.StringComparison.Ordinal) && cursorPosition.CharacterPosition > 0)
-                    cursorPosition.SubtractFromCharacterPos(tabCharacter.Length);
+                string line = textManager.GetLineText(cursorManager.LineNumber);
+                if (line.Contains(tabCharacter, StringComparison.Ordinal) && cursorManager.CharacterPosition > 0)
+                    cursorManager.CharacterPosition -= tabCharacter.Length;
 
                 undoRedo.RecordUndoAction(() =>
                 {
-                    textManager.SetLineText(cursorPosition.LineNumber, line.RemoveFirstOccurence(tabCharacter));
-                }, cursorPosition.LineNumber, 1, 1);
+                    textManager.SetLineText(cursorManager.LineNumber, line.RemoveFirstOccurence(tabCharacter));
+                }, cursorManager.LineNumber, 1, 1);
 
-                return new TextSelection(cursorPosition, null);
+                selectionManager.selection.HasEndPos = false;
             }
 
-            textSelection = selectionManager.OrderTextSelection(textSelection);
-            int selectedLinesCount = textSelection.EndPosition.LineNumber - textSelection.StartPosition.LineNumber;
+            var sel = selectionManager.selection;
+            int selectedLinesCount = sel.OrderedEndLine - sel.OrderedStartLine;
 
-            TextSelection tempSel = new TextSelection(textSelection);
-            tempSel.StartPosition.CharacterPosition = 0;
-            tempSel.EndPosition.CharacterPosition = textManager.GetLineText(textSelection.EndPosition.LineNumber).Length + tabCharacter.Length;
+            TextSelection undoRedoSelection = new TextSelection(sel);
+            undoRedoSelection.ActualStartCharacterPos = 0;
+            undoRedoSelection.ActualEndCharacterPos = textManager.GetLineText(textSelection.EndPosition.LineNumber).Length + tabCharacter.Length;
 
             undoRedo.RecordUndoAction(() =>
             {
                 for (int i = 0; i < selectedLinesCount + 1; i++)
                 {
-                    int lineIndex = i + textSelection.StartPosition.LineNumber;
+                    int lineIndex = i + sel.OrderedStartLine;
                     string currentLine = textManager.GetLineText(lineIndex);
 
                     if (i == 0 && currentLine.Contains(tabCharacter, System.StringComparison.Ordinal) && cursorPosition.CharacterPosition > 0)
-                        textSelection.StartPosition.CharacterPosition -= tabCharacter.Length;
+                        sel.actza -= tabCharacter.Length;
                     else if (i == selectedLinesCount && currentLine.Contains(tabCharacter, System.StringComparison.Ordinal))
                     {
                         textSelection.EndPosition.CharacterPosition -= tabCharacter.Length;
@@ -121,16 +124,16 @@ namespace TextControlBoxNS.Helper
 
                     textManager.SetLineText(lineIndex, currentLine.RemoveFirstOccurence(tabCharacter));
                 }
-            }, tempSel, selectedLinesCount);
+            }, undoRedoSelection, selectedLinesCount);
 
             return new TextSelection(new CursorPosition(textSelection.StartPosition), new CursorPosition(textSelection.EndPosition));
         }
 
-        public TextSelection MoveTab(TextSelection textSelection, CursorPosition cursorPosition, string tabCharacter, UndoRedo undoRedo)
+        public void MoveTab(TextSelection textSelection, string tabCharacter, UndoRedo undoRedo)
         {
-            if (textSelection == null)
+            if (textSelection.HasSelection)
             {
-                string line = textManager.GetLineText(cursorPosition.LineNumber);
+                string line = textManager.GetLineText(selectionManager..LineNumber);
 
                 undoRedo.RecordUndoAction(() =>
                 {

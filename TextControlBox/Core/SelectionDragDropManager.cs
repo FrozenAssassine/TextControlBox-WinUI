@@ -41,11 +41,11 @@ namespace TextControlBoxNS.Core
 
         public void DoDragDropSelection()
         {
-            if (selectionManager.currentTextSelection == null || textManager._IsReadonly)
+            if (selectionManager.selection == null || textManager._IsReadonly)
                 return;
 
             //Position to insert is selection start or selection end -> no need to drag
-            if (cursorManager.Equals(selectionManager.currentTextSelection.StartPosition, cursorManager.currentCursorPosition) || cursorManager.Equals(selectionManager.currentTextSelection.EndPosition, cursorManager.currentCursorPosition))
+            if (cursorManager.Equals(selectionManager.selection.StartPosition, cursorManager.currentCursorPosition) || cursorManager.Equals(selectionManager.selection.EndPosition, cursorManager.currentCursorPosition))
             {
                 coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
                 isDragDropSelection = false;
@@ -78,8 +78,8 @@ namespace TextControlBoxNS.Core
         }
         public bool DragDropOverSelection(Point curPos)
         {
-            bool res = SelectionHelper.CursorIsInSelection(selectionManager, cursorManager.currentCursorPosition, selectionManager.currentTextSelection) ||
-                SelectionHelper.PointerIsOverSelection(textRenderer, curPos, selectionManager.currentTextSelection);
+            bool res = SelectionHelper.CursorIsInSelection(selectionManager, cursorManager.currentCursorPosition, selectionManager.selection) ||
+                SelectionHelper.PointerIsOverSelection(textRenderer, curPos, selectionManager.selection);
 
             coreTextbox.ChangeCursor(res ? InputSystemCursorShape.UniversalNo : InputSystemCursorShape.IBeam);
 

@@ -99,7 +99,7 @@ internal class CursorRenderer
 
         if (!cursorManager.Equals(cursorManager.currentCursorPosition, cursorManager.oldCursorPosition))
         {
-            cursorManager.oldCursorPosition = new CursorPosition(cursorManager.currentCursorPosition);
+            cursorManager.oldCursorPosition.SetChangeValues(cursorManager.currentCursorPosition);
             eventsManager.CallSelectionChanged();
         }
     }

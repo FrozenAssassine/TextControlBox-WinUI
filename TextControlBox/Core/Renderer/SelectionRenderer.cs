@@ -162,7 +162,6 @@ namespace TextControlBoxNS.Core.Renderer
             IsSelecting = false;
             SelectionEndPosition = null;
             SelectionStartPosition = null;
-            eventsManager.CallSelectionChanged();
         }
 
         public void SetSelection(TextSelection selection)
@@ -222,10 +221,10 @@ namespace TextControlBoxNS.Core.Renderer
                 selectionManager.SetCurrentTextSelection(selection);
             }
 
-            if (!selectionManager.TextSelIsNull && !selectionManager.Equals(selectionManager.OldTextSelection, selectionManager.currentTextSelection))
+            if (!selectionManager.TextSelIsNull && !selectionManager.Equals(selectionManager.OldTextSelection, selectionManager.selection))
             {
                 //Update the variables
-                selectionManager.OldTextSelection = new TextSelection(selectionManager.currentTextSelection);
+                selectionManager.OldTextSelection = new TextSelection(selectionManager.selection);
                 eventsManager.CallSelectionChanged();
             }
         }

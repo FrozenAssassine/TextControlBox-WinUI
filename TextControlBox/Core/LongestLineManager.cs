@@ -37,7 +37,7 @@ internal class LongestLineManager
 
     public void CheckSelection()
     {
-        if (selManager.currentTextSelection.IsLineInSelection(longestIndex))
+        if (selManager.selection.IsLineInSelection(longestIndex))
             needsRecalculation = true;
     }
 }
