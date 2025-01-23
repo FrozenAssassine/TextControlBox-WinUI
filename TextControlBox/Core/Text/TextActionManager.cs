@@ -29,6 +29,7 @@ namespace TextControlBoxNS.Core.Text
         private EventsManager eventsManager;
         private TextRenderer textRenderer;
         private StringManager stringManager;
+        private AutoIndentionManager autoIndentionManager;
 
         public void Init(
             CoreTextControlBox coreTextbox,
@@ -43,7 +44,8 @@ namespace TextControlBoxNS.Core.Text
             ScrollManager scrollManager,
             EventsManager eventsManager,
             StringManager stringManager,
-            SelectionManager selectionManager)
+            SelectionManager selectionManager,
+            AutoIndentionManager autoIndentationManager)
         {
             this.canvasUpdateHelper = canvasUpdateHelper;
             this.textManager = textManager;
@@ -58,6 +60,7 @@ namespace TextControlBoxNS.Core.Text
             this.textRenderer = textRenderer;
             this.stringManager = stringManager;
             this.selectionManager = selectionManager;
+            this.autoIndentionManager = autoIndentationManager;
         }
 
         public void SelectAll()
@@ -548,15 +551,20 @@ namespace TextControlBoxNS.Core.Text
                 return;
             }
 
+            int indentionAdd = 0;
             if (selectionManager.TextSelIsNull) //No selection
             {
                 string startLine = textManager.GetLineText(startLinePos.LineNumber);
+                indentionAdd = autoIndentionManager.OnEnterPressed(startLinePos.LineNumber);
+                string indention = null;
+                if(indentionAdd != 0)
+                    indention = autoIndentionManager.RepeatIndentionString(indentionAdd);
 
                 undoRedo.RecordUndoAction(() =>
                 {
                     string[] splittedLine = Utils.SplitAt(textManager.GetLineText(startLinePos.LineNumber), startLinePos.CharacterPosition);
 
-                    textManager.SetLineText(startLinePos.LineNumber, splittedLine[1]);
+                    textManager.SetLineText(startLinePos.LineNumber, indention + splittedLine[1]);
                     textManager.InsertOrAdd(startLinePos.LineNumber, splittedLine[0]);
 
                 }, startLinePos.LineNumber, 1, 2);
@@ -582,7 +590,7 @@ namespace TextControlBoxNS.Core.Text
 
             selectionManager.ForceClearSelection(canvasUpdateHelper);
             cursorManager.LineNumber += 1;
-            cursorManager.CharacterPosition = 0;
+            cursorManager.CharacterPosition = indentionAdd;
 
             if (selectionManager.currentTextSelection == null && cursorManager.LineNumber == textRenderer.NumberOfRenderedLines + textRenderer.NumberOfStartLine)
                 scrollManager.ScrollOneLineDown();

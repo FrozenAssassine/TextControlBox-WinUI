@@ -52,6 +52,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     private readonly TextLayoutManager textLayoutManager;
     private readonly LineHighlighterRenderer lineHighlighterRenderer;
     private readonly LoadingManager loadingManager;
+    private readonly AutoIndentionManager autoIndentionManager;
 
     public CanvasControl canvasText;
     public CanvasControl canvasCursor;
@@ -104,16 +105,17 @@ internal sealed partial class CoreTextControlBox : UserControl
         textLayoutManager = new TextLayoutManager();
         loadingManager = new LoadingManager();
         lineHighlighterRenderer = new LineHighlighterRenderer();
+        autoIndentionManager = new AutoIndentionManager();
 
         stringManager.Init(textManager, tabSpaceHelper);
         lineHighlighterRenderer.Init(lineHighlighterManager, selectionManager, textRenderer);
-        cursorManager.Init(textManager, currentLineManager);
+        cursorManager.Init(textManager, currentLineManager, tabSpaceHelper);
         selectionManager.Init(textManager, cursorManager, selectionRenderer);
         undoRedo.Init(textManager, selectionManager);
         selectionRenderer.Init(selectionManager, textRenderer, eventsManager, scrollManager, zoomManager, designHelper, textManager);
         flyoutHelper.Init(this);
         canvasUpdateManager.Init(this);
-        textActionManager.Init(this, textRenderer, undoRedo, currentLineManager, longestLineManager, canvasUpdateManager, textManager, selectionRenderer, cursorManager, scrollManager, eventsManager, stringManager, selectionManager);
+        textActionManager.Init(this, textRenderer, undoRedo, currentLineManager, longestLineManager, canvasUpdateManager, textManager, selectionRenderer, cursorManager, scrollManager, eventsManager, stringManager, selectionManager, autoIndentionManager);
         textRenderer.Init(cursorManager, designHelper, textLayoutManager, textManager, scrollManager, lineNumberRenderer, longestLineManager, this, searchManager, canvasUpdateManager, zoomManager);
         cursorRenderer.Init(cursorManager, currentLineManager, textRenderer, focusManager, textManager, scrollManager, zoomManager, designHelper, lineHighlighterRenderer, eventsManager);
         scrollManager.Init(this, canvasUpdateManager, textManager, textRenderer, cursorManager, VerticalScrollbar, HorizontalScrollbar);
@@ -129,7 +131,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         focusManager.Init(this, canvasUpdateManager, inputHandler, eventsManager);
         pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, selectionDragDropManager, currentLineManager);
         textLayoutManager.Init(textManager, zoomManager);
-
+        autoIndentionManager.Init(textManager, cursorManager, tabSpaceHelper);
         //subscribe to events:
 
         //set default values

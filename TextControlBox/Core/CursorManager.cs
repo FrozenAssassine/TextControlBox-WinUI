@@ -13,10 +13,13 @@ internal class CursorManager
 
     private TextManager textManager;
     private CurrentLineManager currentLineManager;
-    public void Init(TextManager textManager, CurrentLineManager currentLineManager)
+    private TabSpaceHelper tabSpaceHelper;
+
+    public void Init(TextManager textManager, CurrentLineManager currentLineManager, TabSpaceHelper tabSpaceHelper)
     {
         this.textManager = textManager;
         this.currentLineManager = currentLineManager;
+        this.tabSpaceHelper = tabSpaceHelper;
     }
 
     public void SetCursorPosition(CursorPosition cursorPosition)
@@ -29,7 +32,6 @@ internal class CursorManager
         this.currentCursorPosition.LineNumber = cursorPosition.LineNumber;
         this.currentCursorPosition.CharacterPosition = cursorPosition.CharacterPosition;
     }
-
 
     public int GetCurPosInLine()
     {
@@ -63,7 +65,7 @@ internal class CursorManager
     }
 
     //Calculate the number of characters from the cursorposition to the next character or digit to the left and to the right
-    public int CalculateStepsToMoveLeft2(int cursorCharPosition)
+    public int CalculateStepsToMoveLeftNoControl(int cursorCharPosition)
     {
         if (currentLineManager.Length == 0)
             return 0;
@@ -71,7 +73,7 @@ internal class CursorManager
         int stepsToMove = 0;
         for (int i = cursorCharPosition - 1; i >= 0; i--)
         {
-            char currentCharacter = currentLineManager.CurrentLine[CheckIndex(currentLineManager.CurrentLine, i)];
+            char currentCharacter = currentLineManager.CurrentLine[i];
             if (char.IsLetterOrDigit(currentCharacter) || currentCharacter == '_')
                 stepsToMove++;
             else if (i == cursorCharPosition - 1 && char.IsWhiteSpace(currentCharacter))
@@ -81,7 +83,7 @@ internal class CursorManager
         }
         return stepsToMove;
     }
-    public int CalculateStepsToMoveRight2(int cursorCharPosition)
+    public int CalculateStepsToMoveRightNoControl(int cursorCharPosition)
     {
         if (currentLineManager.Length == 0)
             return 0;
@@ -89,7 +91,7 @@ internal class CursorManager
         int stepsToMove = 0;
         for (int i = cursorCharPosition; i < currentLineManager.Length; i++)
         {
-            char currentCharacter = currentLineManager.CurrentLine[CheckIndex(currentLineManager.CurrentLine, i)];
+            char currentCharacter = currentLineManager.CurrentLine[i];
             if (char.IsLetterOrDigit(currentCharacter) || currentCharacter == '_')
                 stepsToMove++;
             else if (i == cursorCharPosition && char.IsWhiteSpace(currentCharacter))
@@ -101,7 +103,7 @@ internal class CursorManager
     }
 
     //Calculates how many characters the cursor needs to move if control is pressed
-    //Returns 1 when control is not pressed
+    //Returns 1 if control is not pressed
     public int CalculateStepsToMoveLeft(int cursorCharPosition)
     {
         if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))

@@ -549,10 +549,10 @@ namespace TextControlBoxNS.Core
             int characterpos = cursorPosition.CharacterPosition;
             //Update variables
             selectionRenderer.SelectionStartPosition =
-                new CursorPosition(characterpos - cursorManager.CalculateStepsToMoveLeft2(characterpos), cursorPosition.LineNumber);
+                new CursorPosition(characterpos - cursorManager.CalculateStepsToMoveLeftNoControl(characterpos), cursorPosition.LineNumber);
 
             selectionRenderer.SelectionEndPosition =
-                new CursorPosition(characterpos + cursorManager.CalculateStepsToMoveRight2(characterpos), cursorPosition.LineNumber);
+                new CursorPosition(characterpos + cursorManager.CalculateStepsToMoveRightNoControl(characterpos), cursorPosition.LineNumber);
 
             cursorPosition.CharacterPosition = selectionRenderer.SelectionEndPosition.CharacterPosition;
             selectionRenderer.HasSelection = true;
