@@ -102,12 +102,70 @@ internal class CursorManager
         return stepsToMove;
     }
 
-    //Calculates how many characters the cursor needs to move if control is pressed
+    //Calculates how many characters the cursor needs to move if control is pressed -> skip contiguous tabs and spaces as one move
     //Returns 1 if control is not pressed
+
+    private int IsFilledWithTabsAndSpacesToCursor(string currentLine, int cursor)
+    {
+        string tabCharacter = tabSpaceHelper.TabCharacter;
+        int tabLength = tabCharacter.Length;
+        int count = 0;
+
+        for (int i = cursor - 1; i >= 0;)
+        {
+            if (currentLine[i] == ' ') // Check for spaces
+            {
+                count++;
+                i--; // Move one character back
+            }
+            else if (i >= tabLength - 1 && currentLine.Substring(i - tabLength + 1, tabLength) == tabCharacter)
+            {
+                count += tabLength;
+                i -= tabLength;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return count;
+    }
+    private int IsFilledWithTabsAndSpacesFromCursor(string currentLine, int cursor)
+    {
+        string tabCharacter = tabSpaceHelper.TabCharacter;
+        int tabLength = tabCharacter.Length;
+        int count = 0;
+
+        for (int i = cursor; i < currentLine.Length;)
+        {
+            if (currentLine[i] == ' ')
+            {
+                count++;
+                i++;
+            }
+            else if (i + tabLength <= currentLine.Length && currentLine.Substring(i, tabLength) == tabCharacter)
+            {
+                count += tabLength;
+                i += tabLength;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return count;
+    }
+
     public int CalculateStepsToMoveLeft(int cursorCharPosition)
     {
         if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
             return 1;
+
+        int filledRes = IsFilledWithTabsAndSpacesToCursor(currentLineManager.CurrentLine, cursorCharPosition);
+        if (filledRes != 0)
+            return filledRes;
 
         int stepsToMove = 0;
         for (int i = cursorCharPosition - 1; i >= 0; i--)
@@ -128,6 +186,10 @@ internal class CursorManager
     {
         if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
             return 1;
+
+        int filledRes = IsFilledWithTabsAndSpacesFromCursor(currentLineManager.CurrentLine, cursorCharPosition);
+        if (filledRes != 0)
+            return filledRes;
 
         int stepsToMove = 0;
         for (int i = cursorCharPosition; i < currentLineManager.Length; i++)
