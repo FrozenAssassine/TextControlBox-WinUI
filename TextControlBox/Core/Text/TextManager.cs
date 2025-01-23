@@ -97,6 +97,11 @@ internal class TextManager
     {
         totalLines.Span[line] += add;
     }
+    public void String_AddToStart(int line, string add)
+    {
+        totalLines.Span[line] = add + totalLines.Span[line];
+    }
+
     public void DeleteAt(int index)
     {
         if (index >= totalLines.Count)
@@ -173,9 +178,9 @@ internal class TextManager
     public int CountCharacters()
     {
         int count = 0;
-        foreach (var line in totalLines)
+        foreach (var line in totalLines.Span)
         {
-            count += line.AsSpan().Length + 1;
+            count += line.Length + 1;
         }
         return count > 0 ? count - 1 : 0;
     }

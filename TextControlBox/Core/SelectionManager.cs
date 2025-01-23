@@ -15,8 +15,8 @@ namespace TextControlBoxNS.Core
         private CursorManager cursorManager;
         private SelectionRenderer selectionRenderer;
 
-        public TextSelection OldTextSelection = null;
-        public TextSelection currentTextSelection = null;
+        public TextSelection OldTextSelection = new TextSelection();
+        public TextSelection currentTextSelection = new TextSelection();
 
         public bool TextSelIsNull => currentTextSelection == null;
         public void Init(TextManager textManager, CursorManager cursorManager, SelectionRenderer selectionRenderer)
@@ -41,8 +41,10 @@ namespace TextControlBoxNS.Core
         {
             if (this.SelectionIsNull(currentTextSelection))
             {
-                selectionRenderer.SelectionStartPosition = selectionRenderer.SelectionEndPosition = new CursorPosition(cursorManager.currentCursorPosition.CharacterPosition, cursorManager.currentCursorPosition.LineNumber);
-                currentTextSelection = new TextSelection(selectionRenderer.SelectionStartPosition, selectionRenderer.SelectionEndPosition);
+                selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
+                selectionRenderer.SetSelectionStart(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
+ 
+                currentTextSelection = new TextSelection(selectionRenderer.renderedSelectionStartPosition, selectionRenderer.renderedSelectionEndPosition);
             }
         }
 
@@ -87,6 +89,44 @@ namespace TextControlBoxNS.Core
             return new TextSelection(selection.Index, selection.Length, new CursorPosition(startPosition, startLine), new CursorPosition(endPosition, endLine));
         }
 
+        public (bool startNull, bool endNull, int startLine, int startChar, int endLine, int endChar) OrderTextSelectionSeparated(TextSelection selection)
+        {
+            if (selection == null)
+                return (true, true, - 1, -1, -1, -1);
+
+            if (selection.EndPosition.IsNull && !selection.StartPosition.IsNull)
+                return (false, true, selection.StartPosition.LineNumber, selection.StartPosition.CharacterPosition, -1, -1);
+
+            if (!selection.EndPosition.IsNull && selection.StartPosition.IsNull)
+                return (false, true, selection.EndPosition.LineNumber, selection.EndPosition.CharacterPosition, -1, -1);
+
+            int startLine = Math.Min(selection.StartPosition.LineNumber, selection.EndPosition.LineNumber);
+            int endLine = Math.Max(selection.StartPosition.LineNumber, selection.EndPosition.LineNumber);
+            int startPosition;
+            int endPosition;
+            
+            if (startLine == endLine)
+            {
+                startPosition = Math.Min(selection.StartPosition.CharacterPosition, selection.EndPosition.CharacterPosition);
+                endPosition = Math.Max(selection.StartPosition.CharacterPosition, selection.EndPosition.CharacterPosition);
+            }
+            else
+            {
+                if (selection.StartPosition.LineNumber < selection.EndPosition.LineNumber)
+                {
+                    endPosition = selection.EndPosition.CharacterPosition;
+                    startPosition = selection.StartPosition.CharacterPosition;
+                }
+                else
+                {
+                    endPosition = selection.StartPosition.CharacterPosition;
+                    startPosition = selection.EndPosition.CharacterPosition;
+                }
+            }
+
+            return (false, false, startLine, startPosition, endLine, endPosition);
+        }
+
         public bool WholeTextSelected(TextSelection selection)
         {
             if (selection == null)
@@ -129,12 +169,12 @@ namespace TextControlBoxNS.Core
             return GetMax(selection.StartPosition, selection.EndPosition);
         }
 
-        public CursorPosition InsertText(TextSelection selection, CursorPosition cursorPosition, string text)
+        public void InsertText(TextSelection selection, string text)
         {
             if (selection != null)
-                return this.Replace(selection, text);
+                this.Replace(selection, text);
 
-            string curLine = textManager.GetLineText(cursorPosition.LineNumber);
+            string curLine = textManager.GetLineText(cursorManager.LineNumber);
 
             string[] lines = text.Split(textManager.NewLineCharacter);
 
@@ -142,13 +182,13 @@ namespace TextControlBoxNS.Core
             if (lines.Length == 1 && text != string.Empty)
             {
                 text = text.Replace("\r", string.Empty).Replace("\n", string.Empty);
-                textManager.SetLineText(-1, textManager.GetLineText(-1).AddText(text, cursorPosition.CharacterPosition));
-                cursorPosition.AddToCharacterPos(text.Length);
-                return cursorPosition;
+                textManager.SetLineText(-1, textManager.GetLineText(-1).AddText(text, cursorManager.CharacterPosition));
+                cursorManager.CharacterPosition += text.Length;
+                return;
             }
 
             //Multiline:
-            int curPos = cursorPosition.CharacterPosition;
+            int curPos = cursorManager.CharacterPosition;
             if (curPos > curLine.Length)
                 curPos = curLine.Length;
 
@@ -157,17 +197,17 @@ namespace TextControlBoxNS.Core
             //Get the text behind the cursor
             string textBehindCursor = curLine.SafeRemove(0, curPos < 0 ? 0 : curPos);
 
-            textManager.DeleteAt(cursorPosition.LineNumber);
-            textManager.InsertOrAddRange(ListHelper.CreateLines(lines, 0, textInFrontOfCursor, textBehindCursor), cursorPosition.LineNumber);
+            textManager.DeleteAt(cursorManager.LineNumber);
+            textManager.InsertOrAddRange(ListHelper.CreateLines(lines, 0, textInFrontOfCursor, textBehindCursor), cursorManager.LineNumber);
 
-            return new CursorPosition(cursorPosition.CharacterPosition + lines.Length > 0 ? lines[lines.Length - 1].Length : 0, cursorPosition.LineNumber + lines.Length - 1);
+           cursorManager.SetCursorPosition(cursorManager.LineNumber + lines.Length - 1, cursorManager.CharacterPosition + lines.Length > 0 ? lines[lines.Length - 1].Length : 0);
         }
 
-        public CursorPosition Replace(TextSelection selection, string text)
+        public void Replace(TextSelection selection, string text)
         {
             //Just delete the text if the string is emty
             if (text.Length == 0)
-                return this.Remove(selection);
+                this.Remove(selection);
 
             selection = OrderTextSelection(selection);
             int startLine = selection.StartPosition.LineNumber;
@@ -189,7 +229,7 @@ namespace TextControlBoxNS.Core
 
                 textManager.SetLineText(startLine, start_Line.AddText(text, startPosition));
 
-                return new CursorPosition(startPosition + text.Length, selection.StartPosition.LineNumber);
+                cursorManager.SetCursorPosition(selection.StartPosition.LineNumber, startPosition + text.Length);
             }
             else if (startLine == endLine && lines.Length > 1 && (startPosition != 0 && endPosition != start_Line.Length))
             {
@@ -199,7 +239,7 @@ namespace TextControlBoxNS.Core
                 textManager.SetLineText(startLine, (textTo + lines[0]));
                 textManager.InsertOrAddRange(ListHelper.CreateLines(lines, 1, "", textFrom), startLine + 1);
 
-                return new CursorPosition(endPosition + text.Length, startLine + lines.Length - 1);
+                cursorManager.SetCursorPosition(startLine + lines.Length - 1, endPosition + text.Length);
             }
             else if (this.WholeTextSelected(selection))
             {
@@ -211,7 +251,7 @@ namespace TextControlBoxNS.Core
                 else
                     this.ReplaceLines(0, textManager.LinesCount, lines);
 
-                return new CursorPosition(textManager.GetLineLength(-1), textManager.LinesCount - 1);
+                cursorManager.SetCursorPosition(textManager.LinesCount - 1, textManager.GetLineLength(-1));
             }
             else
             {
@@ -262,11 +302,11 @@ namespace TextControlBoxNS.Core
                             textManager.InsertOrAddRange(lines.GetLines(1, lines.Length - 2), startLine + 1);
                     }
                 }
-                return new CursorPosition(start_Line.Length + end_Line.Length - 1, startLine + lines.Length - 1);
+                cursorManager.SetCursorPosition(startLine + lines.Length - 1, start_Line.Length + end_Line.Length - 1);
             }
         }
 
-        public CursorPosition Remove(TextSelection selection)
+        public void Remove(TextSelection selection)
         {
             selection = OrderTextSelection(selection);
             int startLine = selection.StartPosition.LineNumber;
@@ -289,7 +329,7 @@ namespace TextControlBoxNS.Core
             else if (this.WholeTextSelected(selection))
             {
                 textManager.ClearText(true);
-                return new CursorPosition(0, textManager.LinesCount - 1);
+                cursorManager.SetCursorPosition(textManager.LinesCount - 1, 0);
             }
             else
             {
@@ -321,7 +361,7 @@ namespace TextControlBoxNS.Core
             if (textManager.LinesCount == 0)
                 textManager.AddLine();
 
-            return new CursorPosition(startPosition, startLine);
+            cursorManager.SetCursorPosition(startLine, startPosition);
         }
 
         public TextSelectionPosition GetIndexOfSelection(TextSelection selection)
@@ -355,11 +395,10 @@ namespace TextControlBoxNS.Core
             {
                 int position = Math.Abs(currentTotalLength - startPosition);
 
-                returnValue.StartPosition =
-                    new CursorPosition(position, currentIndex);
+                returnValue.StartPosition.SetChangeValues(currentIndex, position);
 
                 if (length == 0)
-                    returnValue.EndPosition = new CursorPosition(returnValue.StartPosition);
+                    returnValue.EndPosition.SetChangeValues(returnValue.StartPosition);
                 else
                 {
                     int lengthCount = 0;
@@ -368,7 +407,7 @@ namespace TextControlBoxNS.Core
                         int lineLength = textManager.GetLineLength(i) + 1;
                         if (lengthCount + lineLength > length)
                         {
-                            returnValue.EndPosition = new CursorPosition(Math.Abs(lengthCount - length) + position, i);
+                            returnValue.EndPosition.SetChangeValues(i, Math.Abs(lengthCount - length) + position);
                             break;
                         }
                         lengthCount += lineLength;
@@ -442,7 +481,6 @@ namespace TextControlBoxNS.Core
         /// Replaces the lines in TotalLines, starting by Start replacing Count number of items, with the string in SplittedText
         /// All lines that can be replaced get replaced all lines that are needed additionally get added
         /// </summary>
-        /// <param name="totalLines"></param>
         /// <param name="start"></param>
         /// <param name="count"></param>
         /// <param name="splittedText"></param>
@@ -537,29 +575,66 @@ namespace TextControlBoxNS.Core
             }
         }
 
-
         public bool SelectionIsNull(TextSelection selection)
         {
             if (selection == null)
                 return true;
-            return selectionRenderer.SelectionStartPosition == null || selectionRenderer.SelectionEndPosition == null;
+            return selectionRenderer.renderedSelectionStartPosition.IsNull || selectionRenderer.renderedSelectionEndPosition.IsNull;
         }
-        public void SelectSingleWord(CanvasUpdateManager canvashelper, CursorPosition cursorPosition)
+        public void SelectSingleWord(CanvasUpdateManager canvashelper)
         {
-            int characterpos = cursorPosition.CharacterPosition;
+            int characterpos = cursorManager.CharacterPosition;
+
             //Update variables
-            selectionRenderer.SelectionStartPosition =
-                new CursorPosition(characterpos - cursorManager.CalculateStepsToMoveLeftNoControl(characterpos), cursorPosition.LineNumber);
+            selectionRenderer.SetSelectionStart(cursorManager.LineNumber, characterpos - cursorManager.CalculateStepsToMoveLeftNoControl(characterpos));
+            selectionRenderer.SetSelectionEnd(cursorManager.LineNumber, characterpos + cursorManager.CalculateStepsToMoveRightNoControl(characterpos));
 
-            selectionRenderer.SelectionEndPosition =
-                new CursorPosition(characterpos + cursorManager.CalculateStepsToMoveRightNoControl(characterpos), cursorPosition.LineNumber);
-
-            cursorPosition.CharacterPosition = selectionRenderer.SelectionEndPosition.CharacterPosition;
+            cursorManager.CharacterPosition = selectionRenderer.renderedSelectionEndPosition.CharacterPosition;
             selectionRenderer.HasSelection = true;
 
             //Render it
             canvashelper.UpdateSelection();
             canvashelper.UpdateCursor();
+        }
+
+        public (int start, int length) CalculateSelectionStartLength()
+        {
+            //order the selection and check if it's null
+
+            var (startNull, endNull, startLine, startChar, endLine, endChar) = OrderTextSelectionSeparated(this.currentTextSelection);
+            if (startNull && endNull)
+                return (0, 0);
+
+            int length = 0;
+            int startIndex = 0;
+
+            for (int i = 0; i < textManager.LinesCount; i++)
+            {
+                var currentLine = textManager.totalLines.Span[i];
+
+                //calculate startIndex
+                if (i < startLine)
+                    startIndex += currentLine.Length + 1;
+                else if (i == startLine)
+                    startIndex += startChar;
+
+                if (endNull) //no end selected:
+                    continue;
+
+                //calculate length
+                if (i >= startLine && i <= endLine)
+                {
+                    if (i == startLine && i == endLine)
+                        length += endChar - startChar;
+                    else if (i == startLine)
+                        length += currentLine.Length - startChar;
+                    else if (i == endLine)
+                        length += endChar;
+                    else
+                        length += currentLine.Length + 1;
+                }
+            }
+            return (startIndex, length);
         }
     }
 }

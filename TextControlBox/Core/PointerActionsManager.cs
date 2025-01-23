@@ -13,7 +13,7 @@ internal class PointerActionsManager
 {
     Point? OldTouchPosition = null;
     public int PointerClickCount = 0;
-    public DispatcherTimer PointerClickTimer = new DispatcherTimer { Interval = new TimeSpan(0, 0, 0, 0, 200) };
+    public DispatcherTimer PointerClickTimer = new DispatcherTimer { Interval = new TimeSpan(0, 0, 0, 0, 250) };
 
     private SelectionRenderer selectionRenderer;
     private SelectionDragDropManager selectionDragDropManager;
@@ -145,7 +145,7 @@ internal class PointerActionsManager
 
             //Update:
             canvasUpdateManager.UpdateCursor();
-            selectionRenderer.SelectionEndPosition = new CursorPosition(cursorManager.CharacterPosition, cursorManager.LineNumber);
+            selectionRenderer.SetSelectionEnd(cursorManager.LineNumber, cursorManager.CharacterPosition);
             canvasUpdateManager.UpdateSelection();
         }
     }
@@ -176,6 +176,4 @@ internal class PointerActionsManager
         }
         return false;
     }
-
-
 }

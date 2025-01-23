@@ -52,4 +52,12 @@ public class CursorPosition
     {
         return new CursorPosition(currentCursorPosition.CharacterPosition, lineNumber);
     }
+
+    internal void SetChangeValues(int line, int cursor)
+    {
+        this.LineNumber = line;
+        this.CharacterPosition = cursor;
+    }
+
+    internal bool IsNull = false;
 }

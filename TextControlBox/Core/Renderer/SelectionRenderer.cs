@@ -17,10 +17,10 @@ namespace TextControlBoxNS.Core.Renderer
         public bool HasSelection = false;
         public bool IsSelecting = false;
         public bool IsSelectingOverLinenumbers = false;
-        public CursorPosition SelectionStartPosition = null;
-        public CursorPosition SelectionEndPosition = null;
-        public int SelectionLength = 0;
-        public int SelectionStart = 0;
+        public CursorPosition renderedSelectionStartPosition = new CursorPosition();
+        public CursorPosition renderedSelectionEndPosition = new CursorPosition();
+        public int renderedSelectionLength = 0;
+        public int renderedSelectionStart = 0;
 
         private SelectionManager selectionManager;
         private TextRenderer textRenderer;
@@ -48,6 +48,7 @@ namespace TextControlBoxNS.Core.Renderer
             this.textManager = textManager;
         }
 
+
         //Draw the actual selection and return the cursorposition. Return -1 if no selection was drawn
         public TextSelection DrawSelection(
             CanvasTextLayout textLayout,
@@ -60,40 +61,41 @@ namespace TextControlBoxNS.Core.Renderer
             Color selectionColor
             )
         {
-            if (HasSelection && SelectionEndPosition != null && SelectionStartPosition != null)
+            if (HasSelection && !renderedSelectionEndPosition.IsNull && !renderedSelectionStartPosition.IsNull)
             {
+
                 int selStartIndex = 0;
                 int selEndIndex = 0;
-                int characterPosStart = SelectionStartPosition.CharacterPosition;
-                int characterPosEnd = SelectionEndPosition.CharacterPosition;
+                int characterPosStart = renderedSelectionStartPosition.CharacterPosition;
+                int characterPosEnd = renderedSelectionEndPosition.CharacterPosition;
 
                 //Render the selection on position 0 if the user scrolled the start away
-                if (SelectionEndPosition.LineNumber < SelectionStartPosition.LineNumber)
+                if (renderedSelectionEndPosition.LineNumber < renderedSelectionStartPosition.LineNumber)
                 {
-                    if (SelectionEndPosition.LineNumber < unrenderedLinesToRenderStart)
+                    if (renderedSelectionEndPosition.LineNumber < unrenderedLinesToRenderStart)
                         characterPosEnd = 0;
-                    if (SelectionStartPosition.LineNumber < unrenderedLinesToRenderStart + 1)
+                    if (renderedSelectionStartPosition.LineNumber < unrenderedLinesToRenderStart + 1)
                         characterPosStart = 0;
                 }
-                else if (SelectionEndPosition.LineNumber == SelectionStartPosition.LineNumber)
+                else if (renderedSelectionEndPosition.LineNumber == renderedSelectionStartPosition.LineNumber)
                 {
-                    if (SelectionStartPosition.LineNumber < unrenderedLinesToRenderStart)
+                    if (renderedSelectionStartPosition.LineNumber < unrenderedLinesToRenderStart)
                         characterPosStart = 0;
-                    if (SelectionEndPosition.LineNumber < unrenderedLinesToRenderStart)
+                    if (renderedSelectionEndPosition.LineNumber < unrenderedLinesToRenderStart)
                         characterPosEnd = 0;
                 }
                 else
                 {
-                    if (SelectionStartPosition.LineNumber < unrenderedLinesToRenderStart)
+                    if (renderedSelectionStartPosition.LineNumber < unrenderedLinesToRenderStart)
                         characterPosStart = 0;
-                    if (SelectionEndPosition.LineNumber < unrenderedLinesToRenderStart + 1)
+                    if (renderedSelectionEndPosition.LineNumber < unrenderedLinesToRenderStart + 1)
                         characterPosEnd = 0;
                 }
 
-                if (SelectionStartPosition.LineNumber == SelectionEndPosition.LineNumber)
+                if (renderedSelectionStartPosition.LineNumber == renderedSelectionEndPosition.LineNumber)
                 {
                     int lenghtToLine = 0;
-                    for (int i = 0; i < SelectionStartPosition.LineNumber - unrenderedLinesToRenderStart; i++)
+                    for (int i = 0; i < renderedSelectionStartPosition.LineNumber - unrenderedLinesToRenderStart; i++)
                     {
                         if (i < numberOfRenderedLines)
                         {
@@ -106,7 +108,7 @@ namespace TextControlBoxNS.Core.Renderer
                 }
                 else
                 {
-                    for (int i = 0; i < SelectionStartPosition.LineNumber - unrenderedLinesToRenderStart; i++)
+                    for (int i = 0; i < renderedSelectionStartPosition.LineNumber - unrenderedLinesToRenderStart; i++)
                     {
                         if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
                             break;
@@ -115,7 +117,7 @@ namespace TextControlBoxNS.Core.Renderer
 
                     selStartIndex += characterPosStart;
 
-                    for (int i = 0; i < SelectionEndPosition.LineNumber - unrenderedLinesToRenderStart; i++)
+                    for (int i = 0; i < renderedSelectionEndPosition.LineNumber - unrenderedLinesToRenderStart; i++)
                     {
                         if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
                             break;
@@ -126,19 +128,19 @@ namespace TextControlBoxNS.Core.Renderer
                     selEndIndex += characterPosEnd;
                 }
 
-                SelectionStart = Math.Min(selStartIndex, selEndIndex);
+                renderedSelectionStart = Math.Min(selStartIndex, selEndIndex);
 
-                if (SelectionStart < 0)
-                    SelectionStart = 0;
-                if (SelectionLength < 0)
-                    SelectionLength = 0;
+                if (renderedSelectionStart < 0)
+                    renderedSelectionStart = 0;
+                if (renderedSelectionLength < 0)
+                    renderedSelectionLength = 0;
 
                 if (selEndIndex > selStartIndex)
-                    SelectionLength = selEndIndex - selStartIndex;
+                    renderedSelectionLength = selEndIndex - selStartIndex;
                 else
-                    SelectionLength = selStartIndex - selEndIndex;
+                    renderedSelectionLength = selStartIndex - selEndIndex;
 
-                CanvasTextLayoutRegion[] descriptions = textLayout.GetCharacterRegions(SelectionStart, SelectionLength);
+                CanvasTextLayoutRegion[] descriptions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
                 for (int i = 0; i < descriptions.Length; i++)
                 {
                     //Change the width if selection in an emty line or starts at a line end
@@ -150,7 +152,7 @@ namespace TextControlBoxNS.Core.Renderer
 
                     args.DrawingSession.FillRectangle(Utils.CreateRect(descriptions[i].LayoutBounds, marginLeft, marginTop), selectionColor);
                 }
-                return new TextSelection(SelectionStart, SelectionLength, new CursorPosition(SelectionStartPosition), new CursorPosition(SelectionEndPosition));
+                return new TextSelection(renderedSelectionStart, renderedSelectionLength, new CursorPosition(renderedSelectionStartPosition), new CursorPosition(renderedSelectionEndPosition));
             }
             return null;
         }
@@ -160,8 +162,8 @@ namespace TextControlBoxNS.Core.Renderer
         {
             HasSelection = false;
             IsSelecting = false;
-            SelectionEndPosition = null;
-            SelectionStartPosition = null;
+            renderedSelectionEndPosition.IsNull = true;
+            renderedSelectionStartPosition.IsNull = true;
             eventsManager.CallSelectionChanged();
         }
 
@@ -175,33 +177,56 @@ namespace TextControlBoxNS.Core.Renderer
         public void SetSelection(CursorPosition startPosition, CursorPosition endPosition)
         {
             IsSelecting = true;
-            SelectionStartPosition = startPosition;
-            SelectionEndPosition = endPosition;
+            renderedSelectionStartPosition.SetChangeValues(startPosition);
+            renderedSelectionEndPosition.SetChangeValues(endPosition);
+
+            renderedSelectionEndPosition.IsNull = false;
+            renderedSelectionStartPosition.IsNull = false;
+
             IsSelecting = false;
             HasSelection = true;
         }
         public void SetSelectionStart(CursorPosition startPosition)
         {
             IsSelecting = true;
-            SelectionStartPosition = startPosition;
+            renderedSelectionStartPosition.SetChangeValues(startPosition);
+            renderedSelectionStartPosition.IsNull = false;
+
             IsSelecting = false;
             HasSelection = true;
         }
         public void SetSelectionEnd(CursorPosition endPosition)
         {
             IsSelecting = true;
-            SelectionEndPosition = endPosition;
+            renderedSelectionEndPosition.SetChangeValues(endPosition);
+            renderedSelectionEndPosition.IsNull = false;
+
             IsSelecting = false;
             HasSelection = true;
         }
 
+        public void SetSelectionStart(int startPos, int characterPos)
+        {
+            renderedSelectionStartPosition.CharacterPosition = characterPos;
+            renderedSelectionStartPosition.LineNumber = startPos;
+            renderedSelectionStartPosition.IsNull = false;
+        }
+
+        public void SetSelectionEnd(int endPos, int characterPos)
+        {
+            renderedSelectionEndPosition.CharacterPosition = characterPos;
+            renderedSelectionEndPosition.LineNumber = endPos;
+            renderedSelectionEndPosition.IsNull = false;
+        }
+
+
         public void Draw(CanvasControl canvasSelection, CanvasDrawEventArgs args)
         {
-            if (SelectionStartPosition != null && SelectionEndPosition != null)
+            if (!renderedSelectionStartPosition.IsNull && !renderedSelectionEndPosition.IsNull)
             {
                 HasSelection =
-                    !(SelectionStartPosition.LineNumber == SelectionEndPosition.LineNumber &&
-                    SelectionStartPosition.CharacterPosition == SelectionEndPosition.CharacterPosition);
+                    !(renderedSelectionStartPosition.LineNumber == renderedSelectionEndPosition.LineNumber &&
+                    renderedSelectionStartPosition.CharacterPosition == renderedSelectionEndPosition.CharacterPosition);
             }
             else
                 HasSelection = false;
@@ -225,7 +250,8 @@ namespace TextControlBoxNS.Core.Renderer
             if (!selectionManager.TextSelIsNull && !selectionManager.Equals(selectionManager.OldTextSelection, selectionManager.currentTextSelection))
             {
                 //Update the variables
-                selectionManager.OldTextSelection = new TextSelection(selectionManager.currentTextSelection);
+                selectionManager.OldTextSelection.EndPosition.SetChangeValues(selectionManager.currentTextSelection.EndPosition);
+                selectionManager.OldTextSelection.StartPosition.SetChangeValues(selectionManager.currentTextSelection.StartPosition);
                 eventsManager.CallSelectionChanged();
             }
         }

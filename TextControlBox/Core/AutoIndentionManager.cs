@@ -89,6 +89,10 @@ internal class AutoIndentionManager
     public void OnCursorMoved(int currentLineIndex)
     {
         int depth = CalculateDepth(currentLineIndex);
-        Debug.WriteLine($"Depth at cursor: {depth}");
+
+        if(textManager.GetLineLength(currentLineIndex) > depth)
+            cursorManager.SetCursorPosition(currentLineIndex, depth * tabSpaceHelper.TabCharacter.Length);
+        else
+            textManager.String_AddToStart(currentLineIndex, tabSpaceHelper.TabCharacter);
     }
 }

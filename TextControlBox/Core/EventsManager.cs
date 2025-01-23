@@ -1,4 +1,9 @@
-﻿using TextControlBoxNS.Core.Renderer;
+﻿using Microsoft.UI.Xaml;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using TextControlBoxNS.Core.Renderer;
+using TextControlBoxNS.Helper;
+using TextControlBoxNS.Models;
 
 namespace TextControlBoxNS.Core
 {
@@ -34,6 +39,9 @@ namespace TextControlBoxNS.Core
 
         public void CallTextChanged()
         {
+            if (TextChanged == null)
+                return;
+
             if (searchManager.IsSearchOpen)
                 searchManager.UpdateSearchLines();
 
@@ -42,24 +50,15 @@ namespace TextControlBoxNS.Core
 
         public void CallSelectionChanged()
         {
+            if (SelectionChanged == null)
+                return;
+
             SelectionChangedEventHandler args = new SelectionChangedEventHandler
             {
                 CharacterPositionInLine = cursorManager.GetCurPosInLine() + 1,
                 LineNumber = cursorManager.LineNumber,
             };
-
-            if (selectionManager.currentTextSelection != null)
-            {
-                var sel = selectionManager.GetIndexOfSelection(selectionManager.currentTextSelection);
-                args.SelectionLength = sel.Length;
-                args.SelectionStartIndex = sel.Index;
-            }
-            else
-            {
-                args.SelectionLength = 0;
-                args.SelectionStartIndex = cursorManager.CursorPositionToIndex(new CursorPosition { CharacterPosition = cursorManager.GetCurPosInLine(), LineNumber = cursorManager.LineNumber });
-            }
-            SelectionChanged?.Invoke(args);
+            SelectionChanged.Invoke(args);
         }
 
         public void CallZoomChanged(int zoomFactor)

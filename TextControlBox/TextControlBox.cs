@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using System;
 using System.Collections.Generic;
 using TextControlBoxNS.Core;
 using Windows.Foundation;
@@ -434,6 +435,26 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Calculates the index and length of the currently selected text.
+    /// Important: resource heavy for very long text!
+    /// </summary>
+    /// <returns>An instance of the TextSelectionPosition object containing the Index and Length properties</returns>
+    public TextSelectionPosition CalculateSelectionPosition()
+    {
+        return coreTextBox.CalculateSelectionPosition();
+    }
+
+    /// <summary>
+    /// Counts the total number of characters in the textbox.
+    /// Important: resource heavy for very long text!
+    /// </summary>
+    public int CharacterCount()
+    {
+        return coreTextBox.CharacterCount();
+    }
+
+
+    /// <summary>
     /// Gets or sets a value indicating whether syntax highlighting is enabled in the textbox.
     /// </summary>
     public bool EnableSyntaxHighlighting { get => coreTextBox.EnableSyntaxHighlighting; set => coreTextBox.EnableSyntaxHighlighting = value; } 
@@ -590,23 +611,6 @@ public partial class TextControlBox : UserControl
         get => coreTextBox.ContextFlyoutDisabled;
         set => coreTextBox.ContextFlyoutDisabled = value;
     }
-    /// <summary>
-    /// Gets or sets the starting index of the selected text in the textbox.
-    /// </summary>
-    public int SelectionStart
-    {
-        get => coreTextBox.SelectionStart;
-        set => coreTextBox.SelectionStart = value;
-    }
-
-    /// <summary>
-    /// Gets or sets the length of the selected text in the textbox.
-    /// </summary>
-    public int SelectionLength
-    {
-        get => coreTextBox.SelectionLength;
-        set => coreTextBox.SelectionLength = value;
-    }
 
     /// <summary>
     /// Gets or sets the text that is currently selected in the textbox.
@@ -635,10 +639,6 @@ public partial class TextControlBox : UserControl
         get => coreTextBox.ScrollBarPosition;
         set => coreTextBox.ScrollBarPosition = value;
     }
-    /// <summary>
-    /// Gets the total number of characters in the textbox.
-    /// </summary>
-    public int CharacterCount => coreTextBox.CharacterCount;
 
     /// <summary>
     /// Gets or sets the sensitivity of vertical scrolling in the textbox.
@@ -715,6 +715,13 @@ public partial class TextControlBox : UserControl
     public IEnumerable<string> Lines => coreTextBox.Lines;
 
     /// <summary>
+    /// Gets an span collection of all the lines in the textbox.
+    /// </summary>
+    /// <remarks>
+    /// Use this property to access all the lines of text in the textbox.
+    //public Span<string> LinesSpan => coreTextBox.LinesSpan;
+
+    /// <summary>
     /// Gets or sets a value indicating whether auto-pairing is enabled.
     /// </summary>
     /// <remarks>
@@ -736,7 +743,6 @@ public partial class TextControlBox : UserControl
         get => coreTextBox.ControlW_SelectWord;
         set => coreTextBox.ControlW_SelectWord = value;
     }
-
 
     /// <summary>
     /// Represents a delegate used for handling the text changed event in the TextControlBox.

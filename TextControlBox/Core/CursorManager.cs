@@ -6,7 +6,7 @@ namespace TextControlBoxNS.Core;
 
 internal class CursorManager
 {
-    public CursorPosition oldCursorPosition = null;
+    public CursorPosition oldCursorPosition = new CursorPosition(0,0);
     public CursorPosition currentCursorPosition { get; private set; } = new CursorPosition(0, 0);
     public int LineNumber { get => currentCursorPosition.LineNumber; set => currentCursorPosition.LineNumber = value; }
     public int CharacterPosition { get => currentCursorPosition.CharacterPosition; set { currentCursorPosition.CharacterPosition = value; } }
@@ -14,19 +14,26 @@ internal class CursorManager
     private TextManager textManager;
     private CurrentLineManager currentLineManager;
     private TabSpaceHelper tabSpaceHelper;
-
-    public void Init(TextManager textManager, CurrentLineManager currentLineManager, TabSpaceHelper tabSpaceHelper)
+    private SelectionManager selectionManager;
+    private AutoIndentionManager autoIndentionManager;
+    public void Init(TextManager textManager, CurrentLineManager currentLineManager, TabSpaceHelper tabSpaceHelper, SelectionManager selectionManager, AutoIndentionManager autoIndentionManager)
     {
         this.textManager = textManager;
         this.currentLineManager = currentLineManager;
         this.tabSpaceHelper = tabSpaceHelper;
+        this.selectionManager = selectionManager;
+        this.autoIndentionManager = autoIndentionManager;
     }
 
     public void SetCursorPosition(CursorPosition cursorPosition)
     {
         this.currentCursorPosition = cursorPosition;
     }
-
+    public void SetCursorPosition(int line, int character)
+    {
+        this.LineNumber = line;
+        this.CharacterPosition = character;
+    }
     public void SetCursorPositionCopyValues(CursorPosition cursorPosition)
     {
         this.currentCursorPosition.LineNumber = cursorPosition.LineNumber;
@@ -50,7 +57,7 @@ internal class CursorManager
         int lineNumber = cursorPosition.LineNumber < textManager.LinesCount ? cursorIndex : textManager.LinesCount - 1;
         for (int i = 0; i < lineNumber; i++)
         {
-            cursorIndex += textManager.GetLineLength(i) + 1;
+            cursorIndex += textManager.totalLines.Span[i].Length + 1;
         }
         return cursorIndex;
     }
@@ -246,11 +253,22 @@ internal class CursorManager
     {
         if (LineNumber < textManager.LinesCount - 1)
             LineNumber += 1;
+
+        if(selectionManager.currentTextSelection.EndPosition.IsNull || selectionManager.currentTextSelection.StartPosition.IsNull)
+        {
+            autoIndentionManager.OnCursorMoved(LineNumber);
+
+        }
     }
     public void MoveUp()
     {
         if (LineNumber > 0)
             LineNumber -= 1;
+
+        if (selectionManager.currentTextSelection.EndPosition.IsNull || selectionManager.currentTextSelection.StartPosition.IsNull)
+        {
+            autoIndentionManager.OnCursorMoved(LineNumber);
+        }
     }
     public void MoveToLineEnd(CursorPosition cursorPosition)
     {

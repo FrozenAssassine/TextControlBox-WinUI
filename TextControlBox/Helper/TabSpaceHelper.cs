@@ -82,7 +82,7 @@ namespace TextControlBoxNS.Helper
             return input.Replace(find, replace, StringComparison.OrdinalIgnoreCase);
         }
 
-        public TextSelection MoveTabBack(TextSelection textSelection, CursorPosition cursorPosition, string tabCharacter, UndoRedo undoRedo)
+        public void MoveTabBack(TextSelection textSelection, CursorPosition cursorPosition, string tabCharacter, UndoRedo undoRedo)
         {
             if (textSelection == null)
             {
@@ -95,7 +95,9 @@ namespace TextControlBoxNS.Helper
                     textManager.SetLineText(cursorPosition.LineNumber, line.RemoveFirstOccurence(tabCharacter));
                 }, cursorPosition.LineNumber, 1, 1);
 
-                return new TextSelection(cursorPosition, null);
+                textSelection.EndPosition.IsNull = true;
+                textSelection.StartPosition.SetChangeValues(cursorPosition);
+                return;
             }
 
             textSelection = selectionManager.OrderTextSelection(textSelection);
@@ -122,11 +124,9 @@ namespace TextControlBoxNS.Helper
                     textManager.SetLineText(lineIndex, currentLine.RemoveFirstOccurence(tabCharacter));
                 }
             }, tempSel, selectedLinesCount);
-
-            return new TextSelection(new CursorPosition(textSelection.StartPosition), new CursorPosition(textSelection.EndPosition));
         }
 
-        public TextSelection MoveTab(TextSelection textSelection, CursorPosition cursorPosition, string tabCharacter, UndoRedo undoRedo)
+        public void MoveTab(TextSelection textSelection, CursorPosition cursorPosition, string tabCharacter, UndoRedo undoRedo)
         {
             if (textSelection == null)
             {
@@ -138,14 +138,16 @@ namespace TextControlBoxNS.Helper
                 }, cursorPosition.LineNumber, 1, 1);
 
                 cursorPosition.AddToCharacterPos(tabCharacter.Length);
-                return new TextSelection(cursorPosition, null);
+
+                textSelection.EndPosition.IsNull = true;
+                textSelection.StartPosition.SetChangeValues(cursorPosition);
             }
 
             textSelection = selectionManager.OrderTextSelection(textSelection);
             int selectedLinesCount = textSelection.EndPosition.LineNumber - textSelection.StartPosition.LineNumber;
 
             if (textSelection.StartPosition.LineNumber == textSelection.EndPosition.LineNumber) //Singleline
-                textSelection.StartPosition = selectionManager.Replace(textSelection, tabCharacter);
+                selectionManager.Replace(textSelection, tabCharacter);
             else
             {
                 TextSelection tempSel = new TextSelection(textSelection);
@@ -163,7 +165,6 @@ namespace TextControlBoxNS.Helper
                     }
                 }, tempSel, selectedLinesCount + 1);
             }
-            return new TextSelection(new CursorPosition(textSelection.StartPosition), new CursorPosition(textSelection.EndPosition));
         }
     }
 }

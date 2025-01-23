@@ -14,14 +14,4 @@ public class SelectionChangedEventHandler
     /// Represents the line number where the cursor is currently located.
     /// </summary>
     public int LineNumber { get; set; }
-
-    /// <summary>
-    /// Represents the starting index of the selection.
-    /// </summary>
-    public int SelectionStartIndex { get; set; }
-
-    /// <summary>
-    /// Represents the length of the selection.
-    /// </summary>
-    public int SelectionLength { get; set; }
 }

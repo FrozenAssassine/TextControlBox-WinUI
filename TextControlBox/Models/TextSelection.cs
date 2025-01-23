@@ -6,25 +6,35 @@ internal class TextSelection
     {
         Index = 0;
         Length = 0;
-        StartPosition = null;
-        EndPosition = null;
+        StartPosition.IsNull = true;
+        EndPosition.IsNull = true;
     }
     public TextSelection(int index = 0, int length = 0, CursorPosition startPosition = null, CursorPosition endPosition = null)
     {
         Index = index;
         Length = length;
-        StartPosition = startPosition;
-        EndPosition = endPosition;
+
+        if(StartPosition != null)
+            StartPosition.SetChangeValues(startPosition);
+        
+        if(endPosition != null)
+            EndPosition.SetChangeValues(endPosition);
     }
     public TextSelection(CursorPosition startPosition = null, CursorPosition endPosition = null)
     {
-        StartPosition = startPosition;
-        EndPosition = endPosition;
+        if(startPosition != null)
+            StartPosition.SetChangeValues(startPosition);
+        
+        if(endPosition != null)
+            EndPosition.SetChangeValues(endPosition);
     }
     public TextSelection(TextSelection textSelection)
     {
-        StartPosition = new CursorPosition(textSelection.StartPosition);
-        EndPosition = new CursorPosition(textSelection.EndPosition);
+        if(textSelection.StartPosition != null)
+            StartPosition.SetChangeValues(textSelection.StartPosition);
+        if(textSelection.EndPosition != null)
+            EndPosition.SetChangeValues(textSelection.EndPosition);
+
         Index = textSelection.Index;
         Length = textSelection.Length;
     }
@@ -32,12 +42,12 @@ internal class TextSelection
     public int Index { get; set; }
     public int Length { get; set; }
 
-    public CursorPosition StartPosition { get; set; }
-    public CursorPosition EndPosition { get; set; }
+    public CursorPosition StartPosition { get; private set; } = new CursorPosition();
+    public CursorPosition EndPosition { get; private set; } = new CursorPosition();
 
     public bool IsLineInSelection(int line)
     {
-        if (this.StartPosition != null && this.EndPosition != null)
+        if (!this.StartPosition.IsNull && !this.EndPosition.IsNull)
         {
             if (this.StartPosition.LineNumber > this.EndPosition.LineNumber)
                 return this.StartPosition.LineNumber < line && this.EndPosition.LineNumber > line;
@@ -48,4 +58,5 @@ internal class TextSelection
         }
         return false;
     }
+
 }

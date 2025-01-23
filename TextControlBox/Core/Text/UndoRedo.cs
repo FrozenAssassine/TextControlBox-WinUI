@@ -84,7 +84,7 @@ namespace TextControlBoxNS.Core.Text
             var linesAfter = textManager.GetLinesAsString(orderedSel.StartPosition.LineNumber, numberOfAddedLines);
 
             AddUndoItem(
-                selection,
+                new TextSelection(selection),
                 orderedSel.StartPosition.LineNumber,
                 linesBefore,
                 linesAfter,

@@ -41,7 +41,7 @@ namespace TextControlBoxNS.Core
 
         public void DoDragDropSelection()
         {
-            if (selectionManager.currentTextSelection == null || textManager._IsReadonly)
+            if (selectionManager.TextSelIsNull || textManager._IsReadonly)
                 return;
 
             //Position to insert is selection start or selection end -> no need to drag
