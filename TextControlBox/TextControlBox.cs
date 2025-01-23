@@ -726,6 +726,17 @@ public partial class TextControlBox : UserControl
         set => coreTextBox.DoAutoPairing = value;
     }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether pressing ctrl + w selects a word or does nothing.
+    /// </summary>
+    /// <remarks>
+    /// </remarks>
+    public bool ControlW_SelectWord
+    {
+        get => coreTextBox.ControlW_SelectWord;
+        set => coreTextBox.ControlW_SelectWord = value;
+    }
+
 
     /// <summary>
     /// Represents a delegate used for handling the text changed event in the TextControlBox.

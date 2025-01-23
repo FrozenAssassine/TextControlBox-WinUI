@@ -232,7 +232,8 @@ internal sealed partial class CoreTextControlBox : UserControl
                     SelectAll();
                     break;
                 case VirtualKey.W:
-                    selectionManager.SelectSingleWord(canvasUpdateManager, CursorPosition);
+                    if(ControlW_SelectWord)
+                        selectionManager.SelectSingleWord(canvasUpdateManager, CursorPosition);
                     break;
             }
 
@@ -1175,7 +1176,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public bool SearchIsOpen => searchManager.IsSearchOpen;
     public IEnumerable<string> Lines => textManager.totalLines;
     public bool DoAutoPairing { get; set; } = true;
-
+    public bool ControlW_SelectWord = true;
 
     public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {
