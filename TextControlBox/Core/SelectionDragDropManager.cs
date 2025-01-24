@@ -53,12 +53,9 @@ namespace TextControlBoxNS.Core
             }
 
             string textToInsert = coreTextbox.SelectedText;
-            CursorPosition curpos = new CursorPosition(cursorManager.currentCursorPosition);
 
             //Delete the selection
             textActionManager.RemoveText();
-
-            cursorManager.SetCursorPosition(curpos);
 
             textActionManager.AddCharacter(textToInsert, false);
 

@@ -11,10 +11,10 @@ internal class SelectionHelper
     //returns whether the pointer is over a selection
     public static bool PointerIsOverSelection(TextRenderer textRenderer, Point pointerPosition, TextSelection selection)
     {
-        if (textRenderer.DrawnTextLayout == null || selection == null)
+        if (textRenderer.DrawnTextLayout == null || selection.IsNull)
             return false;
 
-        CanvasTextLayoutRegion[] regions = textRenderer.DrawnTextLayout.GetCharacterRegions(selection.Index, selection.Length);
+        CanvasTextLayoutRegion[] regions = textRenderer.DrawnTextLayout.GetCharacterRegions(selection.renderedIndex, selection.renderedLength);
         for (int i = 0; i < regions.Length; i++)
         {
             if (regions[i].LayoutBounds.Contains(pointerPosition))
@@ -25,26 +25,25 @@ internal class SelectionHelper
 
     public static bool CursorIsInSelection(SelectionManager selectionManager, CursorPosition cursorPosition, TextSelection textSelection)
     {
-        if (textSelection == null)
+        var textSel = selectionManager.OrderTextSelectionSeparated(textSelection);
+        if (textSel.startNull && textSel.endNull)
             return false;
 
-        textSelection = selectionManager.OrderTextSelection(textSelection);
-
         //Cursorposition is smaller than the start of selection
-        if (textSelection.StartPosition.LineNumber > cursorPosition.LineNumber)
+        if (textSel.startLine> cursorPosition.LineNumber)
             return false;
 
         //Selectionend is smaller than Cursorposition -> not in selection
-        if (textSelection.EndPosition.LineNumber < cursorPosition.LineNumber)
+        if (textSel.endLine< cursorPosition.LineNumber)
             return false;
 
         //Selection-start line equals Cursor line:
-        if (cursorPosition.LineNumber == textSelection.StartPosition.LineNumber)
-            return cursorPosition.CharacterPosition > textSelection.StartPosition.CharacterPosition;
+        if (cursorPosition.LineNumber == textSel.startLine)
+            return cursorPosition.CharacterPosition > textSel.startChar;
 
         //Selection-end line equals Cursor line
-        else if (cursorPosition.LineNumber == textSelection.EndPosition.LineNumber)
-            return cursorPosition.CharacterPosition < textSelection.EndPosition.CharacterPosition;
+        else if (cursorPosition.LineNumber == textSel.endLine)
+            return cursorPosition.CharacterPosition < textSel.endChar;
         return true;
     }
 

@@ -25,10 +25,6 @@ internal class CursorManager
         this.autoIndentionManager = autoIndentionManager;
     }
 
-    public void SetCursorPosition(CursorPosition cursorPosition)
-    {
-        this.currentCursorPosition = cursorPosition;
-    }
     public void SetCursorPosition(int line, int character)
     {
         this.LineNumber = line;
@@ -63,7 +59,7 @@ internal class CursorManager
     }
     public bool Equals(CursorPosition curPos1, CursorPosition curPos2)
     {
-        if (curPos1 == null || curPos2 == null)
+        if (curPos1.IsNull || curPos2.IsNull)
             return false;
 
         if (curPos1.LineNumber == curPos2.LineNumber)
@@ -253,22 +249,11 @@ internal class CursorManager
     {
         if (LineNumber < textManager.LinesCount - 1)
             LineNumber += 1;
-
-        if(selectionManager.currentTextSelection.EndPosition.IsNull || selectionManager.currentTextSelection.StartPosition.IsNull)
-        {
-            autoIndentionManager.OnCursorMoved(LineNumber);
-
-        }
     }
     public void MoveUp()
     {
         if (LineNumber > 0)
             LineNumber -= 1;
-
-        if (selectionManager.currentTextSelection.EndPosition.IsNull || selectionManager.currentTextSelection.StartPosition.IsNull)
-        {
-            autoIndentionManager.OnCursorMoved(LineNumber);
-        }
     }
     public void MoveToLineEnd(CursorPosition cursorPosition)
     {

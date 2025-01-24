@@ -1,9 +1,6 @@
 ﻿using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
@@ -14,11 +11,11 @@ namespace TextControlBoxNS.Core.Renderer
 {
     internal class SelectionRenderer
     {
-        public bool HasSelection = false;
         public bool IsSelecting = false;
+        public bool HasSelection = false;
         public bool IsSelectingOverLinenumbers = false;
-        public CursorPosition renderedSelectionStartPosition = new CursorPosition();
-        public CursorPosition renderedSelectionEndPosition = new CursorPosition();
+        public readonly CursorPosition renderedSelectionStartPosition = new CursorPosition();
+        public readonly CursorPosition renderedSelectionEndPosition = new CursorPosition();
         public int renderedSelectionLength = 0;
         public int renderedSelectionStart = 0;
 
@@ -63,7 +60,6 @@ namespace TextControlBoxNS.Core.Renderer
         {
             if (HasSelection && !renderedSelectionEndPosition.IsNull && !renderedSelectionStartPosition.IsNull)
             {
-
                 int selStartIndex = 0;
                 int selEndIndex = 0;
                 int characterPosStart = renderedSelectionStartPosition.CharacterPosition;
@@ -152,7 +148,7 @@ namespace TextControlBoxNS.Core.Renderer
 
                     args.DrawingSession.FillRectangle(Utils.CreateRect(descriptions[i].LayoutBounds, marginLeft, marginTop), selectionColor);
                 }
-                return new TextSelection(renderedSelectionStart, renderedSelectionLength, new CursorPosition(renderedSelectionStartPosition), new CursorPosition(renderedSelectionEndPosition));
+                return new TextSelection(renderedSelectionStart, renderedSelectionLength, renderedSelectionStartPosition ,renderedSelectionEndPosition);
             }
             return null;
         }
@@ -169,11 +165,24 @@ namespace TextControlBoxNS.Core.Renderer
 
         public void SetSelection(TextSelection selection)
         {
-            if (selection == null)
+            if (selection.IsNull)
                 return;
 
             SetSelection(selection.StartPosition, selection.EndPosition);
         }
+        public void SetSelection(int startLine, int startChar, int endLine, int endChar)
+        {
+            IsSelecting = true;
+            renderedSelectionStartPosition.SetChangeValues(startLine, startChar);
+            renderedSelectionEndPosition.SetChangeValues(endLine, endChar);
+
+            renderedSelectionEndPosition.IsNull = false;
+            renderedSelectionStartPosition.IsNull = false;
+
+            IsSelecting = false;
+            HasSelection = selectionManager.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
+        }
+
         public void SetSelection(CursorPosition startPosition, CursorPosition endPosition)
         {
             IsSelecting = true;
@@ -184,7 +193,7 @@ namespace TextControlBoxNS.Core.Renderer
             renderedSelectionStartPosition.IsNull = false;
 
             IsSelecting = false;
-            HasSelection = true;
+            HasSelection = selectionManager.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
         }
         public void SetSelectionStart(CursorPosition startPosition)
         {
@@ -193,7 +202,7 @@ namespace TextControlBoxNS.Core.Renderer
             renderedSelectionStartPosition.IsNull = false;
 
             IsSelecting = false;
-            HasSelection = true;
+            HasSelection = selectionManager.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
         }
         public void SetSelectionEnd(CursorPosition endPosition)
         {
@@ -202,7 +211,7 @@ namespace TextControlBoxNS.Core.Renderer
             renderedSelectionEndPosition.IsNull = false;
 
             IsSelecting = false;
-            HasSelection = true;
+            HasSelection = selectionManager.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
         }
 
         public void SetSelectionStart(int startPos, int characterPos)
@@ -223,11 +232,7 @@ namespace TextControlBoxNS.Core.Renderer
         public void Draw(CanvasControl canvasSelection, CanvasDrawEventArgs args)
         {
             if (!renderedSelectionStartPosition.IsNull && !renderedSelectionEndPosition.IsNull)
-            {
-                HasSelection =
-                    !(renderedSelectionStartPosition.LineNumber == renderedSelectionEndPosition.LineNumber &&
-                    renderedSelectionStartPosition.CharacterPosition == renderedSelectionEndPosition.CharacterPosition);
-            }
+                HasSelection = selectionManager.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
             else
                 HasSelection = false;
 

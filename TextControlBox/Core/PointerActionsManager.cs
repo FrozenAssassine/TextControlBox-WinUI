@@ -13,7 +13,7 @@ internal class PointerActionsManager
 {
     Point? OldTouchPosition = null;
     public int PointerClickCount = 0;
-    public DispatcherTimer PointerClickTimer = new DispatcherTimer { Interval = new TimeSpan(0, 0, 0, 0, 250) };
+    public DispatcherTimer PointerClickTimer = new DispatcherTimer { Interval = new TimeSpan(0, 0, 0, 0, 200) };
 
     private SelectionRenderer selectionRenderer;
     private SelectionDragDropManager selectionDragDropManager;
@@ -24,6 +24,7 @@ internal class PointerActionsManager
     private TextManager textManager;
     private TextRenderer textRenderer;
     private CurrentLineManager currentLineManager;
+    private SelectionManager selectionManager;
 
     public void Init(
         CoreTextControlBox coreTextbox,
@@ -34,7 +35,8 @@ internal class PointerActionsManager
         ScrollManager scrollManager, 
         SelectionRenderer selectionRenderer, 
         SelectionDragDropManager selectionDragDropManager,
-        CurrentLineManager currentLineManager
+        CurrentLineManager currentLineManager,
+        SelectionManager selectionManager
         )
     {
         this.currentLineManager = currentLineManager;
@@ -46,7 +48,7 @@ internal class PointerActionsManager
         this.textRenderer = textRenderer;
         this.scrollManager = scrollManager;
         this.canvasUpdateManager = canvasUpdateManager;
-
+        this.selectionManager = selectionManager;
     }
 
 
@@ -62,10 +64,7 @@ internal class PointerActionsManager
             selectionDragDropManager.EndDragDropSelection();
 
         if (selectionRenderer.IsSelecting)
-        {
             coreTextbox.Focus(FocusState.Programmatic);
-            selectionRenderer.HasSelection = true;
-        }
 
         selectionRenderer.IsSelecting = false;
     }

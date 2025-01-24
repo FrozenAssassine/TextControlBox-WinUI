@@ -18,7 +18,7 @@ public class CursorPosition
     }
     internal CursorPosition(CursorPosition currentCursorPosition)
     {
-        if (currentCursorPosition == null)
+        if (currentCursorPosition.IsNull)
             return;
 
         this.CharacterPosition = currentCursorPosition.CharacterPosition;
@@ -47,10 +47,6 @@ public class CursorPosition
     {
         this.LineNumber = curPos.LineNumber;
         this.CharacterPosition = curPos.CharacterPosition;
-    }
-    internal static CursorPosition ChangeLineNumber(CursorPosition currentCursorPosition, int lineNumber)
-    {
-        return new CursorPosition(currentCursorPosition.CharacterPosition, lineNumber);
     }
 
     internal void SetChangeValues(int line, int cursor)

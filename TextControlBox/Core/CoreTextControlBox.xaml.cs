@@ -19,7 +19,7 @@ using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Models.Enums;
 using TextControlBoxNS.Models;
 using System.Linq;
-using Microsoft.UI.Xaml.Shapes;
+using System.Diagnostics;
 
 namespace TextControlBoxNS.Core;
 
@@ -123,14 +123,14 @@ internal sealed partial class CoreTextControlBox : UserControl
         currentLineManager.Init(cursorManager, textManager);
         longestLineManager.Init(selectionManager, textManager);
         designHelper.Init(this, textRenderer, canvasUpdateManager);
-        tabSpaceHelper.Init(textManager, selectionManager);
+        tabSpaceHelper.Init(textManager, selectionManager, cursorManager);
         searchManager.Init(textManager);
         eventsManager.Init(searchManager, selectionManager, cursorManager, selectionRenderer);
         lineNumberRenderer.Init(textManager, textLayoutManager, textRenderer, designHelper, lineNumberManager);
         zoomManager.Init(textManager, textRenderer, scrollManager, canvasUpdateManager, lineNumberRenderer, eventsManager);
         selectionDragDropManager.Init(this, cursorManager, selectionManager, textManager, textActionManager, canvasUpdateManager, selectionRenderer, textRenderer);
         focusManager.Init(this, canvasUpdateManager, inputHandler, eventsManager);
-        pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, selectionDragDropManager, currentLineManager);
+        pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, selectionDragDropManager, currentLineManager, selectionManager);
         textLayoutManager.Init(textManager, zoomManager);
         autoIndentionManager.Init(textManager, cursorManager, tabSpaceHelper);
         //subscribe to events:
@@ -178,16 +178,14 @@ internal sealed partial class CoreTextControlBox : UserControl
         if (e.Key == VirtualKey.Tab)
         {
             if (Utils.IsKeyPressed(VirtualKey.Shift))
-                tabSpaceHelper.MoveTabBack(selectionManager.currentTextSelection, CursorPosition, tabSpaceHelper.TabCharacter, undoRedo);
+                tabSpaceHelper.MoveTabBack(tabSpaceHelper.TabCharacter, undoRedo);
             else
-                tabSpaceHelper.MoveTab(selectionManager.currentTextSelection, CursorPosition, tabSpaceHelper.TabCharacter, undoRedo);
+                tabSpaceHelper.MoveTab(tabSpaceHelper.TabCharacter, undoRedo);
 
-            if (selectionManager.currentTextSelection != null)
+            if (!selectionManager.currentTextSelection.IsNull)
             {
                 if (selectionManager.currentTextSelection.EndPosition.IsNull)
-                {
                     cursorManager.SetCursorPositionCopyValues(selectionManager.currentTextSelection.StartPosition);
-                }
                 else
                 {
                     selectionRenderer.SetSelection(selectionManager.currentTextSelection);
@@ -291,8 +289,9 @@ internal sealed partial class CoreTextControlBox : UserControl
                     }
                     else
                     {
+                        Debug.WriteLine("SEL: " + selectionRenderer.HasSelection);
                         //Move the cursor to the start of the selection
-                        if (selectionRenderer.HasSelection && selectionManager.currentTextSelection != null)
+                        if (selectionRenderer.HasSelection && !selectionManager.currentTextSelection.IsNull)
                             cursorManager.SetCursorPositionCopyValues(selectionManager.GetMin(selectionManager.currentTextSelection));
                         else
                             cursorManager.MoveLeft();
@@ -315,7 +314,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     else
                     {
                         //Move the cursor to the end of the selection
-                        if (selectionRenderer.HasSelection && selectionManager.currentTextSelection != null)
+                        if (selectionRenderer.HasSelection && !selectionManager.currentTextSelection.IsNull)
                             cursorManager.SetCursorPositionCopyValues(selectionManager.GetMax(selectionManager.currentTextSelection));
                         else
                             cursorManager.MoveRight();
@@ -461,13 +460,8 @@ internal sealed partial class CoreTextControlBox : UserControl
         if (leftButtonPressed && !Utils.IsKeyPressed(VirtualKey.Shift))
             pointerActionsManager.PointerClickCount++;
 
-        if (pointerActionsManager.PointerClickCount == 4)
-        {
-            SelectAll();
-            pointerActionsManager.PointerClickCount = 0;
-            return;
-        }
-        else if(pointerActionsManager.PointerClickCount == 3)
+
+        if(pointerActionsManager.PointerClickCount == 3)
         {
             SelectLine(CursorPosition.LineNumber);
             pointerActionsManager.PointerClickCount = 0;
@@ -487,7 +481,6 @@ internal sealed partial class CoreTextControlBox : UserControl
         else
         {
             //TODO: Show the on screen keyboard if no physical keyboard is attached
-
             //Show the contextflyout
             if (rightButtonPressed)
             {
@@ -513,7 +506,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             if (Utils.IsKeyPressed(VirtualKey.Shift) && leftButtonPressed)
             {
                 if (selectionRenderer.renderedSelectionStartPosition.IsNull)
-                    selectionRenderer.SetSelectionStart(new CursorPosition(CursorPosition));
+                    selectionRenderer.SetSelectionStart(CursorPosition);
 
                 CursorHelper.UpdateCursorPosFromPoint(Canvas_Text,
                     currentLineManager,
@@ -522,7 +515,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     pointerPosition,
                     cursorManager.currentCursorPosition);
 
-                selectionRenderer.SetSelectionEnd(new CursorPosition(CursorPosition));
+                selectionRenderer.SetSelectionEnd(CursorPosition);
                 canvasUpdateManager.UpdateSelection();
                 canvasUpdateManager.UpdateCursor();
                 return;
@@ -538,7 +531,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     cursorManager.currentCursorPosition);
 
                 //Text drag/drop
-                if (selectionManager.currentTextSelection != null)
+                if (!selectionManager.currentTextSelection.IsNull)
                 {
                     if (SelectionHelper.PointerIsOverSelection(textRenderer, pointerPosition, selectionManager.currentTextSelection) && !selectionDragDropManager.isDragDropSelection)
                     {
@@ -756,8 +749,9 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public void SelectLine(int line)
     {
-        selectionRenderer.SetSelection(new CursorPosition(0, line), new CursorPosition(textManager.GetLineLength(line), line));
-        CursorPosition.SetChangeValues(selectionRenderer.renderedSelectionEndPosition);
+        int lineLength = textManager.GetLineLength(line);
+        selectionRenderer.SetSelection(line, 0, line, lineLength);
+        cursorManager.SetCursorPosition(line, lineLength);
 
         canvasUpdateManager.UpdateSelection();
         canvasUpdateManager.UpdateCursor();
@@ -819,8 +813,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         var result = selectionManager.GetSelectionFromPosition(start, length, CharacterCount());
         if (result != null)
         {
-            //TODO! Check this for improvement
-            selectionManager.SetCurrentTextSelection(new TextSelection(result.StartPosition, result.EndPosition));
+            selectionManager.currentTextSelection.SetChangedValues(result.StartPosition, result.EndPosition);
             if (!result.EndPosition.IsNull)
                 CursorPosition.SetChangeValues(result.EndPosition);
         }
@@ -928,7 +921,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public void SurroundSelectionWith(string text1, string text2)
     {
-        if (!selectionManager.SelectionIsNull(selectionManager.currentTextSelection))
+        if (!selectionManager.TextSelIsNull)
         {
             textActionManager.AddCharacter(stringManager.CleanUpString(text1) + SelectedText + stringManager.CleanUpString(text2));
         }
@@ -1170,9 +1163,9 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         get
         {
-            if (selectionManager.currentTextSelection != null && selectionManager.WholeTextSelected(selectionManager.currentTextSelection))
+            if (selectionManager.WholeTextSelected())
                 return GetText();
-            return selectionManager.GetSelectedText(selectionManager.currentTextSelection, CursorPosition.LineNumber);
+            return selectionManager.GetSelectedText(CursorPosition.LineNumber);
         }
         set => textActionManager.AddCharacter(stringManager.CleanUpString(value));
     }

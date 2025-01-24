@@ -31,10 +31,12 @@ namespace TextControlBoxNS.Helper
 
         private TextManager textManager;
         private SelectionManager selectionManager;
-        public void Init(TextManager textManager, SelectionManager selectionManager)
+        private CursorManager cursorManager;
+        public void Init(TextManager textManager, SelectionManager selectionManager, CursorManager cursorManager)
         {
             this.textManager = textManager;
             this.selectionManager = selectionManager;
+            this.cursorManager = cursorManager;
         }
 
         public void UpdateNumberOfSpaces()
@@ -82,9 +84,11 @@ namespace TextControlBoxNS.Helper
             return input.Replace(find, replace, StringComparison.OrdinalIgnoreCase);
         }
 
-        public void MoveTabBack(TextSelection textSelection, CursorPosition cursorPosition, string tabCharacter, UndoRedo undoRedo)
+        public void MoveTabBack(string tabCharacter, UndoRedo undoRedo)
         {
-            if (textSelection == null)
+            var cursorPosition = cursorManager.currentCursorPosition;
+            var textSelection = selectionManager.currentTextSelection;
+            if (textSelection.IsNull)
             {
                 string line = textManager.GetLineText(cursorPosition.LineNumber);
                 if (line.Contains(tabCharacter, System.StringComparison.Ordinal) && cursorPosition.CharacterPosition > 0)
@@ -126,9 +130,11 @@ namespace TextControlBoxNS.Helper
             }, tempSel, selectedLinesCount);
         }
 
-        public void MoveTab(TextSelection textSelection, CursorPosition cursorPosition, string tabCharacter, UndoRedo undoRedo)
+        public void MoveTab(string tabCharacter, UndoRedo undoRedo)
         {
-            if (textSelection == null)
+            var cursorPosition = cursorManager.currentCursorPosition;
+            var textSelection = selectionManager.currentTextSelection;
+            if (textSelection.IsNull)
             {
                 string line = textManager.GetLineText(cursorPosition.LineNumber);
 
@@ -147,7 +153,7 @@ namespace TextControlBoxNS.Helper
             int selectedLinesCount = textSelection.EndPosition.LineNumber - textSelection.StartPosition.LineNumber;
 
             if (textSelection.StartPosition.LineNumber == textSelection.EndPosition.LineNumber) //Singleline
-                selectionManager.Replace(textSelection, tabCharacter);
+                selectionManager.Replace(tabCharacter);
             else
             {
                 TextSelection tempSel = new TextSelection(textSelection);

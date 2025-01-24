@@ -27,10 +27,10 @@ namespace TextControlBox_TestApp
 
         private void Textbox_Loaded(object sender, RoutedEventArgs e)
         {
-            textbox.SetCursorPosition(10000, 40);
-            textbox.GetLinesText(0, textbox.NumberOfLines);
+            //textbox.SetCursorPosition(10000, 40);
+            //textbox.GetLinesText(0, textbox.NumberOfLines);
 
-            textbox.EnableSyntaxHighlighting = true;
+            //textbox.EnableSyntaxHighlighting = true;
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
 
@@ -62,7 +61,7 @@ namespace TextControlBoxNS.Core.Text
             action.Invoke();
             var linesAfter = textManager.GetLinesAsString(startline, redoCount);
 
-            AddUndoItem(cursorposition == null ? null : new TextSelection(new CursorPosition(cursorposition), null), startline, linesBefore, linesAfter, undocount, redoCount);
+            AddUndoItem(cursorposition == null ? null : new TextSelection(cursorposition, null), startline, linesBefore, linesAfter, undocount, redoCount);
         }
         public void RecordUndoAction(Action action, TextSelection selection, int numberOfAddedLines)
         {
@@ -76,7 +75,7 @@ namespace TextControlBoxNS.Core.Text
             int numberOfRemovedLines = orderedSel.EndPosition.LineNumber - orderedSel.StartPosition.LineNumber + 1;
 
             if (numberOfAddedLines == 0 && !selectionManager.WholeLinesAreSelected(selection) ||
-                orderedSel.StartPosition.LineNumber == orderedSel.EndPosition.LineNumber && orderedSel.Length == textManager.GetLineLength(orderedSel.StartPosition.LineNumber))
+                orderedSel.StartPosition.LineNumber == orderedSel.EndPosition.LineNumber && orderedSel.renderedLength == textManager.GetLineLength(orderedSel.StartPosition.LineNumber))
                 numberOfAddedLines += 1;
 
             var linesBefore = textManager.GetLinesAsString(orderedSel.StartPosition.LineNumber, numberOfRemovedLines);
@@ -84,7 +83,7 @@ namespace TextControlBoxNS.Core.Text
             var linesAfter = textManager.GetLinesAsString(orderedSel.StartPosition.LineNumber, numberOfAddedLines);
 
             AddUndoItem(
-                new TextSelection(selection),
+                selection,
                 orderedSel.StartPosition.LineNumber,
                 linesBefore,
                 linesAfter,
