@@ -745,6 +745,11 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Gets whether the textbox has an active selection.
+    /// </summary>
+    public bool HasSelection => coreTextBox.HasSelection;
+
+    /// <summary>
     /// Represents a delegate used for handling the text changed event in the TextControlBox.
     /// </summary>
     /// <param name="sender">The instance of the TextControlBox that raised the event.</param>

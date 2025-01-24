@@ -1189,6 +1189,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     //public Span<string> LinesSpan => textManager.totalLines.Span;
     public bool DoAutoPairing { get; set; } = true;
     public bool ControlW_SelectWord = true;
+    public bool HasSelection => selectionRenderer.HasSelection;
 
     public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {
