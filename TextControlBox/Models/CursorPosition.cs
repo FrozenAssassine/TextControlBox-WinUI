@@ -11,19 +11,7 @@
 /// </remarks>
 public class CursorPosition
 {
-    internal CursorPosition(int characterPosition = 0, int lineNumber = 0)
-    {
-        this.CharacterPosition = characterPosition;
-        this.LineNumber = lineNumber;
-    }
-    internal CursorPosition(CursorPosition currentCursorPosition)
-    {
-        if (currentCursorPosition.IsNull)
-            return;
 
-        this.CharacterPosition = currentCursorPosition.CharacterPosition;
-        this.LineNumber = currentCursorPosition.LineNumber;
-    }
     /// <summary>
     /// Gets the character position of the cursor within the current line.
     /// </summary>
@@ -33,27 +21,31 @@ public class CursorPosition
     /// </summary>
     public int LineNumber { get; internal set; } = 0;
 
-    internal void AddToCharacterPos(int add)
+
+    internal CursorPosition(int characterPosition = 0, int lineNumber = 0)
     {
-        CharacterPosition += add;
+        SetChangeValues(lineNumber, characterPosition);
     }
-    internal void SubtractFromCharacterPos(int subtract)
-    {
-        CharacterPosition -= subtract;
-        if (CharacterPosition < 0)
-            CharacterPosition = 0;
-    }
+
     internal void SetChangeValues(CursorPosition curPos)
     {
+        if (curPos == null)
+        {
+            this.IsNull = true;
+            return;
+        }
+
         this.LineNumber = curPos.LineNumber;
         this.CharacterPosition = curPos.CharacterPosition;
+        this.IsNull = false;
     }
 
     internal void SetChangeValues(int line, int cursor)
     {
+        this.IsNull = false;
         this.LineNumber = line;
         this.CharacterPosition = cursor;
     }
 
-    internal bool IsNull = false;
+    internal bool IsNull { get; set; } = false;
 }

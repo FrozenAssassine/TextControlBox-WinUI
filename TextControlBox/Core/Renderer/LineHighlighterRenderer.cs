@@ -25,6 +25,6 @@ internal class LineHighlighterRenderer
 
     public bool CanRender()
     {
-        return lineHighlighterManager._ShowLineHighlighter && !selectionManager.TextIsSelected();
+        return lineHighlighterManager._ShowLineHighlighter && !selectionManager.HasSelection;
     }
 }

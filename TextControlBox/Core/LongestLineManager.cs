@@ -1,4 +1,5 @@
-﻿using TextControlBoxNS.Core.Text;
+﻿using Collections.Pooled;
+using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 
 namespace TextControlBoxNS.Core;
@@ -17,9 +18,40 @@ internal class LongestLineManager
         this.textManager = textManager;
     }
 
+    //Get the longest line in the textbox
+    private int GetLongestLineIndex(PooledList<string> totalLines)
+    {
+        int longestIndex = 0;
+        int oldLenght = 0;
+        for (int i = 0; i < totalLines.Count; i++)
+        {
+            var lenght = totalLines[i].Length;
+            if (lenght > oldLenght)
+            {
+                longestIndex = i;
+                oldLenght = lenght;
+            }
+        }
+        return longestIndex;
+    }
+    private int GetLongestLineLength(string text)
+    {
+        var splitted = text.Split("\n");
+        int oldLenght = 0;
+        for (int i = 0; i < splitted.Length; i++)
+        {
+            var lenght = splitted[i].Length;
+            if (lenght > oldLenght)
+            {
+                oldLenght = lenght;
+            }
+        }
+        return oldLenght;
+    }
+
     public void CheckRecalculateLongestLine(string text)
     {
-        if (Utils.GetLongestLineLength(text) > longestLineLength)
+        if (GetLongestLineLength(text) > longestLineLength)
         {
             needsRecalculation = true;
         }
@@ -30,7 +62,7 @@ internal class LongestLineManager
         if (needsRecalculation)
         {
             needsRecalculation = false;
-            longestIndex= Utils.GetLongestLineIndex(textManager.totalLines);
+            longestIndex= GetLongestLineIndex(textManager.totalLines);
         }
 
     }

@@ -41,7 +41,7 @@ namespace TextControlBoxNS.Core
 
         public void DoDragDropSelection()
         {
-            if (selectionManager.TextSelIsNull || textManager._IsReadonly)
+            if (!selectionManager.HasSelection || textManager._IsReadonly)
                 return;
 
             //Position to insert is selection start or selection end -> no need to drag
@@ -75,8 +75,8 @@ namespace TextControlBoxNS.Core
         }
         public bool DragDropOverSelection(Point curPos)
         {
-            bool res = SelectionHelper.CursorIsInSelection(selectionManager, cursorManager.currentCursorPosition, selectionManager.currentTextSelection) ||
-                SelectionHelper.PointerIsOverSelection(textRenderer, curPos, selectionManager.currentTextSelection);
+            bool res = SelectionHelper.CursorIsInSelection(selectionManager, cursorManager.currentCursorPosition) ||
+                SelectionHelper.PointerIsOverSelection(textRenderer, selectionManager, curPos);
 
             coreTextbox.ChangeCursor(res ? InputSystemCursorShape.UniversalNo : InputSystemCursorShape.IBeam);
 

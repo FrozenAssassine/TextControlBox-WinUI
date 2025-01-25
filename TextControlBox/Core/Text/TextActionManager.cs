@@ -81,12 +81,12 @@ namespace TextControlBoxNS.Core.Text
 
             longestLineManager.needsRecalculation = true;
 
-            if (sel != null && !sel.IsNull)
+            if (sel != null && sel.HasSelection)
             {
                 //only set cursorposition
                 if (!sel.StartPosition.IsNull && sel.EndPosition.IsNull)
                 {
-                    cursorManager.currentCursorPosition.SetChangeValues(sel.StartPosition);
+                    cursorManager.SetCursorPositionCopyValues(sel.StartPosition);
                     canvasUpdateHelper.UpdateAll();
                     return;
                 }
@@ -111,21 +111,17 @@ namespace TextControlBoxNS.Core.Text
 
             longestLineManager.needsRecalculation = true;
 
-            if (sel != null && !sel.IsNull)
-            {
-                //only set cursorposition
-                if (!sel.StartPosition.IsNull && sel.EndPosition.IsNull)
-                {
-                    cursorManager.currentCursorPosition.SetChangeValues(sel.StartPosition);
-                    canvasUpdateHelper.UpdateAll();
-                    return;
-                }
+            selectionRenderer.ClearSelection();
 
-                selectionRenderer.SetSelection(sel);
+            //only set cursorposition
+            if (sel != null && !sel.EndPosition.IsNull)
+            {
                 cursorManager.SetCursorPositionCopyValues(sel.EndPosition);
             }
-            else
-                selectionManager.ForceClearSelection(canvasUpdateHelper);
+            else if (sel != null && sel.HasSelection)
+            {
+                cursorManager.SetCursorPositionCopyValues(selectionManager.GetMin(sel));
+            }
             canvasUpdateHelper.UpdateAll();
         }
 
@@ -187,7 +183,7 @@ namespace TextControlBoxNS.Core.Text
             {
                 DataPackage dataPackage = new DataPackage();
                 dataPackage.SetText(coreTextbox.SelectedText);
-                if (selectionManager.TextSelIsNull)
+                if (!selectionManager.HasSelection)
                     DeleteLine(cursorManager.LineNumber); //Delete the line
                 else
                     DeleteText(); //Delete the selected text
@@ -320,7 +316,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void DeleteSelection()
         {
-            if (selectionManager.TextSelIsNull)
+            if (!selectionManager.HasSelection)
                 return;
 
             //line gets deleted -> recalculate the longest line:
@@ -344,9 +340,12 @@ namespace TextControlBoxNS.Core.Text
             if (ignoreSelection)
                 selectionManager.ForceClearSelection(canvasUpdateHelper);
 
-            int splittedTextLength = text.Contains(textManager.NewLineCharacter, StringComparison.Ordinal) ? Utils.CountLines(text, textManager.NewLineCharacter) : 1;
+            int splittedTextLength = text.Contains(textManager.NewLineCharacter, StringComparison.Ordinal)
+                ? Utils.CountLines(text, textManager.NewLineCharacter)
+                : 1;
+            bool hasSelection = selectionManager.HasSelection;
 
-            if (selectionManager.TextSelIsNull && splittedTextLength == 1)
+            if (!hasSelection && splittedTextLength == 1)
             {
                 var res = AutoPairing.AutoPair(coreTextbox, text);
                 text = res.text;
@@ -359,6 +358,7 @@ namespace TextControlBoxNS.Core.Text
                         currentLineManager.AddToEnd(text);
                     else
                         currentLineManager.AddText(text, characterPos);
+
                     cursorManager.CharacterPosition = res.length + characterPos;
 
                 }, cursorManager.LineNumber, 1, 1);
@@ -368,7 +368,7 @@ namespace TextControlBoxNS.Core.Text
                     longestLineManager.longestIndex = cursorManager.LineNumber;
                 }
             }
-            else if (selectionManager.TextSelIsNull && splittedTextLength > 1)
+            else if (!hasSelection && splittedTextLength > 1)
             {
                 longestLineManager.CheckRecalculateLongestLine(text);
                 undoRedo.RecordUndoAction(() =>
@@ -380,7 +380,7 @@ namespace TextControlBoxNS.Core.Text
             {
                 DeleteSelection();
             }
-            else if (!selectionManager.TextSelIsNull)
+            else if (hasSelection)
             {
                 text = AutoPairing.AutoPairSelection(coreTextbox, text);
                 if (text == null)
@@ -407,7 +407,7 @@ namespace TextControlBoxNS.Core.Text
             if (textManager._IsReadonly)
                 return;
 
-            if (!selectionManager.currentTextSelection.IsNull)
+            if (selectionManager.HasSelection)
                 DeleteSelection();
             else
             {
@@ -467,10 +467,12 @@ namespace TextControlBoxNS.Core.Text
             if (textManager._IsReadonly)
                 return;
 
+            bool hasSelection = selectionManager.HasSelection;
+
             //Shift + delete:
-            if (shiftIsPressed && selectionManager.TextSelIsNull)
+            if (shiftIsPressed && !hasSelection)
                 coreTextbox.DeleteLine(cursorManager.LineNumber);
-            else if (!selectionManager.currentTextSelection.IsNull)
+            else if (hasSelection)
                 DeleteSelection();
             else
             {
@@ -527,10 +529,11 @@ namespace TextControlBoxNS.Core.Text
                 textManager.AddLine();
                 return;
             }
+            bool hasSelection = selectionManager.HasSelection;
 
             var min = selectionManager.GetMin(selectionManager.currentTextSelection);
-            int startPosLine = selectionManager.TextSelIsNull ? cursorManager.LineNumber : min.LineNumber;
-            int startPosChar = selectionManager.TextSelIsNull ? cursorManager.CharacterPosition : min.LineNumber;
+            int startPosLine = hasSelection ? min.LineNumber : cursorManager.LineNumber;
+            int startPosChar = hasSelection  ?  min.LineNumber : cursorManager.CharacterPosition;
 
             //If the whole text is selected
             if (selectionManager.WholeTextSelected())
@@ -549,7 +552,7 @@ namespace TextControlBoxNS.Core.Text
             }
 
             int indentionAdd = 0;
-            if (selectionManager.TextSelIsNull) //No selection
+            if (!hasSelection) //No selection
             {
                 string startLine = textManager.GetLineText(startPosLine);
                 indentionAdd = autoIndentionManager.OnEnterPressed(startPosLine);
@@ -589,7 +592,7 @@ namespace TextControlBoxNS.Core.Text
 
             cursorManager.SetCursorPosition(cursorManager.LineNumber + 1, indentionAdd);
 
-            if (selectionManager.TextSelIsNull && cursorManager.LineNumber == textRenderer.NumberOfRenderedLines + textRenderer.NumberOfStartLine)
+            if (!hasSelection && cursorManager.LineNumber == textRenderer.NumberOfRenderedLines + textRenderer.NumberOfStartLine)
                 scrollManager.ScrollOneLineDown();
             else
                 scrollManager.UpdateScrollToShowCursor();

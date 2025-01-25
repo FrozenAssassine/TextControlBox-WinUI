@@ -11,7 +11,7 @@ namespace TextControlBox_TestApp
             this.InitializeComponent();
 
             StringBuilder sb = new StringBuilder();
-            for(int i = 0; i<1_000_000; i++)
+            for(int i = 0; i<10; i++)
             {
                 sb.AppendLine("This is the best line of the textbox " + i);
             }

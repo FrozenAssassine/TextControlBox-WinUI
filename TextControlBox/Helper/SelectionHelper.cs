@@ -3,18 +3,19 @@ using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core;
 using Windows.Foundation;
 using TextControlBoxNS.Models;
+using TextControlBoxNS.Core.Text;
 
 namespace TextControlBoxNS.Helper;
 
 internal class SelectionHelper
 {
     //returns whether the pointer is over a selection
-    public static bool PointerIsOverSelection(TextRenderer textRenderer, Point pointerPosition, TextSelection selection)
+    public static bool PointerIsOverSelection(TextRenderer textRenderer, SelectionManager selectionManager, Point pointerPosition)
     {
-        if (textRenderer.DrawnTextLayout == null || selection.IsNull)
+        if (textRenderer.DrawnTextLayout == null || !selectionManager.HasSelection)
             return false;
 
-        CanvasTextLayoutRegion[] regions = textRenderer.DrawnTextLayout.GetCharacterRegions(selection.renderedIndex, selection.renderedLength);
+        CanvasTextLayoutRegion[] regions = textRenderer.DrawnTextLayout.GetCharacterRegions(selectionManager.currentTextSelection.renderedIndex, selectionManager.currentTextSelection.renderedLength);
         for (int i = 0; i < regions.Length; i++)
         {
             if (regions[i].LayoutBounds.Contains(pointerPosition))
@@ -23,9 +24,9 @@ internal class SelectionHelper
         return false;
     }
 
-    public static bool CursorIsInSelection(SelectionManager selectionManager, CursorPosition cursorPosition, TextSelection textSelection)
+    public static bool CursorIsInSelection(SelectionManager selectionManager, CursorPosition cursorPosition)
     {
-        var textSel = selectionManager.OrderTextSelectionSeparated(textSelection);
+        var textSel = selectionManager.OrderTextSelectionSeparated();
         if (textSel.startNull && textSel.endNull)
             return false;
 
@@ -46,6 +47,66 @@ internal class SelectionHelper
             return cursorPosition.CharacterPosition < textSel.endChar;
         return true;
     }
+    public static bool TextIsSelected(CursorPosition start, CursorPosition end)
+    {
+        if (start.IsNull || end.IsNull)
+            return false;
 
+        return start.LineNumber != end.LineNumber ||
+            start.CharacterPosition != end.CharacterPosition;
+    }
+
+    public static (bool startNull, bool endNull, int startLine, int startChar, int endLine, int endChar) OrderTextSelectionSeparated(TextSelection selection, bool? hasSelection = null)
+    {
+        //allow for passing whether the selection is null or not. Required for undo/redo and selectionmanager checking. They are differentiated
+        if (hasSelection.HasValue ? !hasSelection.Value : !selection.HasSelection)
+            return (true, true, -1, -1, -1, -1);
+
+        if (selection.EndPosition.IsNull && !selection.StartPosition.IsNull)
+            return (false, true, selection.StartPosition.LineNumber, selection.StartPosition.CharacterPosition, -1, -1);
+
+        if (!selection.EndPosition.IsNull && selection.StartPosition.IsNull)
+            return (false, true, selection.EndPosition.LineNumber, selection.EndPosition.CharacterPosition, -1, -1);
+
+        int startLine = selection.GetMinLine();
+        int endLine = selection.GetMaxLine();
+        int startPosition;
+        int endPosition;
+
+        if (startLine == endLine)
+        {
+            startPosition = selection.GetMinChar();
+            endPosition = selection.GetMaxChar();
+        }
+        else
+        {
+            if (selection.StartPosition.LineNumber < selection.EndPosition.LineNumber)
+            {
+                endPosition = selection.EndPosition.CharacterPosition;
+                startPosition = selection.StartPosition.CharacterPosition;
+            }
+            else
+            {
+                endPosition = selection.StartPosition.CharacterPosition;
+                startPosition = selection.EndPosition.CharacterPosition;
+            }
+        }
+
+        return (false, false, startLine, startPosition, endLine, endPosition);
+    }
+
+    //returns whether the selection starts at character zero and ends
+    //needs to pass any selection object, since undo/redo uses different textselection
+    public static bool WholeLinesAreSelected(TextSelection selection, TextManager textManager)
+    {
+        if (!selection.HasSelection)
+            return false;
+
+        var sel = OrderTextSelectionSeparated(selection);
+        if (sel.startNull && sel.endNull)
+            return false;
+
+        return sel.startChar == 0 && sel.endChar == textManager.GetLineLength(sel.endLine);
+    }
 
 }

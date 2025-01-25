@@ -11,8 +11,9 @@ namespace TextControlBoxNS.Core.Renderer
 {
     internal class SelectionRenderer
     {
-        public bool IsSelecting = false;
-        public bool HasSelection = false;
+        public bool IsSelecting { get; set; } = false;
+        public bool HasSelection { get; set; } = false;
+
         public bool IsSelectingOverLinenumbers = false;
         public readonly CursorPosition renderedSelectionStartPosition = new CursorPosition();
         public readonly CursorPosition renderedSelectionEndPosition = new CursorPosition();
@@ -47,7 +48,7 @@ namespace TextControlBoxNS.Core.Renderer
 
 
         //Draw the actual selection and return the cursorposition. Return -1 if no selection was drawn
-        public TextSelection DrawSelection(
+        public void DrawSelection(
             CanvasTextLayout textLayout,
             CanvasDrawEventArgs args,
             float marginLeft,
@@ -58,99 +59,97 @@ namespace TextControlBoxNS.Core.Renderer
             Color selectionColor
             )
         {
-            if (HasSelection && !renderedSelectionEndPosition.IsNull && !renderedSelectionStartPosition.IsNull)
+
+            int selStartIndex = 0;
+            int selEndIndex = 0;
+            int characterPosStart = renderedSelectionStartPosition.CharacterPosition;
+            int characterPosEnd = renderedSelectionEndPosition.CharacterPosition;
+
+            //Render the selection on position 0 if the user scrolled the start away
+            if (renderedSelectionEndPosition.LineNumber < renderedSelectionStartPosition.LineNumber)
             {
-                int selStartIndex = 0;
-                int selEndIndex = 0;
-                int characterPosStart = renderedSelectionStartPosition.CharacterPosition;
-                int characterPosEnd = renderedSelectionEndPosition.CharacterPosition;
-
-                //Render the selection on position 0 if the user scrolled the start away
-                if (renderedSelectionEndPosition.LineNumber < renderedSelectionStartPosition.LineNumber)
-                {
-                    if (renderedSelectionEndPosition.LineNumber < unrenderedLinesToRenderStart)
-                        characterPosEnd = 0;
-                    if (renderedSelectionStartPosition.LineNumber < unrenderedLinesToRenderStart + 1)
-                        characterPosStart = 0;
-                }
-                else if (renderedSelectionEndPosition.LineNumber == renderedSelectionStartPosition.LineNumber)
-                {
-                    if (renderedSelectionStartPosition.LineNumber < unrenderedLinesToRenderStart)
-                        characterPosStart = 0;
-                    if (renderedSelectionEndPosition.LineNumber < unrenderedLinesToRenderStart)
-                        characterPosEnd = 0;
-                }
-                else
-                {
-                    if (renderedSelectionStartPosition.LineNumber < unrenderedLinesToRenderStart)
-                        characterPosStart = 0;
-                    if (renderedSelectionEndPosition.LineNumber < unrenderedLinesToRenderStart + 1)
-                        characterPosEnd = 0;
-                }
-
-                if (renderedSelectionStartPosition.LineNumber == renderedSelectionEndPosition.LineNumber)
-                {
-                    int lenghtToLine = 0;
-                    for (int i = 0; i < renderedSelectionStartPosition.LineNumber - unrenderedLinesToRenderStart; i++)
-                    {
-                        if (i < numberOfRenderedLines)
-                        {
-                            lenghtToLine += textManager.GetLineLength(textRenderer.NumberOfStartLine + i) + 2;
-                        }
-                    }
-
-                    selStartIndex = characterPosStart + lenghtToLine;
-                    selEndIndex = characterPosEnd + lenghtToLine;
-                }
-                else
-                {
-                    for (int i = 0; i < renderedSelectionStartPosition.LineNumber - unrenderedLinesToRenderStart; i++)
-                    {
-                        if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
-                            break;
-                        selStartIndex += textManager.GetLineLength(textRenderer.NumberOfStartLine + i) + 2;
-                    }
-
-                    selStartIndex += characterPosStart;
-
-                    for (int i = 0; i < renderedSelectionEndPosition.LineNumber - unrenderedLinesToRenderStart; i++)
-                    {
-                        if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
-                            break;
-
-                        selEndIndex += textManager.GetLineLength(textRenderer.NumberOfStartLine + i) + 2;
-                    }
-
-                    selEndIndex += characterPosEnd;
-                }
-
-                renderedSelectionStart = Math.Min(selStartIndex, selEndIndex);
-
-                if (renderedSelectionStart < 0)
-                    renderedSelectionStart = 0;
-                if (renderedSelectionLength < 0)
-                    renderedSelectionLength = 0;
-
-                if (selEndIndex > selStartIndex)
-                    renderedSelectionLength = selEndIndex - selStartIndex;
-                else
-                    renderedSelectionLength = selStartIndex - selEndIndex;
-
-                CanvasTextLayoutRegion[] descriptions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
-                for (int i = 0; i < descriptions.Length; i++)
-                {
-                    //Change the width if selection in an emty line or starts at a line end
-                    if (descriptions[i].LayoutBounds.Width == 0 && descriptions.Length > 1)
-                    {
-                        var bounds = descriptions[i].LayoutBounds;
-                        descriptions[i].LayoutBounds = new Rect { Width = fontSize / 4, Height = bounds.Height, X = bounds.X, Y = bounds.Y };
-                    }
-
-                    args.DrawingSession.FillRectangle(Utils.CreateRect(descriptions[i].LayoutBounds, marginLeft, marginTop), selectionColor);
-                }
-                return new TextSelection(renderedSelectionStart, renderedSelectionLength, renderedSelectionStartPosition ,renderedSelectionEndPosition);
+                if (renderedSelectionEndPosition.LineNumber < unrenderedLinesToRenderStart)
+                    characterPosEnd = 0;
+                if (renderedSelectionStartPosition.LineNumber < unrenderedLinesToRenderStart + 1)
+                    characterPosStart = 0;
             }
-            return null;
+            else if (renderedSelectionEndPosition.LineNumber == renderedSelectionStartPosition.LineNumber)
+            {
+                if (renderedSelectionStartPosition.LineNumber < unrenderedLinesToRenderStart)
+                    characterPosStart = 0;
+                if (renderedSelectionEndPosition.LineNumber < unrenderedLinesToRenderStart)
+                    characterPosEnd = 0;
+            }
+            else
+            {
+                if (renderedSelectionStartPosition.LineNumber < unrenderedLinesToRenderStart)
+                    characterPosStart = 0;
+                if (renderedSelectionEndPosition.LineNumber < unrenderedLinesToRenderStart + 1)
+                    characterPosEnd = 0;
+            }
+
+            if (renderedSelectionStartPosition.LineNumber == renderedSelectionEndPosition.LineNumber)
+            {
+                int lenghtToLine = 0;
+                for (int i = 0; i < renderedSelectionStartPosition.LineNumber - unrenderedLinesToRenderStart; i++)
+                {
+                    if (i < numberOfRenderedLines)
+                    {
+                        lenghtToLine += textManager.GetLineLength(textRenderer.NumberOfStartLine + i) + 2;
+                    }
+                }
+
+                selStartIndex = characterPosStart + lenghtToLine;
+                selEndIndex = characterPosEnd + lenghtToLine;
+            }
+            else
+            {
+                for (int i = 0; i < renderedSelectionStartPosition.LineNumber - unrenderedLinesToRenderStart; i++)
+                {
+                    if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
+                        break;
+                    selStartIndex += textManager.GetLineLength(textRenderer.NumberOfStartLine + i) + 2;
+                }
+
+                selStartIndex += characterPosStart;
+
+                for (int i = 0; i < renderedSelectionEndPosition.LineNumber - unrenderedLinesToRenderStart; i++)
+                {
+                    if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
+                        break;
+
+                    selEndIndex += textManager.GetLineLength(textRenderer.NumberOfStartLine + i) + 2;
+                }
+
+                selEndIndex += characterPosEnd;
+            }
+
+            renderedSelectionStart = Math.Min(selStartIndex, selEndIndex);
+
+            if (renderedSelectionStart < 0)
+                renderedSelectionStart = 0;
+            if (renderedSelectionLength < 0)
+                renderedSelectionLength = 0;
+
+            if (selEndIndex > selStartIndex)
+                renderedSelectionLength = selEndIndex - selStartIndex;
+            else
+                renderedSelectionLength = selStartIndex - selEndIndex;
+
+            CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
+            for (int i = 0; i < regions.Length; i++)
+            {
+                //Change the width if selection in an emty line or starts at a line end
+                if (regions[i].LayoutBounds.Width == 0 && regions.Length > 1)
+                {
+                    var bounds = regions[i].LayoutBounds;
+                    regions[i].LayoutBounds = new Rect { Width = fontSize / 4, Height = bounds.Height, X = bounds.X, Y = bounds.Y };
+                }
+
+                args.DrawingSession.FillRectangle(Utils.CreateRect(regions[i].LayoutBounds, marginLeft, marginTop), selectionColor);
+            }
+
+            selectionManager.currentTextSelection.SetChangedValues(renderedSelectionStart, renderedSelectionLength, renderedSelectionStartPosition, renderedSelectionEndPosition);
         }
 
         //Clear the selection
@@ -160,12 +159,16 @@ namespace TextControlBoxNS.Core.Renderer
             IsSelecting = false;
             renderedSelectionEndPosition.IsNull = true;
             renderedSelectionStartPosition.IsNull = true;
+
+            selectionManager.currentTextSelection.StartPosition.IsNull = true;
+            selectionManager.currentTextSelection.EndPosition.IsNull = true;
+
             eventsManager.CallSelectionChanged();
         }
 
         public void SetSelection(TextSelection selection)
         {
-            if (selection.IsNull)
+            if (!selection.HasSelection)
                 return;
 
             SetSelection(selection.StartPosition, selection.EndPosition);
@@ -180,7 +183,7 @@ namespace TextControlBoxNS.Core.Renderer
             renderedSelectionStartPosition.IsNull = false;
 
             IsSelecting = false;
-            HasSelection = selectionManager.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
+            HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
         }
 
         public void SetSelection(CursorPosition startPosition, CursorPosition endPosition)
@@ -193,7 +196,7 @@ namespace TextControlBoxNS.Core.Renderer
             renderedSelectionStartPosition.IsNull = false;
 
             IsSelecting = false;
-            HasSelection = selectionManager.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
+            HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
         }
         public void SetSelectionStart(CursorPosition startPosition)
         {
@@ -202,7 +205,7 @@ namespace TextControlBoxNS.Core.Renderer
             renderedSelectionStartPosition.IsNull = false;
 
             IsSelecting = false;
-            HasSelection = selectionManager.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
+            HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
         }
         public void SetSelectionEnd(CursorPosition endPosition)
         {
@@ -211,7 +214,7 @@ namespace TextControlBoxNS.Core.Renderer
             renderedSelectionEndPosition.IsNull = false;
 
             IsSelecting = false;
-            HasSelection = selectionManager.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
+            HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
         }
 
         public void SetSelectionStart(int startPos, int characterPos)
@@ -232,16 +235,16 @@ namespace TextControlBoxNS.Core.Renderer
         public void Draw(CanvasControl canvasSelection, CanvasDrawEventArgs args)
         {
             if (!renderedSelectionStartPosition.IsNull && !renderedSelectionEndPosition.IsNull)
-                HasSelection = selectionManager.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
+                HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
             else
                 HasSelection = false;
-
+            
             if (HasSelection)
             {
-                var selection = DrawSelection(
-                    textRenderer.DrawnTextLayout, 
-                    args, 
-                    (float)-scrollManager.HorizontalScroll, 
+                DrawSelection(
+                    textRenderer.DrawnTextLayout,
+                    args,
+                    (float)-scrollManager.HorizontalScroll,
                     textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
                     textRenderer.NumberOfStartLine,
                     textRenderer.NumberOfRenderedLines,
@@ -249,10 +252,9 @@ namespace TextControlBoxNS.Core.Renderer
                     designHelper._Design.SelectionColor
                     );
 
-                selectionManager.SetCurrentTextSelection(selection);
             }
 
-            if (!selectionManager.TextSelIsNull && !selectionManager.Equals(selectionManager.OldTextSelection, selectionManager.currentTextSelection))
+            if (selectionManager.HasSelection && !selectionManager.Equals(selectionManager.OldTextSelection, selectionManager.currentTextSelection))
             {
                 //Update the variables
                 selectionManager.OldTextSelection.EndPosition.SetChangeValues(selectionManager.currentTextSelection.EndPosition);

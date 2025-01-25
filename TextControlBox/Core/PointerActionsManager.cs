@@ -35,8 +35,7 @@ internal class PointerActionsManager
         ScrollManager scrollManager, 
         SelectionRenderer selectionRenderer, 
         SelectionDragDropManager selectionDragDropManager,
-        CurrentLineManager currentLineManager,
-        SelectionManager selectionManager
+        CurrentLineManager currentLineManager
         )
     {
         this.currentLineManager = currentLineManager;
@@ -48,7 +47,6 @@ internal class PointerActionsManager
         this.textRenderer = textRenderer;
         this.scrollManager = scrollManager;
         this.canvasUpdateManager = canvasUpdateManager;
-        this.selectionManager = selectionManager;
     }
 
 

@@ -19,6 +19,7 @@
     GotFocus="UserControl_GotFocus"
     LostFocus="UserControl_LostFocus"
     LosingFocus="UserControl_LosingFocus"
+    Loaded="UserControl_Loaded"
     >
     <Grid x:Name="MainGrid">
         <Grid.ColumnDefinitions>

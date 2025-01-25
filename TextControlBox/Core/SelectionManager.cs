@@ -17,9 +17,10 @@ internal class SelectionManager
     private SelectionRenderer selectionRenderer;
 
     public TextSelection OldTextSelection = new TextSelection();
-    public TextSelection currentTextSelection = new TextSelection();
+    public readonly TextSelection currentTextSelection = new TextSelection();
 
-    public bool TextSelIsNull => currentTextSelection.IsNull;
+    public bool HasSelection => selectionRenderer.HasSelection;
+
     public void Init(TextManager textManager, CursorManager cursorManager, SelectionRenderer selectionRenderer)
     {
         this.textManager = textManager;
@@ -30,18 +31,12 @@ internal class SelectionManager
     public void ForceClearSelection(CanvasUpdateManager canvasHelper)
     {
         selectionRenderer.ClearSelection();
-        this.currentTextSelection.IsNull = true;
         canvasHelper.UpdateSelection();
-    }
-
-    public void SetCurrentTextSelection(TextSelection textSelection)
-    {
-        this.currentTextSelection.SetChangedValues(textSelection.StartPosition, textSelection.EndPosition);
     }
 
     public void StartSelectionIfNeeded()
     {
-        if (this.currentTextSelection.IsNull)
+        if (!this.HasSelection)
         {
             selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
             selectionRenderer.SetSelectionStart(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
@@ -52,104 +47,23 @@ internal class SelectionManager
 
     public bool Equals(TextSelection sel1, TextSelection sel2)
     {
-        if (sel1.IsNull || sel2.IsNull)
-            return false;
-
         return cursorManager.Equals(sel1.StartPosition, sel2.StartPosition) &&
             cursorManager.Equals(sel1.EndPosition, sel2.EndPosition);
     }
 
     //Order the selection that StartPosition is always smaller than EndPosition
-    public TextSelection OrderTextSelection(TextSelection selection)
+    public (bool startNull, bool endNull, int startLine, int startChar, int endLine, int endChar) OrderTextSelectionSeparated()
     {
-        if (selection.IsNull)
-            return selection;
-
-        int startLine = selection.GetMinLine();
-        int endLine = selection.GetMaxLine();
-        int startPosition;
-        int endPosition;
-        if (startLine == endLine)
-        {
-            startPosition = selection.GetMinChar();
-            endPosition = selection.GetMaxChar();
-        }
-        else
-        {
-            if (selection.StartPosition.LineNumber < selection.EndPosition.LineNumber)
-            {
-                endPosition = selection.EndPosition.CharacterPosition;
-                startPosition = selection.StartPosition.CharacterPosition;
-            }
-            else
-            {
-                endPosition = selection.StartPosition.CharacterPosition;
-                startPosition = selection.EndPosition.CharacterPosition;
-            }
-        }
-
-        return new TextSelection(selection.renderedIndex, selection.renderedLength, startLine, startPosition, endLine, endPosition);
-    }
-
-    public (bool startNull, bool endNull, int startLine, int startChar, int endLine, int endChar) OrderTextSelectionSeparated(TextSelection selection)
-    {
-        if (selection.IsNull)
-            return (true, true, - 1, -1, -1, -1);
-
-        if (selection.EndPosition.IsNull && !selection.StartPosition.IsNull)
-            return (false, true, selection.StartPosition.LineNumber, selection.StartPosition.CharacterPosition, -1, -1);
-
-        if (!selection.EndPosition.IsNull && selection.StartPosition.IsNull)
-            return (false, true, selection.EndPosition.LineNumber, selection.EndPosition.CharacterPosition, -1, -1);
-
-        int startLine = selection.GetMinLine();
-        int endLine = selection.GetMaxLine();
-        int startPosition;
-        int endPosition;
-        
-        if (startLine == endLine)
-        {
-            startPosition = selection.GetMinChar();
-            endPosition = selection.GetMaxChar();
-        }
-        else
-        {
-            if (selection.StartPosition.LineNumber < selection.EndPosition.LineNumber)
-            {
-                endPosition = selection.EndPosition.CharacterPosition;
-                startPosition = selection.StartPosition.CharacterPosition;
-            }
-            else
-            {
-                endPosition = selection.StartPosition.CharacterPosition;
-                startPosition = selection.EndPosition.CharacterPosition;
-            }
-        }
-
-        return (false, false, startLine, startPosition, endLine, endPosition);
+        return SelectionHelper.OrderTextSelectionSeparated(currentTextSelection, HasSelection);
     }
 
     public bool WholeTextSelected()
     {
-        var sel = OrderTextSelectionSeparated(currentTextSelection);
+        var sel = OrderTextSelectionSeparated();
         if (sel.startNull && sel.endNull)
             return false;
 
         return sel.startLine == 0 && sel.startChar == 0 && sel.endLine == textManager.LinesCount - 1 && sel.endChar == textManager.GetLineLength(-1);
-    }
-
-    //returns whether the selection starts at character zero and ends
-    //needs to pass any selection object, since undo/redo uses different textselection
-    public bool WholeLinesAreSelected(TextSelection selection)
-    {
-        if (selection.IsNull)
-            return false;
-
-        var sel = OrderTextSelectionSeparated(currentTextSelection);
-        if (sel.startNull && sel.endNull)
-            return false;
-
-        return sel.startChar == 0 && sel.endChar == textManager.GetLineLength(sel.endLine);
     }
 
     public CursorPosition GetMax(CursorPosition pos1, CursorPosition pos2)
@@ -175,7 +89,7 @@ internal class SelectionManager
 
     public void InsertText(string text)
     {
-        if (!currentTextSelection.IsNull)
+        if (currentTextSelection.HasSelection)
             this.Replace(text);
 
         string curLine = textManager.GetLineText(cursorManager.LineNumber);
@@ -212,7 +126,7 @@ internal class SelectionManager
         if (text.Length == 0)
             this.Remove();
 
-        var selection = OrderTextSelectionSeparated(currentTextSelection);
+        var selection = OrderTextSelectionSeparated();
         int startLine = selection.startLine;
         int endLine = selection.endLine;
         int startPosition = selection.startChar;
@@ -241,7 +155,6 @@ internal class SelectionManager
 
             textManager.SetLineText(startLine, (textTo + lines[0]));
             textManager.InsertOrAddRange(ListHelper.CreateLines(lines, 1, "", textFrom), startLine + 1);
-
             cursorManager.SetCursorPosition(startLine + lines.Length - 1, endPosition + text.Length);
         }
         else if (this.WholeTextSelected())
@@ -305,12 +218,13 @@ internal class SelectionManager
                         textManager.InsertOrAddRange(lines.GetLines(1, lines.Length - 2), startLine + 1);
                 }
             }
+
             cursorManager.SetCursorPosition(startLine + lines.Length - 1, start_Line.Length + end_Line.Length - 1);
         }
     }
     public void Remove()
     {
-        var selection = OrderTextSelectionSeparated(currentTextSelection);
+        var selection = OrderTextSelectionSeparated();
         int startLine = selection.startLine;
         int endLine = selection.endLine;
         int startPosition = selection.startChar;
@@ -424,7 +338,7 @@ internal class SelectionManager
     public string GetSelectedText(int currentLineIndex)
     {
         //return the current line, if no text is selected:
-        if (currentTextSelection.IsNull)
+        if (!currentTextSelection.HasSelection)
             return textManager.GetLineText(currentLineIndex) + textManager.NewLineCharacter;
 
         int startLine = currentTextSelection.GetMinLine();
@@ -467,13 +381,8 @@ internal class SelectionManager
         return stringBuilder.ToString();
     }
 
-    /// <summary>
-    /// Replaces the lines in TotalLines, starting by Start replacing Count number of items, with the string in SplittedText
-    /// All lines that can be replaced get replaced all lines that are needed additionally get added
-    /// </summary>
-    /// <param name="start"></param>
-    /// <param name="count"></param>
-    /// <param name="splittedText"></param>
+    // Replaces the lines in TotalLines, starting by Start replacing Count number of items, with the string in SplittedText
+    // All lines that can be replaced get replaced all lines that are needed additionally get added
     public void ReplaceLines(int start, int count, string[] splittedText)
     {
         if (splittedText.Length == 0)
@@ -565,30 +474,16 @@ internal class SelectionManager
         }
     }
 
-    public bool TextIsSelected()
-    {
-        return TextIsSelected(currentTextSelection.StartPosition, currentTextSelection.EndPosition);
-    }
-    public bool TextIsSelected(CursorPosition start, CursorPosition end)
-    {
-        if (start.IsNull || end.IsNull)
-            return false;
-
-        return start.LineNumber != end.LineNumber || 
-            start.CharacterPosition != end.CharacterPosition;
-    }
     public void SelectSingleWord(CanvasUpdateManager canvashelper)
     {
         int characterpos = cursorManager.CharacterPosition;
 
-        //Update variables
         selectionRenderer.SetSelectionStart(cursorManager.LineNumber, characterpos - cursorManager.CalculateStepsToMoveLeftNoControl(characterpos));
         selectionRenderer.SetSelectionEnd(cursorManager.LineNumber, characterpos + cursorManager.CalculateStepsToMoveRightNoControl(characterpos));
 
         cursorManager.CharacterPosition = selectionRenderer.renderedSelectionEndPosition.CharacterPosition;
         selectionRenderer.HasSelection = true;
 
-        //Render it
         canvashelper.UpdateSelection();
         canvashelper.UpdateCursor();
     }
@@ -596,8 +491,7 @@ internal class SelectionManager
     public (int start, int length) CalculateSelectionStartLength()
     {
         //order the selection and check if it's null
-
-        var (startNull, endNull, startLine, startChar, endLine, endChar) = OrderTextSelectionSeparated(this.currentTextSelection);
+        var (startNull, endNull, startLine, startChar, endLine, endChar) = OrderTextSelectionSeparated();
         if (startNull && endNull)
             return (0, 0);
 

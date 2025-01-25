@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
 
@@ -51,7 +52,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void RecordUndoAction(Action action, int startline, int undocount, int redoCount, CursorPosition cursorposition = null)
         {
-            if (undocount == redoCount && redoCount == 1)
+            if (undocount == 1 && redoCount == 1)
             {
                 RecordSingleLine(action, startline);
                 return;
@@ -61,30 +62,37 @@ namespace TextControlBoxNS.Core.Text
             action.Invoke();
             var linesAfter = textManager.GetLinesAsString(startline, redoCount);
 
-            AddUndoItem(cursorposition == null ? null : new TextSelection(cursorposition, null), startline, linesBefore, linesAfter, undocount, redoCount);
+            AddUndoItem(
+                cursorposition == null ? null : new TextSelection(cursorposition, null), 
+                startline, 
+                linesBefore, 
+                linesAfter, 
+                undocount, 
+                redoCount
+                );
         }
         public void RecordUndoAction(Action action, TextSelection selection, int numberOfAddedLines)
         {
-            var orderedSel = selectionManager.OrderTextSelection(selection);
-            if (orderedSel.StartPosition.LineNumber == orderedSel.EndPosition.LineNumber && orderedSel.StartPosition.LineNumber == 1)
+            var orderedSel = SelectionHelper.OrderTextSelectionSeparated(selection);
+            int numberOfRemovedLines = orderedSel.endLine - orderedSel.startLine + 1;
+
+            //TODO! maybe combine this, but not sure whether it is working properly yet!
+            if (numberOfAddedLines == 0 && numberOfRemovedLines == 1)
             {
-                RecordSingleLine(action, orderedSel.StartPosition.LineNumber);
-                return;
+                numberOfAddedLines += 1;
+            }
+            else if(numberOfAddedLines == 0 && !SelectionHelper.WholeLinesAreSelected(selection, textManager))
+            {
+                numberOfAddedLines += 1;
             }
 
-            int numberOfRemovedLines = orderedSel.EndPosition.LineNumber - orderedSel.StartPosition.LineNumber + 1;
-
-            if (numberOfAddedLines == 0 && !selectionManager.WholeLinesAreSelected(selection) ||
-                orderedSel.StartPosition.LineNumber == orderedSel.EndPosition.LineNumber && orderedSel.renderedLength == textManager.GetLineLength(orderedSel.StartPosition.LineNumber))
-                numberOfAddedLines += 1;
-
-            var linesBefore = textManager.GetLinesAsString(orderedSel.StartPosition.LineNumber, numberOfRemovedLines);
+            var linesBefore = textManager.GetLinesAsString(orderedSel.startLine, numberOfRemovedLines);
             action.Invoke();
-            var linesAfter = textManager.GetLinesAsString(orderedSel.StartPosition.LineNumber, numberOfAddedLines);
+            var linesAfter = textManager.GetLinesAsString(orderedSel.startLine, numberOfAddedLines);
 
             AddUndoItem(
-                selection,
-                orderedSel.StartPosition.LineNumber,
+                new TextSelection(selection),
+                orderedSel.startLine,
                 linesBefore,
                 linesAfter,
                 numberOfRemovedLines,
@@ -100,14 +108,10 @@ namespace TextControlBoxNS.Core.Text
             if (HasRedone)
             {
                 HasRedone = false;
-                while (RedoStack.Count > 0)
-                {
-                    var redoItem = RedoStack.Pop();
-                    redoItem.UndoText = redoItem.RedoText = null;
-                }
+                RedoStack.Clear();
             }
 
-            UndoRedoItem item = UndoStack.Pop();
+            var item = UndoStack.Pop();
             RecordRedo(item);
 
             //Faster for singleline
@@ -119,13 +123,20 @@ namespace TextControlBoxNS.Core.Text
             {
                 textManager.Safe_RemoveRange(item.StartLine, item.RedoCount);
                 if (item.UndoCount > 0)
-                    textManager.InsertOrAddRange(ListHelper.GetLinesFromString(stringManager.CleanUpString(item.UndoText), textManager.NewLineCharacter), item.StartLine);
+                {
+                    var cleanedLines = ListHelper.GetLinesFromString(
+                        stringManager.CleanUpString(item.UndoText),
+                        textManager.NewLineCharacter
+                    );
+
+                    textManager.InsertOrAddRange(cleanedLines, item.StartLine);
+                }
             }
 
             return item.Selection;
         }
 
-        public TextSelection Redo(StringManager stringmanager)
+        public TextSelection Redo(StringManager stringManager)
         {
             if (RedoStack.Count < 1)
                 return null;
@@ -137,15 +148,21 @@ namespace TextControlBoxNS.Core.Text
             //Faster for singleline
             if (item.UndoCount == 1 && item.RedoCount == 1)
             {
-                textManager.SetLineText(item.StartLine, stringmanager.CleanUpString(item.RedoText));
+                textManager.SetLineText(item.StartLine, stringManager.CleanUpString(item.RedoText));
             }
             else
             {
                 textManager.Safe_RemoveRange(item.StartLine, item.UndoCount);
                 if (item.RedoCount > 0)
-                    textManager.InsertOrAddRange(ListHelper.GetLinesFromString(stringmanager.CleanUpString(item.RedoText), textManager.NewLineCharacter), item.StartLine);
+                {
+                    var cleanedLines = ListHelper.GetLinesFromString(
+                        stringManager.CleanUpString(item.RedoText),
+                        textManager.NewLineCharacter
+                    );
+                    textManager.InsertOrAddRange(cleanedLines, item.StartLine);
+                }
             }
-            return null;
+            return item.Selection;
         }
 
         /// <summary>

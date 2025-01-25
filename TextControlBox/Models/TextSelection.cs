@@ -1,44 +1,31 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
+using TextControlBoxNS.Helper;
 
 namespace TextControlBoxNS.Models;
 
 internal class TextSelection
 {
-    public bool IsNull = true;
+    public bool HasSelection { get => SelectionHelper.TextIsSelected(StartPosition, EndPosition); }
+
+    internal int renderedIndex { get; set; }
+    internal int renderedLength { get; set; }
+
+    public CursorPosition StartPosition { get; private set; } = new CursorPosition();
+    public CursorPosition EndPosition { get; private set; } = new CursorPosition();
+
     public TextSelection()
     {
         renderedIndex = 0;
         renderedLength = 0;
         StartPosition.IsNull = true;
         EndPosition.IsNull = true;
-        this.IsNull = false;
     }
     public TextSelection(int index, int length, int startLine, int startChar, int endLine, int endChar)
     {
-        renderedIndex = index;
-        renderedLength = length;
-        this.IsNull = false;
-
-        StartPosition.SetChangeValues(startLine, startChar);
-        EndPosition.SetChangeValues(endLine, endChar);
-    }
-    public TextSelection(int index = 0, int length = 0, CursorPosition startPosition = null, CursorPosition endPosition = null)
-    {
-        renderedIndex = index;
-        renderedLength = length;
-        this.IsNull = false;
-
-        if(StartPosition != null)
-            StartPosition.SetChangeValues(startPosition);
-        
-        if(endPosition != null)
-            EndPosition.SetChangeValues(endPosition);
+        SetChangedValues(index, length, startLine, startChar, endLine, endChar);
     }
     public TextSelection(CursorPosition startPosition = null, CursorPosition endPosition = null)
     {
-        this.IsNull = false;
-
         if(startPosition != null)
             StartPosition.SetChangeValues(startPosition);
         
@@ -47,8 +34,6 @@ internal class TextSelection
     }
     public TextSelection(TextSelection textSelection)
     {
-        this.IsNull = false;
-
         if (textSelection.StartPosition != null)
             StartPosition.SetChangeValues(textSelection.StartPosition);
         if(textSelection.EndPosition != null)
@@ -58,33 +43,27 @@ internal class TextSelection
         renderedLength = textSelection.renderedLength;
     }
 
-    internal int renderedIndex { get; set; }
-    internal int renderedLength { get; set; }
-
-    public CursorPosition StartPosition { get; private set; } = new CursorPosition();
-    public CursorPosition EndPosition { get; private set; } = new CursorPosition();
-
-    public bool IsLineInSelection(int line)
+    internal void SetChangedValues(int index = 0, int length = 0, CursorPosition startPosition = null, CursorPosition endPosition = null)
     {
-        if (!this.StartPosition.IsNull && !this.EndPosition.IsNull)
-        {
-            if (this.StartPosition.LineNumber > this.EndPosition.LineNumber)
-                return this.StartPosition.LineNumber < line && this.EndPosition.LineNumber > line;
-            else if (this.StartPosition.LineNumber == this.EndPosition.LineNumber)
-                return this.StartPosition.LineNumber != line;
-            else
-                return this.StartPosition.LineNumber > line && this.EndPosition.LineNumber < line;
-        }
-        return false;
-    }
+        renderedIndex = index;
+        renderedLength = length;
 
+        StartPosition.SetChangeValues(startPosition);
+        EndPosition.SetChangeValues(endPosition);
+    }
     internal void SetChangedValues(CursorPosition start, CursorPosition end)
     {
         this.StartPosition.SetChangeValues(start);
         this.EndPosition.SetChangeValues(end);
-        this.IsNull = false;
     }
+    internal void SetChangedValues(int index, int length, int startLine, int startChar, int endLine, int endChar)
+    {
+        renderedIndex = index;
+        renderedLength = length;
 
+        StartPosition.SetChangeValues(startLine, startChar);
+        EndPosition.SetChangeValues(endLine, endChar);
+    }
 
     internal int GetMinLine()
     {
@@ -101,5 +80,18 @@ internal class TextSelection
     internal int GetMaxChar()
     {
         return Math.Max(StartPosition.CharacterPosition, EndPosition.CharacterPosition);
+    }
+    public bool IsLineInSelection(int line)
+    {
+        if (!this.StartPosition.IsNull && !this.EndPosition.IsNull)
+        {
+            if (this.StartPosition.LineNumber > this.EndPosition.LineNumber)
+                return this.StartPosition.LineNumber < line && this.EndPosition.LineNumber > line;
+            else if (this.StartPosition.LineNumber == this.EndPosition.LineNumber)
+                return this.StartPosition.LineNumber != line;
+            else
+                return this.StartPosition.LineNumber > line && this.EndPosition.LineNumber < line;
+        }
+        return false;
     }
 }

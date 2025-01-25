@@ -1,5 +1,4 @@
-﻿using Collections.Pooled;
-using Microsoft.Graphics.Canvas;
+﻿using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
 using System;
@@ -45,48 +44,11 @@ internal class Utils
         return new Size(layout.DrawBounds.Width - placeholderWidth, layout.DrawBounds.Height);
     }
 
-    //Get the longest line in the textbox
-    public static int GetLongestLineIndex(PooledList<string> totalLines)
-    {
-        int longestIndex = 0;
-        int oldLenght = 0;
-        for (int i = 0; i < totalLines.Count; i++)
-        {
-            var lenght = totalLines[i].Length;
-            if (lenght > oldLenght)
-            {
-                longestIndex = i;
-                oldLenght = lenght;
-            }
-        }
-        return longestIndex;
-    }
-
-    public static int GetLongestLineLength(string text)
-    {
-        var splitted = text.Split("\n");
-        int oldLenght = 0;
-        for (int i = 0; i < splitted.Length; i++)
-        {
-            var lenght = splitted[i].Length;
-            if (lenght > oldLenght)
-            {
-                oldLenght = lenght;
-            }
-        }
-        return oldLenght;
-    }
-
-    public static bool CursorPositionsAreEqual(CursorPosition first, CursorPosition second)
-    {
-        return first.LineNumber == second.LineNumber && first.CharacterPosition == second.CharacterPosition;
-    }
-
     public static string[] SplitAt(string text, int index)
     {
         string first = index < text.Length ? text.SafeRemove(index) : text;
         string second = index < text.Length ? text.Safe_Substring(index) : "";
-        return new string[] { first, second };
+        return [ first, second ];
     }
 
 
@@ -127,11 +89,6 @@ internal class Utils
             default: return ApplicationTheme.Light;
         }
     }
-
-    public static Point GetTextboxstartingPoint(UIElement relativeTo)
-    {
-        return relativeTo.TransformToVisual(Window.Current.Content).TransformPoint(new Point(0, 0));
-    }
     public static int CountLines(string text, string newLineCharacter)
     {
         //is slower than normal string operation but consumes soo much less memory
@@ -162,5 +119,4 @@ internal class Utils
                 Math.Ceiling(rect.Right + marginLeft), //Width
                 Math.Ceiling(rect.Bottom + marginTop))); //Height
     }
-
 }
