@@ -2,8 +2,8 @@
 using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Core;
 using TextControlBoxNS.Core.Text;
-using System.Diagnostics;
 using TextControlBoxNS.Core.Renderer;
+using TextControlBoxNS.Core.Selection;
 
 namespace TextControlBoxNS.Helper
 {
@@ -28,7 +28,7 @@ namespace TextControlBoxNS.Helper
         public bool UseSpacesInsteadTabs = false;
         public string TabCharacter { get => UseSpacesInsteadTabs ? Spaces : Tab; }
         private string Spaces = "    ";
-        private string Tab = "\t";
+        public readonly string Tab = "\t";
 
         private TextManager textManager;
         private SelectionManager selectionManager;
@@ -67,7 +67,7 @@ namespace TextControlBoxNS.Helper
         {
             for (int i = 0; i < textManager.LinesCount; i++)
             {
-                textManager.totalLines[i] = Replace(textManager.totalLines[i], OldSpaces, Spaces);
+                textManager.totalLines[i] = textManager.totalLines[i].Replace(OldSpaces, Spaces);
             }
         }
         private void ReplaceSpacesToTabs()
@@ -77,11 +77,12 @@ namespace TextControlBoxNS.Helper
                 textManager.totalLines[i] = Replace(textManager.totalLines[i], Spaces, Tab);
             }
         }
+
         private void ReplaceTabsToSpaces()
         {
             for (int i = 0; i < textManager.LinesCount; i++)
             {
-                textManager.totalLines[i] = Replace(textManager.totalLines[i], "\t", Spaces);
+                textManager.totalLines[i] = Replace(textManager.totalLines[i], Tab.ToString(), Spaces);
             }
         }
         public string Replace(string input, string find, string replace)
@@ -147,6 +148,7 @@ namespace TextControlBoxNS.Helper
                 cursorPosition.CharacterPosition += tabCharacter.Length;
                 textSelection.EndPosition.IsNull = true;
                 textSelection.StartPosition.SetChangeValues(cursorPosition);
+                return;
             }
             
             //handle selected text moving
