@@ -20,7 +20,8 @@ namespace TextControlBox_TestApp
 
             textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.CSharp);
 
-
+            textbox.UseSpacesInsteadTabs = true;
+            textbox.NumberOfSpacesForTab = 4;
             textbox.Loaded += Textbox_Loaded;
         }
 

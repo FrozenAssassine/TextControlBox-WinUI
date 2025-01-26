@@ -64,5 +64,32 @@ namespace TextControlBoxNS.Extensions
             else
                 return text.Substring(index, count);
         }
+
+        public static string[] SplitAt(this string text, int index)
+        {
+            string first = index < text.Length ? text.SafeRemove(index) : text;
+            string second = index < text.Length ? text.Safe_Substring(index) : "";
+            return [first, second];
+        }
+
+        public static int CountLines(this string text, string newLineCharacter)
+        {
+            //is slower than normal string operation but consumes soo much less memory
+            var span = text.AsSpan();
+            int lineCount = 1;
+
+            int newLineLength = newLineCharacter.Length;
+
+            for (int i = 0; i <= span.Length - newLineLength; i++)
+            {
+                if (span.Slice(i, newLineLength).SequenceEqual(newLineCharacter.AsSpan()))
+                {
+                    lineCount++;
+                    i += newLineLength - 1;
+                }
+            }
+
+            return lineCount;
+        }
     }
 }

@@ -2,9 +2,7 @@
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
-using TextControlBoxNS.Extensions;
 using Windows.Foundation;
 using Windows.System;
 using Windows.UI.Core;
@@ -44,14 +42,6 @@ internal class Utils
         return new Size(layout.DrawBounds.Width - placeholderWidth, layout.DrawBounds.Height);
     }
 
-    public static string[] SplitAt(string text, int index)
-    {
-        string first = index < text.Length ? text.SafeRemove(index) : text;
-        string second = index < text.Length ? text.Safe_Substring(index) : "";
-        return [ first, second ];
-    }
-
-
     public static bool IsKeyPressed(VirtualKey key)
     {
         return Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(key).HasFlag(CoreVirtualKeyStates.Down);
@@ -64,15 +54,6 @@ internal class Utils
             return true;
         }
         return false;
-    }
-    public static void Benchmark(Action action, string text)
-    {
-        Stopwatch sw = new Stopwatch();
-        sw.Start();
-        action.Invoke();
-        sw.Stop();
-
-        Debug.WriteLine(text + " took " + sw.ElapsedMilliseconds + "::" + sw.ElapsedTicks);
     }
 
     public static ApplicationTheme ConvertTheme(ElementTheme theme)
@@ -88,25 +69,6 @@ internal class Utils
 
             default: return ApplicationTheme.Light;
         }
-    }
-    public static int CountLines(string text, string newLineCharacter)
-    {
-        //is slower than normal string operation but consumes soo much less memory
-        var span = text.AsSpan();
-        int lineCount = 1;
-
-        int newLineLength = newLineCharacter.Length;
-
-        for (int i = 0; i <= span.Length - newLineLength; i++)
-        {
-            if (span.Slice(i, newLineLength).SequenceEqual(newLineCharacter.AsSpan()))
-            {
-                lineCount++;
-                i += newLineLength - 1;
-            }
-        }
-
-        return lineCount;
     }
 
     public static Rect CreateRect(Rect rect, float marginLeft = 0, float marginTop = 0)

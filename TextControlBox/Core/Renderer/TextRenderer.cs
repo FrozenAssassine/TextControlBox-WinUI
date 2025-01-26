@@ -6,7 +6,6 @@ using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using Windows.Foundation;
 
-
 namespace TextControlBoxNS.Core.Renderer;
 
 internal class TextRenderer
@@ -96,15 +95,17 @@ internal class TextRenderer
 
         //Calculate number of lines that needs to be rendered
         int linesToRenderCount = (int)(canvasText.ActualHeight / SingleLineHeight);
-
         NumberOfStartLine = (int)((scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity) / SingleLineHeight);
-
         NumberOfRenderedLines = linesToRenderCount + NumberOfStartLine > textManager.LinesCount ? textManager.LinesCount : linesToRenderCount;
+        
+        //Create the text we will render
         RenderedText = textManager.GetLinesAsString(NumberOfStartLine, NumberOfRenderedLines);
 
+        //check rendering and calculation updates
         lineNumberRenderer.CheckGenerateLineNumberText();
         longestLineManager.CheckRecalculateLongestLine();
 
+        //Find the longest line length
         string longestLineText = textManager.GetLineText(longestLineManager.longestIndex);
         longestLineManager.longestLineLength = longestLineText.Length;
         Size lineLength = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), longestLineText, TextFormat);

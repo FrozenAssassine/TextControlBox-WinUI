@@ -3,6 +3,8 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Net.Mime;
 using TextControlBoxNS.Helper;
 
 namespace TextControlBoxNS.Core.Text;
@@ -27,8 +29,6 @@ internal class TextManager
 
     public int LinesCount => totalLines.Count;
 
-    public string LineAt(int line) => totalLines[line];
-
     public string GetLineText(int line)
     {
         if (totalLines.Count == 0)
@@ -42,46 +42,17 @@ internal class TextManager
 
     public string GetLinesAsString()
     {
-        //not directly faster than string.join, but 3 times more memory efficient:
-        if (totalLines.Count == 0)
-            return string.Empty;
-
-        var builder = new System.Text.StringBuilder();
-
-        var span = totalLines.Span;
-
-        for (int i = 0; i < span.Length; i++)
-        {
-            builder.Append(span[i].AsSpan());
-            builder.Append(NewLineCharacter.AsSpan());
-        }
-
-        if (builder.Length > 0)
-            builder.Length -= NewLineCharacter.Length;
-
-        return builder.ToString();
+        return string.Join(NewLineCharacter, totalLines);
     }
     public string GetLinesAsString(int start, int count)
     {
-        if (start < 0 || count < 0 || start >= totalLines.Count)
-            return string.Empty;
+        if (start == 0 && count >= totalLines.Count)
+            return GetLinesAsString();
 
-        int end = Math.Min(totalLines.Count, start + count);
+        if (start + count >= totalLines.Count)
+            return string.Join(NewLineCharacter, totalLines.Skip(start));
 
-        var builder = new System.Text.StringBuilder();
-
-        var span = totalLines.Span.Slice(start, end - start);
-
-        foreach (var line in span)
-        {
-            builder.Append(line.AsSpan());
-            builder.Append(NewLineCharacter.AsSpan());
-        }
-
-        if (builder.Length > 0)
-            builder.Length -= NewLineCharacter.Length;
-
-        return builder.ToString();
+        return string.Join(NewLineCharacter, totalLines.Skip(start).Take(count));
     }
 
     public void SetLineText(int line, string text)
@@ -99,7 +70,7 @@ internal class TextManager
     }
     public void String_AddToStart(int line, string add)
     {
-        totalLines.Span[line] = add + totalLines.Span[line];
+        totalLines[line] = add + totalLines[line];
     }
 
     public void DeleteAt(int index)
@@ -108,7 +79,6 @@ internal class TextManager
             index = totalLines.Count - 1 < 0 ? totalLines.Count - 1 : 0;
 
         totalLines.RemoveAt(index);
-        totalLines.TrimExcess();
     }
 
     public void InsertOrAddRange(IEnumerable<string> lines, int index)
@@ -116,7 +86,11 @@ internal class TextManager
         if (index >= totalLines.Count)
             totalLines.AddRange(lines);
         else
-            totalLines.InsertRange(index < 0 ? 0 : index, lines);
+        {
+            var lineList = lines as IList<string> ?? lines.ToList();
+            totalLines.Capacity = Math.Max(totalLines.Count + lineList.Count, totalLines.Capacity);
+            totalLines.InsertRange(index < 0 ? 0 : index, lineList);
+        }
     }
     public void InsertOrAdd(int index, string lineText)
     {
@@ -148,18 +122,6 @@ internal class TextManager
         //clear up the memory of the list when more than 1mio items are removed
         if (res.Count > 1_000_000)
             ListHelper.GCList(totalLines);
-    }
-
-    public IEnumerable<string> GetLines(int start, int count)
-    {
-        if (start < 0 || count < 0 || start >= totalLines.Count)
-            yield break;
-
-        int end = Math.Min(totalLines.Count, start + count);
-        for (int i = start; i < end; i++)
-        {
-            yield return totalLines[i];
-        }
     }
 
     public void AddLine(string content = "")

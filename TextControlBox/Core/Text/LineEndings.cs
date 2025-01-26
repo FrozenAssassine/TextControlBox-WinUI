@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text.RegularExpressions;
-using TextControlBoxNS.Models.Enums;
 
 namespace TextControlBoxNS.Core.Text;
 

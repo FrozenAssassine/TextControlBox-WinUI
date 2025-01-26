@@ -1,5 +1,6 @@
 ﻿using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.UI.Xaml;
+using TextControlBoxNS.Core.Selection;
 
 namespace TextControlBoxNS.Core.Renderer;
 

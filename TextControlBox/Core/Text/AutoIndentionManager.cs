@@ -22,12 +22,13 @@ internal class AutoIndentionManager
     {
         if (startIndex < 0 || startIndex >= textManager.LinesCount)
             return 0;
-        
+
         int currentDepth = startIndex > 0 ? GetDepth(startIndex) : 0;
-        for (int i = startIndex; i < textManager.LinesCount; i++)
+        var linesSpan = textManager.totalLines.Span;
+
+        for (int i = startIndex; i < linesSpan.Length; i++)
         {
-            string line = textManager.totalLines[i];
-            int lineDepth = GetIndentationLevel(line);
+            int lineDepth = GetIndentationLevel(linesSpan[i]);
 
             if (lineDepth != currentDepth)
                 break;
@@ -40,29 +41,37 @@ internal class AutoIndentionManager
 
     private int GetDepth(int index)
     {
-        int depth = GetIndentationLevel(textManager.totalLines[index]);
-        return depth;
+        return GetIndentationLevel(textManager.totalLines.Span[index]);
     }
 
-    private static int GetIndentationLevel(string line)
+    private int GetIndentationLevel(ReadOnlySpan<char> line)
     {
+        int spaces = tabSpaceHelper.NumberOfSpaces;
+        char tabChar = tabSpaceHelper.Tab[0];
         int level = 0;
+        int spaceCount = 0;
+
         foreach (char c in line)
         {
-            if (c == ' ') // Assume 4 spaces = 1 level
+            if (c == ' ')
             {
-                level++;
-                if (level % 4 == 0) level++;
+                spaceCount++;
+                if (spaceCount == spaces)
+                {
+                    level++;
+                    spaceCount = 0;
+                }
             }
-            else if (c == '\t') // 1 tab = 1 level
+            else if (c == tabChar)
             {
                 level++;
             }
             else
             {
-                break; // Stop when non-indentation characters are found
+                break;
             }
         }
+
         return level;
     }
 
@@ -79,20 +88,11 @@ internal class AutoIndentionManager
                 state.indStr.AsSpan().CopyTo(span.Slice(i * state.indStr.Length));
             }
         });
+        
     }
 
     public int OnEnterPressed(int currentLineIndex)
     {
         return CalculateDepth(currentLineIndex);
-    }
-
-    public void OnCursorMoved(int currentLineIndex)
-    {
-        int depth = CalculateDepth(currentLineIndex);
-
-        if(textManager.GetLineLength(currentLineIndex) > depth)
-            cursorManager.SetCursorPosition(currentLineIndex, depth * tabSpaceHelper.TabCharacter.Length);
-        else
-            textManager.String_AddToStart(currentLineIndex, tabSpaceHelper.TabCharacter);
     }
 }

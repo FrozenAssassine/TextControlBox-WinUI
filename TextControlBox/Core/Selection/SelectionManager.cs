@@ -6,15 +6,17 @@ using TextControlBoxNS.Helper;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Models;
-using System.Diagnostics;
 
-namespace TextControlBoxNS.Core;
+namespace TextControlBoxNS.Core.Selection;
 
 internal class SelectionManager
 {
     private TextManager textManager;
     private CursorManager cursorManager;
     private SelectionRenderer selectionRenderer;
+
+    private ReplaceSelectionManager replaceSelectionManager = new ReplaceSelectionManager();
+    private RemoveSelectionManager removeSelectionManager = new RemoveSelectionManager();
 
     public TextSelection OldTextSelection = new TextSelection();
     public readonly TextSelection currentTextSelection = new TextSelection();
@@ -26,6 +28,9 @@ internal class SelectionManager
         this.textManager = textManager;
         this.cursorManager = cursorManager;
         this.selectionRenderer = selectionRenderer;
+
+        replaceSelectionManager.Init(textManager, cursorManager);
+        removeSelectionManager.Init(cursorManager, textManager);
     }
 
     public void ForceClearSelection(CanvasUpdateManager canvasHelper)
@@ -36,7 +41,7 @@ internal class SelectionManager
 
     public void StartSelectionIfNeeded()
     {
-        if (!this.HasSelection)
+        if (!HasSelection)
         {
             selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
             selectionRenderer.SetSelectionStart(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
@@ -90,7 +95,7 @@ internal class SelectionManager
     public void InsertText(string text)
     {
         if (currentTextSelection.HasSelection)
-            this.Replace(text);
+            Replace(text);
 
         string curLine = textManager.GetLineText(cursorManager.LineNumber);
 
@@ -118,13 +123,44 @@ internal class SelectionManager
         textManager.DeleteAt(cursorManager.LineNumber);
         textManager.InsertOrAddRange(ListHelper.CreateLines(lines, 0, textInFrontOfCursor, textBehindCursor), cursorManager.LineNumber);
 
-       cursorManager.SetCursorPosition(cursorManager.LineNumber + lines.Length - 1, cursorManager.CharacterPosition + lines.Length > 0 ? lines[lines.Length - 1].Length : 0);
+        cursorManager.SetCursorPosition(cursorManager.LineNumber + lines.Length - 1, cursorManager.CharacterPosition + lines.Length > 0 ? lines[lines.Length - 1].Length : 0);
+    }
+    public void Remove()
+    {
+        var selection = OrderTextSelectionSeparated();
+        int startLine = selection.startLine;
+        int endLine = selection.endLine;
+        int startPosition = selection.startChar;
+        int endPosition = selection.endChar;
+
+        if (startLine == endLine)
+        {
+            removeSelectionManager.HandleSingleLineRemoval(startLine, startPosition, endPosition);
+        }
+        else if (WholeTextSelected())
+        {
+            removeSelectionManager.HandleWholeTextRemoval();
+        }
+        else
+        {
+            removeSelectionManager.HandleMultiLineRemoval(startLine, endLine, startPosition, endPosition);
+        }
+
+        if (textManager.LinesCount == 0)
+        {
+            textManager.AddLine();
+        }
+
+        cursorManager.SetCursorPosition(startLine, startPosition);
     }
     public void Replace(string text)
     {
-        //Just delete the text if the string is emty
+        //Just remove the text if the text to replace with is empty
         if (text.Length == 0)
-            this.Remove();
+        {
+            Remove();
+            return;
+        }
 
         var selection = OrderTextSelectionSeparated();
         int startLine = selection.startLine;
@@ -135,149 +171,29 @@ internal class SelectionManager
         string[] lines = text.Split(textManager.NewLineCharacter);
         string start_Line = textManager.GetLineText(startLine);
 
-        //Selection is singleline and text to paste is also singleline
+        //Case1: singleline selection and singleline replacement text
         if (startLine == endLine && lines.Length == 1)
         {
-            start_Line =
-                (startPosition == 0 && endPosition == textManager.GetLineLength(endLine)) ?
-                "" :
-                start_Line.SafeRemove(startPosition, endPosition - startPosition
-                );
-
-            textManager.SetLineText(startLine, start_Line.AddText(text, startPosition));
-
-            cursorManager.SetCursorPosition(selection.startLine, startPosition + text.Length);
+            replaceSelectionManager.ReplaceSingleLineSelection(startLine, startPosition, endPosition, text, start_Line);
+            return;
         }
-        else if (startLine == endLine && lines.Length > 1 && (startPosition != 0 && endPosition != start_Line.Length))
+
+        //Case2: singleline selection and multiline replacement text
+        if (startLine == endLine && lines.Length > 1)
         {
-            string textTo = start_Line == "" ? "" : startPosition >= start_Line.Length ? start_Line : start_Line.Safe_Substring(0, startPosition);
-            string textFrom = start_Line == "" ? "" : endPosition >= start_Line.Length ? start_Line : start_Line.Safe_Substring(endPosition);
-
-            textManager.SetLineText(startLine, (textTo + lines[0]));
-            textManager.InsertOrAddRange(ListHelper.CreateLines(lines, 1, "", textFrom), startLine + 1);
-            cursorManager.SetCursorPosition(startLine + lines.Length - 1, endPosition + text.Length);
+            replaceSelectionManager.ReplaceSingleLineWithMultiLine(startLine, startPosition, endPosition, lines, start_Line);
+            return;
         }
-        else if (this.WholeTextSelected())
+
+        //Case3: whole text selected
+        if (WholeTextSelected())
         {
-            if (lines.Length < textManager.LinesCount)
-            {
-                textManager.ClearText();
-                textManager.InsertOrAddRange(lines, 0);
-            }
-            else
-                this.ReplaceLines(0, textManager.LinesCount, lines);
-
-            cursorManager.SetCursorPosition(textManager.LinesCount - 1, textManager.GetLineLength(-1));
-        }
-        else
-        {
-            string end_Line = textManager.GetLineText(endLine);
-
-            //All lines are selected from start to finish
-            if (startPosition == 0 && endPosition == end_Line.Length)
-            {
-                textManager.Safe_RemoveRange(startLine, endLine - startLine + 1);
-                textManager.InsertOrAddRange(lines, startLine);
-            }
-            //Only the startline is completely selected
-            else if (startPosition == 0 && endPosition != end_Line.Length)
-            {
-                //TODO Out of range -> multiline text => Ctrl + A => new text:
-                textManager.SetLineText(endLine, end_Line.Substring(endPosition).AddToStart(lines[lines.Length - 1]));
-
-                textManager.Safe_RemoveRange(startLine, endLine - startLine);
-                textManager.InsertOrAddRange(lines.Take(lines.Length - 1), startLine);
-            }
-            //Only the endline is completely selected
-            else if (startPosition != 0 && endPosition == end_Line.Length)
-            {
-                textManager.SetLineText(startLine, start_Line.SafeRemove(startPosition).AddToEnd(lines[0]));
-
-                textManager.Safe_RemoveRange(startLine + 1, endLine - startLine);
-                textManager.InsertOrAddRange(lines.Skip(1), startLine + 1);
-            }
-            else
-            {
-                //Delete the selected parts
-                start_Line = start_Line.SafeRemove(startPosition);
-                end_Line = end_Line.Safe_Substring(endPosition);
-
-                //Only one line to insert
-                if (lines.Length == 1)
-                {
-                    textManager.SetLineText(startLine, start_Line.AddToEnd(lines[0] + end_Line));
-                    textManager.Safe_RemoveRange(startLine + 1, endLine - startLine < 0 ? 0 : endLine - startLine);
-                }
-                else
-                {
-                    textManager.SetLineText(startLine, start_Line.AddToEnd(lines[0]));
-                    textManager.SetLineText(endLine, end_Line.AddToStart(lines[lines.Length - 1]));
-
-                    textManager.Safe_RemoveRange(startLine + 1, endLine - startLine - 1 < 0 ? 0 : endLine - startLine - 1);
-                    if (lines.Length > 2)
-                        textManager.InsertOrAddRange(lines.GetLines(1, lines.Length - 2), startLine + 1);
-                }
-            }
-
-            cursorManager.SetCursorPosition(startLine + lines.Length - 1, start_Line.Length + end_Line.Length - 1);
-        }
-    }
-    public void Remove()
-    {
-        var selection = OrderTextSelectionSeparated();
-        int startLine = selection.startLine;
-        int endLine = selection.endLine;
-        int startPosition = selection.startChar;
-        int endPosition = selection.endChar;
-
-        string start_Line = textManager.GetLineText(startLine);
-        string end_Line = textManager.GetLineText(endLine);
-
-        if (startLine == endLine)
-        {
-            string text =
-                startPosition == 0 && endPosition == end_Line.Length ?
-                "" :
-                start_Line.SafeRemove(startPosition, endPosition - startPosition);
-
-            textManager.SetLineText(startLine, text);
-        }
-        else if (this.WholeTextSelected())
-        {
-            textManager.ClearText(true);
-            cursorManager.SetCursorPosition(textManager.LinesCount - 1, 0);
-        }
-        else
-        {
-            //Whole lines are selected from start to finish
-            if (startPosition == 0 && endPosition == end_Line.Length)
-            {
-                textManager.Safe_RemoveRange(startLine, endLine - startLine + 1);
-            }
-            //Only the startline is completely selected
-            else if (startPosition == 0 && endPosition != end_Line.Length)
-            {
-                textManager.SetLineText(endLine, end_Line.Safe_Substring(endPosition));
-                textManager.Safe_RemoveRange(startLine, endLine - startLine);
-            }
-            //Only the endline is completely selected
-            else if (startPosition != 0 && endPosition == end_Line.Length)
-            {
-                textManager.SetLineText(startLine, start_Line.SafeRemove(startPosition));
-                textManager.Safe_RemoveRange(startLine + 1, endLine - startLine);
-            }
-            //Both startline and endline are not completely selected
-            else
-            {
-                textManager.SetLineText(startLine, start_Line.SafeRemove(startPosition) + end_Line.Safe_Substring(endPosition));
-                textManager.Safe_RemoveRange(startLine + 1, endLine - startLine);
-            }
+            replaceSelectionManager.ReplaceWholeText(lines);
+            return;
         }
 
-        if (textManager.LinesCount == 0)
-            textManager.AddLine();
-
-        cursorManager.SetCursorPosition(startLine, startPosition);
+        //Case4: multiline selection
+        replaceSelectionManager.ReplaceMultiLineSelection(startLine, endLine, startPosition, endPosition, lines, start_Line);
     }
 
     public TextSelection GetSelectionFromPosition(int startPosition, int length, int numberOfCharacters)
@@ -350,7 +266,7 @@ internal class SelectionManager
 
         if (startLine == endLine) //Singleline
         {
-            string line = textManager.GetLineText(startLine < textManager.LinesCount? startLine : textManager.LinesCount - 1);
+            string line = textManager.GetLineText(startLine < textManager.LinesCount ? startLine : textManager.LinesCount - 1);
 
             if (startIndex == 0 && endIndex != line.Length)
                 stringBuilder.Append(line.SafeRemove(endIndex));
@@ -360,7 +276,7 @@ internal class SelectionManager
                 stringBuilder.Append(line);
             else stringBuilder.Append(line.SafeRemove(endIndex).Substring(startIndex));
         }
-        else if (this.WholeTextSelected())
+        else if (WholeTextSelected())
         {
             stringBuilder.Append(textManager.GetLinesAsString());
         }

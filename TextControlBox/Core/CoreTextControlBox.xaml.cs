@@ -20,6 +20,7 @@ using TextControlBoxNS.Models.Enums;
 using TextControlBoxNS.Models;
 using System.Linq;
 using System.Diagnostics;
+using TextControlBoxNS.Core.Selection;
 
 namespace TextControlBoxNS.Core;
 
@@ -110,7 +111,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         stringManager.Init(textManager, tabSpaceHelper);
         lineHighlighterRenderer.Init(lineHighlighterManager, selectionManager, textRenderer);
-        cursorManager.Init(textManager, currentLineManager, tabSpaceHelper, selectionManager, autoIndentionManager);
+        cursorManager.Init(textManager, currentLineManager, tabSpaceHelper);
         selectionManager.Init(textManager, cursorManager, selectionRenderer);
         undoRedo.Init(textManager, selectionManager);
         selectionRenderer.Init(selectionManager, textRenderer, eventsManager, scrollManager, zoomManager, designHelper, textManager);
@@ -125,7 +126,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         designHelper.Init(this, textRenderer, canvasUpdateManager);
         tabSpaceHelper.Init(textManager, selectionManager, cursorManager, selectionRenderer, textActionManager);
         searchManager.Init(textManager);
-        eventsManager.Init(searchManager, selectionManager, cursorManager, selectionRenderer);
+        eventsManager.Init(searchManager, cursorManager);
         lineNumberRenderer.Init(textManager, textLayoutManager, textRenderer, designHelper, lineNumberManager);
         zoomManager.Init(textManager, textRenderer, scrollManager, canvasUpdateManager, lineNumberRenderer, eventsManager);
         selectionDragDropManager.Init(this, cursorManager, selectionManager, textManager, textActionManager, canvasUpdateManager, selectionRenderer, textRenderer);

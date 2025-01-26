@@ -9,8 +9,8 @@ namespace TextControlBoxNS.Core.Renderer;
 
 internal class SyntaxHighlightingRenderer
 {
-    public static FontWeight BoldFont = new FontWeight { Weight = 600 };
-    public static FontStyle ItalicFont = FontStyle.Italic;
+    public readonly static FontWeight BoldFont = new FontWeight(600);
+    public const FontStyle ItalicFont = FontStyle.Italic;
 
     public static void UpdateSyntaxHighlighting(CanvasTextLayout drawnTextLayout, ApplicationTheme theme, SyntaxHighlightLanguage syntaxHighlightingLanguage, bool syntaxHighlighting, string renderedText)
     {

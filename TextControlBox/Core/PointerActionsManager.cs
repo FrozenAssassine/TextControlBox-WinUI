@@ -6,6 +6,8 @@ using TextControlBoxNS.Helper;
 using TextControlBoxNS.Core.Renderer;
 using Windows.Foundation;
 using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Core.Selection;
+using System.Diagnostics;
 
 namespace TextControlBoxNS.Core;
 
@@ -133,15 +135,16 @@ internal class PointerActionsManager
             }
             else //Default selection
                 CursorHelper.UpdateCursorPosFromPoint(
-                coreTextbox.canvasText,
-                currentLineManager,
-                textRenderer,
-                scrollManager,
-                point,
-                cursorManager.currentCursorPosition);
+                    coreTextbox.canvasText,
+                    currentLineManager,
+                    textRenderer,
+                    scrollManager,
+                    point,
+                    cursorManager.currentCursorPosition);
 
             //Update:
             canvasUpdateManager.UpdateCursor();
+
             selectionRenderer.SetSelectionEnd(cursorManager.LineNumber, cursorManager.CharacterPosition);
             canvasUpdateManager.UpdateSelection();
         }

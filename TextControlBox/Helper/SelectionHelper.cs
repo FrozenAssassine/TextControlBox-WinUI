@@ -1,9 +1,9 @@
 ﻿using Microsoft.Graphics.Canvas.Text;
 using TextControlBoxNS.Core.Renderer;
-using TextControlBoxNS.Core;
 using Windows.Foundation;
 using TextControlBoxNS.Models;
 using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Core.Selection;
 
 namespace TextControlBoxNS.Helper;
 
@@ -108,5 +108,4 @@ internal class SelectionHelper
 
         return sel.startChar == 0 && sel.endChar == textManager.GetLineLength(sel.endLine);
     }
-
 }

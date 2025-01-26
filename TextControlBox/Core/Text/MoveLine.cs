@@ -1,4 +1,5 @@
 ﻿
+using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Models;
 using TextControlBoxNS.Models.Enums;
 

@@ -1,6 +1,7 @@
 ﻿using Collections.Pooled;
+using System;
+using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
-using TextControlBoxNS.Helper;
 
 namespace TextControlBoxNS.Core;
 
@@ -21,11 +22,13 @@ internal class LongestLineManager
     //Get the longest line in the textbox
     private int GetLongestLineIndex(PooledList<string> totalLines)
     {
+        var span = totalLines.Span;
         int longestIndex = 0;
         int oldLenght = 0;
-        for (int i = 0; i < totalLines.Count; i++)
+
+        for (int i = 0; i < span.Length; i++)
         {
-            var lenght = totalLines[i].Length;
+            var lenght = span[i].Length;
             if (lenght > oldLenght)
             {
                 longestIndex = i;
@@ -36,19 +39,27 @@ internal class LongestLineManager
     }
     private int GetLongestLineLength(string text)
     {
-        var splitted = text.Split("\n");
-        int oldLenght = 0;
-        for (int i = 0; i < splitted.Length; i++)
+        int maxLength = 0;
+        int currentLength = 0;
+        ReadOnlySpan<char> spanText = text.AsSpan();
+        foreach (char c in spanText)
         {
-            var lenght = splitted[i].Length;
-            if (lenght > oldLenght)
+            if (c == '\n')
             {
-                oldLenght = lenght;
+                if (currentLength > maxLength)
+                    maxLength = currentLength;
+                currentLength = 0;
+            }
+            else
+            {
+                currentLength++;
             }
         }
-        return oldLenght;
+        if (currentLength > maxLength)
+            maxLength = currentLength;
+        return maxLength;
     }
-
+    
     public void CheckRecalculateLongestLine(string text)
     {
         if (GetLongestLineLength(text) > longestLineLength)
@@ -56,7 +67,6 @@ internal class LongestLineManager
             needsRecalculation = true;
         }
     }
-
     public void CheckRecalculateLongestLine()
     {
         if (needsRecalculation)
@@ -66,7 +76,6 @@ internal class LongestLineManager
         }
 
     }
-
     public void CheckSelection()
     {
         if (selManager.currentTextSelection.IsLineInSelection(longestIndex))

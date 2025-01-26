@@ -1,78 +1,67 @@
-﻿using Microsoft.UI.Xaml;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using TextControlBoxNS.Core.Renderer;
-using TextControlBoxNS.Helper;
-using TextControlBoxNS.Models;
+﻿
+namespace TextControlBoxNS.Core;
 
-namespace TextControlBoxNS.Core
+internal class EventsManager
 {
-    internal class EventsManager
+    private SearchManager searchManager;
+    private CursorManager cursorManager;
+
+    public delegate void ZoomChangedEvent(int zoomFactor);
+    public event ZoomChangedEvent ZoomChanged;
+
+    public delegate void TextChangedEvent();
+    public event TextChangedEvent TextChanged;
+    
+    public delegate void SelectionChangedEvent(SelectionChangedEventHandler args);
+    public event SelectionChangedEvent SelectionChanged;
+
+    public delegate void GotFocusEvent();
+    public event GotFocusEvent GotFocus;
+
+    public delegate void LostFocusEvent();
+    public event LostFocusEvent LostFocus;
+
+    public void Init(SearchManager searchManager, CursorManager cursorManager)
     {
-        private SearchManager searchManager;
-        private CursorManager cursorManager;
-        private SelectionRenderer selectionRenderer;
-        private SelectionManager selectionManager;
+        this.searchManager = searchManager;
+        this.cursorManager = cursorManager;
+    }
 
-        public delegate void ZoomChangedEvent(int zoomFactor);
-        public event ZoomChangedEvent ZoomChanged;
+    public void CallTextChanged()
+    {
+        if (TextChanged == null)
+            return;
 
-        public delegate void TextChangedEvent();
-        public event TextChangedEvent TextChanged;
-        
-        public delegate void SelectionChangedEvent(SelectionChangedEventHandler args);
-        public event SelectionChangedEvent SelectionChanged;
+        if (searchManager.IsSearchOpen)
+            searchManager.UpdateSearchLines();
 
-        public delegate void GotFocusEvent();
-        public event GotFocusEvent GotFocus;
+        TextChanged?.Invoke();
+    }
 
-        public delegate void LostFocusEvent();
-        public event LostFocusEvent LostFocus;
+    public void CallSelectionChanged()
+    {
+        if (SelectionChanged == null)
+            return;
 
-        public void Init(SearchManager searchManager, SelectionManager selectionManager, CursorManager cursorManager, SelectionRenderer selectionRenderer)
+        SelectionChangedEventHandler args = new SelectionChangedEventHandler
         {
-            this.searchManager = searchManager;
-            this.cursorManager = cursorManager;
-            this.selectionRenderer = selectionRenderer;
-            this.selectionManager = selectionManager;
-        }
+            CharacterPositionInLine = cursorManager.GetCurPosInLine() + 1,
+            LineNumber = cursorManager.LineNumber,
+        };
+        SelectionChanged.Invoke(args);
+    }
 
-        public void CallTextChanged()
-        {
-            if (TextChanged == null)
-                return;
+    public void CallZoomChanged(int zoomFactor)
+    {
+        ZoomChanged?.Invoke(zoomFactor);
+    }
 
-            if (searchManager.IsSearchOpen)
-                searchManager.UpdateSearchLines();
-
-            TextChanged?.Invoke();
-        }
-
-        public void CallSelectionChanged()
-        {
-            if (SelectionChanged == null)
-                return;
-
-            SelectionChangedEventHandler args = new SelectionChangedEventHandler
-            {
-                CharacterPositionInLine = cursorManager.GetCurPosInLine() + 1,
-                LineNumber = cursorManager.LineNumber,
-            };
-            SelectionChanged.Invoke(args);
-        }
-
-        public void CallZoomChanged(int zoomFactor)
-        {
-            ZoomChanged?.Invoke(zoomFactor);
-        }
-
-        public void CallGotFocus()
-        {
-            GotFocus?.Invoke();
-        }
-        public void CallLostFocus()
-        {
-            LostFocus?.Invoke();
-        }
+    public void CallGotFocus()
+    {
+        GotFocus?.Invoke();
+    }
+    public void CallLostFocus()
+    {
+        LostFocus?.Invoke();
     }
 }

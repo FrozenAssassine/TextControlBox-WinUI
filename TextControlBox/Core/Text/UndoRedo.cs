@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
 
