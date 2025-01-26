@@ -28,7 +28,7 @@ namespace TextControlBox_TestApp
 
         private void Textbox_Loaded(object sender, RoutedEventArgs e)
         {
-            textbox.LoadLines(File.ReadAllLines("C:\\Users\\Juliu\\Desktop\\Cable_Clip_Large.gcode"));
+            //textbox.LoadLines(File.ReadAllLines("C:\\Users\\Juliu\\Desktop\\Cable_Clip_Large.gcode"));
 
             //textbox.SetCursorPosition(10000, 40);
             //textbox.GetLinesText(0, textbox.NumberOfLines);

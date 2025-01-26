@@ -1,9 +1,7 @@
-﻿using Microsoft.Graphics.Canvas;
-using Microsoft.Graphics.Canvas.Text;
+﻿using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using Windows.Foundation;
@@ -115,6 +113,7 @@ internal class TextRenderer
             scrollManager.horizontalScrollBar.Maximum = (longestLineManager.longestLineWidth.Width <= canvasText.ActualWidth - 30 ? 0 : longestLineManager.longestLineWidth.Width - canvasText.ActualWidth + 30);
             scrollManager.horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
         }
+
         scrollManager.ScrollIntoViewHorizontal(canvasText, false);
 
         //Only update the textformat when the text changes:

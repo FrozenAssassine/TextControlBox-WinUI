@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Extensions;
 

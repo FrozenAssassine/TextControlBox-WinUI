@@ -1,6 +1,7 @@
 ﻿using Collections.Pooled;
 using Microsoft.Graphics.Canvas;
 using System;
+using System.Diagnostics;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
@@ -12,7 +13,17 @@ namespace TextControlBoxNS.Core;
 internal class LongestLineManager
 {
     public int longestLineLength = 0;
-    public int longestIndex = 0;
+
+    private int _longestIndex = 0;
+    public int longestIndex
+    {
+        get => _longestIndex;
+        set
+        {
+            _longestIndex = value;
+            Recalculate(value);
+        }
+    }
     public bool needsRecalculation = true;
 
     public Size longestLineWidth { get; private set; }
@@ -72,12 +83,15 @@ internal class LongestLineManager
 
     private void Recalculate(int index = -1)
     {
+        Debug.WriteLine("Recalculate");
+
         needsRecalculation = false;
         if (index == -1)
-            longestIndex = GetLongestLineIndex(textManager.totalLines);
+            _longestIndex = GetLongestLineIndex(textManager.totalLines);
         else
-            longestIndex = index;
+            _longestIndex = index;
 
+        longestLineLength = textManager.totalLines[_longestIndex].Length;
         longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[longestIndex], textRenderer.TextFormat);
         HasLongestLineChanged = true;
     }
@@ -99,7 +113,7 @@ internal class LongestLineManager
     }
     public void CheckSelection()
     {
-        if (selManager.currentTextSelection.IsLineInSelection(longestIndex))
+        if (selManager.currentTextSelection.IsLineInSelection(_longestIndex))
             needsRecalculation = true;
     }
 }
