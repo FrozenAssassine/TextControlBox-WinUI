@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 
@@ -14,17 +16,17 @@ internal class CursorManager
     private TextManager textManager;
     private CurrentLineManager currentLineManager;
     private TabSpaceHelper tabSpaceHelper;
-    private SelectionManager selectionManager;
-    private AutoIndentionManager autoIndentionManager;
-    public void Init(TextManager textManager, CurrentLineManager currentLineManager, TabSpaceHelper tabSpaceHelper, SelectionManager selectionManager, AutoIndentionManager autoIndentionManager)
+    public void Init(TextManager textManager, CurrentLineManager currentLineManager, TabSpaceHelper tabSpaceHelper)
     {
         this.textManager = textManager;
         this.currentLineManager = currentLineManager;
         this.tabSpaceHelper = tabSpaceHelper;
-        this.selectionManager = selectionManager;
-        this.autoIndentionManager = autoIndentionManager;
     }
 
+    public void SetCursorPosition(CursorPosition cursorPosition)
+    {
+        this.currentCursorPosition = cursorPosition;
+    }
     public void SetCursorPosition(int line, int character)
     {
         this.LineNumber = line;
@@ -45,7 +47,6 @@ internal class CursorManager
         return CharacterPosition;
     }
 
-
     private int CheckIndex(string str, int index) => Math.Clamp(index, 0, str.Length - 1);
     public int CursorPositionToIndex(CursorPosition cursorPosition)
     {
@@ -59,7 +60,7 @@ internal class CursorManager
     }
     public bool Equals(CursorPosition curPos1, CursorPosition curPos2)
     {
-        if (curPos1.IsNull || curPos2.IsNull)
+        if (curPos1 == null || curPos2 == null)
             return false;
 
         if (curPos1.LineNumber == curPos2.LineNumber)
@@ -134,6 +135,32 @@ internal class CursorManager
 
         return count;
     }
+    private int CountCharactersToMoveLeft(int startPosition)
+    {
+        int count = 0;
+        for (int i = startPosition; i >= 0; i--)
+        {
+            char currentChar = currentLineManager.CurrentLine[CheckIndex(currentLineManager.CurrentLine, i)];
+
+            if (char.IsLetterOrDigit(currentChar) || currentChar == '_')
+                count++;
+            else
+                break;
+        }
+        return count;
+    }
+    public int CalculateStepsToMoveLeft(int cursorCharPosition)
+    {
+        if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
+            return 1;
+
+        int filledRes = IsFilledWithTabsAndSpacesToCursor(currentLineManager.CurrentLine, cursorCharPosition);
+        int startPosition = (filledRes != 0) ? cursorCharPosition - filledRes - 1 : cursorCharPosition - 1;
+        int stepsToMove = filledRes + CountCharactersToMoveLeft(startPosition);
+
+        return stepsToMove == 0 ? 1 : stepsToMove;
+    }
+
     private int IsFilledWithTabsAndSpacesFromCursor(string currentLine, int cursor)
     {
         string tabCharacter = tabSpaceHelper.TabCharacter;
@@ -160,31 +187,6 @@ internal class CursorManager
 
         return count;
     }
-
-    public int CalculateStepsToMoveLeft(int cursorCharPosition)
-    {
-        if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
-            return 1;
-
-        int filledRes = IsFilledWithTabsAndSpacesToCursor(currentLineManager.CurrentLine, cursorCharPosition);
-        if (filledRes != 0)
-            return filledRes;
-
-        int stepsToMove = 0;
-        for (int i = cursorCharPosition - 1; i >= 0; i--)
-        {
-            char CurrentCharacter = currentLineManager.CurrentLine[CheckIndex(currentLineManager.CurrentLine, i)];
-            if (char.IsLetterOrDigit(CurrentCharacter) || CurrentCharacter == '_')
-                stepsToMove++;
-            else if (i == cursorCharPosition - 1 && char.IsWhiteSpace(CurrentCharacter))
-                stepsToMove++;
-            else
-                break;
-        }
-        //If it ignores the ControlKey return the real value of stepsToMove otherwise
-        //return 1 if stepsToMove is 0
-        return stepsToMove == 0 ? 1 : stepsToMove;
-    }
     public int CalculateStepsToMoveRight(int cursorCharPosition)
     {
         if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
@@ -205,7 +207,15 @@ internal class CursorManager
             else
                 break;
         }
-        //If it ignores the ControlKey return the real value of stepsToMove otherwise
+
+        //skip trailing spaces or tabs: "Hello |World Test" => "Hello World |Test"
+        int index = cursorCharPosition + stepsToMove;
+        if (index + 1 < currentLineManager.Length && char.IsWhiteSpace(currentLineManager.CurrentLine[index]))
+        {
+            int filled = IsFilledWithTabsAndSpacesFromCursor(currentLineManager.CurrentLine, index);
+            stepsToMove += filled;
+        }
+
         //return 1 if stepsToMove is 0
         return stepsToMove == 0 ? 1 : stepsToMove;
     }
