@@ -90,7 +90,6 @@ internal class PointerActionsManager
             if (curPosX > canvasWidth - 100 || curPosX < 100)
             {
                 scrollManager.ScrollIntoViewHorizontal(coreTextbox.canvasText);
-                canvasUpdateManager.UpdateAll();
             }
         }
 
@@ -132,6 +131,7 @@ internal class PointerActionsManager
                     cursorManager.currentCursorPosition);
             }
             else //Default selection
+            {
                 CursorHelper.UpdateCursorPosFromPoint(
                     coreTextbox.canvasText,
                     currentLineManager,
@@ -140,6 +140,7 @@ internal class PointerActionsManager
                     point,
                     cursorManager.currentCursorPosition);
 
+            }
             //Update:
             canvasUpdateManager.UpdateCursor();
 

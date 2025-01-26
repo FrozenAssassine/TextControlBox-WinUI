@@ -21,6 +21,8 @@ internal class EventsManager
     public delegate void LostFocusEvent();
     public event LostFocusEvent LostFocus;
 
+    private SelectionChangedEventHandler args = new SelectionChangedEventHandler();
+
     public void Init(SearchManager searchManager, CursorManager cursorManager)
     {
         this.searchManager = searchManager;
@@ -43,11 +45,9 @@ internal class EventsManager
         if (SelectionChanged == null)
             return;
 
-        SelectionChangedEventHandler args = new SelectionChangedEventHandler
-        {
-            CharacterPositionInLine = cursorManager.GetCurPosInLine() + 1,
-            LineNumber = cursorManager.LineNumber,
-        };
+        args.CharacterPositionInLine = cursorManager.GetCurPosInLine() + 1;
+        args.LineNumber = cursorManager.LineNumber;
+
         SelectionChanged.Invoke(args);
     }
 

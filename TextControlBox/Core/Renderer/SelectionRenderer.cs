@@ -1,6 +1,7 @@
 ﻿using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
+using System.Diagnostics;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
@@ -96,7 +97,7 @@ namespace TextControlBoxNS.Core.Renderer
                 {
                     if (i < numberOfRenderedLines)
                     {
-                        lenghtToLine += textManager.GetLineLength(textRenderer.NumberOfStartLine + i) + 2;
+                        lenghtToLine += textManager.totalLines.Span[textRenderer.NumberOfStartLine + i].Length + 2;
                     }
                 }
 
@@ -109,7 +110,7 @@ namespace TextControlBoxNS.Core.Renderer
                 {
                     if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
                         break;
-                    selStartIndex += textManager.GetLineLength(textRenderer.NumberOfStartLine + i) + 2;
+                    selStartIndex += textManager.totalLines.Span[textRenderer.NumberOfStartLine + i].Length + 2;
                 }
 
                 selStartIndex += characterPosStart;
@@ -119,7 +120,7 @@ namespace TextControlBoxNS.Core.Renderer
                     if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
                         break;
 
-                    selEndIndex += textManager.GetLineLength(textRenderer.NumberOfStartLine + i) + 2;
+                    selEndIndex += textManager.totalLines.Span[textRenderer.NumberOfStartLine + i].Length + 2;
                 }
 
                 selEndIndex += characterPosEnd;

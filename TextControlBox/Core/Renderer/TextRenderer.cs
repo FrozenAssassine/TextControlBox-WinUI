@@ -2,6 +2,8 @@
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using Windows.Foundation;
@@ -85,9 +87,9 @@ internal class TextRenderer
         {
             lineNumberRenderer.CreateLineNumberTextFormat();
             TextFormat = textLayoutManager.CreateCanvasTextFormat();
-        }
 
-        designHelper.CreateColorResources(args.DrawingSession);
+            designHelper.CreateColorResources(args.DrawingSession);
+        }
 
         //Measure textposition and apply the value to the scrollbar
         scrollManager.verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * SingleLineHeight - scrollGrid.ActualHeight) / scrollManager.DefaultVerticalScrollSensitivity;
@@ -105,23 +107,24 @@ internal class TextRenderer
         lineNumberRenderer.CheckGenerateLineNumberText();
         longestLineManager.CheckRecalculateLongestLine();
 
-        //Find the longest line length
-        string longestLineText = textManager.GetLineText(longestLineManager.longestIndex);
-        longestLineManager.longestLineLength = longestLineText.Length;
-        Size lineLength = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), longestLineText, TextFormat);
+        if (longestLineManager.HasLongestLineChanged)
+        {
+            longestLineManager.HasLongestLineChanged = false;
 
-        //Measure horizontal Width of longest line and apply to scrollbar
-        scrollManager.horizontalScrollBar.Maximum = (lineLength.Width <= canvasText.ActualWidth - 30 ? 0 : lineLength.Width - canvasText.ActualWidth + 30);
-        scrollManager.horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
-        scrollManager.ScrollIntoViewHorizontal(canvasText);
+            //Apply longest width to scrollbar
+            scrollManager.horizontalScrollBar.Maximum = (longestLineManager.longestLineWidth.Width <= canvasText.ActualWidth - 30 ? 0 : longestLineManager.longestLineWidth.Width - canvasText.ActualWidth + 30);
+            scrollManager.horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
+        }
+        scrollManager.ScrollIntoViewHorizontal(canvasText, false);
 
         //Only update the textformat when the text changes:
-        if (OldRenderedText != RenderedText || NeedsUpdateTextLayout)
+        if (OldRenderedText != null && !RenderedText.Equals(OldRenderedText, System.StringComparison.OrdinalIgnoreCase) || NeedsUpdateTextLayout)
         {
             NeedsUpdateTextLayout = false;
             OldRenderedText = RenderedText;
 
             DrawnTextLayout = textLayoutManager.CreateTextResource(canvasText, DrawnTextLayout, TextFormat, RenderedText, new Size { Height = canvasText.Size.Height, Width = coreTextbox.ActualWidth });
+
             SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting, RenderedText);
         }
 

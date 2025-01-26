@@ -52,7 +52,6 @@ internal sealed partial class CoreTextControlBox : UserControl
     private readonly PointerActionsManager pointerActionsManager;
     private readonly TextLayoutManager textLayoutManager;
     private readonly LineHighlighterRenderer lineHighlighterRenderer;
-    private readonly LoadingManager loadingManager;
     private readonly AutoIndentionManager autoIndentionManager;
 
     public CanvasControl canvasText;
@@ -104,7 +103,6 @@ internal sealed partial class CoreTextControlBox : UserControl
         focusManager = new FocusManager();
         pointerActionsManager = new PointerActionsManager();
         textLayoutManager = new TextLayoutManager();
-        loadingManager = new LoadingManager();
         lineHighlighterRenderer = new LineHighlighterRenderer();
         autoIndentionManager = new AutoIndentionManager();
 
@@ -121,7 +119,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         cursorRenderer.Init(cursorManager, currentLineManager, textRenderer, focusManager, textManager, scrollManager, zoomManager, designHelper, lineHighlighterRenderer, eventsManager);
         scrollManager.Init(this, canvasUpdateManager, textManager, textRenderer, cursorManager, VerticalScrollbar, HorizontalScrollbar);
         currentLineManager.Init(cursorManager, textManager);
-        longestLineManager.Init(selectionManager, textManager);
+        longestLineManager.Init(selectionManager, textManager, textRenderer);
         designHelper.Init(this, textRenderer, canvasUpdateManager);
         tabSpaceHelper.Init(textManager, selectionManager, cursorManager, selectionRenderer, textActionManager);
         searchManager.Init(textManager);
@@ -141,8 +139,6 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         InitialiseOnStart();
         focusManager.SetFocus();
-
-        loadingManager.IsTextboxLoaded = true;
     }
 
     public void ChangeCursor(InputSystemCursorShape cursor)
@@ -636,30 +632,18 @@ internal sealed partial class CoreTextControlBox : UserControl
     //Canvas event
     private void Canvas_Text_Draw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        if (!loadingManager.IsTextboxLoaded)
-            return;
-
         textRenderer.Draw(sender, args);
     }
     private void Canvas_Selection_Draw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        if (!loadingManager.IsTextboxLoaded)
-            return;
-
         selectionRenderer.Draw(sender, args);
     }
     private void Canvas_Cursor_Draw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        if (!loadingManager.IsTextboxLoaded)
-            return;
-
         cursorRenderer.Draw(Canvas_Text, Canvas_Cursor, args);
     }
     private void Canvas_LineNumber_Draw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        if (!loadingManager.IsTextboxLoaded)
-            return;
-
         if (!lineNumberManager._ShowLineNumbers)
         {
             lineNumberRenderer.HideLineNumbers(sender, lineNumberManager._SpaceBetweenLineNumberAndText);

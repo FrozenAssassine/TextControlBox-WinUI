@@ -136,7 +136,7 @@ internal class ScrollManager
             canvasHelper.UpdateAll();
     }
 
-    public void ScrollIntoViewHorizontal(CanvasControl canvasText)
+    public void ScrollIntoViewHorizontal(CanvasControl canvasText, bool update = true)
     {
         float curPosInLine = CursorHelper.GetCursorPositionInLine(
             textRenderer.CurrentLineTextLayout,
@@ -159,6 +159,8 @@ internal class ScrollManager
             horizontalScrollBar.Value = Math.Min(curPosInLine - canvasText.ActualWidth + 60, horizontalScrollBar.Maximum);
         }
         OldHorizontalScrollValue = curPosInLine;
-        canvasHelper.UpdateAll();
+
+        if(update)
+            canvasHelper.UpdateAll();
     }
 }

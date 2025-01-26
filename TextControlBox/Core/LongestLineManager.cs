@@ -1,7 +1,11 @@
 ﻿using Collections.Pooled;
+using Microsoft.Graphics.Canvas;
 using System;
+using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Helper;
+using Windows.Foundation;
 
 namespace TextControlBoxNS.Core;
 
@@ -11,12 +15,18 @@ internal class LongestLineManager
     public int longestIndex = 0;
     public bool needsRecalculation = true;
 
+    public Size longestLineWidth { get; private set; }
+
+    public bool HasLongestLineChanged = false;
     private SelectionManager selManager;
     private TextManager textManager;
-    public void Init(SelectionManager selManager, TextManager textManager)
+    private TextRenderer textRenderer;
+
+    public void Init(SelectionManager selManager, TextManager textManager, TextRenderer textRenderer)
     {
         this.selManager = selManager;
         this.textManager = textManager;
+        this.textRenderer = textRenderer;
     }
 
     //Get the longest line in the textbox
@@ -60,21 +70,32 @@ internal class LongestLineManager
         return maxLength;
     }
 
+    private void Recalculate(int index = -1)
+    {
+        needsRecalculation = false;
+        if (index == -1)
+            longestIndex = GetLongestLineIndex(textManager.totalLines);
+        else
+            longestIndex = index;
+
+        longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[longestIndex], textRenderer.TextFormat);
+        HasLongestLineChanged = true;
+    }
+
     public void CheckRecalculateLongestLine(string text)
     {
-        if (GetLongestLineLength(text) > longestLineLength)
+        int lengt = GetLongestLineLength(text);
+        if (lengt > longestLineLength)
         {
-            needsRecalculation = true;
+            Recalculate();
         }
     }
     public void CheckRecalculateLongestLine()
     {
         if (needsRecalculation)
         {
-            needsRecalculation = false;
-            longestIndex = GetLongestLineIndex(textManager.totalLines);
+            Recalculate();
         }
-
     }
     public void CheckSelection()
     {
