@@ -27,7 +27,7 @@ internal class ReplaceSelectionManager
         string suffix = originalLine.Safe_Substring(end);
 
         textManager.SetLineText(line, prefix + lines[0]);
-        textManager.InsertOrAddRange(ListHelper.CreateLines(lines, 1, "", suffix), line + 1);
+        textManager.InsertOrAddRange(ListHelper.CreateLines(lines, 1, suffix, ""), line + 1);
         cursorManager.SetCursorPosition(line + lines.Length - 1, suffix.Length + lines[^1].Length);
     }
 
@@ -80,6 +80,6 @@ internal class ReplaceSelectionManager
             }
         }
 
-        cursorManager.SetCursorPosition(startLine + lines.Length - 1, lines[^1].Length);
+        cursorManager.SetCursorPosition(startLine + lines.Length - 1, startPos + lines[0].Length);
     }
 }
