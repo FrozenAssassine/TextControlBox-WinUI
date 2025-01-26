@@ -16,7 +16,7 @@ namespace TextControlBoxNS.Core.Renderer
         public string LineNumberTextToRender;
         public string OldLineNumberTextToRender;
 
-        private StringBuilder LineNumberContent = new StringBuilder();
+        private readonly StringBuilder LineNumberContent = new StringBuilder();
         private bool needsUpdate = false;
 
         private TextManager textManager;
@@ -35,7 +35,7 @@ namespace TextControlBoxNS.Core.Renderer
 
         public void GenerateLineNumberText(int renderedLines, int startLine)
         {
-            //todo check performance:
+            //TODO! check performance:
             for (int i = 0; i < renderedLines; i++)
             {
                 LineNumberContent.AppendLine((i + 1 + startLine).ToString());

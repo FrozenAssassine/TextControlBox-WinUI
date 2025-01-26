@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
-using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 
@@ -8,7 +6,7 @@ namespace TextControlBoxNS.Core;
 
 internal class CursorManager
 {
-    public CursorPosition oldCursorPosition = new CursorPosition(0,0);
+    public CursorPosition oldCursorPosition = new CursorPosition(0, 0);
     public CursorPosition currentCursorPosition { get; private set; } = new CursorPosition(0, 0);
     public int LineNumber { get => currentCursorPosition.LineNumber; set => currentCursorPosition.LineNumber = value; }
     public int CharacterPosition { get => currentCursorPosition.CharacterPosition; set { currentCursorPosition.CharacterPosition = value; } }
@@ -23,10 +21,6 @@ internal class CursorManager
         this.tabSpaceHelper = tabSpaceHelper;
     }
 
-    public void SetCursorPosition(CursorPosition cursorPosition)
-    {
-        this.currentCursorPosition = cursorPosition;
-    }
     public void SetCursorPosition(int line, int character)
     {
         this.LineNumber = line;
@@ -48,16 +42,6 @@ internal class CursorManager
     }
 
     private int CheckIndex(string str, int index) => Math.Clamp(index, 0, str.Length - 1);
-    public int CursorPositionToIndex(CursorPosition cursorPosition)
-    {
-        int cursorIndex = cursorPosition.CharacterPosition;
-        int lineNumber = cursorPosition.LineNumber < textManager.LinesCount ? cursorIndex : textManager.LinesCount - 1;
-        for (int i = 0; i < lineNumber; i++)
-        {
-            cursorIndex += textManager.totalLines.Span[i].Length + 1;
-        }
-        return cursorIndex;
-    }
     public bool Equals(CursorPosition curPos1, CursorPosition curPos2)
     {
         if (curPos1 == null || curPos2 == null)
@@ -241,7 +225,7 @@ internal class CursorManager
     {
         int lineLength = textManager.GetLineLength(LineNumber);
 
-        if (LineNumber > textManager.LinesCount- 1)
+        if (LineNumber > textManager.LinesCount - 1)
             return;
 
         if (CharacterPosition == lineLength && LineNumber < textManager.LinesCount - 1)

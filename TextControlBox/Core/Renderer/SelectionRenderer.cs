@@ -239,7 +239,7 @@ namespace TextControlBoxNS.Core.Renderer
                 HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
             else
                 HasSelection = false;
-            
+
             if (HasSelection)
             {
                 DrawSelection(

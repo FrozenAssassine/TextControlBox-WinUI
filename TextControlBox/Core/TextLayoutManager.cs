@@ -1,8 +1,8 @@
-﻿using Microsoft.Graphics.Canvas.Text;
-using Microsoft.Graphics.Canvas;
+﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml.Media;
-using Windows.Foundation;
 using TextControlBoxNS.Core.Text;
+using Windows.Foundation;
 
 namespace TextControlBoxNS.Core;
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text.RegularExpressions;
-using TextControlBoxNS.Core;
 using TextControlBoxNS.Models;
 
 namespace TextControlBoxNS.Extensions

@@ -498,6 +498,6 @@
                 new SyntaxHighlights("\\b(MIN|MAX|COUNT|SUM|AVG)\\b","#11C9DB","#11C9DB",false,true),
                 new SyntaxHighlights("\\.","#901F9E","#901F9E",true)
             };
-            }
+        }
     }
 }

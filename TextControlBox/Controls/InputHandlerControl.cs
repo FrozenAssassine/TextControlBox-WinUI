@@ -39,7 +39,7 @@ internal class InputHandlerControl : TextBox
 
     protected override void OnKeyDown(KeyRoutedEventArgs e)
     {
-        // Override key down behavior if needed
+        //override key down behavior if needed
         return;
     }
 }

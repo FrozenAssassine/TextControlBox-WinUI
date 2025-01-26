@@ -26,17 +26,17 @@ internal class TextSelection
     }
     public TextSelection(CursorPosition startPosition = null, CursorPosition endPosition = null)
     {
-        if(startPosition != null)
+        if (startPosition != null)
             StartPosition.SetChangeValues(startPosition);
-        
-        if(endPosition != null)
+
+        if (endPosition != null)
             EndPosition.SetChangeValues(endPosition);
     }
     public TextSelection(TextSelection textSelection)
     {
         if (textSelection.StartPosition != null)
             StartPosition.SetChangeValues(textSelection.StartPosition);
-        if(textSelection.EndPosition != null)
+        if (textSelection.EndPosition != null)
             EndPosition.SetChangeValues(textSelection.EndPosition);
 
         renderedIndex = textSelection.renderedIndex;

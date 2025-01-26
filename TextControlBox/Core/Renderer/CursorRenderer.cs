@@ -94,7 +94,7 @@ internal class CursorRenderer
             args,
             designHelper.CursorColorBrush);
 
-        if(lineHighlighterRenderer.CanRender())
+        if (lineHighlighterRenderer.CanRender())
             lineHighlighterRenderer.Render((float)canvasCursor.ActualWidth, renderPosY, zoomManager.ZoomedFontSize, args, designHelper.LineHighlighterBrush);
 
         if (!cursorManager.Equals(cursorManager.currentCursorPosition, cursorManager.oldCursorPosition))

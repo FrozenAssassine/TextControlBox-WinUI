@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using TextControlBoxNS.Core;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
@@ -7,14 +6,12 @@ using TextControlBoxNS.Helper;
 internal class AutoIndentionManager
 {
     private TextManager textManager;
-    private CursorManager cursorManager;
     private TabSpaceHelper tabSpaceHelper;
 
 
-    public void Init(TextManager textManager, CursorManager cursorManager, TabSpaceHelper tabSpaceHelper)
+    public void Init(TextManager textManager, TabSpaceHelper tabSpaceHelper)
     {
         this.textManager = textManager;
-        this.cursorManager = cursorManager;
         this.tabSpaceHelper = tabSpaceHelper;
     }
 
@@ -88,7 +85,7 @@ internal class AutoIndentionManager
                 state.indStr.AsSpan().CopyTo(span.Slice(i * state.indStr.Length));
             }
         });
-        
+
     }
 
     public int OnEnterPressed(int currentLineIndex)

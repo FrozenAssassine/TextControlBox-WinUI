@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
@@ -64,11 +63,11 @@ namespace TextControlBoxNS.Core.Text
             var linesAfter = textManager.GetLinesAsString(startline, redoCount);
 
             AddUndoItem(
-                cursorposition == null ? null : new TextSelection(cursorposition, null), 
-                startline, 
-                linesBefore, 
-                linesAfter, 
-                undocount, 
+                cursorposition == null ? null : new TextSelection(cursorposition, null),
+                startline,
+                linesBefore,
+                linesAfter,
+                undocount,
                 redoCount
                 );
         }
@@ -82,7 +81,7 @@ namespace TextControlBoxNS.Core.Text
             {
                 numberOfAddedLines += 1;
             }
-            else if(numberOfAddedLines == 0 && !SelectionHelper.WholeLinesAreSelected(selection, textManager))
+            else if (numberOfAddedLines == 0 && !SelectionHelper.WholeLinesAreSelected(selection, textManager))
             {
                 numberOfAddedLines += 1;
             }

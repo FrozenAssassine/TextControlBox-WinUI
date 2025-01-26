@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
 using System.Text;
-using TextControlBoxNS.Extensions;
-using TextControlBoxNS.Helper;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Extensions;
+using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
 
 namespace TextControlBoxNS.Core.Selection;
@@ -15,8 +15,8 @@ internal class SelectionManager
     private CursorManager cursorManager;
     private SelectionRenderer selectionRenderer;
 
-    private ReplaceSelectionManager replaceSelectionManager = new ReplaceSelectionManager();
-    private RemoveSelectionManager removeSelectionManager = new RemoveSelectionManager();
+    private readonly ReplaceSelectionManager replaceSelectionManager = new ReplaceSelectionManager();
+    private readonly RemoveSelectionManager removeSelectionManager = new RemoveSelectionManager();
 
     public TextSelection OldTextSelection = new TextSelection();
     public readonly TextSelection currentTextSelection = new TextSelection();

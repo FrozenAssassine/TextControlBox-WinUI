@@ -1,7 +1,6 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using System;
 using System.Collections.Generic;
 using TextControlBoxNS.Core;
 using Windows.Foundation;
@@ -13,7 +12,7 @@ namespace TextControlBoxNS;
 /// </summary>
 public partial class TextControlBox : UserControl
 {
-    private CoreTextControlBox coreTextBox = new CoreTextControlBox();
+    private readonly CoreTextControlBox coreTextBox = new CoreTextControlBox();
 
     /// <summary>
     /// Initializes a new instance of the TextControlBox class.
@@ -420,7 +419,7 @@ public partial class TextControlBox : UserControl
     /// Gets the current cursor position in the textbox.
     /// </summary>
     /// <returns>The current cursor position represented by a Point object (X, Y).</returns>
-    public void SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true) 
+    public void SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true)
     {
         coreTextBox.SetCursorPosition(lineNumber, characterPos, scrollIntoView);
     }
@@ -457,7 +456,7 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Gets or sets a value indicating whether syntax highlighting is enabled in the textbox.
     /// </summary>
-    public bool EnableSyntaxHighlighting { get => coreTextBox.EnableSyntaxHighlighting; set => coreTextBox.EnableSyntaxHighlighting = value; } 
+    public bool EnableSyntaxHighlighting { get => coreTextBox.EnableSyntaxHighlighting; set => coreTextBox.EnableSyntaxHighlighting = value; }
 
     /// <summary>
     /// Gets or sets the style to use for the syntaxhighlighting and auto pairing.

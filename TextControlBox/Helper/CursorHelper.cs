@@ -1,11 +1,11 @@
 ﻿using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
-using TextControlBoxNS.Extensions;
-using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core;
-using Windows.Foundation;
+using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Extensions;
+using Windows.Foundation;
 
 namespace TextControlBoxNS.Helper;
 

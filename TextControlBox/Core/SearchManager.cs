@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Models;
 
 namespace TextControlBoxNS.Core;

@@ -7,20 +7,19 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
+using TextControlBoxNS.Core.Renderer;
+using TextControlBoxNS.Core.Selection;
+using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Languages;
-using TextControlBoxNS.Core.Renderer;
+using TextControlBoxNS.Models;
+using TextControlBoxNS.Models.Enums;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
 using Windows.System;
-using TextControlBoxNS.Core.Text;
-using TextControlBoxNS.Models.Enums;
-using TextControlBoxNS.Models;
-using System.Linq;
-using System.Diagnostics;
-using TextControlBoxNS.Core.Selection;
 
 namespace TextControlBoxNS.Core;
 
@@ -133,7 +132,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         focusManager.Init(this, canvasUpdateManager, inputHandler, eventsManager);
         pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, selectionDragDropManager, currentLineManager);
         textLayoutManager.Init(textManager, zoomManager);
-        autoIndentionManager.Init(textManager, cursorManager, tabSpaceHelper);
+        autoIndentionManager.Init(textManager, tabSpaceHelper);
         //subscribe to events:
 
         //set default values
@@ -223,7 +222,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     SelectAll();
                     break;
                 case VirtualKey.W:
-                    if(ControlW_SelectWord)
+                    if (ControlW_SelectWord)
                         selectionManager.SelectSingleWord(canvasUpdateManager);
                     break;
             }
@@ -451,7 +450,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             pointerActionsManager.PointerClickCount++;
 
 
-        if(pointerActionsManager.PointerClickCount == 3)
+        if (pointerActionsManager.PointerClickCount == 3)
         {
             SelectLine(CursorPosition.LineNumber);
             pointerActionsManager.PointerClickCount = 0;
@@ -1034,7 +1033,8 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         if (scrollIntoView)
         {
-            this.DispatcherQueue.TryEnqueue(() => {
+            this.DispatcherQueue.TryEnqueue(() =>
+            {
                 scrollManager.ScrollLineIntoView(lineNumber);
                 scrollManager.ScrollIntoViewHorizontal(canvasText);
             });
@@ -1086,7 +1086,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public CursorPosition CursorPosition
     {
         get => cursorManager.currentCursorPosition;
-        set { cursorManager.LineNumber = value.LineNumber;  cursorManager.CharacterPosition = value.CharacterPosition; canvasUpdateManager.UpdateCursor(); }
+        set { cursorManager.LineNumber = value.LineNumber; cursorManager.CharacterPosition = value.CharacterPosition; canvasUpdateManager.UpdateCursor(); }
     }
 
     public new FontFamily FontFamily { get => textManager._FontFamily; set { textManager._FontFamily = value; textRenderer.NeedsTextFormatUpdate = true; canvasUpdateManager.UpdateAll(); } }

@@ -1,8 +1,8 @@
 ﻿using Microsoft.UI.Input;
-using TextControlBoxNS.Helper;
 using TextControlBoxNS.Core.Renderer;
-using Windows.Foundation;
 using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Helper;
+using Windows.Foundation;
 
 namespace TextControlBoxNS.Core.Selection;
 

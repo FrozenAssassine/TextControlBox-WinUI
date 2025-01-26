@@ -11,7 +11,7 @@ internal class EventsManager
 
     public delegate void TextChangedEvent();
     public event TextChangedEvent TextChanged;
-    
+
     public delegate void SelectionChangedEvent(SelectionChangedEventHandler args);
     public event SelectionChangedEvent SelectionChanged;
 

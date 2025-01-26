@@ -1,9 +1,9 @@
 ﻿using System;
-using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Core;
-using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Selection;
+using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Extensions;
 
 namespace TextControlBoxNS.Helper
 {
@@ -112,7 +112,7 @@ namespace TextControlBoxNS.Helper
 
             //handle selected text moving
             var selection = selectionManager.OrderTextSelectionSeparated();
-            int selectedLinesCount = selection.endLine -  selection.startLine;
+            int selectedLinesCount = selection.endLine - selection.startLine;
 
             undoRedo.RecordUndoAction(() =>
             {
@@ -120,7 +120,7 @@ namespace TextControlBoxNS.Helper
                 {
                     int lineIndex = i + selection.startLine;
                     string currentLine = textManager.GetLineText(lineIndex);
-                    
+
                     //move the selection
                     if (i == 0 && currentLine.Contains(tabCharacter, StringComparison.Ordinal) && cursorPosition.CharacterPosition > 0)
                         selectionRenderer.SetSelectionStart(textSelection.StartPosition.LineNumber, textSelection.StartPosition.CharacterPosition - tabCharacter.Length);
@@ -150,7 +150,7 @@ namespace TextControlBoxNS.Helper
                 textSelection.StartPosition.SetChangeValues(cursorPosition);
                 return;
             }
-            
+
             //handle selected text moving
             var selection = selectionManager.OrderTextSelectionSeparated();
             int selectedLinesCount = selection.endLine - selection.startLine;

@@ -2,12 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using TextControlBoxNS.Helper;
 using TextControlBoxNS.Core.Renderer;
-using Windows.ApplicationModel.DataTransfer;
 using TextControlBoxNS.Core.Selection;
-using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Core.Text.TextActions;
+using TextControlBoxNS.Extensions;
+using TextControlBoxNS.Helper;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace TextControlBoxNS.Core.Text
 {
@@ -28,10 +28,10 @@ namespace TextControlBoxNS.Core.Text
         private StringManager stringManager;
         private AutoIndentionManager autoIndentionManager;
 
-        private AddCharacterTextAction addCharacterTextAction = new AddCharacterTextAction();
-        private DeleteTextAction deleteTextAction = new DeleteTextAction();
-        private AddNewLineTextAction addNewLineTextAction = new AddNewLineTextAction();
-        private RemoveTextAction removeTextAction = new RemoveTextAction();
+        private readonly AddCharacterTextAction addCharacterTextAction = new AddCharacterTextAction();
+        private readonly DeleteTextAction deleteTextAction = new DeleteTextAction();
+        private readonly AddNewLineTextAction addNewLineTextAction = new AddNewLineTextAction();
+        private readonly RemoveTextAction removeTextAction = new RemoveTextAction();
 
         public void Init(
             CoreTextControlBox coreTextbox,
@@ -347,7 +347,7 @@ namespace TextControlBoxNS.Core.Text
             canvasUpdateManager.UpdateCursor();
         }
 
-        
+
         public void AddCharacter2(string text, bool ignoreSelection = false)
         {
             if (textManager._IsReadonly)
@@ -497,7 +497,7 @@ namespace TextControlBoxNS.Core.Text
             canvasUpdateManager.UpdateCursor();
             eventsManager.CallTextChanged();
         }
-        
+
         public void AddCharacter(string text, bool ignoreSelection = false)
         {
             if (textManager._IsReadonly)

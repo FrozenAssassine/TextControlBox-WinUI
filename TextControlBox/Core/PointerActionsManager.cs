@@ -2,18 +2,17 @@
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using System;
-using TextControlBoxNS.Helper;
 using TextControlBoxNS.Core.Renderer;
-using Windows.Foundation;
-using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Core.Selection;
-using System.Diagnostics;
+using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Helper;
+using Windows.Foundation;
 
 namespace TextControlBoxNS.Core;
 
 internal class PointerActionsManager
 {
-    Point? OldTouchPosition = null;
+    private Point? OldTouchPosition = null;
     public int PointerClickCount = 0;
     public DispatcherTimer PointerClickTimer = new DispatcherTimer { Interval = new TimeSpan(0, 0, 0, 0, 200) };
 
@@ -26,16 +25,15 @@ internal class PointerActionsManager
     private TextManager textManager;
     private TextRenderer textRenderer;
     private CurrentLineManager currentLineManager;
-    private SelectionManager selectionManager;
 
     public void Init(
         CoreTextControlBox coreTextbox,
-        TextRenderer textRenderer, 
-        TextManager textManager, 
-        CursorManager cursorManager, 
-        CanvasUpdateManager canvasUpdateManager, 
-        ScrollManager scrollManager, 
-        SelectionRenderer selectionRenderer, 
+        TextRenderer textRenderer,
+        TextManager textManager,
+        CursorManager cursorManager,
+        CanvasUpdateManager canvasUpdateManager,
+        ScrollManager scrollManager,
+        SelectionRenderer selectionRenderer,
         SelectionDragDropManager selectionDragDropManager,
         CurrentLineManager currentLineManager
         )
@@ -107,7 +105,7 @@ internal class PointerActionsManager
                 scrollManager,
                 point,
                 cursorManager.currentCursorPosition);
-            
+
             canvasUpdateManager.UpdateCursor();
         }
         if (selectionRenderer.IsSelecting && !selectionDragDropManager.isDragDropSelection)

@@ -3,10 +3,10 @@ using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using TextControlBoxNS.Helper;
+using System;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Text;
-using System;
+using TextControlBoxNS.Helper;
 
 namespace TextControlBoxNS.Core;
 
@@ -47,7 +47,7 @@ internal class ScrollManager
 
     private void VerticalScrollbar_Loaded(object sender, RoutedEventArgs e)
     {
-        verticalScrollBar.Maximum = ((textManager.LinesCount+ 1) * textRenderer.SingleLineHeight - scrollGrid.ActualHeight) / DefaultVerticalScrollSensitivity;
+        verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * textRenderer.SingleLineHeight - scrollGrid.ActualHeight) / DefaultVerticalScrollSensitivity;
         verticalScrollBar.ViewportSize = textbox.ActualHeight;
     }
     private void HorizontalScrollBar_Scroll(object sender, ScrollEventArgs e)
@@ -120,7 +120,7 @@ internal class ScrollManager
     public void ScrollPageDown()
     {
         cursorManager.LineNumber += textRenderer.NumberOfRenderedLines;
-        if (cursorManager.LineNumber > textManager.LinesCount- 1)
+        if (cursorManager.LineNumber > textManager.LinesCount - 1)
             cursorManager.LineNumber = textManager.LinesCount - 1;
         verticalScrollBar.Value += textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
         canvasHelper.UpdateAll();
@@ -128,7 +128,7 @@ internal class ScrollManager
     public void UpdateScrollToShowCursor(bool update = true)
     {
         if (textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines <= cursorManager.LineNumber)
-            verticalScrollBar.Value = (cursorManager.LineNumber- textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+            verticalScrollBar.Value = (cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
         else if (textRenderer.NumberOfStartLine > cursorManager.LineNumber)
             verticalScrollBar.Value = (cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
 

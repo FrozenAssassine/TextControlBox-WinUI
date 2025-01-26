@@ -1,12 +1,10 @@
-﻿using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml;
-using Windows.UI;
+﻿using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
-using Microsoft.Graphics.Canvas;
-using Microsoft.Graphics.Canvas.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using TextControlBoxNS.Core.Renderer;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using TextControlBoxNS.Core;
+using TextControlBoxNS.Core.Renderer;
+using Windows.UI;
 
 namespace TextControlBoxNS.Helper;
 

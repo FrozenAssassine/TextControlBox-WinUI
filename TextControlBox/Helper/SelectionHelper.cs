@@ -1,9 +1,9 @@
 ﻿using Microsoft.Graphics.Canvas.Text;
 using TextControlBoxNS.Core.Renderer;
-using Windows.Foundation;
-using TextControlBoxNS.Models;
-using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Core.Selection;
+using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Models;
+using Windows.Foundation;
 
 namespace TextControlBoxNS.Helper;
 
@@ -31,11 +31,11 @@ internal class SelectionHelper
             return false;
 
         //Cursorposition is smaller than the start of selection
-        if (textSel.startLine> cursorPosition.LineNumber)
+        if (textSel.startLine > cursorPosition.LineNumber)
             return false;
 
         //Selectionend is smaller than Cursorposition -> not in selection
-        if (textSel.endLine< cursorPosition.LineNumber)
+        if (textSel.endLine < cursorPosition.LineNumber)
             return false;
 
         //Selection-start line equals Cursor line:

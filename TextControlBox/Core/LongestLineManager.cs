@@ -59,7 +59,7 @@ internal class LongestLineManager
             maxLength = currentLength;
         return maxLength;
     }
-    
+
     public void CheckRecalculateLongestLine(string text)
     {
         if (GetLongestLineLength(text) > longestLineLength)
@@ -72,7 +72,7 @@ internal class LongestLineManager
         if (needsRecalculation)
         {
             needsRecalculation = false;
-            longestIndex= GetLongestLineIndex(textManager.totalLines);
+            longestIndex = GetLongestLineIndex(textManager.totalLines);
         }
 
     }

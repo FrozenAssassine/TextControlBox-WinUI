@@ -97,7 +97,7 @@ internal class TextRenderer
         int linesToRenderCount = (int)(canvasText.ActualHeight / SingleLineHeight);
         NumberOfStartLine = (int)((scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity) / SingleLineHeight);
         NumberOfRenderedLines = linesToRenderCount + NumberOfStartLine > textManager.LinesCount ? textManager.LinesCount : linesToRenderCount;
-        
+
         //Create the text we will render
         RenderedText = textManager.GetLinesAsString(NumberOfStartLine, NumberOfRenderedLines);
 
@@ -128,13 +128,13 @@ internal class TextRenderer
         //render the search highlights
         if (searchManager.IsSearchOpen)
             SearchHighlightsRenderer.RenderHighlights(
-                args, 
+                args,
                 DrawnTextLayout,
-                RenderedText, 
-                searchManager.MatchingSearchLines, 
-                searchManager.searchParameter.SearchExpression, 
-                (float)-scrollManager.HorizontalScroll, 
-                SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity, 
+                RenderedText,
+                searchManager.MatchingSearchLines,
+                searchManager.searchParameter.SearchExpression,
+                (float)-scrollManager.HorizontalScroll,
+                SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
                 designHelper._Design.SearchHighlightColor
                 );
 
