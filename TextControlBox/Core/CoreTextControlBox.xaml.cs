@@ -1221,6 +1221,5 @@ internal sealed partial class CoreTextControlBox : UserControl
     private void UserControl_Loaded(object sender, RoutedEventArgs e)
     {
         this.Focus(FocusState.Programmatic);
-        this.SetCursorPosition(0, 0);
     }
 }
