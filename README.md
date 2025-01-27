@@ -7,13 +7,9 @@
 </div>
 
 <div align="center">
-     <!--<a href="https://www.microsoft.com/store/productId/9NWL9M9JPQ36">
-         <img src="https://img.shields.io/badge/Download demo App-Microsoft%20Store-brightgreen?style=flat">
-    </a>-->
 <img src="https://img.shields.io/github/issues/FrozenAssassine/TextControlBox-WinUI.svg?style=flat">
-<img src="https://img.shields.io/github/issues-closed/FrozenAssassine/TextControlBox-WinUI.svg">
-<img src="https://img.shields.io/github/stars/FrozenAssassine/TextControlBox-WinUI.svg">
-<img src="https://img.shields.io/github/repo-size/FrozenAssassine/TextControlBox-WinUI">
+<img src="https://img.shields.io/github/stars/FrozenAssassine/TextControlBox-WinUI.svg?style=flat">
+<img src="https://img.shields.io/github/repo-size/FrozenAssassine/TextControlBox-WinUI?style=flat">
 
 <!--[![NuGet version (TextControlBox)](https://img.shields.io/nuget/v/TextControlBox.JuliusKirsch)](https://www.nuget.org/packages/TextControlBox.JuliusKirsch)-->
 
@@ -21,10 +17,7 @@
 
 <h3 align="center">A textbox for WinUI3 with syntax highlighting, line numbering, and support for a large amount of text</h3>
 
-## Reason why I built it
-WinUI has a default Textbox and a RichTextBox. Both of them are very slow in rendering multiple thousand lines. The selection works also very slow. So I decided to create my own version of a Textbox.
-
-## Features:
+## 🔎 Features:
 - Viewing files with a million lines or more without performance issues
 - Syntax highlighting
 - Outstanding performance because it only renders the lines that are needed to display
@@ -32,13 +25,14 @@ WinUI has a default Textbox and a RichTextBox. Both of them are very slow in ren
 - Line highlighter
 - Use JSON to create custom syntax highlighting
 - Highly customizable
+- Fast
 
 
-## Problems:
+## ❗ Problems:
 - Current text limit is 100 million characters
 - Currently, there is no text wrapping
 
-## Available languages:
+## 🚩 Available languages:
 - Batch
 - Config file
 - C++
@@ -56,6 +50,7 @@ WinUI has a default Textbox and a RichTextBox. Both of them are very slow in ren
 - PHP
 - Python
 - QSharp
+- SQL
 - Toml
 - XML
 
@@ -86,7 +81,7 @@ WinUI has a default Textbox and a RichTextBox. Both of them are very slow in ren
 
 TextControlBox textbox = new TextControlBox();
 
-//Use a builtin language -> see list a bit higher
+//Use a built in language -> see list a bit higher
 textbox.CodeLanguage = TextControlBox.GetCodeLanguageFromId(CodeLanguageId.CSharp");
 
 //Use a custom language:
