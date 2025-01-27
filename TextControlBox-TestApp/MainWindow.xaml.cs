@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml;
+using System.Diagnostics;
 using System.IO;
-using System.Text;
 using TextControlBoxNS;
 
 namespace TextControlBox_TestApp
@@ -9,15 +9,12 @@ namespace TextControlBox_TestApp
     {
         public MainWindow()
         {
+            Debug.WriteLine("started");
             this.InitializeComponent();
 
-            StringBuilder sb = new StringBuilder();
-            for(int i = 0; i<10; i++)
-            {
-                sb.AppendLine("This is the best line of the textbox " + i);
-            }
+            Debug.WriteLine("Second");
 
-            textbox.SetText(sb.ToString());
+            textbox.LoadLines(File.ReadAllLines("C:\\Users\\Juliu\\Desktop\\Cable_Clip_Large.gcode"));
 
             textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.CSharp);
 
@@ -26,14 +23,11 @@ namespace TextControlBox_TestApp
             textbox.Loaded += Textbox_Loaded;
         }
 
-        private void Textbox_Loaded(object sender, RoutedEventArgs e)
+        private void Textbox_Loaded(TextControlBox sender)
         {
-            //textbox.LoadLines(File.ReadAllLines("C:\\Users\\Juliu\\Desktop\\Cable_Clip_Large.gcode"));
+            Debug.WriteLine("Third");
 
-            //textbox.SetCursorPosition(10000, 40);
-            //textbox.GetLinesText(0, textbox.NumberOfLines);
-
-            //textbox.EnableSyntaxHighlighting = true;
+            textbox.SetCursorPosition(100, 5);
         }
     }
 }

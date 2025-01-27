@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using TextControlBoxNS.Core.Renderer;
@@ -131,28 +132,25 @@ internal sealed partial class CoreTextControlBox : UserControl
         pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, selectionDragDropManager, currentLineManager);
         textLayoutManager.Init(textManager, zoomManager);
         autoIndentionManager.Init(textManager, tabSpaceHelper);
-        //subscribe to events:
+    }
 
-        //set default values
+    public void InitialiseOnStart()
+    {
+        if (textManager.LinesCount == 0)
+            textManager.AddLine();
+
+        cursorManager.SetCursorPosition(0, 0);
+        Debug.WriteLine("LOST");
+        selectionManager.ForceClearSelection(canvasUpdateManager);
         RequestedTheme = ElementTheme.Default;
         LineEnding = LineEnding.CRLF;
 
-        InitialiseOnStart();
+        zoomManager.UpdateZoom();
         focusManager.SetFocus();
+        
+        eventsManager.CallLoaded();
     }
 
-    public void ChangeCursor(InputSystemCursorShape cursor)
-    {
-        this.ProtectedCursor = InputSystemCursor.Create(cursor);
-    }
-    private void InitialiseOnStart()
-    {
-        zoomManager.UpdateZoom();
-        if (textManager.LinesCount == 0)
-        {
-            textManager.AddLine();
-        }
-    }
 
     //Handle keyinputs
     private void InputHandler_TextEntered(object sender, TextChangedEventArgs e)
@@ -718,6 +716,11 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         CursorHelper.UpdateCursorPosFromPoint(Canvas_Text, currentLineManager, textRenderer, scrollManager, e.GetPosition(Canvas_Text), cursorManager.currentCursorPosition);
         canvasUpdateManager.UpdateCursor();
+    }
+
+    public void ChangeCursor(InputSystemCursorShape cursor)
+    {
+        this.ProtectedCursor = InputSystemCursor.Create(cursor);
     }
 
     public void SelectLine(int line)

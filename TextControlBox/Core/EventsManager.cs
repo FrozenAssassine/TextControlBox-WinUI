@@ -21,6 +21,9 @@ internal class EventsManager
     public delegate void LostFocusEvent();
     public event LostFocusEvent LostFocus;
 
+    public delegate void LoadedEvent();
+    public event LoadedEvent Loaded;
+
     private SelectionChangedEventHandler args = new SelectionChangedEventHandler();
 
     public void Init(SearchManager searchManager, CursorManager cursorManager)
@@ -63,5 +66,10 @@ internal class EventsManager
     public void CallLostFocus()
     {
         LostFocus?.Invoke();
+    }
+
+    public void CallLoaded()
+    {
+        Loaded?.Invoke();
     }
 }

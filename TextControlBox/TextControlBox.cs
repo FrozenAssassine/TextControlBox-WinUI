@@ -2,6 +2,7 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System.Collections.Generic;
+using System.Diagnostics;
 using TextControlBoxNS.Core;
 using Windows.Foundation;
 
@@ -12,13 +13,17 @@ namespace TextControlBoxNS;
 /// </summary>
 public partial class TextControlBox : UserControl
 {
-    private readonly CoreTextControlBox coreTextBox = new CoreTextControlBox();
+    private readonly CoreTextControlBox coreTextBox;
 
     /// <summary>
     /// Initializes a new instance of the TextControlBox class.
     /// </summary>
     public TextControlBox()
     {
+        base.Loaded += TextControlBox_Loaded;
+
+        coreTextBox = new CoreTextControlBox();
+        coreTextBox.eventsManager.Loaded += EventsManager_Loaded;
         coreTextBox.eventsManager.ZoomChanged += ZoomManager_ZoomChanged;
         coreTextBox.eventsManager.TextChanged += EventsManager_TextChanged;
         coreTextBox.eventsManager.SelectionChanged += EventsManager_SelectionChanged;
@@ -26,6 +31,17 @@ public partial class TextControlBox : UserControl
         coreTextBox.eventsManager.LostFocus += EventsManager_LostFocus;
 
         this.Content = coreTextBox;
+    }
+
+    private void TextControlBox_Loaded(object sender, RoutedEventArgs e)
+    {
+        coreTextBox.InitialiseOnStart();
+    }
+
+    private void EventsManager_Loaded()
+    {
+        Debug.WriteLine("LOADED ");
+        Loaded?.Invoke(this);
     }
 
     private void EventsManager_LostFocus()
@@ -803,6 +819,17 @@ public partial class TextControlBox : UserControl
     /// Occurs when the TextControlBox loses focus.
     /// </summary>
     public new event LostFocusEvent LostFocus;
+
+    /// <summary>
+    /// Occurs when the TextControlBox finished loading and all components initialized
+    /// </summary>
+    /// <param name="sender">The instance of the loaded TextControlBox</param>
+    public delegate void LoadedEvent(TextControlBox sender);
+
+    /// <summary>
+    /// Occurs when the TextControlBox finished loading and all components initialized
+    /// </summary>
+    public new event LoadedEvent Loaded;
 
     //static functions
     /// <summary>
