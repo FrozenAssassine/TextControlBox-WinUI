@@ -1,6 +1,6 @@
 ﻿namespace TextControlBoxNS.Languages
 {
-    internal class Batch : CodeLanguage
+    internal class Batch : SyntaxHighlightLanguage
     {
         public Batch()
         {
@@ -20,7 +20,7 @@
             };
         }
     }
-    internal class ConfigFile : CodeLanguage
+    internal class ConfigFile : SyntaxHighlightLanguage
     {
         public ConfigFile()
         {
@@ -42,7 +42,7 @@
             };
         }
     }
-    internal class Cpp : CodeLanguage
+    internal class Cpp : SyntaxHighlightLanguage
     {
         public Cpp()
         {
@@ -72,7 +72,7 @@
             };
         }
     }
-    internal class CSharp : CodeLanguage
+    internal class CSharp : SyntaxHighlightLanguage
     {
         public CSharp()
         {
@@ -104,7 +104,7 @@
             };
         }
     }
-    internal class GCode : CodeLanguage
+    internal class GCode : SyntaxHighlightLanguage
     {
         public GCode()
         {
@@ -126,7 +126,7 @@
             };
         }
     }
-    internal class HexFile : CodeLanguage
+    internal class HexFile : SyntaxHighlightLanguage
     {
         public HexFile()
         {
@@ -147,7 +147,7 @@
             };
         }
     }
-    internal class Html : CodeLanguage
+    internal class Html : SyntaxHighlightLanguage
     {
         public Html()
         {
@@ -170,7 +170,7 @@
             };
         }
     }
-    internal class Java : CodeLanguage
+    internal class Java : SyntaxHighlightLanguage
     {
         public Java()
         {
@@ -199,7 +199,7 @@
             };
         }
     }
-    internal class Javascript : CodeLanguage
+    internal class Javascript : SyntaxHighlightLanguage
     {
         public Javascript()
         {
@@ -233,7 +233,7 @@
             };
         }
     }
-    internal class Json : CodeLanguage
+    internal class Json : SyntaxHighlightLanguage
     {
         public Json()
         {
@@ -262,7 +262,7 @@
             };
         }
     }
-    internal class PHP : CodeLanguage
+    internal class PHP : SyntaxHighlightLanguage
     {
         public PHP()
         {
@@ -293,7 +293,7 @@
             };
         }
     }
-    internal class QSharp : CodeLanguage
+    internal class QSharp : SyntaxHighlightLanguage
     {
         public QSharp()
         {
@@ -319,7 +319,7 @@
             };
         }
     }
-    internal class XML : CodeLanguage
+    internal class XML : SyntaxHighlightLanguage
     {
         public XML()
         {
@@ -340,7 +340,7 @@
             };
         }
     }
-    internal class Python : CodeLanguage
+    internal class Python : SyntaxHighlightLanguage
     {
         public Python()
         {
@@ -370,7 +370,7 @@
             };
         }
     }
-    internal class CSV : CodeLanguage
+    internal class CSV : SyntaxHighlightLanguage
     {
         public CSV()
         {
@@ -384,7 +384,7 @@
             };
         }
     }
-    internal class LaTex : CodeLanguage
+    internal class LaTex : SyntaxHighlightLanguage
     {
         public LaTex()
         {
@@ -402,7 +402,7 @@
             };
         }
     }
-    internal class TOML : CodeLanguage
+    internal class TOML : SyntaxHighlightLanguage
     {
         public TOML()
         {
@@ -428,7 +428,7 @@
             };
         }
     }
-    internal class Markdown : CodeLanguage
+    internal class Markdown : SyntaxHighlightLanguage
     {
         public Markdown()
         {
@@ -449,7 +449,7 @@
             };
         }
     }
-    internal class CSS : CodeLanguage
+    internal class CSS : SyntaxHighlightLanguage
     {
         public CSS()
         {
@@ -478,6 +478,25 @@
                 new SyntaxHighlights("(\".+?\"|\'.+?\')", "#00aaff", "#ff8800"),//strings
                 new SyntaxHighlights("(;|:|{|}|,)", "#777777", "#bbbbbb"),//special characters
                 new SyntaxHighlights("\\/\\*(.|\\n)*?\\*\\/", "#555555", "#888888"),//comments
+            };
+        }
+    }
+    internal class SQL : SyntaxHighlightLanguage
+    {
+        public SQL()
+        {
+            this.Name = "SQL";
+            this.Author = "Finn Freitag";
+            this.Filter = new string[1] { ".sql" };
+            this.Description = "Syntax highlightung for SQL";
+            this.Highlights = new SyntaxHighlights[]
+            {
+                new SyntaxHighlights("\\b(ADD|ADD CONSTRAINT|ALL|ALTER|ALTER COLUMN|ALTER TABLE|AND|ANY|AS|ASC|BACKUP DATABASE|BETWEEN|CASE|CHECK|COLUMN|CONSTRAINT|CREATE|CREATE DATABASE|CREATE INDEX|CREATE OR REPLACE VIEW|CREATE TABLE|CREATE PROCEDURE|CREATE UNIQUE INDEX|CREATE VIEW|DATABASE|DEFAULT|DELETE|DESC|DISTINCT|DROP|DROP COLUMN|DROP CONSTRAINT|DROP DATABASE|DROP DEFAULT|DROP INDEX|DROP TABLE|DROP VIEW|EXEC|EXISTS|FOREIGN KEY|FROM|FULL OUTER JOIN|GROUP BY|HAVING|IN|INDEX|INNER JOIN|INSERT INTO|INSERT INTO SELECT|IS NULL|IS NOT NULL|JOIN|LEFT JOIN|LIKE|LIMIT|NOT|NOT NULL|OR|ORDER BY|OUTER JOIN|PRIMARY KEY|PROCEDURE|RIGHT JOIN|ROWNUM|SELECT|SELECT DISTINCT|SELECT INTO|SELCET TOP|SET|TABLE|TOP|TRUNCATE TABLE|UNION|UNION ALL|UNIQUE|UPDATE|USE|VALUES|VIEW|WHERE)\\b","#FF6A00","#FF6A00",true,true),
+                new SyntaxHighlights("\"[^\\n]*?\"","#42C22B","#42C22B"),
+                new SyntaxHighlights("'[^\\n]*?'","#42C22B","#42C22B"),
+                new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#2B3BFF","#2B3BFF"),
+                new SyntaxHighlights("\\b(MIN|MAX|COUNT|SUM|AVG)\\b","#11C9DB","#11C9DB",false,true),
+                new SyntaxHighlights("\\.","#901F9E","#901F9E",true)
             };
         }
     }

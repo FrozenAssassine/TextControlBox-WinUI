@@ -1,52 +1,97 @@
-﻿namespace TextControlBoxNS.Text
+﻿using System;
+using TextControlBoxNS.Helper;
+
+namespace TextControlBoxNS.Models;
+
+internal class TextSelection
 {
-    internal class TextSelection
+    public bool HasSelection { get => SelectionHelper.TextIsSelected(StartPosition, EndPosition); }
+
+    internal int renderedIndex { get; set; }
+    internal int renderedLength { get; set; }
+
+    public CursorPosition StartPosition { get; private set; } = new CursorPosition();
+    public CursorPosition EndPosition { get; private set; } = new CursorPosition();
+
+    public TextSelection()
     {
-        public TextSelection()
-        {
-            Index = 0;
-            Length = 0;
-            StartPosition = null;
-            EndPosition = null;
-        }
-        public TextSelection(int index = 0, int length = 0, CursorPosition startPosition = null, CursorPosition endPosition = null)
-        {
-            Index = index;
-            Length = length;
-            StartPosition = startPosition;
-            EndPosition = endPosition;
-        }
-        public TextSelection(CursorPosition startPosition = null, CursorPosition endPosition = null)
-        {
-            StartPosition = startPosition;
-            EndPosition = endPosition;
-        }
-        public TextSelection(TextSelection textSelection)
-        {
-            StartPosition = new CursorPosition(textSelection.StartPosition);
-            EndPosition = new CursorPosition(textSelection.EndPosition);
-            Index = textSelection.Index;
-            Length = textSelection.Length;
-        }
+        renderedIndex = 0;
+        renderedLength = 0;
+        StartPosition.IsNull = true;
+        EndPosition.IsNull = true;
+    }
+    public TextSelection(int index, int length, int startLine, int startChar, int endLine, int endChar)
+    {
+        SetChangedValues(index, length, startLine, startChar, endLine, endChar);
+    }
+    public TextSelection(CursorPosition startPosition = null, CursorPosition endPosition = null)
+    {
+        if (startPosition != null)
+            StartPosition.SetChangeValues(startPosition);
 
-        public int Index { get; set; }
-        public int Length { get; set; }
+        if (endPosition != null)
+            EndPosition.SetChangeValues(endPosition);
+    }
+    public TextSelection(TextSelection textSelection)
+    {
+        if (textSelection.StartPosition != null)
+            StartPosition.SetChangeValues(textSelection.StartPosition);
+        if (textSelection.EndPosition != null)
+            EndPosition.SetChangeValues(textSelection.EndPosition);
 
-        public CursorPosition StartPosition { get; set; }
-        public CursorPosition EndPosition { get; set; }
+        renderedIndex = textSelection.renderedIndex;
+        renderedLength = textSelection.renderedLength;
+    }
 
-        public bool IsLineInSelection(int line)
+    internal void SetChangedValues(int index = 0, int length = 0, CursorPosition startPosition = null, CursorPosition endPosition = null)
+    {
+        renderedIndex = index;
+        renderedLength = length;
+
+        StartPosition.SetChangeValues(startPosition);
+        EndPosition.SetChangeValues(endPosition);
+    }
+    internal void SetChangedValues(CursorPosition start, CursorPosition end)
+    {
+        this.StartPosition.SetChangeValues(start);
+        this.EndPosition.SetChangeValues(end);
+    }
+    internal void SetChangedValues(int index, int length, int startLine, int startChar, int endLine, int endChar)
+    {
+        renderedIndex = index;
+        renderedLength = length;
+
+        StartPosition.SetChangeValues(startLine, startChar);
+        EndPosition.SetChangeValues(endLine, endChar);
+    }
+
+    internal int GetMinLine()
+    {
+        return Math.Min(StartPosition.LineNumber, EndPosition.LineNumber);
+    }
+    internal int GetMaxLine()
+    {
+        return Math.Max(StartPosition.LineNumber, EndPosition.LineNumber);
+    }
+    internal int GetMinChar()
+    {
+        return Math.Min(StartPosition.CharacterPosition, EndPosition.CharacterPosition);
+    }
+    internal int GetMaxChar()
+    {
+        return Math.Max(StartPosition.CharacterPosition, EndPosition.CharacterPosition);
+    }
+    public bool IsLineInSelection(int line)
+    {
+        if (!this.StartPosition.IsNull && !this.EndPosition.IsNull)
         {
-            if (this.StartPosition != null && this.EndPosition != null)
-            {
-                if (this.StartPosition.LineNumber > this.EndPosition.LineNumber)
-                    return this.StartPosition.LineNumber < line && this.EndPosition.LineNumber > line;
-                else if (this.StartPosition.LineNumber == this.EndPosition.LineNumber)
-                    return this.StartPosition.LineNumber != line;
-                else
-                    return this.StartPosition.LineNumber > line && this.EndPosition.LineNumber < line;
-            }
-            return false;
+            if (this.StartPosition.LineNumber > this.EndPosition.LineNumber)
+                return this.StartPosition.LineNumber < line && this.EndPosition.LineNumber > line;
+            else if (this.StartPosition.LineNumber == this.EndPosition.LineNumber)
+                return this.StartPosition.LineNumber != line;
+            else
+                return this.StartPosition.LineNumber > line && this.EndPosition.LineNumber < line;
         }
+        return false;
     }
 }
