@@ -6,11 +6,11 @@ namespace TextControlBoxNS.Core;
 internal class CanvasUpdateManager
 {
     private CoreTextControlBox coreTextbox;
-    private readonly CanvasBatchRedrawer _batchRedrawer;
+    //private readonly CanvasBatchRedrawer _batchRedrawer;
 
     public CanvasUpdateManager()
     {
-        _batchRedrawer = new CanvasBatchRedrawer(8); //16ms = 60FPS
+        //_batchRedrawer = new CanvasBatchRedrawer(8); //16ms = 60FPS
     }
 
     public void Init(CoreTextControlBox coreTextbox)
