@@ -19,7 +19,7 @@ internal class CurrentLineManager
         get => GetCurrentLineText();
         set => SetCurrentLineText(value);
     }
-    public int Length => CurrentLine.Length;
+    public int Length => textManager.totalLines.Count == 0 ? 0 : CurrentLine.Length;
 
     public string GetCurrentLineText()
     {
