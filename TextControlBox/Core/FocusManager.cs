@@ -24,10 +24,11 @@ internal class FocusManager
     {
         if (!HasFocus)
             eventsManager.CallGotFocus();
-        HasFocus = true;
 
+        HasFocus = true;
+        eventsManager.CallGotFocus();
         canvasUpdateManager.UpdateCursor();
-        inputHandler.Focus(FocusState.Programmatic);
+
         coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
     }
     public void RemoveFocus()
@@ -39,5 +40,4 @@ internal class FocusManager
         HasFocus = false;
         coreTextbox.ChangeCursor(InputSystemCursorShape.Arrow);
     }
-
 }

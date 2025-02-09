@@ -500,14 +500,24 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         this.Focus(FocusState.Programmatic);
     }
-    private void UserControl_GotFocus(object sender, RoutedEventArgs e)
+    private void InputManager_GotFocus(object sender, RoutedEventArgs e)
     {
+        Debug.WriteLine("Set Focus");
         focusManager.SetFocus();
     }
-    private void UserControl_LostFocus(object sender, RoutedEventArgs e)
+    private void InputManager_LostFocus(object sender, RoutedEventArgs e)
     {
+        Debug.WriteLine("Remove Focus");
+
         focusManager.RemoveFocus();
     }
+
+    public new void Focus(FocusState state)
+    {
+        inputHandler.Focus(state);
+        Debug.WriteLine("Focus");
+    }
+
     //Cursor:
     private void Canvas_LineNumber_PointerEntered(object sender, PointerRoutedEventArgs e)
     {
@@ -1039,8 +1049,4 @@ internal sealed partial class CoreTextControlBox : UserControl
         return SyntaxHighlightingRenderer.GetSyntaxHighlightingFromJson(Json);
     }
 
-    private void UserControl_Loaded(object sender, RoutedEventArgs e)
-    {
-        this.Focus(FocusState.Programmatic);
-    }
 }

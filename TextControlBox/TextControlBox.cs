@@ -65,6 +65,15 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Sets the focus to the textbox
+    /// </summary>
+    /// <param name="state"></param>
+    public new void Focus(FocusState state)
+    {
+        coreTextBox.Focus(state);
+    }
+
+    /// <summary>
     /// Selects the entire line specified by its index.
     /// </summary>
     /// <param name="line">The index of the line to select.</param>
