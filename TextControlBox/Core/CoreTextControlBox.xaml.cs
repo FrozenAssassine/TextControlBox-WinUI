@@ -502,20 +502,16 @@ internal sealed partial class CoreTextControlBox : UserControl
     }
     private void InputManager_GotFocus(object sender, RoutedEventArgs e)
     {
-        Debug.WriteLine("Set Focus");
         focusManager.SetFocus();
     }
     private void InputManager_LostFocus(object sender, RoutedEventArgs e)
     {
-        Debug.WriteLine("Remove Focus");
-
         focusManager.RemoveFocus();
     }
 
     public new void Focus(FocusState state)
     {
         inputHandler.Focus(state);
-        Debug.WriteLine("Focus");
     }
 
     //Cursor:
@@ -966,7 +962,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public new MenuFlyout ContextFlyout
     {
-        get { return flyoutHelper.MenuFlyout; }
+        get { return flyoutHelper.menuFlyout; }
         set
         {
             if (value == null) //Use the builtin flyout
@@ -975,7 +971,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             }
             else //Use a custom flyout
             {
-                flyoutHelper.MenuFlyout = value;
+                flyoutHelper.menuFlyout = value;
             }
         }
     }

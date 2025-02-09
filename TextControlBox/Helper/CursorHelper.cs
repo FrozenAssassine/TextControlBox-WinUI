@@ -47,5 +47,5 @@ internal class CursorHelper
 
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
         cursorPos.CharacterPosition = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, (float)-scrollManager.HorizontalScroll);
-            }
+    }
 }

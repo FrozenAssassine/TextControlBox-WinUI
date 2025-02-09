@@ -97,22 +97,19 @@ internal class PointerActionsManager
         return;
     }
 
-    private void HandleSingleRightClick(object sender, Point pointerPosition, bool rightButtonPressed)
+    private void HandleSingleRightClick(object sender, Point pointerPosition)
     {
-        //show the rightclick menu or clear selection
-        if (!rightButtonPressed)
-            return;
-
         if (!SelectionHelper.PointerIsOverSelection(textRenderer, selectionManager, pointerPosition))
         {
-            selectionManager.ForceClearSelection(canvasUpdateManager);
-
-            CursorHelper.UpdateCursorPosFromPoint(coreTextbox.canvasText,
-                currentLineManager,
-                textRenderer,
-                scrollManager,
-                pointerPosition,
-                cursorManager.currentCursorPosition);
+            if (!selectionManager.HasSelection)
+            {
+                CursorHelper.UpdateCursorPosFromPoint(coreTextbox.canvasText,
+                    currentLineManager,
+                    textRenderer,
+                    scrollManager,
+                    pointerPosition,
+                    cursorManager.currentCursorPosition);
+            }
         }
 
         if (!coreTextbox.ContextFlyoutDisabled && coreTextbox.ContextFlyout != null)
@@ -120,7 +117,7 @@ internal class PointerActionsManager
             coreTextbox.ContextFlyout.ShowAt(sender as FrameworkElement, new FlyoutShowOptions { Position = pointerPosition });
         }
     }
-    
+
     private void HandleSingleLeftClick(Point pointerPosition)
     {
         isPendingCursorPlacement = true;
@@ -165,7 +162,9 @@ internal class PointerActionsManager
 
     private void HandleSingleClick(Point pointerPosition, bool rightButtonPressed, bool leftButtonPressed, object sender)
     {
-        HandleSingleRightClick(sender, pointerPosition, rightButtonPressed);
+        //show the rightclick menu or clear selection
+        if (rightButtonPressed)
+            HandleSingleRightClick(sender, pointerPosition);
 
         //Shift + click = set selection
         if (Utils.IsKeyPressed(VirtualKey.Shift) && leftButtonPressed)
@@ -192,13 +191,13 @@ internal class PointerActionsManager
             HandleSingleLeftClick(pointerPosition);
         }
         canvasUpdateManager.UpdateCursor();
-
     }
 
     public void PointerPressedAction(object sender, Point pointerPosition, PointerPointProperties properties)
     {
         bool leftButtonPressed = properties.IsLeftButtonPressed;
         bool rightButtonPressed = properties.IsRightButtonPressed;
+
 
         if (leftButtonPressed && !Utils.IsKeyPressed(VirtualKey.Shift))
             PointerClickCount++;
@@ -219,7 +218,7 @@ internal class PointerActionsManager
             HandleTripleClick();
         else if (PointerClickCount == 2)
             HandleDoubleClicked(pointerPosition);
-        else if(PointerClickCount == 1)
+        else
             HandleSingleClick(pointerPosition, rightButtonPressed, leftButtonPressed, sender);
     }
 
