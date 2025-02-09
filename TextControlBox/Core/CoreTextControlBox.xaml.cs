@@ -129,7 +129,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         zoomManager.Init(textManager, textRenderer, scrollManager, canvasUpdateManager, lineNumberRenderer, eventsManager);
         selectionDragDropManager.Init(this, cursorManager, selectionManager, textManager, textActionManager, canvasUpdateManager, selectionRenderer, textRenderer);
         focusManager.Init(this, canvasUpdateManager, inputHandler, eventsManager);
-        pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, selectionDragDropManager, currentLineManager);
+        pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, selectionDragDropManager, currentLineManager, selectionManager);
         textLayoutManager.Init(textManager, zoomManager);
         autoIndentionManager.Init(textManager, tabSpaceHelper);
     }
@@ -140,7 +140,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             textManager.AddLine();
 
         cursorManager.SetCursorPosition(0, 0);
-        Debug.WriteLine("LOST");
+
         selectionManager.ForceClearSelection(canvasUpdateManager);
         RequestedTheme = ElementTheme.Default;
         LineEnding = LineEnding.CRLF;
@@ -416,14 +416,9 @@ internal sealed partial class CoreTextControlBox : UserControl
             return;
 
         var point = e.GetCurrentPoint(Canvas_Selection);
-
         if (pointerActionsManager.CheckTouchInput(point))
             return;
 
-        if (point.Properties.IsLeftButtonPressed)
-        {
-            selectionRenderer.IsSelecting = true;
-        }
         pointerActionsManager.PointerMovedAction(point.Position);
 
     }
@@ -436,172 +431,11 @@ internal sealed partial class CoreTextControlBox : UserControl
         if (pointerActionsManager.CheckTouchInput_Click(point))
             return;
 
-        Point pointerPosition = point.Position;
-        bool leftButtonPressed = point.Properties.IsLeftButtonPressed;
-        bool rightButtonPressed = point.Properties.IsRightButtonPressed;
-
-        if (leftButtonPressed && !Utils.IsKeyPressed(VirtualKey.Shift))
-            pointerActionsManager.PointerClickCount++;
-
-
-        if (pointerActionsManager.PointerClickCount == 3)
-        {
-            SelectLine(CursorPosition.LineNumber);
-            pointerActionsManager.PointerClickCount = 0;
-            return;
-        }
-        else if (pointerActionsManager.PointerClickCount == 2)
-        {
-            CursorHelper.UpdateCursorPosFromPoint(Canvas_Text,
-                currentLineManager,
-                textRenderer,
-                scrollManager,
-                pointerPosition,
-                cursorManager.currentCursorPosition);
-
-            selectionManager.SelectSingleWord(canvasUpdateManager);
-        }
-        else
-        {
-            //TODO: Show the on screen keyboard if no physical keyboard is attached
-            //Show the contextflyout
-            if (rightButtonPressed)
-            {
-                if (!SelectionHelper.PointerIsOverSelection(textRenderer, selectionManager, pointerPosition))
-                {
-                    selectionManager.ForceClearSelection(canvasUpdateManager);
-
-                    CursorHelper.UpdateCursorPosFromPoint(Canvas_Text,
-                        currentLineManager,
-                        textRenderer,
-                        scrollManager,
-                        pointerPosition,
-                        cursorManager.currentCursorPosition);
-                }
-
-                if (!ContextFlyoutDisabled && ContextFlyout != null)
-                {
-                    ContextFlyout.ShowAt(sender as FrameworkElement, new FlyoutShowOptions { Position = pointerPosition });
-                }
-            }
-
-            //Shift + click = set selection
-            if (Utils.IsKeyPressed(VirtualKey.Shift) && leftButtonPressed)
-            {
-                if (selectionRenderer.renderedSelectionStartPosition.IsNull)
-                    selectionRenderer.SetSelectionStart(CursorPosition);
-
-                CursorHelper.UpdateCursorPosFromPoint(Canvas_Text,
-                    currentLineManager,
-                    textRenderer,
-                    scrollManager,
-                    pointerPosition,
-                    cursorManager.currentCursorPosition);
-
-                selectionRenderer.SetSelectionEnd(CursorPosition);
-                canvasUpdateManager.UpdateSelection();
-                canvasUpdateManager.UpdateCursor();
-                return;
-            }
-
-            if (leftButtonPressed)
-            {
-                CursorHelper.UpdateCursorPosFromPoint(Canvas_Text,
-                    currentLineManager,
-                    textRenderer,
-                    scrollManager,
-                    pointerPosition,
-                    cursorManager.currentCursorPosition);
-
-                //Text drag/drop
-                if (selectionManager.HasSelection)
-                {
-                    if (SelectionHelper.PointerIsOverSelection(textRenderer, selectionManager, pointerPosition) && !selectionDragDropManager.isDragDropSelection)
-                    {
-                        pointerActionsManager.PointerClickCount = 0;
-                        selectionDragDropManager.isDragDropSelection = true;
-
-                        return;
-                    }
-                    //End the selection by pressing on it
-                    if (selectionDragDropManager.isDragDropSelection && selectionDragDropManager.DragDropOverSelection(pointerPosition))
-                    {
-                        selectionDragDropManager.EndDragDropSelection(true);
-                    }
-                }
-
-                //Clear the selection when pressing anywhere
-                if (selectionRenderer.HasSelection)
-                {
-                    selectionManager.ForceClearSelection(canvasUpdateManager);
-                    selectionRenderer.SetSelectionStart(CursorPosition);
-                }
-                else
-                {
-                    selectionRenderer.SetSelectionStart(CursorPosition);
-                    selectionRenderer.IsSelecting = true;
-                }
-            }
-            canvasUpdateManager.UpdateCursor();
-        }
-
-        pointerActionsManager.PointerClickTimer.Start();
-        pointerActionsManager.PointerClickTimer.Tick += (s, t) =>
-        {
-            pointerActionsManager.PointerClickTimer.Stop();
-            pointerActionsManager.PointerClickCount = 0;
-        };
+        pointerActionsManager.PointerPressedAction(sender, point.Position, point.Properties);
     }
     private void Canvas_Selection_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
     {
-        var delta = e.GetCurrentPoint(Canvas_Selection).Properties.MouseWheelDelta;
-        bool needsUpdate = false;
-        //Zoom using mousewheel
-        if (Utils.IsKeyPressed(VirtualKey.Control))
-        {
-            zoomManager._ZoomFactor += delta / 20;
-            zoomManager.UpdateZoom();
-            return;
-        }
-        //Scroll horizontal using mousewheel
-        else if (Utils.IsKeyPressed(VirtualKey.Shift))
-        {
-            HorizontalScrollbar.Value -= delta * HorizontalScrollSensitivity;
-            needsUpdate = true;
-        }
-        //Scroll horizontal using touchpad
-        else if (e.GetCurrentPoint(Canvas_Selection).Properties.IsHorizontalMouseWheel)
-        {
-            HorizontalScrollbar.Value += delta * HorizontalScrollSensitivity;
-            needsUpdate = true;
-        }
-        //Scroll vertical using mousewheel
-        else
-        {
-            VerticalScrollbar.Value -= (delta * VerticalScrollSensitivity) / scrollManager.DefaultVerticalScrollSensitivity;
-            //Only update when a line was scrolled
-            if ((int)(VerticalScrollbar.Value / textRenderer.SingleLineHeight * scrollManager.DefaultVerticalScrollSensitivity) != textRenderer.NumberOfStartLine)
-            {
-                needsUpdate = true;
-            }
-        }
-
-        if (selectionRenderer.IsSelecting)
-        {
-            CursorHelper.UpdateCursorPosFromPoint(Canvas_Text,
-                currentLineManager,
-                textRenderer,
-                scrollManager,
-                e.GetCurrentPoint(Canvas_Selection).Position,
-                cursorManager.currentCursorPosition);
-
-            canvasUpdateManager.UpdateCursor();
-
-            selectionRenderer.SetSelectionEnd(CursorPosition);
-            needsUpdate = true;
-        }
-        if (needsUpdate)
-            canvasUpdateManager.UpdateAll();
+        pointerActionsManager.PointerWheelAction(zoomManager, e);
     }
     private void Canvas_LineNumber_PointerPressed(object sender, PointerRoutedEventArgs e)
     {

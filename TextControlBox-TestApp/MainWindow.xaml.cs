@@ -9,11 +9,7 @@ namespace TextControlBox_TestApp
     {
         public MainWindow()
         {
-            Debug.WriteLine("started");
             this.InitializeComponent();
-
-            Debug.WriteLine("Second");
-
             textbox.LoadLines(File.ReadAllLines("C:\\Users\\Juliu\\Desktop\\Cable_Clip_Large.gcode"));
 
             textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.CSharp);
@@ -25,8 +21,6 @@ namespace TextControlBox_TestApp
 
         private void Textbox_Loaded(TextControlBox sender)
         {
-            Debug.WriteLine("Third");
-
             textbox.SetCursorPosition(100, 5);
         }
     }

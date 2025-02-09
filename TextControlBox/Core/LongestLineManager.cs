@@ -83,8 +83,6 @@ internal class LongestLineManager
 
     private void Recalculate(int index = -1)
     {
-        Debug.WriteLine("Recalculate");
-
         needsRecalculation = false;
         if (index == -1)
             _longestIndex = GetLongestLineIndex(textManager.totalLines);

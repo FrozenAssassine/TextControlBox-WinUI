@@ -61,7 +61,6 @@ namespace TextControlBoxNS.Core.Renderer
             Color selectionColor
             )
         {
-
             int selStartIndex = 0;
             int selEndIndex = 0;
             int characterPosStart = renderedSelectionStartPosition.CharacterPosition;
@@ -224,6 +223,8 @@ namespace TextControlBoxNS.Core.Renderer
             renderedSelectionStartPosition.CharacterPosition = characterPos;
             renderedSelectionStartPosition.LineNumber = startPos;
             renderedSelectionStartPosition.IsNull = false;
+
+            HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
         }
 
         public void SetSelectionEnd(int endPos, int characterPos)
@@ -231,6 +232,8 @@ namespace TextControlBoxNS.Core.Renderer
             renderedSelectionEndPosition.CharacterPosition = characterPos;
             renderedSelectionEndPosition.LineNumber = endPos;
             renderedSelectionEndPosition.IsNull = false;
+
+            HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
         }
 
 

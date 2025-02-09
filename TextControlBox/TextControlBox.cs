@@ -40,7 +40,6 @@ public partial class TextControlBox : UserControl
 
     private void EventsManager_Loaded()
     {
-        Debug.WriteLine("LOADED ");
         Loaded?.Invoke(this);
     }
 

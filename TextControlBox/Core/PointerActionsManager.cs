@@ -1,12 +1,15 @@
 ﻿using Microsoft.Graphics.Canvas;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
 using System;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using Windows.Foundation;
+using Windows.System;
 
 namespace TextControlBoxNS.Core;
 
@@ -15,6 +18,8 @@ internal class PointerActionsManager
     private Point? OldTouchPosition = null;
     public int PointerClickCount = 0;
     public DispatcherTimer PointerClickTimer = new DispatcherTimer { Interval = new TimeSpan(0, 0, 0, 0, 200) };
+    private DispatcherTimer selectionTimer;
+    private bool isPendingCursorPlacement = false;
 
     private SelectionRenderer selectionRenderer;
     private SelectionDragDropManager selectionDragDropManager;
@@ -25,6 +30,7 @@ internal class PointerActionsManager
     private TextManager textManager;
     private TextRenderer textRenderer;
     private CurrentLineManager currentLineManager;
+    private SelectionManager selectionManager;
 
     public void Init(
         CoreTextControlBox coreTextbox,
@@ -35,7 +41,8 @@ internal class PointerActionsManager
         ScrollManager scrollManager,
         SelectionRenderer selectionRenderer,
         SelectionDragDropManager selectionDragDropManager,
-        CurrentLineManager currentLineManager
+        CurrentLineManager currentLineManager,
+        SelectionManager selectionManager
         )
     {
         this.currentLineManager = currentLineManager;
@@ -47,15 +54,183 @@ internal class PointerActionsManager
         this.textRenderer = textRenderer;
         this.scrollManager = scrollManager;
         this.canvasUpdateManager = canvasUpdateManager;
+        this.selectionManager = selectionManager;
+        InitTimer();
     }
 
+    private void InitTimer()
+    {
+        selectionTimer = new DispatcherTimer();
+        selectionTimer.Interval = TimeSpan.FromMilliseconds(200);
+        selectionTimer.Tick += (s, e) =>
+        {
+            selectionTimer.Stop();
+            if (isPendingCursorPlacement)
+            {
+                selectionRenderer.IsSelecting = false;
+                canvasUpdateManager.UpdateCursor();
+            }
+        };
+    }
+
+    private void HandleDoubleClicked(Point pointerPosition)
+    {
+        isPendingCursorPlacement = true;
+        selectionTimer.Start();
+
+        CursorHelper.UpdateCursorPosFromPoint(coreTextbox.canvasText,
+                currentLineManager,
+                textRenderer,
+                scrollManager,
+                pointerPosition,
+                cursorManager.currentCursorPosition);
+
+        selectionManager.SelectSingleWord(canvasUpdateManager);
+    }
+
+    private void HandleTripleClick()
+    {
+        PointerClickTimer.Stop();
+        PointerClickCount = 0;
+
+        coreTextbox.SelectLine(cursorManager.LineNumber);
+        return;
+    }
+
+    private void HandleSingleRightClick(object sender, Point pointerPosition, bool rightButtonPressed)
+    {
+        //show the rightclick menu or clear selection
+        if (!rightButtonPressed)
+            return;
+
+        if (!SelectionHelper.PointerIsOverSelection(textRenderer, selectionManager, pointerPosition))
+        {
+            selectionManager.ForceClearSelection(canvasUpdateManager);
+
+            CursorHelper.UpdateCursorPosFromPoint(coreTextbox.canvasText,
+                currentLineManager,
+                textRenderer,
+                scrollManager,
+                pointerPosition,
+                cursorManager.currentCursorPosition);
+        }
+
+        if (!coreTextbox.ContextFlyoutDisabled && coreTextbox.ContextFlyout != null)
+        {
+            coreTextbox.ContextFlyout.ShowAt(sender as FrameworkElement, new FlyoutShowOptions { Position = pointerPosition });
+        }
+    }
+    
+    private void HandleSingleLeftClick(Point pointerPosition)
+    {
+        isPendingCursorPlacement = true;
+        selectionTimer.Start();
+
+        CursorHelper.UpdateCursorPosFromPoint(coreTextbox.canvasText,
+            currentLineManager,
+            textRenderer,
+            scrollManager,
+            pointerPosition,
+            cursorManager.currentCursorPosition);
+
+        //Text drag/drop
+        if (selectionManager.HasSelection)
+        {
+            if (SelectionHelper.PointerIsOverSelection(textRenderer, selectionManager, pointerPosition) && !selectionDragDropManager.isDragDropSelection)
+            {
+                PointerClickCount = 0;
+                selectionDragDropManager.isDragDropSelection = true;
+
+                return;
+            }
+
+            //End the selection by pressing on it
+            if (selectionDragDropManager.isDragDropSelection && selectionDragDropManager.DragDropOverSelection(pointerPosition))
+            {
+                selectionDragDropManager.EndDragDropSelection(true);
+            }
+        }
+
+        //Clear the selection when pressing anywhere
+        if (selectionRenderer.HasSelection)
+        {
+            selectionManager.ForceClearSelection(canvasUpdateManager);
+            selectionRenderer.SetSelectionStart(cursorManager.currentCursorPosition);
+        }
+        else
+        {
+            selectionRenderer.SetSelectionStart(cursorManager.currentCursorPosition);
+        }
+    }
+
+    private void HandleSingleClick(Point pointerPosition, bool rightButtonPressed, bool leftButtonPressed, object sender)
+    {
+        HandleSingleRightClick(sender, pointerPosition, rightButtonPressed);
+
+        //Shift + click = set selection
+        if (Utils.IsKeyPressed(VirtualKey.Shift) && leftButtonPressed)
+        {
+            if (selectionRenderer.renderedSelectionStartPosition.IsNull)
+                selectionRenderer.SetSelectionStart(cursorManager.currentCursorPosition);
+
+            CursorHelper.UpdateCursorPosFromPoint(coreTextbox.canvasText,
+                currentLineManager,
+                textRenderer,
+                scrollManager,
+                pointerPosition,
+                cursorManager.currentCursorPosition);
+
+            selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition);
+            canvasUpdateManager.UpdateSelection();
+            canvasUpdateManager.UpdateCursor();
+            return;
+        }
+
+        //click
+        if (leftButtonPressed)
+        {
+            HandleSingleLeftClick(pointerPosition);
+        }
+        canvasUpdateManager.UpdateCursor();
+
+    }
+
+    public void PointerPressedAction(object sender, Point pointerPosition, PointerPointProperties properties)
+    {
+        bool leftButtonPressed = properties.IsLeftButtonPressed;
+        bool rightButtonPressed = properties.IsRightButtonPressed;
+
+        if (leftButtonPressed && !Utils.IsKeyPressed(VirtualKey.Shift))
+            PointerClickCount++;
+
+        if (PointerClickTimer.IsEnabled)
+        {
+            PointerClickTimer.Stop();
+        }
+
+        PointerClickTimer.Start();
+        PointerClickTimer.Tick += (s, t) =>
+        {
+            PointerClickTimer.Stop();
+            PointerClickCount = 0;
+        };
+
+        if (PointerClickCount == 3)
+            HandleTripleClick();
+        else if (PointerClickCount == 2)
+            HandleDoubleClicked(pointerPosition);
+        else if(PointerClickCount == 1)
+            HandleSingleClick(pointerPosition, rightButtonPressed, leftButtonPressed, sender);
+    }
 
     public void PointerReleasedAction(Point point)
     {
+        selectionTimer.Stop();
+        isPendingCursorPlacement = false;
+
         OldTouchPosition = null;
         selectionRenderer.IsSelectingOverLinenumbers = false;
 
-        //End text drag/drop -> insert text at cursorposition
         if (selectionDragDropManager.isDragDropSelection && !selectionDragDropManager.DragDropOverSelection(point))
             selectionDragDropManager.DoDragDropSelection();
         else if (selectionDragDropManager.isDragDropSelection)
@@ -66,88 +241,192 @@ internal class PointerActionsManager
 
         selectionRenderer.IsSelecting = false;
     }
+
+    private void HandleScrollingWhileSelecting(Point point)
+    {
+        double canvasWidth = Math.Round(coreTextbox.ActualWidth, 2);
+        double canvasHeight = Math.Round(coreTextbox.ActualHeight, 2);
+        double curPosX = Math.Round(point.X, 2);
+        double curPosY = Math.Round(point.Y, 2);
+
+        //vertical Scrolling
+        double verticalSpeed = 0;
+        if (curPosY > canvasHeight - 50)  //near bottom
+        {
+            double distance = curPosY - (canvasHeight - 50); 
+            verticalSpeed = Math.Pow(distance / 10, 1.5);
+            verticalSpeed = Math.Min(verticalSpeed, 20);
+        }
+        else if (curPosY < 50)  //near top
+        {
+            double distance = 50 - curPosY;
+            verticalSpeed = -Math.Pow(distance / 10, 1.5);
+            verticalSpeed = Math.Max(verticalSpeed, -20);
+        }
+
+        if (verticalSpeed != 0)
+        {
+            scrollManager.VerticalScroll += verticalSpeed;
+            scrollManager.UpdateWhenScrolled();
+        }
+
+        //horizontal scrolling
+        double horizontalSpeed = 0;
+        if (curPosX > canvasWidth - 80)  //near right edge
+        {
+            double distance = curPosX - (canvasWidth - 80);
+            horizontalSpeed = Math.Pow(distance / 10, 1.5);
+            horizontalSpeed = Math.Min(horizontalSpeed, 15);
+        }
+        else if (curPosX < 80)  //near left edge
+        {
+            double distance = 80 - curPosX;
+            horizontalSpeed = -Math.Pow(distance / 10, 1.5);
+            horizontalSpeed = Math.Max(horizontalSpeed, -15);
+        }
+
+        if (horizontalSpeed != 0)
+        {
+            scrollManager.HorizontalScroll += horizontalSpeed;
+            scrollManager.UpdateWhenScrolled();
+        }
+    }
+    
+    
+    private void PointerMovedDragDrop(Point point)
+    {
+        selectionDragDropManager.DragDropOverSelection(point);
+        CursorHelper.UpdateCursorPosFromPoint(
+            coreTextbox.canvasText,
+            currentLineManager,
+            textRenderer,
+            scrollManager,
+            point,
+            cursorManager.currentCursorPosition);
+
+        canvasUpdateManager.UpdateCursor();
+    }
+    private void PointerMovedOverLinenumbers(Point point)
+    {
+        Point pointerPos = point;
+        pointerPos.Y += textRenderer.SingleLineHeight; //add one more line
+
+        //if the selection reaches the end of the textbox select the last line completely
+        if (cursorManager.LineNumber == textManager.LinesCount - 1)
+        {
+            pointerPos.Y -= textRenderer.SingleLineHeight; //add one more line
+            pointerPos.X = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.GetLineText(-1), textRenderer.TextFormat).Width + 10;
+        }
+
+        CursorHelper.UpdateCursorPosFromPoint(
+            coreTextbox.canvasText,
+            currentLineManager,
+            textRenderer,
+            scrollManager,
+            pointerPos,
+            cursorManager.currentCursorPosition);
+    }
+
     public void PointerMovedAction(Point point)
     {
-        if (selectionRenderer.IsSelecting)
+        //if the user moves the pointer before the delay expires, it is a selection
+        if (selectionRenderer.IsSelecting || selectionDragDropManager.isDragDropSelection)
         {
-            double canvasWidth = Math.Round(coreTextbox.ActualWidth, 2);
-            double canvasHeight = Math.Round(coreTextbox.ActualHeight, 2);
-            double curPosX = Math.Round(point.X, 2);
-            double curPosY = Math.Round(point.Y, 2);
+            //handle pointer moved
+            HandleScrollingWhileSelecting(point);
 
-            if (curPosY > canvasHeight - 50)
+            //Drag drop text -> move the cursor to get the insertion point
+            if (selectionDragDropManager.isDragDropSelection)
             {
-                scrollManager.VerticalScroll += (curPosY > canvasHeight + 30 ? 20 : (canvasHeight - curPosY) / 180);
-                scrollManager.UpdateWhenScrolled();
+                PointerMovedDragDrop(point);
             }
-            else if (curPosY < 50)
+            else if (selectionRenderer.IsSelecting)
             {
-                scrollManager.VerticalScroll += curPosY < -30 ? -20 : -(50 - curPosY) / 20;
-                scrollManager.UpdateWhenScrolled();
-            }
+                //Selection over linenumbers
+                if (selectionRenderer.IsSelectingOverLinenumbers)
+                {
+                    PointerMovedOverLinenumbers(point);
+                }
+                else //Default selection
+                {
+                    CursorHelper.UpdateCursorPosFromPoint(
+                        coreTextbox.canvasText,
+                        currentLineManager,
+                        textRenderer,
+                        scrollManager,
+                        point,
+                        cursorManager.currentCursorPosition);
+                }
 
-            //Horizontal
-            if (curPosX > canvasWidth - 100 || curPosX < 100)
+                canvasUpdateManager.UpdateCursor();
+                selectionRenderer.SetSelectionEnd(cursorManager.LineNumber, cursorManager.CharacterPosition);
+                canvasUpdateManager.UpdateSelection();
+            }
+            return;
+        }
+
+        if (isPendingCursorPlacement)
+        {
+            isPendingCursorPlacement = false;
+            selectionTimer.Stop();
+            selectionRenderer.IsSelecting = true;
+        }
+        return;
+    }
+    
+    public void PointerWheelAction(ZoomManager zoomManager, PointerRoutedEventArgs e)
+    {
+        var delta = e.GetCurrentPoint(coreTextbox.canvasSelection).Properties.MouseWheelDelta;
+        bool needsUpdate = false;
+        //Zoom using mousewheel
+        if (Utils.IsKeyPressed(VirtualKey.Control))
+        {
+            zoomManager._ZoomFactor += delta / 20;
+            zoomManager.UpdateZoom();
+            return;
+        }
+        //Scroll horizontal using mousewheel
+        else if (Utils.IsKeyPressed(VirtualKey.Shift))
+        {
+            scrollManager.horizontalScrollBar.Value -= delta * scrollManager._HorizontalScrollSensitivity;
+            needsUpdate = true;
+        }
+        //Scroll horizontal using touchpad
+        else if (e.GetCurrentPoint(coreTextbox.canvasSelection).Properties.IsHorizontalMouseWheel)
+        {
+            scrollManager.horizontalScrollBar.Value += delta * scrollManager._HorizontalScrollSensitivity;
+            needsUpdate = true;
+        }
+        //Scroll vertical using mousewheel
+        else
+        {
+            scrollManager.verticalScrollBar.Value -= (delta * scrollManager._VerticalScrollSensitivity) / scrollManager.DefaultVerticalScrollSensitivity;
+            //Only update when a line was scrolled
+            if ((int)(scrollManager.verticalScrollBar.Value / textRenderer.SingleLineHeight * scrollManager.DefaultVerticalScrollSensitivity) != textRenderer.NumberOfStartLine)
             {
-                scrollManager.ScrollIntoViewHorizontal(coreTextbox.canvasText);
+                needsUpdate = true;
             }
         }
 
-        //Drag drop text -> move the cursor to get the insertion point
-        if (selectionDragDropManager.isDragDropSelection)
+        if (selectionRenderer.IsSelecting)
         {
-            selectionDragDropManager.DragDropOverSelection(point);
-            CursorHelper.UpdateCursorPosFromPoint(
-                coreTextbox.canvasText,
+            CursorHelper.UpdateCursorPosFromPoint(coreTextbox.canvasText,
                 currentLineManager,
                 textRenderer,
                 scrollManager,
-                point,
+                e.GetCurrentPoint(coreTextbox.canvasSelection).Position,
                 cursorManager.currentCursorPosition);
 
             canvasUpdateManager.UpdateCursor();
+
+            selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition);
+            selectionRenderer.IsSelecting = true;
+            needsUpdate = true;
         }
-        if (selectionRenderer.IsSelecting && !selectionDragDropManager.isDragDropSelection)
-        {
-            //selection started over the linenumbers:
-            if (selectionRenderer.IsSelectingOverLinenumbers)
-            {
-                Point pointerPos = point;
-                pointerPos.Y += textRenderer.SingleLineHeight; //add one more line
-
-                //When the selection reaches the end of the textbox select the last line completely
-                if (cursorManager.LineNumber == textManager.LinesCount - 1)
-                {
-                    pointerPos.Y -= textRenderer.SingleLineHeight; //add one more line
-                    pointerPos.X = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.GetLineText(-1), textRenderer.TextFormat).Width + 10;
-                }
-
-                CursorHelper.UpdateCursorPosFromPoint(
-                    coreTextbox.canvasText,
-                    currentLineManager,
-                    textRenderer,
-                    scrollManager,
-                    pointerPos,
-                    cursorManager.currentCursorPosition);
-            }
-            else //Default selection
-            {
-                CursorHelper.UpdateCursorPosFromPoint(
-                    coreTextbox.canvasText,
-                    currentLineManager,
-                    textRenderer,
-                    scrollManager,
-                    point,
-                    cursorManager.currentCursorPosition);
-
-            }
-            //Update:
-            canvasUpdateManager.UpdateCursor();
-
-            selectionRenderer.SetSelectionEnd(cursorManager.LineNumber, cursorManager.CharacterPosition);
-            canvasUpdateManager.UpdateSelection();
-        }
+        if (needsUpdate)
+            canvasUpdateManager.UpdateAll();
     }
+    
     public bool CheckTouchInput(PointerPoint point)
     {
         if (point.PointerDeviceType == PointerDeviceType.Touch || point.PointerDeviceType == PointerDeviceType.Pen)
