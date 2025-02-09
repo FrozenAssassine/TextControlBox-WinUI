@@ -66,6 +66,12 @@ namespace TextControlBoxNS.Core.Renderer
             int characterPosStart = renderedSelectionStartPosition.CharacterPosition;
             int characterPosEnd = renderedSelectionEndPosition.CharacterPosition;
 
+            if (characterPosStart > textManager.totalLines.Span[renderedSelectionStartPosition.LineNumber].Length)
+                characterPosStart = textManager.totalLines.Span[renderedSelectionStartPosition.LineNumber].Length;
+
+            if (characterPosEnd > textManager.totalLines.Span[renderedSelectionEndPosition.LineNumber].Length)
+                characterPosEnd = textManager.totalLines.Span[renderedSelectionEndPosition.LineNumber].Length;
+
             //Render the selection on position 0 if the user scrolled the start away
             if (renderedSelectionEndPosition.LineNumber < renderedSelectionStartPosition.LineNumber)
             {
@@ -141,7 +147,7 @@ namespace TextControlBoxNS.Core.Renderer
             for (int i = 0; i < regions.Length; i++)
             {
                 //Change the width if selection in an emty line or starts at a line end
-                if (regions[i].LayoutBounds.Width == 0 && regions.Length > 1)
+                if (regions[i].LayoutBounds.Width == 0 && regions.Length > 0)
                 {
                     var bounds = regions[i].LayoutBounds;
                     regions[i].LayoutBounds = new Rect { Width = fontSize / 4, Height = bounds.Height, X = bounds.X, Y = bounds.Y };
@@ -203,7 +209,6 @@ namespace TextControlBoxNS.Core.Renderer
         {
             IsSelecting = true;
             renderedSelectionStartPosition.SetChangeValues(startPosition);
-            renderedSelectionStartPosition.IsNull = false;
 
             IsSelecting = false;
             HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
@@ -212,7 +217,6 @@ namespace TextControlBoxNS.Core.Renderer
         {
             IsSelecting = true;
             renderedSelectionEndPosition.SetChangeValues(endPosition);
-            renderedSelectionEndPosition.IsNull = false;
 
             IsSelecting = false;
             HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
