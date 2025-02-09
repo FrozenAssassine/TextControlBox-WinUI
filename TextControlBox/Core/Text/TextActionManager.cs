@@ -110,6 +110,9 @@ namespace TextControlBoxNS.Core.Text
             }
             else
                 selectionManager.ForceClearSelection(canvasUpdateManager);
+
+            scrollManager.UpdateScrollToShowCursor(false);
+
             canvasUpdateManager.UpdateAll();
         }
         public void Redo()
@@ -136,6 +139,9 @@ namespace TextControlBoxNS.Core.Text
             {
                 cursorManager.SetCursorPositionCopyValues(selectionManager.GetMin(sel));
             }
+
+            scrollManager.UpdateScrollToShowCursor(false);
+
             canvasUpdateManager.UpdateAll();
         }
 
