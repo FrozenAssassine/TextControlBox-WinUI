@@ -11,7 +11,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageId>TextControlBox.WinUI.JuliusKirsch</PackageId>
 		<Title>TextControlBox WinUI</Title>
-		<Version>1.1.0</Version>
+		<Version>1.1.0-alpha</Version>
 		<Authors>Julius Kirsch</Authors>
 		<Product>TextControlBox WinUI</Product>
 		<Description>A high-performance, customizable TextBox for WinUI 3 with syntax highlighting. It renders only visible lines for smooth performance and supports JSON-based syntax definitions. Features include line numbers, highlighting, and support for multiple programming languages.</Description>
@@ -22,12 +22,18 @@
 		<PackageReleaseNotes>Migrated from UWP to WinUI with numerous bug fixes, property updates, and significant memory and performance improvements. Added .NET 8 support, SQL syntax highlighting, and various enhancements to syntax highlighting.</PackageReleaseNotes>
 		<PackageIcon>Icon1.png</PackageIcon>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
   <ItemGroup>
     <None Remove="Core\CoreTextControlBox.xaml" />
   </ItemGroup>
 	<ItemGroup>
 		<None Include="..\images\Icon1.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\README.md">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
