@@ -17,6 +17,9 @@
 
 <h3 align="center">A textbox for WinUI3 with syntax highlighting, line numbering, and support for a large amount of text</h3>
 
+## 📥 Download Nuget
+### [Nuget.org](https://www.nuget.org/packages/TextControlBox.WinUI.JuliusKirsch/1.1.0-alpha)
+
 ## 🔎 Features:
 - Viewing files with a million lines or more without performance issues
 - Syntax highlighting
