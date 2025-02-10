@@ -45,6 +45,6 @@ internal class ZoomManager
 
         textRenderer.NeedsTextFormatUpdate = true;
         lineNumberRenderer.NeedsUpdateLineNumbers();
-        canvasHelper.UpdateText();
+        canvasHelper.UpdateAll();
     }
 }
