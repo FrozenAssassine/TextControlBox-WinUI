@@ -1003,7 +1003,6 @@ internal sealed partial class CoreTextControlBox : UserControl
     public int NumberOfSpacesForTab { get => tabSpaceHelper.NumberOfSpaces; set { tabSpaceHelper.NumberOfSpaces = value; tabSpaceHelper.UpdateNumberOfSpaces(); canvasUpdateManager.UpdateAll(); } }
     public bool SearchIsOpen => searchManager.IsSearchOpen;
     public IEnumerable<string> Lines => textManager.totalLines;
-    //public Span<string> LinesSpan => textManager.totalLines.Span;
     public bool DoAutoPairing { get; set; } = true;
     public bool ControlW_SelectWord = true;
     public bool HasSelection => selectionRenderer.HasSelection;

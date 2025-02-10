@@ -1,8 +1,8 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using TextControlBoxNS.Core;
 using Windows.Foundation;
 
@@ -736,13 +736,6 @@ public partial class TextControlBox : UserControl
     /// Utilizing this property for saving will significantly improve RAM usage during the saving process.
     /// </remarks>
     public IEnumerable<string> Lines => coreTextBox.Lines;
-
-    /// <summary>
-    /// Gets an span collection of all the lines in the textbox.
-    /// </summary>
-    /// <remarks>
-    /// Use this property to access all the lines of text in the textbox.
-    //public Span<string> LinesSpan => coreTextBox.LinesSpan;
 
     /// <summary>
     /// Gets or sets a value indicating whether auto-pairing is enabled.
