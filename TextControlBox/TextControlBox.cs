@@ -366,10 +366,20 @@ public partial class TextControlBox : UserControl
     /// <param name="replaceWord">The word to replace with</param>
     /// <param name="matchCase">Search with case sensitivity</param>
     /// <param name="wholeWord">Search for whole words</param>
-    /// <returns>Found when everything was replaced and not found when nothing was replaced</returns>
+    /// <returns>Found if everything was replaced and not found if nothing was replaced</returns>
     public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord)
     {
         return coreTextBox.ReplaceAll(word, replaceWord, matchCase, wholeWord);
+    }
+
+    /// <summary>
+    /// Replaces the next occurnce in the text with the replaceWord
+    /// </summary>
+    /// <param name="replaceWord">The string to replace the searched string with</param>
+    /// <returns>Found if the next occurence got replaced and not found if nothing got replaced</returns>
+    public SearchResult ReplaceNext(string replaceWord)
+    {
+        return coreTextBox.ReplaceNext(replaceWord);
     }
 
     /// <summary>

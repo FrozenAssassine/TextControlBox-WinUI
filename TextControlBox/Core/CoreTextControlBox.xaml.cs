@@ -33,7 +33,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     private readonly SearchManager searchManager;
     private readonly CanvasUpdateManager canvasUpdateManager;
     private readonly LineNumberRenderer lineNumberRenderer;
-    private readonly TextManager textManager = new TextManager();
+    private readonly TextManager textManager;
     private readonly UndoRedo undoRedo;
     private readonly SelectionManager selectionManager;
     private readonly CursorManager cursorManager;
@@ -54,6 +54,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     private readonly TextLayoutManager textLayoutManager;
     private readonly LineHighlighterRenderer lineHighlighterRenderer;
     private readonly AutoIndentionManager autoIndentionManager;
+    private readonly ReplaceManager replaceManager;
 
     public CanvasControl canvasText;
     public CanvasControl canvasCursor;
@@ -106,6 +107,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         textLayoutManager = new TextLayoutManager();
         lineHighlighterRenderer = new LineHighlighterRenderer();
         autoIndentionManager = new AutoIndentionManager();
+        replaceManager = new ReplaceManager();
 
         stringManager.Init(textManager, tabSpaceHelper);
         lineHighlighterRenderer.Init(lineHighlighterManager, selectionManager, textRenderer);
@@ -132,6 +134,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, selectionDragDropManager, currentLineManager, selectionManager);
         textLayoutManager.Init(textManager, zoomManager);
         autoIndentionManager.Init(textManager, tabSpaceHelper);
+        replaceManager.Init(canvasUpdateManager, undoRedo, textManager, searchManager, cursorManager, textActionManager, selectionRenderer, selectionManager);
     }
 
     public void InitialiseOnStart()
@@ -754,25 +757,17 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord)
     {
-        if (word.Length == 0 || replaceWord.Length == 0)
-            return SearchResult.InvalidInput;
+        return replaceManager.ReplaceAll(word, replaceWord, matchCase, wholeWord);
+    }
 
-        SearchParameter searchParameter = new SearchParameter(word, wholeWord, matchCase);
-
-        bool isFound = false;
-        undoRedo.RecordUndoAction(() =>
+    public SearchResult ReplaceNext(string replaceWord)
+    {
+        var res = replaceManager.ReplaceNext(replaceWord);
+        if (res.Selection != null)
         {
-            for (int i = 0; i < textManager.LinesCount; i++)
-            {
-                if (textManager.totalLines[i].Contains(searchParameter))
-                {
-                    isFound = true;
-                    SetLineText(i, Regex.Replace(textManager.totalLines[i], searchParameter.SearchExpression, replaceWord));
-                }
-            }
-        }, 0, textManager.LinesCount, textManager.LinesCount);
-        canvasUpdateManager.UpdateText();
-        return isFound ? SearchResult.Found : SearchResult.NotFound;
+            ScrollLineIntoView(CursorPosition.LineNumber);
+        }
+        return res.Result;
     }
 
     public SearchResult FindNext()
@@ -785,8 +780,6 @@ internal sealed partial class CoreTextControlBox : UserControl
         {
             selectionRenderer.SetSelection(res.Selection);
             ScrollLineIntoView(CursorPosition.LineNumber);
-            canvasUpdateManager.UpdateText();
-            canvasUpdateManager.UpdateSelection();
         }
         return res.Result;
     }
@@ -801,8 +794,6 @@ internal sealed partial class CoreTextControlBox : UserControl
         {
             selectionRenderer.SetSelection(res.Selection);
             ScrollLineIntoView(CursorPosition.LineNumber);
-            canvasUpdateManager.UpdateText();
-            canvasUpdateManager.UpdateSelection();
         }
         return res.Result;
     }

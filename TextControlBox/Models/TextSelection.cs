@@ -56,6 +56,11 @@ internal class TextSelection
         this.StartPosition.SetChangeValues(start);
         this.EndPosition.SetChangeValues(end);
     }
+    internal void SetChangedValues(TextSelection textSelection)
+    {
+        this.StartPosition.SetChangeValues(textSelection.StartPosition);
+        this.EndPosition.SetChangeValues(textSelection.EndPosition);
+    }
     internal void SetChangedValues(int index, int length, int startLine, int startChar, int endLine, int endChar)
     {
         renderedIndex = index;
