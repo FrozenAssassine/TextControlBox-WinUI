@@ -86,7 +86,10 @@ internal class SearchManager
         UpdateSearchLines();
 
         if (word == null || word.Length == 0)
+        {
+            IsSearchOpen = false;
             return SearchResult.InvalidInput;
+        }
 
         if (MatchingSearchLines.Length > 0)
             IsSearchOpen = true;
