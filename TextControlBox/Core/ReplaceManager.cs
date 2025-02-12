@@ -20,6 +20,7 @@ internal class ReplaceManager
     private TextActionManager textActionManager;
     private SelectionRenderer selectionRenderer;
     private SelectionManager selectionManager;
+    private EventsManager eventsManager;
 
     public void Init(
         CanvasUpdateManager canvasUpdateManager,
@@ -29,7 +30,8 @@ internal class ReplaceManager
         CursorManager cursorManager,
     TextActionManager textActionManager,
     SelectionRenderer selectionRenderer,
-    SelectionManager selectionManager)
+    SelectionManager selectionManager,
+    EventsManager eventsManager)
     {
         this.canvasUpdateManager = canvasUpdateManager;
         this.undoRedo = undoRedo;
@@ -39,6 +41,7 @@ internal class ReplaceManager
         this.textActionManager = textActionManager;
         this.selectionRenderer = selectionRenderer;
         this.selectionManager = selectionManager;
+        this.eventsManager = eventsManager;
     }
 
     public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord)
@@ -63,6 +66,9 @@ internal class ReplaceManager
                 }
             }
         }, 0, textManager.LinesCount, textManager.LinesCount);
+
+        eventsManager.CallTextChanged();
+
         canvasUpdateManager.UpdateText();
         return isFound ? SearchResult.Found : SearchResult.NotFound;
     }
@@ -82,6 +88,8 @@ internal class ReplaceManager
             {
                 selectionManager.Replace(replaceWord);
             }, selectionManager.currentTextSelection, 1);
+
+            eventsManager.CallTextChanged();
 
             var start = res.Selection.StartPosition;
             selectionRenderer.SetSelection(start.LineNumber, start.CharacterPosition, start.LineNumber, start.CharacterPosition + replaceWord.Length);

@@ -369,11 +369,11 @@ namespace TextControlBoxNS.Core.Text
                 removeTextAction.HandleTextRemoval(controlIsPressed);
             }
 
+            eventsManager.CallTextChanged();
+
             scrollManager.UpdateScrollToShowCursor();
             canvasUpdateManager.UpdateText();
             canvasUpdateManager.UpdateCursor();
-
-            eventsManager.CallTextChanged();
         }
         public void AddNewLine()
         {
@@ -406,8 +406,8 @@ namespace TextControlBoxNS.Core.Text
                 scrollManager.UpdateScrollToShowCursor();
             }
 
-            canvasUpdateManager.UpdateAll();
             eventsManager.CallTextChanged();
+            canvasUpdateManager.UpdateAll();
         }
         public void DeleteText(bool controlIsPressed = false, bool shiftIsPressed = false)
         {
@@ -429,10 +429,10 @@ namespace TextControlBoxNS.Core.Text
                 deleteTextAction.DeleteTextInLine(controlIsPressed);
             }
 
+            eventsManager.CallTextChanged();
             scrollManager.UpdateScrollToShowCursor();
             canvasUpdateManager.UpdateText();
             canvasUpdateManager.UpdateCursor();
-            eventsManager.CallTextChanged();
         }
 
         public void AddCharacter(string text, bool ignoreSelection = false)
@@ -463,10 +463,10 @@ namespace TextControlBoxNS.Core.Text
                 addCharacterTextAction.HandleTextWithSelection(text, splittedTextLength);
             }
 
+            eventsManager.CallTextChanged();
             scrollManager.ScrollLineIntoViewIfOutside(cursorManager.LineNumber);
             canvasUpdateManager.UpdateText();
             canvasUpdateManager.UpdateCursor();
-            eventsManager.CallTextChanged();
         }
 
         public bool DeleteLine(int line)
@@ -487,6 +487,7 @@ namespace TextControlBoxNS.Core.Text
                 textManager.AddLine();
             }
 
+            eventsManager.CallTextChanged();
             canvasUpdateManager.UpdateText();
             return true;
         }
@@ -505,6 +506,7 @@ namespace TextControlBoxNS.Core.Text
 
             }, line, 1, 2);
 
+            eventsManager.CallTextChanged();
             canvasUpdateManager.UpdateText();
             return true;
         }
@@ -521,6 +523,8 @@ namespace TextControlBoxNS.Core.Text
             {
                 textManager.SetLineText(line, stringManager.CleanUpString(text));
             }, line, 1, 1);
+
+            eventsManager.CallTextChanged();
             canvasUpdateManager.UpdateText();
             return true;
         }
@@ -536,6 +540,7 @@ namespace TextControlBoxNS.Core.Text
             if (textRenderer.OutOfRenderedArea(line))
                 scrollManager.ScrollBottomIntoView();
 
+            eventsManager.CallTextChanged();
             canvasUpdateManager.UpdateText();
             canvasUpdateManager.UpdateCursor();
         }
