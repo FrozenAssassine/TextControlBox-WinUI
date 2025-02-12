@@ -80,7 +80,7 @@ internal class SearchManager
         MatchingSearchLines = FindIndexes();
     }
 
-    public SearchResult BeginSearch(string word, bool matchCase, bool wholeWord)
+    public SearchResult BeginSearch(string word, bool wholeWord, bool matchCase)
     {
         searchParameter = new SearchParameter(word, wholeWord, matchCase);
         UpdateSearchLines();
