@@ -22,7 +22,11 @@ internal class TextSelection
     }
     public TextSelection(int index, int length, int startLine, int startChar, int endLine, int endChar)
     {
-        SetChangedValues(index, length, startLine, startChar, endLine, endChar);
+        renderedIndex = index;
+        renderedLength = length;
+
+        StartPosition.SetChangeValues(startLine, startChar);
+        EndPosition.SetChangeValues(endLine, endChar);
     }
     public TextSelection(CursorPosition startPosition = null, CursorPosition endPosition = null)
     {
@@ -41,33 +45,6 @@ internal class TextSelection
 
         renderedIndex = textSelection.renderedIndex;
         renderedLength = textSelection.renderedLength;
-    }
-
-    internal void SetChangedValues(int index = 0, int length = 0, CursorPosition startPosition = null, CursorPosition endPosition = null)
-    {
-        renderedIndex = index;
-        renderedLength = length;
-
-        StartPosition.SetChangeValues(startPosition);
-        EndPosition.SetChangeValues(endPosition);
-    }
-    internal void SetChangedValues(CursorPosition start, CursorPosition end)
-    {
-        this.StartPosition.SetChangeValues(start);
-        this.EndPosition.SetChangeValues(end);
-    }
-    internal void SetChangedValues(TextSelection textSelection)
-    {
-        this.StartPosition.SetChangeValues(textSelection.StartPosition);
-        this.EndPosition.SetChangeValues(textSelection.EndPosition);
-    }
-    internal void SetChangedValues(int index, int length, int startLine, int startChar, int endLine, int endChar)
-    {
-        renderedIndex = index;
-        renderedLength = length;
-
-        StartPosition.SetChangeValues(startLine, startChar);
-        EndPosition.SetChangeValues(endLine, endChar);
     }
 
     internal int GetMinLine()

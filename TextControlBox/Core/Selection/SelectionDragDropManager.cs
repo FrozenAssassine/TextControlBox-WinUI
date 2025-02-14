@@ -70,7 +70,7 @@ internal class SelectionDragDropManager
             selectionManager.ForceClearSelection(canvasUpdateManager);
 
         coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
-        selectionRenderer.IsSelecting = false;
+        selectionManager.IsSelecting = false;
         canvasUpdateManager.UpdateCursor();
     }
     public bool DragDropOverSelection(Point curPos)

@@ -123,9 +123,9 @@ namespace TextControlBoxNS.Helper
 
                     //move the selection
                     if (i == 0 && currentLine.Contains(tabCharacter, StringComparison.Ordinal) && cursorPosition.CharacterPosition > 0)
-                        selectionRenderer.SetSelectionStart(textSelection.StartPosition.LineNumber, textSelection.StartPosition.CharacterPosition - tabCharacter.Length);
+                        selectionManager.SetSelectionStart(textSelection.StartPosition.LineNumber, textSelection.StartPosition.CharacterPosition - tabCharacter.Length);
                     else if (i == selectedLinesCount && currentLine.Contains(tabCharacter, StringComparison.Ordinal))
-                        selectionRenderer.SetSelectionEnd(textSelection.EndPosition.LineNumber, textSelection.EndPosition.CharacterPosition - tabCharacter.Length);
+                        selectionManager.SetSelectionEnd(textSelection.EndPosition.LineNumber, textSelection.EndPosition.CharacterPosition - tabCharacter.Length);
 
                     textManager.SetLineText(lineIndex, currentLine.RemoveFirstOccurence(tabCharacter));
                 }
@@ -161,8 +161,8 @@ namespace TextControlBoxNS.Helper
             }
             else
             {
-                selectionRenderer.SetSelectionStart(textSelection.StartPosition.LineNumber, textSelection.StartPosition.CharacterPosition + tabCharacter.Length);
-                selectionRenderer.SetSelectionEnd(textSelection.EndPosition.LineNumber, textSelection.EndPosition.CharacterPosition + tabCharacter.Length);
+                selectionManager.SetSelectionStart(textSelection.StartPosition.LineNumber, textSelection.StartPosition.CharacterPosition + tabCharacter.Length);
+                selectionManager.SetSelectionEnd(textSelection.EndPosition.LineNumber, textSelection.EndPosition.CharacterPosition + tabCharacter.Length);
                 cursorManager.currentCursorPosition.CharacterPosition += tabCharacter.Length;
 
                 undoRedo.RecordUndoAction(() =>
