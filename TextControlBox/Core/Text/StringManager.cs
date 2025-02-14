@@ -16,7 +16,7 @@ namespace TextControlBoxNS.Core.Text
         public string CleanUpString(string input)
         {
             //Fix tabs and lineendings
-            return tabSpaceHelper.UpdateTabs(LineEndings.CleanLineEndings(input, textManager._LineEnding));
+            return tabSpaceHelper.UpdateTabs(LineEndings.CleanLineEndings(input, textManager.LineEnding));
         }
     }
 }

@@ -253,7 +253,7 @@ namespace TextControlBoxNS.Core.Text
                 textManager.ClearText();
                 textManager.totalLines.AddRange(lines);
 
-                textManager._LineEnding = lineEnding;
+                textManager.LineEnding = lineEnding;
 
                 longestLineManager.needsRecalculation = true;
                 canvasUpdateManager.UpdateAll();
@@ -277,7 +277,7 @@ namespace TextControlBoxNS.Core.Text
                     return;
 
                 //Get the LineEnding
-                textManager._LineEnding = LineEndings.FindLineEnding(text);
+                textManager.LineEnding = LineEndings.FindLineEnding(text);
 
                 selectionRenderer.ClearSelection();
                 undoRedo.ClearAll();
@@ -446,19 +446,19 @@ namespace TextControlBoxNS.Core.Text
             int splittedTextLength = addCharacterTextAction.CalculateSplitTextLength(text);
             bool hasSelection = selectionManager.HasSelection;
 
-            if (!hasSelection && splittedTextLength == 1)
+            if (!hasSelection && splittedTextLength == 1) //add single line text -> no selection
             {
                 addCharacterTextAction.HandleSingleCharacterWithoutSelection(text);
             }
-            else if (!hasSelection && splittedTextLength > 1)
+            else if (!hasSelection && splittedTextLength > 1) //add multi line text -> no selection
             {
                 addCharacterTextAction.HandleMultiLineTextWithoutSelection(text, splittedTextLength);
             }
-            else if (text.Length == 0)
+            else if (text.Length == 0) //no text to add
             {
                 DeleteSelection();
             }
-            else if (hasSelection)
+            else if (hasSelection) //add multiline text + selection
             {
                 addCharacterTextAction.HandleTextWithSelection(text, splittedTextLength);
             }

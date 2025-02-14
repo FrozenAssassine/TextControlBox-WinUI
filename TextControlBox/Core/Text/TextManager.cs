@@ -13,7 +13,17 @@ internal class TextManager
     public PooledList<string> totalLines = new PooledList<string>(0);
 
     public int _FontSize = 18;
-    public LineEnding _LineEnding = LineEnding.CRLF;
+    private LineEnding _LineEnding = LineEnding.CRLF;
+    public LineEnding LineEnding 
+    { 
+        get => _LineEnding;
+        set 
+        {
+            _LineEnding = value; 
+            NewLineCharacter = LineEndings.LineEndingToString(value);
+        }
+    }
+
     public FontFamily _FontFamily = new FontFamily("Consolas");
     public string NewLineCharacter = "\r\n";
     public SyntaxHighlightLanguage _SyntaxHighlighting = null;

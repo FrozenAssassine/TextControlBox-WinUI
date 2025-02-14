@@ -898,10 +898,10 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public LineEnding LineEnding
     {
-        get => textManager._LineEnding;
+        get => textManager.LineEnding;
         set
         {
-            textManager._LineEnding = value;
+            textManager.LineEnding = value;
         }
     }
 
