@@ -10,6 +10,7 @@ internal class InitializationManager
 
     private bool initDone = false;
     public int[] canvasDrawed = [0, 0, 0];
+    private bool loaded =false;
     public void Init(EventsManager eventsManager)
     {
         this.eventsManager = eventsManager;
@@ -29,8 +30,9 @@ internal class InitializationManager
 
     public void CheckInitialized()
     {
-        if(initDone && canvasDrawed[0] == canvasDrawed[1] && canvasDrawed[1] == canvasDrawed[2] && canvasDrawed[2] == 1)
+        if(!loaded && initDone && canvasDrawed[0] == canvasDrawed[1] && canvasDrawed[1] == canvasDrawed[2] && canvasDrawed[2] == 1)
         {
+            loaded = true;
             eventsManager.CallLoaded();
         }
     }
