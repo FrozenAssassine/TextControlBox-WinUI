@@ -81,8 +81,7 @@ internal class ReplaceManager
         var res = searchManager.FindNext(cursorManager.currentCursorPosition);
         if (res.Selection != null)
         {
-            selectionManager.currentTextSelection.SetChangedValues(res.Selection);
-            selectionRenderer.SetSelection(res.Selection);
+            selectionManager.SetSelection(res.Selection);
 
             undoRedo.RecordUndoAction(() =>
             {
@@ -92,7 +91,7 @@ internal class ReplaceManager
             eventsManager.CallTextChanged();
 
             var start = res.Selection.StartPosition;
-            selectionRenderer.SetSelection(start.LineNumber, start.CharacterPosition, start.LineNumber, start.CharacterPosition + replaceWord.Length);
+            selectionManager.SetSelection(start.LineNumber, start.CharacterPosition, start.LineNumber, start.CharacterPosition + replaceWord.Length);
         }
         return res;
     }

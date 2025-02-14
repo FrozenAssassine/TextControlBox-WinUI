@@ -18,10 +18,22 @@ internal class SelectionManager
     private readonly ReplaceSelectionManager replaceSelectionManager = new ReplaceSelectionManager();
     private readonly RemoveSelectionManager removeSelectionManager = new RemoveSelectionManager();
 
-    public TextSelection OldTextSelection = new TextSelection();
+    public readonly TextSelection OldTextSelection = new TextSelection();
     public readonly TextSelection currentTextSelection = new TextSelection();
 
-    public bool HasSelection => selectionRenderer.HasSelection;
+    public readonly CursorPosition selectionStart;
+    public readonly CursorPosition selectionEnd;
+
+    public bool IsSelectingOverLinenumbers { get; set; } = false;
+
+    public bool IsSelecting { get; set; } = false;
+    public bool HasSelection { get; set; } = false;
+    
+    public SelectionManager()
+    {
+        selectionStart = currentTextSelection.StartPosition;
+        selectionEnd = currentTextSelection.EndPosition;
+    }
 
     public void Init(TextManager textManager, CursorManager cursorManager, SelectionRenderer selectionRenderer)
     {
@@ -33,9 +45,87 @@ internal class SelectionManager
         removeSelectionManager.Init(cursorManager, textManager);
     }
 
+    public void SetSelection(TextSelection selection)
+    {
+        if (!selection.HasSelection)
+            return;
+
+        SetSelection(selection.StartPosition, selection.EndPosition);
+    }
+    public void SetSelection(int startLine, int startChar, int endLine, int endChar)
+    {
+        IsSelecting = true;
+        selectionStart.SetChangeValues(startLine, startChar);
+        selectionEnd.SetChangeValues(endLine, endChar);
+
+        selectionEnd.IsNull = false;
+        selectionStart.IsNull = false;
+
+        IsSelecting = false;
+        HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
+    }
+
+    public void SetSelection(CursorPosition startPosition, CursorPosition endPosition)
+    {
+        IsSelecting = true;
+        selectionStart.SetChangeValues(startPosition);
+        selectionEnd.SetChangeValues(endPosition);
+
+        selectionEnd.IsNull = false;
+        selectionStart.IsNull = false;
+
+        IsSelecting = false;
+        HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
+    }
+    public void SetSelectionStart(CursorPosition startPosition)
+    {
+        IsSelecting = true;
+        selectionStart.SetChangeValues(startPosition);
+
+        IsSelecting = false;
+        HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
+    }
+    public void SetSelectionEnd(CursorPosition endPosition)
+    {
+        IsSelecting = true;
+        selectionEnd.SetChangeValues(endPosition);
+
+        IsSelecting = false;
+        HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
+    }
+
+    public void SetSelectionStart(int startPos, int characterPos)
+    {
+        selectionStart.CharacterPosition = characterPos;
+        selectionStart.LineNumber = startPos;
+        selectionStart.IsNull = false;
+
+        HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
+    }
+
+    public void SetSelectionEnd(int endPos, int characterPos)
+    {
+        selectionEnd.CharacterPosition = characterPos;
+        selectionEnd.LineNumber = endPos;
+        selectionEnd.IsNull = false;
+
+        HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
+    }
+
+    public void ClearSelection()
+    {
+        HasSelection = false;
+        IsSelecting = false;
+        selectionEnd.IsNull = true;
+        selectionStart.IsNull = true;
+
+        //TODO! eventsManager.CallSelectionChanged();
+    }
+
+
     public void ForceClearSelection(CanvasUpdateManager canvasHelper)
     {
-        selectionRenderer.ClearSelection();
+        ClearSelection();
         canvasHelper.UpdateSelection();
     }
 
@@ -43,10 +133,9 @@ internal class SelectionManager
     {
         if (!HasSelection)
         {
-            selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
-            selectionRenderer.SetSelectionStart(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
-
-            currentTextSelection.SetChangedValues(selectionRenderer.renderedSelectionStartPosition, selectionRenderer.renderedSelectionEndPosition);
+            //TODO! 
+            SetSelectionEnd(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
+            SetSelectionStart(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
         }
     }
 
@@ -383,7 +472,7 @@ internal class SelectionManager
     public void ClearSelectionIfNeeded(CoreTextControlBox textbox)
     {
         //If the selection is visible, but is not getting set, clear the selection
-        if (selectionRenderer.HasSelection && !selectionRenderer.IsSelecting)
+        if (HasSelection && !IsSelecting)
         {
             textbox.ClearSelection();
         }
@@ -393,11 +482,11 @@ internal class SelectionManager
     {
         int characterpos = cursorManager.CharacterPosition;
 
-        selectionRenderer.SetSelectionStart(cursorManager.LineNumber, characterpos - cursorManager.CalculateStepsToMoveLeftNoControl(characterpos));
-        selectionRenderer.SetSelectionEnd(cursorManager.LineNumber, characterpos + cursorManager.CalculateStepsToMoveRightNoControl(characterpos));
+        SetSelectionStart(cursorManager.LineNumber, characterpos - cursorManager.CalculateStepsToMoveLeftNoControl(characterpos));
+        SetSelectionEnd(cursorManager.LineNumber, characterpos + cursorManager.CalculateStepsToMoveRightNoControl(characterpos));
 
-        cursorManager.CharacterPosition = selectionRenderer.renderedSelectionEndPosition.CharacterPosition;
-        selectionRenderer.HasSelection = true;
+        cursorManager.CharacterPosition = selectionEnd.CharacterPosition;
+        HasSelection = true;
 
         canvashelper.UpdateSelection();
         canvashelper.UpdateCursor();

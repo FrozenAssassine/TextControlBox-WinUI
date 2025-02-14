@@ -1,11 +1,9 @@
 ﻿using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
-using System.Diagnostics;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
-using TextControlBoxNS.Models;
 using Windows.Foundation;
 using Windows.UI;
 
@@ -13,12 +11,6 @@ namespace TextControlBoxNS.Core.Renderer
 {
     internal class SelectionRenderer
     {
-        public bool IsSelecting { get; set; } = false;
-        public bool HasSelection { get; set; } = false;
-
-        public bool IsSelectingOverLinenumbers = false;
-        public readonly CursorPosition renderedSelectionStartPosition = new CursorPosition();
-        public readonly CursorPosition renderedSelectionEndPosition = new CursorPosition();
         public int renderedSelectionLength = 0;
         public int renderedSelectionStart = 0;
 
@@ -48,8 +40,6 @@ namespace TextControlBoxNS.Core.Renderer
             this.textManager = textManager;
         }
 
-
-        //Draw the actual selection and return the cursorposition. Return -1 if no selection was drawn
         public void DrawSelection(
             CanvasTextLayout textLayout,
             CanvasDrawEventArgs args,
@@ -60,7 +50,10 @@ namespace TextControlBoxNS.Core.Renderer
             float fontSize,
             Color selectionColor
             )
-        {
+        {   var renderedSelectionStartPosition = selectionManager.selectionStart;
+            var renderedSelectionEndPosition = selectionManager.selectionEnd;
+
+
             int selStartIndex = 0;
             int selEndIndex = 0;
             int characterPosStart = renderedSelectionStartPosition.CharacterPosition;
@@ -158,99 +151,19 @@ namespace TextControlBoxNS.Core.Renderer
                 args.DrawingSession.FillRectangle(Utils.CreateRect(regions[i].LayoutBounds, marginLeft, marginTop), selectionColor);
             }
 
-            selectionManager.currentTextSelection.SetChangedValues(renderedSelectionStart, renderedSelectionLength, renderedSelectionStartPosition, renderedSelectionEndPosition);
-        }
-
-        //Clear the selection
-        public void ClearSelection()
-        {
-            HasSelection = false;
-            IsSelecting = false;
-            renderedSelectionEndPosition.IsNull = true;
-            renderedSelectionStartPosition.IsNull = true;
-
-            selectionManager.currentTextSelection.StartPosition.IsNull = true;
-            selectionManager.currentTextSelection.EndPosition.IsNull = true;
-
-            eventsManager.CallSelectionChanged();
-        }
-
-        public void SetSelection(TextSelection selection)
-        {
-            if (!selection.HasSelection)
-                return;
-
-            SetSelection(selection.StartPosition, selection.EndPosition);
-        }
-        public void SetSelection(int startLine, int startChar, int endLine, int endChar)
-        {
-            IsSelecting = true;
-            renderedSelectionStartPosition.SetChangeValues(startLine, startChar);
-            renderedSelectionEndPosition.SetChangeValues(endLine, endChar);
-
-            renderedSelectionEndPosition.IsNull = false;
-            renderedSelectionStartPosition.IsNull = false;
-
-            IsSelecting = false;
-            HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
-        }
-
-        public void SetSelection(CursorPosition startPosition, CursorPosition endPosition)
-        {
-            IsSelecting = true;
-            renderedSelectionStartPosition.SetChangeValues(startPosition);
-            renderedSelectionEndPosition.SetChangeValues(endPosition);
-
-            renderedSelectionEndPosition.IsNull = false;
-            renderedSelectionStartPosition.IsNull = false;
-
-            IsSelecting = false;
-            HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
-        }
-        public void SetSelectionStart(CursorPosition startPosition)
-        {
-            IsSelecting = true;
-            renderedSelectionStartPosition.SetChangeValues(startPosition);
-
-            IsSelecting = false;
-            HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
-        }
-        public void SetSelectionEnd(CursorPosition endPosition)
-        {
-            IsSelecting = true;
-            renderedSelectionEndPosition.SetChangeValues(endPosition);
-
-            IsSelecting = false;
-            HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
-        }
-
-        public void SetSelectionStart(int startPos, int characterPos)
-        {
-            renderedSelectionStartPosition.CharacterPosition = characterPos;
-            renderedSelectionStartPosition.LineNumber = startPos;
-            renderedSelectionStartPosition.IsNull = false;
-
-            HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
-        }
-
-        public void SetSelectionEnd(int endPos, int characterPos)
-        {
-            renderedSelectionEndPosition.CharacterPosition = characterPos;
-            renderedSelectionEndPosition.LineNumber = endPos;
-            renderedSelectionEndPosition.IsNull = false;
-
-            HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
+            selectionManager.currentTextSelection.renderedIndex = renderedSelectionStart;
+            selectionManager.currentTextSelection.renderedLength = renderedSelectionLength;
         }
 
 
         public void Draw(CanvasControl canvasSelection, CanvasDrawEventArgs args)
         {
-            if (!renderedSelectionStartPosition.IsNull && !renderedSelectionEndPosition.IsNull)
-                HasSelection = SelectionHelper.TextIsSelected(renderedSelectionStartPosition, renderedSelectionEndPosition);
+            if (!selectionManager.selectionStart.IsNull && !selectionManager.selectionEnd.IsNull)
+                selectionManager.HasSelection = SelectionHelper.TextIsSelected(selectionManager.selectionStart, selectionManager.selectionEnd);
             else
-                HasSelection = false;
+                selectionManager.HasSelection = false;
 
-            if (HasSelection)
+            if (selectionManager.HasSelection)
             {
                 DrawSelection(
                     textRenderer.DrawnTextLayout,

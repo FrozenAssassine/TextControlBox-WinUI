@@ -7,16 +7,11 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text.RegularExpressions;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
-using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Languages;
-using TextControlBoxNS.Models;
 using TextControlBoxNS.Models.Enums;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
@@ -47,7 +42,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     private readonly DesignHelper designHelper;
     private readonly LineHighlighterManager lineHighlighterManager;
     private readonly LineNumberManager lineNumberManager;
-    public readonly EventsManager eventsManager;
+    private readonly EventsManager eventsManager;
     private readonly SelectionDragDropManager selectionDragDropManager;
     private readonly FocusManager focusManager;
     private readonly PointerActionsManager pointerActionsManager;
@@ -153,7 +148,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         zoomManager.UpdateZoom();
         focusManager.SetFocus();
-        
+
         initializationManager.TextboxInitDone();
     }
 
@@ -275,12 +270,12 @@ internal sealed partial class CoreTextControlBox : UserControl
                     {
                         selectionManager.StartSelectionIfNeeded();
                         cursorManager.MoveLeft();
-                        selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition);
+                        selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
                     }
                     else
                     {
                         //Move the cursor to the start of the selection
-                        if (selectionRenderer.HasSelection && selectionManager.HasSelection)
+                        if (selectionManager.HasSelection && selectionManager.HasSelection)
                             cursorManager.SetCursorPositionCopyValues(selectionManager.GetMin(selectionManager.currentTextSelection));
                         else
                             cursorManager.MoveLeft();
@@ -298,12 +293,12 @@ internal sealed partial class CoreTextControlBox : UserControl
                     {
                         selectionManager.StartSelectionIfNeeded();
                         cursorManager.MoveRight();
-                        selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition);
+                        selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
                     }
                     else
                     {
                         //Move the cursor to the end of the selection
-                        if (selectionRenderer.HasSelection && selectionManager.HasSelection)
+                        if (selectionManager.HasSelection && selectionManager.HasSelection)
                             cursorManager.SetCursorPositionCopyValues(selectionManager.GetMax(selectionManager.currentTextSelection));
                         else
                             cursorManager.MoveRight();
@@ -321,7 +316,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     {
                         selectionManager.StartSelectionIfNeeded();
                         cursorManager.MoveDown();
-                        selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition);
+                        selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
                     }
                     else
                     {
@@ -339,7 +334,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     {
                         selectionManager.StartSelectionIfNeeded();
                         cursorManager.MoveUp();
-                        selectionRenderer.SetSelectionEnd(cursorManager.currentCursorPosition);
+                        selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
                     }
                     else
                     {
@@ -367,13 +362,13 @@ internal sealed partial class CoreTextControlBox : UserControl
                 {
                     if (shift)
                     {
-                        selectionRenderer.HasSelection = true;
+                        selectionManager.HasSelection = true;
 
-                        if (selectionRenderer.renderedSelectionStartPosition.IsNull)
-                            selectionRenderer.SetSelectionStart(CursorPosition);
+                        if (selectionManager.selectionStart.IsNull)
+                            selectionManager.SetSelectionStart(CursorPosition);
 
                         cursorManager.MoveToLineEnd(CursorPosition);
-                        selectionRenderer.SetSelectionEnd(CursorPosition);
+                        selectionManager.SetSelectionEnd(CursorPosition);
                         canvasUpdateManager.UpdateSelection();
                     }
                     else
@@ -389,13 +384,13 @@ internal sealed partial class CoreTextControlBox : UserControl
                 {
                     if (shift)
                     {
-                        selectionRenderer.HasSelection = true;
+                        selectionManager.HasSelection = true;
 
-                        if (selectionRenderer.renderedSelectionStartPosition.IsNull)
-                            selectionRenderer.SetSelectionStart(CursorPosition);
+                        if (selectionManager.selectionStart.IsNull)
+                            selectionManager.SetSelectionStart(CursorPosition);
 
                         cursorManager.MoveToLineStart(CursorPosition);
-                        selectionRenderer.SetSelectionEnd(CursorPosition);
+                        selectionManager.SetSelectionEnd(CursorPosition);
 
                         canvasUpdateManager.UpdateSelection();
                     }
@@ -431,7 +426,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     private void Canvas_Selection_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
         Canvas_Selection.CapturePointer(e.Pointer);
-        selectionRenderer.IsSelectingOverLinenumbers = false;
+        selectionManager.IsSelectingOverLinenumbers = false;
 
         var point = e.GetCurrentPoint(Canvas_Selection);
         if (pointerActionsManager.CheckTouchInput_Click(point))
@@ -454,8 +449,8 @@ internal sealed partial class CoreTextControlBox : UserControl
         //Select the line where the cursor is over
         SelectLine(CursorHelper.GetCursorLineFromPoint(textRenderer, point.Position));
 
-        selectionRenderer.IsSelecting = true;
-        selectionRenderer.IsSelectingOverLinenumbers = true;
+        selectionManager.IsSelecting = true;
+        selectionManager.IsSelectingOverLinenumbers = true;
     }
     //Change the cursor when entering/leaving the control
     private void UserControl_PointerEntered(object sender, PointerRoutedEventArgs e)
@@ -553,7 +548,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     }
     private void UserControl_DragOver(object sender, DragEventArgs e)
     {
-        if (selectionRenderer.IsSelecting || textManager._IsReadonly || !e.DataView.Contains(StandardDataFormats.Text))
+        if (selectionManager.IsSelecting || textManager._IsReadonly || !e.DataView.Contains(StandardDataFormats.Text))
             return;
 
         var deferral = e.GetDeferral();
@@ -575,7 +570,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public void SelectLine(int line)
     {
         int lineLength = textManager.GetLineLength(line);
-        selectionRenderer.SetSelection(line, 0, line, lineLength);
+        selectionManager.SetSelection(line, 0, line, lineLength);
         cursorManager.SetCursorPosition(line, lineLength);
 
         canvasUpdateManager.UpdateSelection();
@@ -587,9 +582,9 @@ internal sealed partial class CoreTextControlBox : UserControl
         if (line >= textManager.LinesCount || line < 0)
             return;
 
-        selectionRenderer.renderedSelectionEndPosition.IsNull = true;
+        selectionManager.selectionEnd.IsNull = true;
         cursorManager.SetCursorPosition(line, 0);
-        selectionRenderer.SetSelectionStart(line, 0);
+        selectionManager.SetSelectionStart(line, 0);
 
         ScrollLineIntoView(line);
         this.Focus(FocusState.Programmatic);
@@ -638,7 +633,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         var result = selectionManager.GetSelectionFromPosition(start, length, CharacterCount());
         if (result != null)
         {
-            selectionManager.currentTextSelection.SetChangedValues(result.StartPosition, result.EndPosition);
+            selectionManager.SetSelection(result.StartPosition, result.EndPosition);
             if (!result.EndPosition.IsNull)
                 CursorPosition.SetChangeValues(result.EndPosition);
         }
@@ -756,7 +751,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         textActionManager.DuplicateLine(line);
     }
-    public void DuplicateLine()
+    public void DuplicateCurrentLine()
     {
         textActionManager.DuplicateLine(CursorPosition.LineNumber);
     }
@@ -784,7 +779,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         var res = searchManager.FindNext(CursorPosition);
         if (res.Selection != null)
         {
-            selectionRenderer.SetSelection(res.Selection);
+            selectionManager.SetSelection(res.Selection);
             ScrollLineIntoView(CursorPosition.LineNumber);
         }
         return res.Result;
@@ -798,7 +793,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         var res = searchManager.FindPrevious(CursorPosition);
         if (res.Selection != null)
         {
-            selectionRenderer.SetSelection(res.Selection);
+            selectionManager.SetSelection(res.Selection);
             ScrollLineIntoView(CursorPosition.LineNumber);
         }
         return res.Result;
@@ -881,6 +876,37 @@ internal sealed partial class CoreTextControlBox : UserControl
     public int CharacterCount()
     {
         return textManager.CountCharacters();
+    }
+
+    public int WordCount()
+    {
+        int wordCount = 0;
+
+        foreach (var line in textManager.totalLines)
+        {
+            var span = line.AsSpan();
+            int index = 0;
+
+            while (index < span.Length)
+            {
+                while (index < span.Length && char.IsWhiteSpace(span[index]))
+                {
+                    index++;
+                }
+
+                if (index < span.Length)
+                {
+                    wordCount++;
+                }
+
+                while (index < span.Length && !char.IsWhiteSpace(span[index]))
+                {
+                    index++;
+                }
+            }
+        }
+
+        return wordCount;
     }
 
     public bool EnableSyntaxHighlighting { get; set; } = true;
@@ -1002,7 +1028,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public IEnumerable<string> Lines => textManager.totalLines;
     public bool DoAutoPairing { get; set; } = true;
     public bool ControlW_SelectWord = true;
-    public bool HasSelection => selectionRenderer.HasSelection;
+    public bool HasSelection => selectionManager.HasSelection;
 
     public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {

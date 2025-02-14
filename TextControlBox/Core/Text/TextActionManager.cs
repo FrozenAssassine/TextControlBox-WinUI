@@ -77,8 +77,8 @@ namespace TextControlBoxNS.Core.Text
             if (textManager.LinesCount == 1 && textManager.GetLineLength(0) == 0)
                 return;
 
-            selectionRenderer.SetSelection(0, 0, textManager.LinesCount - 1, textManager.GetLineLength(-1));
-            cursorManager.SetCursorPositionCopyValues(selectionRenderer.renderedSelectionEndPosition);
+            selectionManager.SetSelection(0, 0, textManager.LinesCount - 1, textManager.GetLineLength(-1));
+            cursorManager.SetCursorPositionCopyValues(selectionManager.selectionEnd);
             canvasUpdateManager.UpdateSelection();
             canvasUpdateManager.UpdateCursor();
         }
@@ -105,7 +105,7 @@ namespace TextControlBoxNS.Core.Text
                     return;
                 }
 
-                selectionRenderer.SetSelection(sel);
+                selectionManager.SetSelection(sel);
                 cursorManager.SetCursorPositionCopyValues(sel.EndPosition);
             }
             else
@@ -128,7 +128,7 @@ namespace TextControlBoxNS.Core.Text
 
             longestLineManager.needsRecalculation = true;
 
-            selectionRenderer.ClearSelection();
+            selectionManager.ClearSelection();
 
             //only set cursorposition
             if (sel != null && !sel.EndPosition.IsNull)
@@ -247,7 +247,7 @@ namespace TextControlBoxNS.Core.Text
         {
             try
             {
-                selectionRenderer.ClearSelection();
+                selectionManager.ClearSelection();
                 undoRedo.ClearAll();
 
                 textManager.ClearText();
@@ -279,7 +279,7 @@ namespace TextControlBoxNS.Core.Text
                 //Get the LineEnding
                 textManager.LineEnding = LineEndings.FindLineEnding(text);
 
-                selectionRenderer.ClearSelection();
+                selectionManager.ClearSelection();
                 undoRedo.ClearAll();
 
                 longestLineManager.needsRecalculation = true;
@@ -309,7 +309,7 @@ namespace TextControlBoxNS.Core.Text
                 if (await Utils.IsOverTextLimit(text.Length))
                     return;
 
-                selectionRenderer.ClearSelection();
+                selectionManager.ClearSelection();
                 longestLineManager.needsRecalculation = true;
                 undoRedo.RecordUndoAction(() =>
                 {
@@ -454,7 +454,7 @@ namespace TextControlBoxNS.Core.Text
             {
                 addCharacterTextAction.HandleMultiLineTextWithoutSelection(text, splittedTextLength);
             }
-            else if (text.Length == 0) //no text to add
+            else if (selectionManager.HasSelection && text.Length == 0) //delete all text -> selection 
             {
                 DeleteSelection();
             }
