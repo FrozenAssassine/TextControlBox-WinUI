@@ -14,6 +14,7 @@ internal class SelectionManager
     private TextManager textManager;
     private CursorManager cursorManager;
     private SelectionRenderer selectionRenderer;
+    private EventsManager eventsManager;
 
     private readonly ReplaceSelectionManager replaceSelectionManager = new ReplaceSelectionManager();
     private readonly RemoveSelectionManager removeSelectionManager = new RemoveSelectionManager();
@@ -25,7 +26,6 @@ internal class SelectionManager
     public readonly CursorPosition selectionEnd;
 
     public bool IsSelectingOverLinenumbers { get; set; } = false;
-
     public bool IsSelecting { get; set; } = false;
     public bool HasSelection { get; set; } = false;
     
@@ -35,11 +35,17 @@ internal class SelectionManager
         selectionEnd = currentTextSelection.EndPosition;
     }
 
-    public void Init(TextManager textManager, CursorManager cursorManager, SelectionRenderer selectionRenderer)
+    public void Init(
+        TextManager textManager, 
+        CursorManager cursorManager, 
+        SelectionRenderer selectionRenderer, 
+        EventsManager eventsManager
+        )
     {
         this.textManager = textManager;
         this.cursorManager = cursorManager;
         this.selectionRenderer = selectionRenderer;
+        this.eventsManager = eventsManager;
 
         replaceSelectionManager.Init(textManager, cursorManager);
         removeSelectionManager.Init(cursorManager, textManager);
@@ -93,7 +99,6 @@ internal class SelectionManager
         IsSelecting = false;
         HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
     }
-
     public void SetSelectionStart(int startPos, int characterPos)
     {
         selectionStart.CharacterPosition = characterPos;
@@ -102,7 +107,6 @@ internal class SelectionManager
 
         HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
     }
-
     public void SetSelectionEnd(int endPos, int characterPos)
     {
         selectionEnd.CharacterPosition = characterPos;
@@ -119,7 +123,7 @@ internal class SelectionManager
         selectionEnd.IsNull = true;
         selectionStart.IsNull = true;
 
-        //TODO! eventsManager.CallSelectionChanged();
+        eventsManager.CallSelectionChanged();
     }
 
 
