@@ -41,11 +41,12 @@ internal class TextManager
     public string GetLineText(int line)
     {
         if (totalLines.Count == 0)
-            return "";
+            return string.Empty;
 
-        if (line == -1 && totalLines.Count > 0)
-            return totalLines[totalLines.Count - 1];
-        line = line >= totalLines.Count ? totalLines.Count - 1 : line > 0 ? line : 0;
+        if (line == -1)
+            return totalLines[^1];
+        
+        line = Math.Clamp(line, 0, totalLines.Count - 1); 
         return totalLines[line];
     }
 

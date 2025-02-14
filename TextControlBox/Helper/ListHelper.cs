@@ -1,6 +1,5 @@
 ﻿using Collections.Pooled;
 using System;
-using System.Linq;
 
 namespace TextControlBoxNS.Helper
 {
@@ -50,13 +49,18 @@ namespace TextControlBoxNS.Helper
         }
         public static string[] CreateLines(string[] lines, int start, string beginning, string end)
         {
-            if (start > 0)
-                lines = lines.Skip(start).ToArray();
+            int length = lines.Length - start;
+            if (length <= 0) return Array.Empty<string>();
 
-            lines[0] = beginning + lines[0];
-            if (lines.Length - 1 > 0)
-                lines[lines.Length - 1] = lines[lines.Length - 1] + end;
-            return lines;
+            string[] result = new string[length];
+
+            Array.Copy(lines, start, result, 0, length);
+
+            result[0] = beginning + result[0];
+            if (length > 1)
+                result[length - 1] += end;
+
+            return result;
         }
     }
 }

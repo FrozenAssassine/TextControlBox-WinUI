@@ -90,5 +90,15 @@ namespace TextControlBoxNS.Extensions
 
             return lineCount;
         }
+
+        public static ReadOnlySpan<char> GetLastLine(this string text, string newLineCharacter)
+        {
+            var span = text.AsSpan();
+            int lastNewline = span.LastIndexOf(newLineCharacter);
+            if (lastNewline == -1)
+                return span; 
+
+            return span.Slice(lastNewline + newLineCharacter.Length);
+        }
     }
 }

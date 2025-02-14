@@ -98,32 +98,31 @@ internal class SelectionManager
             Replace(text);
 
         string curLine = textManager.GetLineText(cursorManager.LineNumber);
-
         string[] lines = text.Split(textManager.NewLineCharacter);
 
-        //Singleline
+        //handle single line
         if (lines.Length == 1 && text != string.Empty)
         {
-            text = text.Replace("\r", string.Empty).Replace("\n", string.Empty);
             textManager.SetLineText(-1, textManager.GetLineText(-1).AddText(text, cursorManager.CharacterPosition));
             cursorManager.CharacterPosition += text.Length;
             return;
         }
 
-        //Multiline:
+        //handle multi line:
         int curPos = cursorManager.CharacterPosition;
         if (curPos > curLine.Length)
-            curPos = curLine.Length;
+            curPos = curLine.Length < 0 ? 0 : curLine.Length;
 
-        //GEt the text in front of the cursor
-        string textInFrontOfCursor = curLine.Substring(0, curPos < 0 ? 0 : curPos);
-        //Get the text behind the cursor
-        string textBehindCursor = curLine.SafeRemove(0, curPos < 0 ? 0 : curPos);
+        string textInFrontOfCursor = curLine.Substring(0, curPos);
+        string textBehindCursor = curLine.SafeRemove(0, curPos);
 
         textManager.DeleteAt(cursorManager.LineNumber);
         textManager.InsertOrAddRange(ListHelper.CreateLines(lines, 0, textInFrontOfCursor, textBehindCursor), cursorManager.LineNumber);
 
-        cursorManager.SetCursorPosition(cursorManager.LineNumber + lines.Length - 1, cursorManager.CharacterPosition + lines.Length > 0 ? lines[lines.Length - 1].Length : 0);
+        //calculate the cursor position:
+        int cursorLine = cursorManager.LineNumber + lines.Length - 1;
+        int cursorChar = text.GetLastLine(textManager.NewLineCharacter).Length;
+        cursorManager.SetCursorPosition(cursorLine, cursorChar);
     }
     public void Remove()
     {
