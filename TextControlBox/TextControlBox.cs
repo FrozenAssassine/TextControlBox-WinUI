@@ -3,7 +3,10 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using TextControlBoxNS.Core;
+using TextControlBoxNS.Test;
 using Windows.Foundation;
 
 namespace TextControlBoxNS;
@@ -41,6 +44,16 @@ public partial class TextControlBox : UserControl
     private void EventsManager_Loaded()
     {
         Loaded?.Invoke(this);
+
+        //start testings:
+        if (Debugger.IsAttached)
+        {
+            this.LoadLines(Enumerable.Range(0, 20).Select(x => "Line " + x + " is cool right?"));
+
+            TestHelper testHelper = new TestHelper(coreTextBox);
+            testHelper.Evaluate();
+        }
+
     }
 
     private void EventsManager_LostFocus()
@@ -145,6 +158,7 @@ public partial class TextControlBox : UserControl
 
     /// <summary>
     /// Gets the entire text content of the textbox.
+    /// Do not call this to count the characters, lines, words or anything else. Use the functions provided.
     /// </summary>
     /// <returns>The complete text content of the textbox as a string.</returns>
 
@@ -271,10 +285,10 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
-    /// Gets the content of the line specified by the index
+    /// Gets the content of the line specified by the zero based index
     /// </summary>
-    /// <param name="line">The index to get the content from</param>
-    /// <returns>The text from the line specified by the index</returns>
+    /// <param name="line">The zero based index of the line</param>
+    /// <returns>The text from the line at the specified index</returns>
     public string GetLineText(int line)
     {
         return coreTextBox.GetLineText(line);
@@ -283,7 +297,7 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Gets the text of multiple lines, starting from the specified line index.
     /// </summary>
-    /// <param name="startLine">The index of the line to start with.</param>
+    /// <param name="startLine">The zero based index of the line to start with.</param>
     /// <param name="length">The number of lines to retrieve.</param>
     /// <returns>The concatenated text from the specified lines.</returns>
     public string GetLinesText(int startLine, int length)
@@ -293,8 +307,9 @@ public partial class TextControlBox : UserControl
 
     /// <summary>
     /// Sets the content of the line specified by the index. The first line has the index 0.
+    /// Setting the text also records an undo step
     /// </summary>
-    /// <param name="line">The index of the line to change the content.</param>
+    /// <param name="line">The zero based index of the line to change the content.</param>
     /// <param name="text">The text to set for the specified line.</param>
     /// <returns>Returns true if the text was changed successfully, and false if the index was out of range.</returns>
     public bool SetLineText(int line, string text)
@@ -303,7 +318,8 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
-    /// Deletes the line from the textbox
+    /// Deletes the line specified by the zero based index from the textbox
+    /// This action will record an undo step
     /// </summary>
     /// <param name="line">The line to delete</param>
     /// <returns>Returns true if the line was deleted successfully and false if not</returns>
@@ -314,9 +330,10 @@ public partial class TextControlBox : UserControl
 
     /// <summary>
     /// Adds a new line with the text specified
+    /// This action will record an undo step
     /// </summary>
-    /// <param name="line">The position to insert the line to</param>
-    /// <param name="text">The text to put in the new line</param>
+    /// <param name="line">The zero based position to insert the line to</param>
+    /// <param name="text">The text to put into the new line</param>
     /// <returns>Returns true if the line was added successfully and false if not</returns>
     public bool AddLine(int line, string text)
     {
@@ -344,9 +361,10 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
-    /// Duplicates the line specified by the index into the next line
+    /// Duplicates the line specified by the zero based index into the next line
+    /// This action records an undo step
     /// </summary>
-    /// <param name="line">The index of the line to duplicate</param>
+    /// <param name="line">The zero based index of the line to duplicate</param>
     public void DuplicateLine(int line)
     {
         coreTextBox.DuplicateLine(line);
@@ -354,13 +372,13 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Duplicates the line at the current cursor position
     /// </summary>
-    public void DuplicateLine()
+    public void DuplicateCurrentLine()
     {
-        coreTextBox.DuplicateLine();
+        coreTextBox.DuplicateCurrentLine();
     }
 
     /// <summary>
-    /// Replaces all occurences in the text with another word
+    /// Replaces all occurences of the specified word with the replae word
     /// </summary>
     /// <param name="word">The word to search for</param>
     /// <param name="replaceWord">The word to replace with</param>
@@ -486,6 +504,15 @@ public partial class TextControlBox : UserControl
         return coreTextBox.CharacterCount();
     }
 
+    /// <summary>
+    /// Counts the total number of words in the textbox.
+    /// </summary>
+    /// <returns></returns>
+    public int WordCount()
+    {
+        return coreTextBox.WordCount();
+    }
+
 
     /// <summary>
     /// Gets or sets a value indicating whether syntax highlighting is enabled in the textbox.
@@ -555,6 +582,7 @@ public partial class TextControlBox : UserControl
 
     /// <summary>
     /// Gets or sets the text displayed in the textbox.
+    /// Setting the text records an undo step. Use LoadLines/LoadText function to load an initial text.
     /// </summary>
     public string Text
     {
