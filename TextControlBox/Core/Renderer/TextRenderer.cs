@@ -44,8 +44,7 @@ internal class TextRenderer
         LongestLineManager longestLineManager,
         CoreTextControlBox textbox,
         SearchManager searchManager,
-        CanvasUpdateManager canvasUpdateManager,
-        ZoomManager zoomManager)
+        CanvasUpdateManager canvasUpdateManager)
     {
         this.cursorManager = cursorManager;
         this.textManager = textManager;
