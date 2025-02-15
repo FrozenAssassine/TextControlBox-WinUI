@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using TextControlBoxNS.Core.Renderer;
@@ -13,7 +14,6 @@ internal class SelectionManager
 {
     private TextManager textManager;
     private CursorManager cursorManager;
-    private SelectionRenderer selectionRenderer;
     private EventsManager eventsManager;
 
     private readonly ReplaceSelectionManager replaceSelectionManager = new ReplaceSelectionManager();
@@ -38,13 +38,11 @@ internal class SelectionManager
     public void Init(
         TextManager textManager, 
         CursorManager cursorManager, 
-        SelectionRenderer selectionRenderer, 
         EventsManager eventsManager
         )
     {
         this.textManager = textManager;
         this.cursorManager = cursorManager;
-        this.selectionRenderer = selectionRenderer;
         this.eventsManager = eventsManager;
 
         replaceSelectionManager.Init(textManager, cursorManager);
@@ -277,13 +275,6 @@ internal class SelectionManager
             return;
         }
 
-        //Case3: whole text selected
-        if (WholeTextSelected())
-        {
-            replaceSelectionManager.ReplaceWholeText(lines);
-            return;
-        }
-
         //Case4: multiline selection
         replaceSelectionManager.ReplaceMultiLineSelection(startLine, endLine, startPosition, endPosition, lines, start_Line);
     }
@@ -445,34 +436,7 @@ internal class SelectionManager
         }
     }
 
-    public bool MoveLinesUp(TextSelection selection, CursorPosition cursorposition)
-    {
-        //Move single line
-        if (selection != null)
-            return false;
-
-        if (cursorposition.LineNumber > 0)
-        {
-            textManager.SwapLines(cursorposition.LineNumber, cursorposition.LineNumber - 1);
-            cursorposition.LineNumber -= 1;
-            return true;
-        }
-        return false;
-    }
-    public bool MoveLinesDown(TextSelection selection, CursorPosition cursorposition)
-    {
-        //Move single line
-        if (selection != null)
-            return false;
-
-        if (cursorposition.LineNumber < textManager.LinesCount)
-        {
-            textManager.SwapLines(cursorposition.LineNumber, cursorposition.LineNumber + 1);
-            cursorposition.LineNumber += 1;
-            return true;
-        }
-        return false;
-    }
+    
     public void ClearSelectionIfNeeded(CoreTextControlBox textbox)
     {
         //If the selection is visible, but is not getting set, clear the selection

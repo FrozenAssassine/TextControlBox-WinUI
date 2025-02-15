@@ -50,50 +50,50 @@ namespace TextControlBoxNS.Core.Renderer
             float fontSize,
             Color selectionColor
             )
-        {   var renderedSelectionStartPosition = selectionManager.selectionStart;
-            var renderedSelectionEndPosition = selectionManager.selectionEnd;
-
-
+        {
             int selStartIndex = 0;
             int selEndIndex = 0;
-            int characterPosStart = renderedSelectionStartPosition.CharacterPosition;
-            int characterPosEnd = renderedSelectionEndPosition.CharacterPosition;
+            int characterPosStart = selectionManager.selectionStart.CharacterPosition;
+            int characterPosEnd = selectionManager.selectionEnd.CharacterPosition;
+            int startLine = selectionManager.selectionStart.LineNumber;
+            int endLine = selectionManager.selectionEnd.LineNumber;
 
-            if (characterPosStart > textManager.totalLines.Span[renderedSelectionStartPosition.LineNumber].Length)
-                characterPosStart = textManager.totalLines.Span[renderedSelectionStartPosition.LineNumber].Length;
 
-            if (characterPosEnd > textManager.totalLines.Span[renderedSelectionEndPosition.LineNumber].Length)
-                characterPosEnd = textManager.totalLines.Span[renderedSelectionEndPosition.LineNumber].Length;
+            if (characterPosStart > textManager.totalLines.Span[startLine].Length)
+                characterPosStart = textManager.totalLines.Span[startLine].Length;
+
+            if (characterPosEnd > textManager.totalLines.Span[endLine].Length)
+                characterPosEnd = textManager.totalLines.Span[endLine].Length;
 
             //Render the selection on position 0 if the user scrolled the start away
-            if (renderedSelectionEndPosition.LineNumber < renderedSelectionStartPosition.LineNumber)
+            if (endLine < startLine)
             {
-                if (renderedSelectionEndPosition.LineNumber < unrenderedLinesToRenderStart)
+                if (endLine < unrenderedLinesToRenderStart)
                     characterPosEnd = 0;
-                if (renderedSelectionStartPosition.LineNumber < unrenderedLinesToRenderStart + 1)
+                if (startLine < unrenderedLinesToRenderStart + 1)
                     characterPosStart = 0;
             }
-            else if (renderedSelectionEndPosition.LineNumber == renderedSelectionStartPosition.LineNumber)
+            else if (endLine == startLine)
             {
-                if (renderedSelectionStartPosition.LineNumber < unrenderedLinesToRenderStart)
+                if (startLine < unrenderedLinesToRenderStart)
                     characterPosStart = 0;
-                if (renderedSelectionEndPosition.LineNumber < unrenderedLinesToRenderStart)
+                if (endLine < unrenderedLinesToRenderStart)
                     characterPosEnd = 0;
             }
             else
             {
-                if (renderedSelectionStartPosition.LineNumber < unrenderedLinesToRenderStart)
+                if (startLine < unrenderedLinesToRenderStart)
                     characterPosStart = 0;
-                if (renderedSelectionEndPosition.LineNumber < unrenderedLinesToRenderStart + 1)
+                if (endLine < unrenderedLinesToRenderStart + 1)
                     characterPosEnd = 0;
             }
 
             int lineEndingLength = textManager.NewLineCharacter.Length;
 
-            if (renderedSelectionStartPosition.LineNumber == renderedSelectionEndPosition.LineNumber)
+            if (startLine == endLine)
             {
                 int lenghtToLine = 0;
-                for (int i = 0; i < renderedSelectionStartPosition.LineNumber - unrenderedLinesToRenderStart; i++)
+                for (int i = 0; i < startLine - unrenderedLinesToRenderStart; i++)
                 {
                     if (i < numberOfRenderedLines)
                     {
@@ -106,7 +106,7 @@ namespace TextControlBoxNS.Core.Renderer
             }
             else
             {
-                for (int i = 0; i < renderedSelectionStartPosition.LineNumber - unrenderedLinesToRenderStart; i++)
+                for (int i = 0; i < startLine - unrenderedLinesToRenderStart; i++)
                 {
                     if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
                         break;
@@ -115,7 +115,7 @@ namespace TextControlBoxNS.Core.Renderer
 
                 selStartIndex += characterPosStart;
 
-                for (int i = 0; i < renderedSelectionEndPosition.LineNumber - unrenderedLinesToRenderStart; i++)
+                for (int i = 0; i < endLine - unrenderedLinesToRenderStart; i++)
                 {
                     if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
                         break;

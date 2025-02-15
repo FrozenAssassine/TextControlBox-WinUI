@@ -138,13 +138,14 @@ internal class TextManager
     {
         totalLines.Add(content);
     }
-    public void SwapLines(int originalIndex, int newIndex)
+    public bool SwapLines(int originalIndex, int newIndex)
     {
         if (originalIndex < 0 || originalIndex >= totalLines.Count ||
             newIndex < 0 || newIndex >= totalLines.Count)
-            return;
+            return false;
 
         (totalLines[originalIndex], totalLines[newIndex]) = (totalLines[newIndex], totalLines[originalIndex]);
+        return true;
     }
 
     public int CountCharacters()

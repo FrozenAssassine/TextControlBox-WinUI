@@ -78,15 +78,17 @@ internal class ScrollManager
             ScrollLineIntoView(line);
     }
 
-    public void ScrollOneLineUp()
+    public void ScrollOneLineUp(bool update = true)
     {
         verticalScrollBar.Value -= textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
-        canvasHelper.UpdateAll();
+        if(update)
+            canvasHelper.UpdateAll();
     }
-    public void ScrollOneLineDown()
+    public void ScrollOneLineDown(bool update = true)
     {
         verticalScrollBar.Value += textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
-        canvasHelper.UpdateAll();
+        if(update)
+            canvasHelper.UpdateAll();
     }
 
     public void ScrollLineIntoView(int line)

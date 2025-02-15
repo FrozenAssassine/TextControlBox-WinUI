@@ -51,6 +51,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     private readonly AutoIndentionManager autoIndentionManager;
     private readonly ReplaceManager replaceManager;
     private readonly InitializationManager initializationManager;
+    private readonly MoveLineManager moveLineManager;
 
     public CanvasControl canvasText;
     public CanvasControl canvasCursor;
@@ -105,11 +106,12 @@ internal sealed partial class CoreTextControlBox : UserControl
         autoIndentionManager = new AutoIndentionManager();
         replaceManager = new ReplaceManager();
         initializationManager = new InitializationManager();
+        moveLineManager = new MoveLineManager();
 
         stringManager.Init(textManager, tabSpaceHelper);
         lineHighlighterRenderer.Init(lineHighlighterManager, selectionManager, textRenderer);
         cursorManager.Init(textManager, currentLineManager, tabSpaceHelper);
-        selectionManager.Init(textManager, cursorManager, selectionRenderer, eventsManager);
+        selectionManager.Init(textManager, cursorManager, eventsManager);
         undoRedo.Init(textManager, selectionManager);
         selectionRenderer.Init(selectionManager, textRenderer, eventsManager, scrollManager, zoomManager, designHelper, textManager);
         flyoutHelper.Init(this);
@@ -133,6 +135,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         autoIndentionManager.Init(textManager, tabSpaceHelper);
         replaceManager.Init(canvasUpdateManager, undoRedo, textManager, searchManager, cursorManager, textActionManager, selectionRenderer, selectionManager, eventsManager);
         initializationManager.Init(eventsManager);
+        moveLineManager.Init(selectionManager, cursorManager, textManager, undoRedo);
     }
 
     public void InitialiseOnStart()
@@ -182,6 +185,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             //mark as handled to not change focus
             e.Handled = true;
         }
+
         if (!focusManager.HasFocus)
             return;
 
@@ -230,24 +234,17 @@ internal sealed partial class CoreTextControlBox : UserControl
         {
             if (e.Key == VirtualKey.Down || e.Key == VirtualKey.Up)
             {
-                MoveLine.Move(
-                    selectionManager,
-                    textManager,
-                    selectionManager.currentTextSelection,
-                    cursorManager.currentCursorPosition,
-                    undoRedo,
-                    e.Key == VirtualKey.Down ? LineMoveDirection.Down : LineMoveDirection.Up
-                    );
+                moveLineManager.Move(e.Key == VirtualKey.Down ? LineMoveDirection.Down : LineMoveDirection.Up);
 
                 if (textRenderer.OutOfRenderedArea(cursorManager.LineNumber))
                 {
                     if (e.Key == VirtualKey.Down)
-                        ScrollOneLineDown();
+                        ScrollOneLineDown(false);
                     else if (e.Key == VirtualKey.Up)
-                        ScrollOneLineUp();
+                        ScrollOneLineUp(false);
                 }
 
-                selectionManager.ForceClearSelection(canvasUpdateManager);
+                selectionManager.ClearSelection();
                 canvasUpdateManager.UpdateAll();
                 return;
             }
@@ -283,8 +280,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                         selectionManager.ClearSelectionIfNeeded(this);
                     }
 
-                    scrollManager.UpdateScrollToShowCursor();
-                    canvasUpdateManager.UpdateAll();
+                    scrollManager.UpdateScrollToShowCursor(true);
                     break;
                 }
             case VirtualKey.Right:
@@ -306,8 +302,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                         selectionManager.ClearSelectionIfNeeded(this);
                     }
 
-                    scrollManager.UpdateScrollToShowCursor(false);
-                    canvasUpdateManager.UpdateAll();
+                    scrollManager.UpdateScrollToShowCursor(true);
                     break;
                 }
             case VirtualKey.Down:
@@ -324,8 +319,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                         cursorManager.MoveDown();
                     }
 
-                    scrollManager.UpdateScrollToShowCursor(false);
-                    canvasUpdateManager.UpdateAll();
+                    scrollManager.UpdateScrollToShowCursor(true);
                     break;
                 }
             case VirtualKey.Up:
@@ -342,8 +336,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                         cursorManager.MoveUp();
                     }
 
-                    scrollManager.UpdateScrollToShowCursor(false);
-                    canvasUpdateManager.UpdateAll();
+                    scrollManager.UpdateScrollToShowCursor(true);
                     break;
                 }
             case VirtualKey.Escape:
@@ -642,6 +635,15 @@ internal sealed partial class CoreTextControlBox : UserControl
         canvasUpdateManager.UpdateCursor();
     }
 
+    public void SetSelection(int startLine, int startChar, int endLine, int endChar)
+    {
+        selectionManager.SetSelection(startLine, startChar, endLine, endChar);
+        CursorPosition.SetChangeValues(endLine, endChar);
+
+        canvasUpdateManager.UpdateSelection();
+        canvasUpdateManager.UpdateCursor();
+    }
+
     public void SelectAll()
     {
         textActionManager.SelectAll();
@@ -672,15 +674,15 @@ internal sealed partial class CoreTextControlBox : UserControl
         scrollManager.ScrollLineIntoViewIfOutside(line);
     }
 
-    public void ScrollOneLineUp()
+    public void ScrollOneLineUp(bool update = true)
     {
-        scrollManager.ScrollOneLineUp();
+        scrollManager.ScrollOneLineUp(update);
 
     }
 
-    public void ScrollOneLineDown()
+    public void ScrollOneLineDown(bool update = true)
     {
-        scrollManager.ScrollOneLineDown();
+        scrollManager.ScrollOneLineDown(update);
     }
 
     public void ScrollLineIntoView(int line)
