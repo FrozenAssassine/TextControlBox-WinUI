@@ -1,5 +1,6 @@
 ﻿using Collections.Pooled;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -40,13 +41,12 @@ internal class TextManager
 
     public string GetLineText(int line)
     {
-        if (totalLines.Count == 0)
-            return string.Empty;
-
         if (line == -1)
             return totalLines[^1];
-        
-        line = Math.Clamp(line, 0, totalLines.Count - 1); 
+
+        if (line >= totalLines.Count || line < 0)
+            throw new ArgumentOutOfRangeException("GetLineText provided line index out of range of valid values.");
+
         return totalLines[line];
     }
 
@@ -59,18 +59,23 @@ internal class TextManager
         if (start == 0 && count >= totalLines.Count)
             return GetLinesAsString();
 
-        if (start + count >= totalLines.Count)
-            return string.Join(NewLineCharacter, totalLines.Skip(start));
+        if (start + count > totalLines.Count)
+            throw new ArgumentOutOfRangeException("GetLinesAsString start + count is out of range of the size of the collection");
 
         return string.Join(NewLineCharacter, totalLines.Skip(start).Take(count));
     }
 
     public void SetLineText(int line, string text)
     {
+        //-1 is the last line:
         if (line == -1)
-            line = totalLines.Count - 1;
+        {
+            totalLines[^1] = text;
+            return;
+        }
 
-        line = Math.Clamp(line, 0, totalLines.Count - 1);
+        if (line >= totalLines.Count || line < 0)
+            throw new ArgumentOutOfRangeException("SetLineText provided line index out of range of valid values.");
 
         totalLines.Span[line] = text;
     }
@@ -85,9 +90,8 @@ internal class TextManager
 
     public void DeleteAt(int index)
     {
-        if (index >= totalLines.Count)
-            index = totalLines.Count - 1 < 0 ? totalLines.Count - 1 : 0;
-
+        if (index >= totalLines.Count || index < 0)
+            throw new IndexOutOfRangeException("DeleteAt: provided index is out of range");
         totalLines.RemoveAt(index);
     }
 
@@ -123,14 +127,16 @@ internal class TextManager
         Debug.WriteLine("Collect GC");
         ListHelper.GCList(totalLines);
     }
-    public void Safe_RemoveRange(int index, int count)
+    public void RemoveRange(int index, int count)
     {
-        var res = ListHelper.CheckValues(totalLines, index, count);
-        totalLines.RemoveRange(res.Index, res.Count);
+        if (index + count > totalLines.Count)
+            throw new IndexOutOfRangeException("RemoveRange index + count out of range");
+
+        totalLines.RemoveRange(index, count);
         totalLines.TrimExcess();
 
-        //clear up the memory of the list when more than 1mio items are removed
-        if (res.Count > 1_000_000)
+        //clear up the memory of the list if more than 1_000_000 items are removed
+        if (count > 1_000_000)
             ListHelper.GCList(totalLines);
     }
 
@@ -156,5 +162,36 @@ internal class TextManager
             count += line.Length + 1;
         }
         return count > 0 ? count - 1 : 0;
+    }
+
+    public int CountWords()
+    {
+        int wordCount = 0;
+
+        foreach (var line in totalLines)
+        {
+            var span = line.AsSpan();
+            int index = 0;
+
+            while (index < span.Length)
+            {
+                while (index < span.Length && char.IsWhiteSpace(span[index]))
+                {
+                    index++;
+                }
+
+                if (index < span.Length)
+                {
+                    wordCount++;
+                }
+
+                while (index < span.Length && !char.IsWhiteSpace(span[index]))
+                {
+                    index++;
+                }
+            }
+        }
+
+        return wordCount;
     }
 }

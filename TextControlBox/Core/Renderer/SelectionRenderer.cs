@@ -126,17 +126,11 @@ namespace TextControlBoxNS.Core.Renderer
                 selEndIndex += characterPosEnd;
             }
 
-            renderedSelectionStart = Math.Min(selStartIndex, selEndIndex);
+            renderedSelectionStart = Math.Max(0, Math.Min(selStartIndex, selEndIndex));
 
-            if (renderedSelectionStart < 0)
-                renderedSelectionStart = 0;
-            if (renderedSelectionLength < 0)
-                renderedSelectionLength = 0;
-
-            if (selEndIndex > selStartIndex)
-                renderedSelectionLength = selEndIndex - selStartIndex;
-            else
-                renderedSelectionLength = selStartIndex - selEndIndex;
+            renderedSelectionLength = selEndIndex > selStartIndex ?
+                selEndIndex - selStartIndex :
+                selStartIndex - selEndIndex;
 
             CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
             for (int i = 0; i < regions.Length; i++)

@@ -41,7 +41,8 @@ internal class CursorHelper
     public static void UpdateCursorPosFromPoint(CanvasControl canvasText, CurrentLineManager currentLineManager, TextRenderer textRenderer, ScrollManager scrollManager, Point point, CursorPosition cursorPos)
     {
         //Apply an offset to the cursorposition
-        point = point.Subtract(-(textRenderer.SingleLineHeight / 4), textRenderer.SingleLineHeight / 4);
+        point.X += textRenderer.SingleLineHeight / 4;
+        point.Y -= textRenderer.SingleLineHeight / 4;
 
         cursorPos.LineNumber = GetCursorLineFromPoint(textRenderer, point);
 

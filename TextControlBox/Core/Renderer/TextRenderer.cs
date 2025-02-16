@@ -1,7 +1,6 @@
 ﻿using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System.Diagnostics;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using Windows.Foundation;
@@ -97,7 +96,6 @@ internal class TextRenderer
         NumberOfStartLine = (int)((scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity) / SingleLineHeight);
         NumberOfRenderedLines = linesToRenderCount + NumberOfStartLine > textManager.LinesCount ? textManager.LinesCount : linesToRenderCount;
 
-        //Create the text we will render
         RenderedText = textManager.GetLinesAsString(NumberOfStartLine, NumberOfRenderedLines);
 
         //check rendering and calculation updates

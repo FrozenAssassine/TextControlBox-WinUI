@@ -121,7 +121,7 @@ namespace TextControlBoxNS.Core.Text
             }
             else
             {
-                textManager.Safe_RemoveRange(item.StartLine, item.RedoCount);
+                textManager.RemoveRange(item.StartLine, item.RedoCount);
                 if (item.UndoCount > 0)
                 {
                     var cleanedLines = ListHelper.GetLinesFromString(
@@ -152,7 +152,7 @@ namespace TextControlBoxNS.Core.Text
             }
             else
             {
-                textManager.Safe_RemoveRange(item.StartLine, item.UndoCount);
+                textManager.RemoveRange(item.StartLine, item.UndoCount);
                 if (item.RedoCount > 0)
                 {
                     var cleanedLines = ListHelper.GetLinesFromString(

@@ -50,13 +50,13 @@ internal class ReplaceSelectionManager
         else if (startPos == 0) //selection starts at pos 0 to any end
         {
             textManager.SetLineText(endLine, lines[^1] + endLineText.Substring(endPos));
-            textManager.Safe_RemoveRange(startLine, endLine - startLine);
+            textManager.RemoveRange(startLine, endLine - startLine);
             textManager.InsertOrAddRange(lines[..^1], startLine);
         }
         else if (endPos == endLineText.Length) //selection ends at end of text and not stars by 0
         {
             textManager.SetLineText(startLine, startLineText.SafeRemove(startPos) + lines[0]);
-            textManager.Safe_RemoveRange(startLine + 1, endLine - startLine);
+            textManager.RemoveRange(startLine + 1, endLine - startLine);
             textManager.InsertOrAddRange(lines[1..], startLine + 1);
         }
         else //selection starting from anywhere going to anywhere:
@@ -67,16 +67,16 @@ internal class ReplaceSelectionManager
             if (lines.Length == 1)
             {
                 textManager.SetLineText(startLine, startLineText.AddToEnd(lines[0] + endLineText));
-                textManager.Safe_RemoveRange(startLine + 1, endLine - startLine < 0 ? 0 : endLine - startLine);
+                textManager.RemoveRange(startLine + 1, endLine - startLine < 0 ? 0 : endLine - startLine);
             }
             else
             {
                 textManager.SetLineText(startLine, startLineText + lines[0]);
                 textManager.SetLineText(endLine, lines[^1] + endLineText);
 
-                textManager.Safe_RemoveRange(startLine + 1, endLine - startLine - 1);
+                textManager.RemoveRange(startLine + 1, endLine - startLine - 1);
                 if (lines.Length > 2)
-                    textManager.InsertOrAddRange(lines.GetLines(1, lines.Length - 2), startLine + 1);
+                    textManager.InsertOrAddRange(ListHelper.GetLines(lines, 1, lines.Length - 2), startLine + 1);
             }
         }
 

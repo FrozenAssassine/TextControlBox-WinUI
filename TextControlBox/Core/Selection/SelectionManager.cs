@@ -386,7 +386,7 @@ internal class SelectionManager
     {
         if (splittedText.Length == 0)
         {
-            textManager.Safe_RemoveRange(start, count);
+            textManager.RemoveRange(start, count);
             return;
         }
 
@@ -412,7 +412,7 @@ internal class SelectionManager
                 }
                 else
                 {
-                    textManager.Safe_RemoveRange(start + i, count - i);
+                    textManager.RemoveRange(start + i, count - i);
                     break;
                 }
             }

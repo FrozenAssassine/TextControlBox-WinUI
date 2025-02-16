@@ -1,6 +1,5 @@
 ﻿using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
-using System;
 using System.Text.RegularExpressions;
 using TextControlBoxNS.Helper;
 using Windows.UI;
@@ -22,15 +21,7 @@ namespace TextControlBoxNS.Core.Renderer
             if (searchRegex == null || possibleLines == null || possibleLines.Length == 0)
                 return;
 
-            MatchCollection matches;
-            try
-            {
-                matches = Regex.Matches(renderedText, searchRegex);
-            }
-            catch (ArgumentException)
-            {
-                return;
-            }
+            MatchCollection matches = Regex.Matches(renderedText, searchRegex);
             for (int j = 0; j < matches.Count; j++)
             {
                 var match = matches[j];

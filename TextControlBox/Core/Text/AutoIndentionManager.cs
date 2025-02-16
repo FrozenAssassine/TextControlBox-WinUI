@@ -1,5 +1,4 @@
 ﻿using System;
-using TextControlBoxNS.Core;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 
@@ -7,7 +6,6 @@ internal class AutoIndentionManager
 {
     private TextManager textManager;
     private TabSpaceHelper tabSpaceHelper;
-
 
     public void Init(TextManager textManager, TabSpaceHelper tabSpaceHelper)
     {
@@ -18,7 +16,7 @@ internal class AutoIndentionManager
     public int CalculateDepth(int startIndex)
     {
         if (startIndex < 0 || startIndex >= textManager.LinesCount)
-            return 0;
+            throw new IndexOutOfRangeException("");
 
         int currentDepth = startIndex > 0 ? GetDepth(startIndex) : 0;
         var linesSpan = textManager.totalLines.Span;

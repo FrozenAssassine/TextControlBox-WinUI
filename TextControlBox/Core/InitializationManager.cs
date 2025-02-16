@@ -1,7 +1,4 @@
 ﻿
-using System.Diagnostics;
-using System.Linq;
-
 namespace TextControlBoxNS.Core;
 
 internal class InitializationManager

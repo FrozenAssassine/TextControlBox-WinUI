@@ -43,26 +43,26 @@ internal class RemoveSelectionManager
         if (startPosition == 0 && endPosition == endLineText.Length)
         {
             //all lines selected
-            textManager.Safe_RemoveRange(startLine, endLine - startLine + 1);
+            textManager.RemoveRange(startLine, endLine - startLine + 1);
         }
         else if (startPosition == 0 && endPosition != endLineText.Length)
         {
             //only start line fully selected
             textManager.SetLineText(endLine, endLineText.Safe_Substring(endPosition));
-            textManager.Safe_RemoveRange(startLine, endLine - startLine);
+            textManager.RemoveRange(startLine, endLine - startLine);
         }
         else if (startPosition != 0 && endPosition == endLineText.Length)
         {
             //only end line fully selected
             textManager.SetLineText(startLine, startLineText.SafeRemove(startPosition));
-            textManager.Safe_RemoveRange(startLine + 1, endLine - startLine);
+            textManager.RemoveRange(startLine + 1, endLine - startLine);
         }
         else
         {
             //neither start nor end line fully selected
             string mergedText = startLineText.SafeRemove(startPosition) + endLineText.Safe_Substring(endPosition);
             textManager.SetLineText(startLine, mergedText);
-            textManager.Safe_RemoveRange(startLine + 1, endLine - startLine);
+            textManager.RemoveRange(startLine + 1, endLine - startLine);
         }
     }
 }

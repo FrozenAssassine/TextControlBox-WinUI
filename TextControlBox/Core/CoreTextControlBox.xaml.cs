@@ -123,7 +123,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         currentLineManager.Init(cursorManager, textManager);
         longestLineManager.Init(selectionManager, textManager, textRenderer);
         designHelper.Init(this, textRenderer, canvasUpdateManager);
-        tabSpaceHelper.Init(textManager, selectionManager, cursorManager, selectionRenderer, textActionManager);
+        tabSpaceHelper.Init(textManager, selectionManager, cursorManager, textActionManager, undoRedo);
         searchManager.Init(textManager);
         eventsManager.Init(searchManager, cursorManager);
         lineNumberRenderer.Init(textManager, textLayoutManager, textRenderer, designHelper, lineNumberManager);
@@ -176,9 +176,9 @@ internal sealed partial class CoreTextControlBox : UserControl
         if (e.Key == VirtualKey.Tab)
         {
             if (Utils.IsKeyPressed(VirtualKey.Shift))
-                tabSpaceHelper.MoveTabBack(tabSpaceHelper.TabCharacter, undoRedo);
+                tabSpaceHelper.MoveTabBack();
             else
-                tabSpaceHelper.MoveTab(tabSpaceHelper.TabCharacter, undoRedo);
+                tabSpaceHelper.MoveTab();
 
             canvasUpdateManager.UpdateAll();
 
@@ -882,33 +882,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public int WordCount()
     {
-        int wordCount = 0;
-
-        foreach (var line in textManager.totalLines)
-        {
-            var span = line.AsSpan();
-            int index = 0;
-
-            while (index < span.Length)
-            {
-                while (index < span.Length && char.IsWhiteSpace(span[index]))
-                {
-                    index++;
-                }
-
-                if (index < span.Length)
-                {
-                    wordCount++;
-                }
-
-                while (index < span.Length && !char.IsWhiteSpace(span[index]))
-                {
-                    index++;
-                }
-            }
-        }
-
-        return wordCount;
+        return textManager.CountWords();
     }
 
     public bool EnableSyntaxHighlighting { get; set; } = true;
