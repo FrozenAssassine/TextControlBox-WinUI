@@ -275,6 +275,12 @@ internal class SelectionManager
             return;
         }
 
+        if (WholeTextSelected())
+        {
+            replaceSelectionManager.ReplaceWholeText(lines);
+            return;
+        }
+
         //Case4: multiline selection
         replaceSelectionManager.ReplaceMultiLineSelection(startLine, endLine, startPosition, endPosition, lines, start_Line);
     }

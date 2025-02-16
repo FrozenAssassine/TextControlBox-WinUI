@@ -43,9 +43,10 @@ internal class ReplaceSelectionManager
     {
         string endLineText = textManager.GetLineText(endLine);
 
-        if (startPos == 0 && endPos == endLineText.Length) //whole text selected
+        if (startPos == 0 && endPos == endLineText.Length) //startline to endline completely selected now WholeText
         {
-            ReplaceWholeText(lines);
+            textManager.RemoveRange(startLine, endLine - startLine + 1);
+            textManager.InsertOrAddRange(lines, startLine);
         }
         else if (startPos == 0) //selection starts at pos 0 to any end
         {
