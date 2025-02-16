@@ -6,9 +6,12 @@ namespace TextControlBoxNS.Core;
 
 internal class ZoomManager
 {
+    private const int MinZoom = 4;
+    private const int MaxZoom = 400;
+
     public float ZoomedFontSize = 0;
     public int _ZoomFactor = 100; //%
-    public int OldZoomFactor = 0;
+    private int OldZoomFactor = 0;
 
     private TextManager textManager;
     private TextRenderer textRenderer;
@@ -34,7 +37,7 @@ internal class ZoomManager
     public void UpdateZoom()
     {
         ZoomedFontSize = Math.Clamp(textManager._FontSize * (float)_ZoomFactor / 100, textManager.MinFontSize, textManager.MaxFontsize);
-        _ZoomFactor = Math.Clamp(_ZoomFactor, 4, 400);
+        _ZoomFactor = Math.Clamp(_ZoomFactor, MinZoom, MaxZoom);
 
         if (_ZoomFactor != OldZoomFactor)
         {

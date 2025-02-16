@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using TextControlBoxNS.Core;
 
@@ -16,15 +17,30 @@ namespace TextControlBoxNS.Test
             TestCases = new List<TestCase>{ new HelperTest(coreTextbox), new TextTests("Text Tests", coreTextbox) };
         }
 
-        public async void Evaluate()
+        public void Evaluate()
         {
             foreach (var test in TestCases)
             {
                 Debug.WriteLine("\n");
                 Debug.WriteLine(test.name);
-                await test.Evaluate();
+                test.Evaluate();
             }
         }
 
+        public static string GetLineText(string text, CoreTextControlBox coreTextBox, int line)
+        {
+            return text.Split(coreTextBox.textManager.NewLineCharacter)[line];
+        }
+
+
+        public static ReadOnlySpan<char> GetFirstLine(string text, string newLineCharacter)
+        {
+            var span = text.AsSpan();
+            int startIndex = span.IndexOf(newLineCharacter);
+            if (startIndex == -1)
+                return span;
+
+            return span.Slice(0, startIndex + newLineCharacter.Length);
+        }
     }
 }

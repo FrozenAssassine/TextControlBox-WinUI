@@ -11,7 +11,7 @@ namespace TextControlBoxNS.Test
         public int failRate { get; set; }
         public int totalTests { get; set; }
         public abstract string name { get; set; }
-        public async Task<TestResult> Evaluate()
+        public TestResult Evaluate()
         {
             foreach(var function in GetAllTests())
             {
@@ -21,8 +21,7 @@ namespace TextControlBoxNS.Test
                     failRate++;
 
                 Debug.WriteLine(" => " + (res ? "Success" : "Failed"));
-
-                await Task.Delay(100);
+                Debug.Assert(res);
             }
 
             if (failRate == 0)

@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using TextControlBoxNS.Core;
 using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Extensions;
 
 namespace TextControlBoxNS.Test
 {
@@ -18,8 +19,11 @@ namespace TextControlBoxNS.Test
 
         public override string name { get; set; }
 
+        private string originalText;
         public override Func<bool>[] GetAllTests()
         {
+            originalText = coreTextbox.GetText();
+
             return [
                 this.Test_1,
                 this.Test_2,
@@ -27,6 +31,17 @@ namespace TextControlBoxNS.Test
                 this.Test_4,
                 this.Test_5,
                 this.Test_6,
+                this.Test_7,
+                this.Test_8,
+                this.Test_9,
+                this.Test_10,
+                this.Test_11,
+                this.Test_12,
+                this.Test_13,
+                this.Test_14,
+                this.Test_15,
+                this.Test_16,
+                this.Test_17,
                 ];
         }
 
@@ -108,10 +123,212 @@ namespace TextControlBoxNS.Test
             coreTextbox.textActionManager.AddCharacter("");
 
             var cur = coreTextbox.cursorManager.currentCursorPosition;
-            return
-                cur.LineNumber == 1 && 
+            
+            bool res =
+                cur.LineNumber == 0 && 
                 coreTextbox.GetText().Length == 0 && 
                 cur.CharacterPosition == 0;
+
+            coreTextbox.SetText(originalText); //reset content
+
+            return res;
         }
+
+        public bool Test_7()
+        {
+            Debug.Write("Add Character (add single line, single line selected)");
+
+            coreTextbox.SetSelection(5, 10);
+
+            coreTextbox.textActionManager.AddCharacter("Hello World");
+
+            var cur = coreTextbox.cursorManager.currentCursorPosition;
+            bool res =
+                cur.LineNumber == 0 &&
+                cur.CharacterPosition == 16;
+
+            coreTextbox.SetText(originalText); //reset content
+
+            return res;
+        }
+
+        public bool Test_8()
+        {
+            Debug.Write("Add Character (add multiline line, single line selected)");
+
+            coreTextbox.SetSelection(5, 10);
+
+            coreTextbox.textActionManager.AddCharacter(coreTextbox.stringManager.CleanUpString("Line1\nLine2\nLine3"));
+
+            var cur = coreTextbox.cursorManager.currentCursorPosition;
+            bool res =
+                cur.LineNumber == 2 &&
+                cur.CharacterPosition == 11;
+
+            coreTextbox.SetText(originalText); //reset content
+
+            return res;
+        }
+
+        public bool Test_9()
+        {
+            Debug.Write("Add Character (add multiline line, single line selected)");
+
+            coreTextbox.SetSelection(5, 10);
+
+            coreTextbox.textActionManager.AddCharacter(coreTextbox.stringManager.CleanUpString("Line1\nLine2\nLine3"));
+
+            var cur = coreTextbox.cursorManager.currentCursorPosition;
+            bool res =
+                cur.LineNumber == 2 &&
+                cur.CharacterPosition == 11;
+
+            coreTextbox.SetText(originalText); //reset content
+
+            return res;
+        }
+
+        public bool Test_10()
+        {
+            Debug.Write("Add Character (add multi line, multi line selection, everything selected)");
+
+            coreTextbox.SelectAll();
+            string text = coreTextbox.stringManager.CleanUpString("Line1\nLine2\nLine3");
+            coreTextbox.textActionManager.AddCharacter(text);
+
+            var cur = coreTextbox.cursorManager.currentCursorPosition;
+            bool res =
+                cur.LineNumber == 2 &&
+                cur.CharacterPosition == 5 &&
+                coreTextbox.GetText().Equals(text);
+
+            coreTextbox.SetText(originalText); //reset content
+
+            return res;
+        }
+
+        public bool Test_11()
+        {
+            Debug.Write("Delete Selection (multi line selection, whole lines)");
+
+            coreTextbox.SelectLines(5, 3);
+            coreTextbox.textActionManager.DeleteSelection();
+
+            var cur = coreTextbox.cursorManager.currentCursorPosition;
+            bool res =
+                cur.LineNumber == 5 &&
+                cur.CharacterPosition == 0 &&
+                coreTextbox.GetLineText(5).Length == 0 && coreTextbox.GetLineText(6) == originalText.Split(coreTextbox.textManager.NewLineCharacter)[9];
+
+            coreTextbox.SetText(originalText); //reset content
+
+            return res;
+        }
+
+        public bool Test_12()
+        {
+            Debug.Write("Delete Selection (single line selection, position inside line)");
+
+            coreTextbox.SetSelection(4, 10);
+            coreTextbox.textActionManager.DeleteSelection();
+
+            string line1 = TestHelper.GetFirstLine(originalText, coreTextbox.textManager.NewLineCharacter).ToString();
+
+            var expected = line1.Substring(0, 4) + line1.Substring(14);
+            var cur = coreTextbox.cursorManager.currentCursorPosition;
+            var t = coreTextbox.GetLineText(0);
+
+            bool res =
+                cur.LineNumber == 0 &&
+                cur.CharacterPosition == 4 &&
+                t.Trim().Equals(expected.Trim());
+
+            coreTextbox.SetText(originalText); //reset content
+
+            return res;
+        }
+
+        public bool Test_13()
+        {
+            Debug.Write("Delete Selection (single line selection, whole line)");
+
+            coreTextbox.SelectLine(0);
+            coreTextbox.textActionManager.DeleteSelection();
+
+            var cur = coreTextbox.cursorManager.currentCursorPosition;
+
+            bool res =
+                cur.LineNumber == 0 &&
+                cur.CharacterPosition == 0 &&
+                coreTextbox.GetLineText(0).Length == 0;
+
+            coreTextbox.SetText(originalText); //reset content
+
+            return res;
+        }
+
+        public bool Test_14()
+        {
+            Debug.Write("Delete Selection (lines selected completely (not whole text selected!))");
+
+            coreTextbox.SetSelection(0, 0, 2, coreTextbox.GetLineText(2).Length);
+            coreTextbox.textActionManager.DeleteSelection();
+
+            var lineText = coreTextbox.GetLineText(0);
+
+            bool res = coreTextbox.textManager.LinesCount == 18 &&
+                       lineText == "";
+
+            coreTextbox.SetText(originalText); // reset content
+            return res;
+        }
+
+        public bool Test_15()
+        {
+            Debug.Write("Delete Selection (only start line fully selected)");
+
+            coreTextbox.SetSelection(0, 0, 1, 5);
+            coreTextbox.textActionManager.DeleteSelection();
+
+            string expected = TestHelper.GetLineText(originalText, coreTextbox, 1).Substring(5);
+            bool res = coreTextbox.GetLineText(0) == expected &&
+                       coreTextbox.textManager.LinesCount == 19;
+
+            coreTextbox.SetText(originalText); // reset content
+            return res;
+        }
+
+        public bool Test_16()
+        {
+            Debug.Write("Delete Selection (only end line fully selected)");
+
+            coreTextbox.SetSelection(1, 3, 2, coreTextbox.GetLineText(2).Length);
+            coreTextbox.textActionManager.DeleteSelection();
+
+            var text = coreTextbox.GetLineText(1);
+            string expected = TestHelper.GetLineText(originalText, coreTextbox, 1).Substring(0, 3);
+
+            bool res = text.Equals(expected) && 
+                coreTextbox.textManager.LinesCount == 19;
+
+            coreTextbox.SetText(originalText); // reset content
+            return res;
+        }
+
+        public bool Test_17()
+        {
+            Debug.Write("Delete Selection (neither start nor end line fully selected)");
+
+            coreTextbox.SetSelection(1, 2, 2, 4);
+            coreTextbox.textActionManager.DeleteSelection();
+
+            string expected = TestHelper.GetLineText(originalText, coreTextbox, 1).Substring(0, 2) + TestHelper.GetLineText(originalText, coreTextbox, 2).Substring(4);
+            bool res = coreTextbox.GetLineText(1) == expected &&
+                       coreTextbox.textManager.LinesCount == 19;
+
+            coreTextbox.SetText(originalText); // reset content
+            return res;
+        }
+
     }
 }

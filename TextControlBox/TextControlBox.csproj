@@ -41,7 +41,7 @@
 
   <ItemGroup>
       <PackageReference Include="Collections.Pooled" Version="1.0.82" />
-      <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.3.0" />
+      <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.3.2" />
 	  <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.241114003" />
 	  <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

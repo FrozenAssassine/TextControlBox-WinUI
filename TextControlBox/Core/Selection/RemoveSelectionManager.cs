@@ -31,7 +31,7 @@ internal class RemoveSelectionManager
     public void HandleWholeTextRemoval()
     {
         textManager.ClearText(true);
-        cursorManager.SetCursorPosition(textManager.LinesCount - 1, 0);
+        cursorManager.SetCursorPosition(0, 0);
     }
 
     //handle remove across multiple lines
