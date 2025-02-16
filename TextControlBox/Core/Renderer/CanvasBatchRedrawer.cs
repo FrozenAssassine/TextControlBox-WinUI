@@ -1,8 +1,11 @@
 ﻿using Microsoft.Graphics.Canvas.UI.Xaml;
+using Microsoft.UI.Dispatching;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using TextControlBoxNS.Languages;
 
 namespace TextControlBoxNS.Core.Renderer
 {
@@ -34,15 +37,17 @@ namespace TextControlBoxNS.Core.Renderer
             }
         }
 
-        private async void StartBatching()
+        private DispatcherQueueTimer? _batchTimer;
+
+        private void StartBatching()
         {
-            if (_isBatching) return;
+            if (_batchTimer != null) return; // Prevent multiple timers
 
-            _isBatching = true;
-
-            while (_redrawRequests.Values.Contains(true))
+            _batchTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
+            _batchTimer.Interval = TimeSpan.FromMilliseconds(_batchIntervalMs);
+            _batchTimer.Tick += (s, e) =>
             {
-                foreach (var canvas in _redrawRequests.Keys)
+                foreach (var canvas in _redrawRequests.Keys.ToList())
                 {
                     if (_redrawRequests[canvas])
                     {
@@ -51,10 +56,14 @@ namespace TextControlBoxNS.Core.Renderer
                     }
                 }
 
-                await Task.Delay(_batchIntervalMs);
-            }
+                if (!_redrawRequests.Values.Contains(true))
+                {
+                    _batchTimer?.Stop();
+                    _batchTimer = null;
+                }
+            };
 
-            _isBatching = false;
+            _batchTimer.Start();
         }
     }
 }
