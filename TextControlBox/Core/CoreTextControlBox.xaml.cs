@@ -560,14 +560,33 @@ internal sealed partial class CoreTextControlBox : UserControl
         this.ProtectedCursor = InputSystemCursor.Create(cursor);
     }
 
-    public void SelectLine(int line)
+    public bool SelectLine(int line)
     {
+        if (line >= textManager.LinesCount)
+            return false;
+
         int lineLength = textManager.GetLineLength(line);
         selectionManager.SetSelection(line, 0, line, lineLength);
         cursorManager.SetCursorPosition(line, lineLength);
 
         canvasUpdateManager.UpdateSelection();
         canvasUpdateManager.UpdateCursor();
+        return true;
+    }
+
+    public bool SelectLines(int start, int count)
+    {
+        if (start + count >= textManager.LinesCount)
+            return false;
+
+        int endLineLength = textManager.GetLineLength(start + count);
+        
+        selectionManager.SetSelection(start, 0, start + count, endLineLength);
+        cursorManager.SetCursorPosition(start + count, endLineLength);
+
+        canvasUpdateManager.UpdateSelection();
+        canvasUpdateManager.UpdateCursor();
+        return true;
     }
 
     public void GoToLine(int line)

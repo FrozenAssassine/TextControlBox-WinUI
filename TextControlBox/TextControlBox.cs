@@ -90,9 +90,21 @@ public partial class TextControlBox : UserControl
     /// Selects the entire line specified by its index.
     /// </summary>
     /// <param name="line">The index of the line to select.</param>
-    public void SelectLine(int line)
+    /// <returns>Whether the line at the specified index could be selected</returns>
+    public bool SelectLine(int line)
     {
-        coreTextBox.SelectLine(line);
+        return coreTextBox.SelectLine(line);
+    }
+
+    /// <summary>
+    /// Selects the entire line specified by its index.
+    /// </summary>
+    /// <param name="start">The zero based index of the first line to select</param>
+    /// <param name="count">The number of lines to select</param>
+    /// <returns>Whether the lines specified could be selected</returns>
+    public bool SelectLines(int start, int count)
+    {
+        return coreTextBox.SelectLines(start, count);
     }
 
     /// <summary>
