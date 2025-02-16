@@ -1,4 +1,8 @@
-﻿namespace TextControlBoxNS;
+﻿using Newtonsoft.Json;
+using System.Text.RegularExpressions;
+using Windows.Devices.Power;
+
+namespace TextControlBoxNS;
 
 /// <summary>
 /// Represents a code language configuration used for syntax highlighting and auto-pairing in the text content.
@@ -34,4 +38,14 @@ public class SyntaxHighlightLanguage
     /// Gets or sets an array of auto-pairing pairs for the code language.
     /// </summary>
     public AutoPairingPair[] AutoPairingPair { get; set; }
+
+    internal void CompileAllRegex()
+    {
+        if (Highlights == null) return;
+
+        foreach (var highlight in Highlights)
+        {
+            highlight.CompileRegex();
+        }
+    }
 }

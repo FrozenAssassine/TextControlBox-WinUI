@@ -21,36 +21,36 @@ namespace TextControlBoxNS.Core;
 
 internal sealed partial class CoreTextControlBox : UserControl
 {
-    private readonly SelectionRenderer selectionRenderer;
-    private readonly FlyoutHelper flyoutHelper;
-    private readonly TabSpaceHelper tabSpaceHelper;
-    private readonly StringManager stringManager;
-    private readonly SearchManager searchManager;
-    private readonly CanvasUpdateManager canvasUpdateManager;
-    private readonly LineNumberRenderer lineNumberRenderer;
-    private readonly TextManager textManager;
-    private readonly UndoRedo undoRedo;
-    private readonly SelectionManager selectionManager;
-    private readonly CursorManager cursorManager;
-    private readonly TextActionManager textActionManager;
-    private readonly TextRenderer textRenderer;
-    private readonly CursorRenderer cursorRenderer;
-    private readonly ScrollManager scrollManager;
-    private readonly CurrentLineManager currentLineManager;
-    private readonly LongestLineManager longestLineManager;
-    private readonly ZoomManager zoomManager;
-    private readonly DesignHelper designHelper;
-    private readonly LineHighlighterManager lineHighlighterManager;
-    private readonly LineNumberManager lineNumberManager;
-    private readonly EventsManager eventsManager;
-    private readonly SelectionDragDropManager selectionDragDropManager;
-    private readonly FocusManager focusManager;
-    private readonly PointerActionsManager pointerActionsManager;
-    private readonly TextLayoutManager textLayoutManager;
-    private readonly LineHighlighterRenderer lineHighlighterRenderer;
-    private readonly AutoIndentionManager autoIndentionManager;
-    private readonly ReplaceManager replaceManager;
-    private readonly InitializationManager initializationManager;
+    public readonly SelectionRenderer selectionRenderer;
+    public readonly FlyoutHelper flyoutHelper;
+    public readonly TabSpaceHelper tabSpaceHelper;
+    public readonly StringManager stringManager;
+    public readonly SearchManager searchManager;
+    public readonly CanvasUpdateManager canvasUpdateManager;
+    public readonly LineNumberRenderer lineNumberRenderer;
+    public readonly TextManager textManager;
+    public readonly UndoRedo undoRedo;
+    public readonly SelectionManager selectionManager;
+    public readonly CursorManager cursorManager;
+    public readonly TextActionManager textActionManager;
+    public readonly TextRenderer textRenderer;
+    public readonly CursorRenderer cursorRenderer;
+    public readonly ScrollManager scrollManager;
+    public readonly CurrentLineManager currentLineManager;
+    public readonly LongestLineManager longestLineManager;
+    public readonly ZoomManager zoomManager;
+    public readonly DesignHelper designHelper;
+    public readonly LineHighlighterManager lineHighlighterManager;
+    public readonly LineNumberManager lineNumberManager;
+    public readonly EventsManager eventsManager;
+    public readonly SelectionDragDropManager selectionDragDropManager;
+    public readonly FocusManager focusManager;
+    public readonly PointerActionsManager pointerActionsManager;
+    public readonly TextLayoutManager textLayoutManager;
+    public readonly LineHighlighterRenderer lineHighlighterRenderer;
+    public readonly AutoIndentionManager autoIndentionManager;
+    public readonly ReplaceManager replaceManager;
+    public readonly InitializationManager initializationManager;
     private readonly MoveLineManager moveLineManager;
 
     public CanvasControl canvasText;
@@ -879,7 +879,6 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         return textManager.CountCharacters();
     }
-
     public int WordCount()
     {
         return textManager.CountWords();
@@ -893,6 +892,9 @@ internal sealed partial class CoreTextControlBox : UserControl
         set
         {
             textManager._SyntaxHighlighting = value;
+
+            textManager._SyntaxHighlighting.CompileAllRegex();
+
             textRenderer.NeedsUpdateTextLayout = true;
             canvasUpdateManager.UpdateText();
         }

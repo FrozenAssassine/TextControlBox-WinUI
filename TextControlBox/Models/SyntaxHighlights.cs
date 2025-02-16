@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+﻿using Newtonsoft.Json;
+using System.Drawing;
+using System.Text.RegularExpressions;
 using TextControlBoxNS.Extensions;
 
 namespace TextControlBoxNS;
@@ -65,5 +67,17 @@ public class SyntaxHighlights
     public string ColorLight
     {
         set => ColorLight_Clr = ((Color)ColorConverter.ConvertFromString(value)).ToMediaColor();
+    }
+
+    [JsonIgnore]
+    internal Regex PrecompiledRegex { get; private set; }
+
+    // Initialize regex when setting the pattern
+    internal void CompileRegex()
+    {
+        if (!string.IsNullOrEmpty(Pattern))
+        {
+            PrecompiledRegex = new Regex(Pattern, RegexOptions.Compiled);
+        }
     }
 }

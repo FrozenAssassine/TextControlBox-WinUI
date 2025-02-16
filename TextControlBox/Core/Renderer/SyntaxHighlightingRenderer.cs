@@ -2,7 +2,6 @@
 using Microsoft.UI.Xaml;
 using Newtonsoft.Json;
 using System;
-using System.Text.RegularExpressions;
 using Windows.UI.Text;
 
 namespace TextControlBoxNS.Core.Renderer;
@@ -14,22 +13,24 @@ internal class SyntaxHighlightingRenderer
 
     public static void UpdateSyntaxHighlighting(CanvasTextLayout drawnTextLayout, ApplicationTheme theme, SyntaxHighlightLanguage syntaxHighlightingLanguage, bool syntaxHighlighting, string renderedText)
     {
-        if (syntaxHighlightingLanguage == null || !syntaxHighlighting)
+        if (syntaxHighlightingLanguage?.Highlights == null || !syntaxHighlighting)
             return;
 
-        var highlights = syntaxHighlightingLanguage.Highlights;
-        for (int i = 0; i < highlights.Length; i++)
-        {
-            var matches = Regex.Matches(renderedText, highlights[i].Pattern, RegexOptions.Compiled);
-            var highlight = highlights[i];
-            var color = theme == ApplicationTheme.Light ? highlight.ColorLight_Clr : highlight.ColorDark_Clr;
+        bool isLightTheme = theme == ApplicationTheme.Light;
 
-            for (int j = 0; j < matches.Count; j++)
+        foreach (var highlight in syntaxHighlightingLanguage.Highlights)
+        {
+            if (highlight.PrecompiledRegex == null) return;
+
+            var color = isLightTheme ? highlight.ColorLight_Clr : highlight.ColorDark_Clr;
+
+            foreach (var match in highlight.PrecompiledRegex.EnumerateMatches(renderedText)) 
             {
-                var match = matches[j];
                 int index = match.Index;
                 int length = match.Length;
+
                 drawnTextLayout.SetColor(index, length, color);
+
                 if (highlight.CodeStyle != null)
                 {
                     if (highlight.CodeStyle.Italic)
@@ -40,7 +41,7 @@ internal class SyntaxHighlightingRenderer
                         drawnTextLayout.SetUnderline(index, length, true);
                 }
             }
-        }
+        };
     }
 
     public static JsonLoadResult GetSyntaxHighlightingFromJson(string json)
