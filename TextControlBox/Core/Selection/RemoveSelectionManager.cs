@@ -43,7 +43,8 @@ internal class RemoveSelectionManager
         if (startPosition == 0 && endPosition == endLineText.Length)
         {
             //all lines selected
-            textManager.RemoveRange(startLine, endLine - startLine + 1);
+            textManager.SetLineText(startLine, "");
+            textManager.RemoveRange(startLine + 1, endLine - startLine);
         }
         else if (startPosition == 0 && endPosition != endLineText.Length)
         {
