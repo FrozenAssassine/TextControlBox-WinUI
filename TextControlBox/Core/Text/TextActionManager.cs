@@ -7,6 +7,7 @@ using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text.TextActions;
 using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Helper;
+using TextControlBoxNS.Models;
 using Windows.ApplicationModel.DataTransfer;
 
 namespace TextControlBoxNS.Core.Text
@@ -82,6 +83,29 @@ namespace TextControlBoxNS.Core.Text
             canvasUpdateManager.UpdateSelection();
             canvasUpdateManager.UpdateCursor();
         }
+
+        private bool ResetUndoRedoSelection(TextSelection sel)
+        {
+            if (sel.EndPosition.IsNull && !sel.StartPosition.IsNull)
+            {
+                selectionManager.ClearSelection();
+                cursorManager.SetCursorPositionCopyValues(sel.StartPosition);
+                Debug.WriteLine($"{sel.StartPosition.IsNull} {sel.StartPosition.LineNumber} {sel.StartPosition.CharacterPosition}");
+                canvasUpdateManager.UpdateAll();
+                return false;
+            }
+            else if (sel.HasSelection)
+            {
+                selectionManager.SetSelection(sel);
+                cursorManager.SetCursorPositionCopyValues(sel.EndPosition);
+            }
+            else
+            {
+                selectionManager.ClearSelection();
+            }
+            return true;
+        }
+
         public void Undo()
         {
             if (coreTextbox.IsReadonly || !undoRedo.CanUndo)
@@ -95,24 +119,10 @@ namespace TextControlBoxNS.Core.Text
 
             longestLineManager.needsRecalculation = true;
 
-            if (sel != null && sel.HasSelection)
-            {
-                //only set cursorposition
-                if (!sel.StartPosition.IsNull && sel.EndPosition.IsNull)
-                {
-                    cursorManager.SetCursorPositionCopyValues(sel.StartPosition);
-                    canvasUpdateManager.UpdateAll();
-                    return;
-                }
-
-                selectionManager.SetSelection(sel);
-                cursorManager.SetCursorPositionCopyValues(sel.EndPosition);
-            }
-            else
-                selectionManager.ForceClearSelection(canvasUpdateManager);
+            if (!ResetUndoRedoSelection(sel))
+                return;
 
             scrollManager.UpdateScrollToShowCursor(false);
-
             canvasUpdateManager.UpdateAll();
         }
         public void Redo()
@@ -128,20 +138,10 @@ namespace TextControlBoxNS.Core.Text
 
             longestLineManager.needsRecalculation = true;
 
-            selectionManager.ClearSelection();
-
-            //only set cursorposition
-            if (sel != null && !sel.EndPosition.IsNull)
-            {
-                cursorManager.SetCursorPositionCopyValues(sel.EndPosition);
-            }
-            else if (sel != null && sel.HasSelection)
-            {
-                cursorManager.SetCursorPositionCopyValues(selectionManager.GetMin(sel));
-            }
+            if (!ResetUndoRedoSelection(sel))
+                return;
 
             scrollManager.UpdateScrollToShowCursor(false);
-
             canvasUpdateManager.UpdateAll();
         }
 
@@ -309,16 +309,16 @@ namespace TextControlBoxNS.Core.Text
                 if (await Utils.IsOverTextLimit(text.Length))
                     return;
 
-                selectionManager.ClearSelection();
                 longestLineManager.needsRecalculation = true;
                 undoRedo.RecordUndoAction(() =>
                 {
+                    selectionManager.ClearSelection();
+
                     selectionManager.ReplaceLines(0, textManager.LinesCount, stringManager.CleanUpString(text).Split(textManager.NewLineCharacter));
                     if (text.Length == 0) //Create a new line when the text gets cleared
-                    {
                         textManager.AddLine();
-                    }
-                }, 0, textManager.LinesCount, text.CountLines(textManager.NewLineCharacter));
+
+                }, 0, textManager.LinesCount, text.CountLines(textManager.NewLineCharacter), cursorManager.currentCursorPosition);
 
                 canvasUpdateManager.UpdateAll();
             }
@@ -345,7 +345,7 @@ namespace TextControlBoxNS.Core.Text
             undoRedo.RecordUndoAction(() =>
             {
                 selectionManager.Remove();
-                selectionManager.ForceClearSelection(canvasUpdateManager);
+                selectionManager.ClearSelection();
 
             }, selectionManager.currentTextSelection, 0);
 
@@ -480,7 +480,7 @@ namespace TextControlBoxNS.Core.Text
             undoRedo.RecordUndoAction(() =>
             {
                 textManager.totalLines.RemoveAt(line);
-            }, line, 2, 1);
+            }, line, 2, 1, cursorManager.currentCursorPosition);
 
             if (textManager.LinesCount == 0)
             {
@@ -504,7 +504,7 @@ namespace TextControlBoxNS.Core.Text
             {
                 textManager.InsertOrAdd(line, stringManager.CleanUpString(text));
 
-            }, line, 1, 2);
+            }, line, 1, 2, cursorManager.currentCursorPosition);
 
             eventsManager.CallTextChanged();
             canvasUpdateManager.UpdateText();
@@ -522,7 +522,7 @@ namespace TextControlBoxNS.Core.Text
             undoRedo.RecordUndoAction(() =>
             {
                 textManager.SetLineText(line, stringManager.CleanUpString(text));
-            }, line, 1, 1);
+            }, line, 1, 1, cursorManager.currentCursorPosition);
 
             eventsManager.CallTextChanged();
             canvasUpdateManager.UpdateText();
@@ -535,14 +535,13 @@ namespace TextControlBoxNS.Core.Text
             {
                 textManager.InsertOrAdd(line, textManager.GetLineText(line));
                 cursorManager.LineNumber += 1;
-            }, line, 1, 2);
+            }, line, 1, 2, cursorManager.currentCursorPosition);
 
             if (textRenderer.OutOfRenderedArea(line))
-                scrollManager.ScrollBottomIntoView();
+                scrollManager.ScrollBottomIntoView(false);
 
             eventsManager.CallTextChanged();
-            canvasUpdateManager.UpdateText();
-            canvasUpdateManager.UpdateCursor();
+            canvasUpdateManager.UpdateAll();
         }
     }
 }

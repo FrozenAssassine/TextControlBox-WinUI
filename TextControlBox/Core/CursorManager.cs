@@ -29,7 +29,7 @@ internal class CursorManager
     public void SetCursorPositionCopyValues(CursorPosition cursorPosition)
     {
         this.currentCursorPosition.LineNumber = cursorPosition.LineNumber;
-        this.currentCursorPosition.CharacterPosition = cursorPosition.CharacterPosition;
+        this.currentCursorPosition.CharacterPosition = cursorPosition.CharacterPosition;        
     }
 
     public int GetCurPosInLine()

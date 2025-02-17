@@ -768,9 +768,13 @@ internal sealed partial class CoreTextControlBox : UserControl
         }
     }
 
-    public void DuplicateLine(int line)
+    public bool DuplicateLine(int line)
     {
+        if (line >= textManager.LinesCount || line < 0)
+            return false;
+        
         textActionManager.DuplicateLine(line);
+        return true;
     }
     public void DuplicateCurrentLine()
     {

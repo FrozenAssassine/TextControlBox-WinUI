@@ -97,15 +97,17 @@ internal class ScrollManager
         canvasHelper.UpdateAll();
     }
 
-    public void ScrollTopIntoView()
+    public void ScrollTopIntoView(bool update = true)
     {
         verticalScrollBar.Value = (cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
-        canvasHelper.UpdateAll();
+        if(update)
+            canvasHelper.UpdateAll();
     }
-    public void ScrollBottomIntoView()
+    public void ScrollBottomIntoView(bool update = true)
     {
         verticalScrollBar.Value = (cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
-        canvasHelper.UpdateAll();
+        if(update)
+            canvasHelper.UpdateAll();
     }
 
     public void ScrollPageUp()

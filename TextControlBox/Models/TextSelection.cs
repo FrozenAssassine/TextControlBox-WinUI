@@ -30,18 +30,13 @@ internal class TextSelection
     }
     public TextSelection(CursorPosition startPosition = null, CursorPosition endPosition = null)
     {
-        if (startPosition != null)
-            StartPosition.SetChangeValues(startPosition);
-
-        if (endPosition != null)
-            EndPosition.SetChangeValues(endPosition);
+        StartPosition.SetChangeValues(startPosition);
+        EndPosition.SetChangeValues(endPosition);
     }
     public TextSelection(TextSelection textSelection)
     {
-        if (textSelection.StartPosition != null)
-            StartPosition.SetChangeValues(textSelection.StartPosition);
-        if (textSelection.EndPosition != null)
-            EndPosition.SetChangeValues(textSelection.EndPosition);
+        StartPosition.SetChangeValues(textSelection.StartPosition);
+        EndPosition.SetChangeValues(textSelection.EndPosition);
 
         renderedIndex = textSelection.renderedIndex;
         renderedLength = textSelection.renderedLength;

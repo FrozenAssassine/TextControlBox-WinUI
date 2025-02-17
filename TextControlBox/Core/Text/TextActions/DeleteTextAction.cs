@@ -60,7 +60,7 @@ internal class DeleteTextAction
                 textManager.DeleteAt(cursorManager.LineNumber + 1);
 
                 cursorManager.CharacterPosition = curPos;
-            }, cursorManager.LineNumber, 2, 1);
+            }, cursorManager.LineNumber, 2, 1, cursorManager.currentCursorPosition);
         }
     }
 
@@ -75,6 +75,6 @@ internal class DeleteTextAction
         undoRedo.RecordUndoAction(() =>
         {
             currentLineManager.SafeRemove(characterPos, stepsToMove);
-        }, cursorManager.LineNumber, 1, 1);
+        }, cursorManager.LineNumber, 1, 1, cursorManager.currentCursorPosition);
     }
 }

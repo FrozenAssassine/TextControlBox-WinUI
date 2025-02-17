@@ -53,9 +53,9 @@ internal class AddNewLineTextAction
                 textManager.ClearText(true);
                 textManager.InsertOrAdd(-1, "");
                 cursorManager.SetCursorPosition(0, 1);
-            }, 0, textManager.LinesCount, 2);
+                selectionManager.ClearSelection();
+            }, 0, textManager.LinesCount, 2, cursorManager.currentCursorPosition);
 
-            selectionManager.ForceClearSelection(canvasUpdateManager);
             canvasUpdateManager.UpdateAll();
             eventsManager.CallTextChanged();
             return true;
@@ -79,9 +79,10 @@ internal class AddNewLineTextAction
             var splitLines = currentLineText.SplitAt(charPosition);
             textManager.SetLineText(lineNumber, indentation + splitLines[1]);
             textManager.InsertOrAdd(lineNumber, splitLines[0]);
-        }, lineNumber, 1, 2);
+     
+            cursorManager.SetCursorPosition(lineNumber + 1, indentation.Length);
+        }, lineNumber, 1, 2, cursorManager.currentCursorPosition);
 
-        cursorManager.SetCursorPosition(lineNumber + 1, indentation.Length);
     }
 
     public void ReplaceSelectionWithNewLine()

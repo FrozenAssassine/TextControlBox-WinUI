@@ -8,5 +8,6 @@ internal struct UndoRedoItem
     public string RedoText { get; set; }
     public int UndoCount { get; set; }
     public int RedoCount { get; set; }
-    public TextSelection Selection { get; set; }
+    public TextSelection SelectionBefore { get; set; }
+    public TextSelection SelectionAfter { get; set; }
 }

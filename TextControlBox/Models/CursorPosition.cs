@@ -37,7 +37,7 @@ public class CursorPosition
 
         this.LineNumber = curPos.LineNumber;
         this.CharacterPosition = curPos.CharacterPosition;
-        this.IsNull = false;
+        this.IsNull = curPos.IsNull;
     }
 
     internal void SetChangeValues(int line, int cursor)

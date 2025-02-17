@@ -58,7 +58,7 @@ internal class AddCharacterTextAction
                 currentLineManager.AddText(text, characterPos);
 
             cursorManager.CharacterPosition = res.length + characterPos;
-        }, cursorManager.LineNumber, 1, 1);
+        }, cursorManager.LineNumber, 1, 1, cursorManager.currentCursorPosition);
 
         if (currentLineManager.Length > longestLineManager.longestLineLength)
         {
@@ -73,7 +73,7 @@ internal class AddCharacterTextAction
         undoRedo.RecordUndoAction(() =>
         {
             selectionManager.InsertText(text);
-        }, cursorManager.LineNumber, 1, splittedTextLength);
+        }, cursorManager.LineNumber, 1, splittedTextLength, cursorManager.currentCursorPosition);
     }
 
     public void HandleTextWithSelection(string text, int splittedTextLength)
@@ -87,7 +87,9 @@ internal class AddCharacterTextAction
         undoRedo.RecordUndoAction(() =>
         {
             selectionManager.Replace(text);
-            selectionManager.ForceClearSelection(canvasUpdateHelper);
+            selectionManager.ClearSelection();
         }, selectionManager.currentTextSelection, splittedTextLength);
+
+        canvasUpdateHelper.UpdateSelection();
     }
 }
