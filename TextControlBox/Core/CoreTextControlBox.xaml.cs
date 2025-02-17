@@ -112,7 +112,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         lineHighlighterRenderer.Init(lineHighlighterManager, selectionManager, textRenderer);
         cursorManager.Init(textManager, currentLineManager, tabSpaceHelper);
         selectionManager.Init(textManager, cursorManager, eventsManager);
-        undoRedo.Init(textManager, selectionManager);
+        undoRedo.Init(textManager, selectionManager, cursorManager);
         selectionRenderer.Init(selectionManager, textRenderer, eventsManager, scrollManager, zoomManager, designHelper, textManager);
         flyoutHelper.Init(this);
         canvasUpdateManager.Init(this);

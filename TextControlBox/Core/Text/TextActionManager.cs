@@ -84,25 +84,16 @@ namespace TextControlBoxNS.Core.Text
             canvasUpdateManager.UpdateCursor();
         }
 
-        private bool ResetUndoRedoSelection(TextSelection sel)
+        private bool ResetUndoRedoSelection(CursorPosition cursor, TextSelection selection)
         {
-            if (sel.EndPosition.IsNull && !sel.StartPosition.IsNull)
-            {
-                selectionManager.ClearSelection();
-                cursorManager.SetCursorPositionCopyValues(sel.StartPosition);
-                Debug.WriteLine($"{sel.StartPosition.IsNull} {sel.StartPosition.LineNumber} {sel.StartPosition.CharacterPosition}");
-                canvasUpdateManager.UpdateAll();
+            if (selection == null && cursor == null)
                 return false;
-            }
-            else if (sel.HasSelection)
-            {
-                selectionManager.SetSelection(sel);
-                cursorManager.SetCursorPositionCopyValues(sel.EndPosition);
-            }
-            else
-            {
-                selectionManager.ClearSelection();
-            }
+
+            if (cursor != null)
+                cursorManager.SetCursorPositionCopyValues(cursor);
+
+            if(selection != null)
+                selectionManager.SetSelection(selection);
             return true;
         }
 
@@ -113,13 +104,13 @@ namespace TextControlBoxNS.Core.Text
 
             //Do the Undo
             coreTextbox.ChangeCursor(InputSystemCursorShape.Wait);
-            var sel = undoRedo.Undo(stringManager);
+            var(cursor, selection) = undoRedo.Undo(stringManager);
             eventsManager.CallTextChanged();
             coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
 
             longestLineManager.needsRecalculation = true;
 
-            if (!ResetUndoRedoSelection(sel))
+            if (!ResetUndoRedoSelection(cursor, selection))
                 return;
 
             scrollManager.UpdateScrollToShowCursor(false);
@@ -132,13 +123,13 @@ namespace TextControlBoxNS.Core.Text
 
             //Do the Redo
             coreTextbox.ChangeCursor(InputSystemCursorShape.Wait);
-            var sel = undoRedo.Redo(stringManager);
+            var (cursor, selection) = undoRedo.Redo(stringManager);
             eventsManager.CallTextChanged();
             coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
 
             longestLineManager.needsRecalculation = true;
 
-            if (!ResetUndoRedoSelection(sel))
+            if (!ResetUndoRedoSelection(cursor, selection))
                 return;
 
             scrollManager.UpdateScrollToShowCursor(false);
@@ -318,7 +309,7 @@ namespace TextControlBoxNS.Core.Text
                     if (text.Length == 0) //Create a new line when the text gets cleared
                         textManager.AddLine();
 
-                }, 0, textManager.LinesCount, text.CountLines(textManager.NewLineCharacter), cursorManager.currentCursorPosition);
+                }, 0, textManager.LinesCount, text.CountLines(textManager.NewLineCharacter));
 
                 canvasUpdateManager.UpdateAll();
             }
@@ -480,7 +471,7 @@ namespace TextControlBoxNS.Core.Text
             undoRedo.RecordUndoAction(() =>
             {
                 textManager.totalLines.RemoveAt(line);
-            }, line, 2, 1, cursorManager.currentCursorPosition);
+            }, line, 2, 1);
 
             if (textManager.LinesCount == 0)
             {
@@ -504,7 +495,7 @@ namespace TextControlBoxNS.Core.Text
             {
                 textManager.InsertOrAdd(line, stringManager.CleanUpString(text));
 
-            }, line, 1, 2, cursorManager.currentCursorPosition);
+            }, line, 1, 2);
 
             eventsManager.CallTextChanged();
             canvasUpdateManager.UpdateText();
@@ -522,7 +513,7 @@ namespace TextControlBoxNS.Core.Text
             undoRedo.RecordUndoAction(() =>
             {
                 textManager.SetLineText(line, stringManager.CleanUpString(text));
-            }, line, 1, 1, cursorManager.currentCursorPosition);
+            }, line, 1, 1);
 
             eventsManager.CallTextChanged();
             canvasUpdateManager.UpdateText();
@@ -535,7 +526,7 @@ namespace TextControlBoxNS.Core.Text
             {
                 textManager.InsertOrAdd(line, textManager.GetLineText(line));
                 cursorManager.LineNumber += 1;
-            }, line, 1, 2, cursorManager.currentCursorPosition);
+            }, line, 1, 2);
 
             if (textRenderer.OutOfRenderedArea(line))
                 scrollManager.ScrollBottomIntoView(false);

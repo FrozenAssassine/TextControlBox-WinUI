@@ -33,7 +33,7 @@ internal class MoveLineManager
             undoRedo.RecordUndoAction(() =>
             {
                 res = MoveLinesDown();
-            }, cursorManager.LineNumber, 2, 2, cursorManager.currentCursorPosition);
+            }, cursorManager.LineNumber, 2, 2);
             return res;
         }
 
@@ -44,7 +44,7 @@ internal class MoveLineManager
         undoRedo.RecordUndoAction(() =>
         {
             res = MoveLinesUp();
-        }, cursorManager.LineNumber - 1, 2, 2, cursorManager.currentCursorPosition);
+        }, cursorManager.LineNumber - 1, 2, 2);
 
         return res;
     }

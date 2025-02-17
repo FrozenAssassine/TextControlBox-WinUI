@@ -51,9 +51,6 @@ internal class SelectionManager
 
     public void SetSelection(TextSelection selection)
     {
-        if (!selection.HasSelection)
-            return;
-
         SetSelection(selection.StartPosition, selection.EndPosition);
     }
     public void SetSelection(int startLine, int startChar, int endLine, int endChar)
@@ -74,9 +71,6 @@ internal class SelectionManager
         IsSelecting = true;
         selectionStart.SetChangeValues(startPosition);
         selectionEnd.SetChangeValues(endPosition);
-
-        selectionEnd.IsNull = false;
-        selectionStart.IsNull = false;
 
         IsSelecting = false;
         HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);

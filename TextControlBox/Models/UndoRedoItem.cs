@@ -10,4 +10,6 @@ internal struct UndoRedoItem
     public int RedoCount { get; set; }
     public TextSelection SelectionBefore { get; set; }
     public TextSelection SelectionAfter { get; set; }
+    public CursorPosition CursorBefore { get; set; }
+    public CursorPosition CursorAfter { get; set; }
 }

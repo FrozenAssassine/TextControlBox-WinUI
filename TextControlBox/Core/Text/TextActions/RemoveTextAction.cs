@@ -49,7 +49,7 @@ internal class RemoveTextAction
             currentLineManager.SafeRemove(charPos - stepsToMove, stepsToMove);
             cursorManager.CharacterPosition -= stepsToMove;
 
-        }, cursorManager.LineNumber, 1, 1, cursorManager.currentCursorPosition);
+        }, cursorManager.LineNumber, 1, 1);
     }
 
     public void RemoveLineAbove(string curLine)
@@ -72,6 +72,6 @@ internal class RemoveTextAction
             cursorManager.LineNumber -= 1;
             cursorManager.CharacterPosition = curpos;
 
-        }, cursorManager.LineNumber - 1, 3, 2, cursorManager.currentCursorPosition);
+        }, cursorManager.LineNumber - 1, 3, 2);
     }
 }

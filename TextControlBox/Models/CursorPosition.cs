@@ -21,7 +21,10 @@ public class CursorPosition
     /// </summary>
     public int LineNumber { get; internal set; } = 0;
 
-
+    internal CursorPosition(CursorPosition curPos)
+    {
+        SetChangeValues(curPos.LineNumber, curPos.CharacterPosition);
+    }
     internal CursorPosition(int characterPosition = 0, int lineNumber = 0)
     {
         SetChangeValues(lineNumber, characterPosition);

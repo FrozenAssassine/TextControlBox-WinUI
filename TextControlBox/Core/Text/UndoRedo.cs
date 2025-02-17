@@ -15,11 +15,13 @@ namespace TextControlBoxNS.Core.Text
         private bool HasRedone = false;
         private TextManager textManager;
         private SelectionManager selectionManager;
+        private CursorManager cursorManager;
 
-        public void Init(TextManager textManager, SelectionManager selectionManager)
+        public void Init(TextManager textManager, SelectionManager selectionManager, CursorManager cursorManager)
         {
             this.textManager = textManager;
             this.selectionManager = selectionManager;
+            this.cursorManager = cursorManager;
         }
 
         private void RecordRedo(UndoRedoItem item)
@@ -31,7 +33,7 @@ namespace TextControlBoxNS.Core.Text
             UndoStack.Push(item);
         }
 
-        private void AddUndoItem(TextSelection selectionBefore, TextSelection selectionAfter, int startLine, string undoText, string redoText, int undoCount, int redoCount)
+        private void AddUndoItem(int startLine, string undoText, string redoText, int undoCount, int redoCount, CursorPosition cursorBefore, CursorPosition cursorAfter, TextSelection selectionBefore = null, TextSelection selectionAfter = null)
         {
             UndoStack.Push(new UndoRedoItem
             {
@@ -39,46 +41,48 @@ namespace TextControlBoxNS.Core.Text
                 UndoText = undoText,
                 SelectionBefore = selectionBefore,
                 SelectionAfter = selectionAfter,
+                CursorBefore = cursorBefore,
+                CursorAfter = cursorAfter,
                 StartLine = startLine,
                 UndoCount = undoCount,
                 RedoCount = redoCount,
             });
         }
 
-        private void RecordSingleLine(Action action, int startline, CursorPosition cursorPosition)
+        private void RecordSingleLine(Action action, int startline)
         {
-            var selectionBefore = new TextSelection(cursorPosition);
+            var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
             var lineBefore = textManager.GetLineText(startline);
             action.Invoke();
             selectionManager.ClearSelection();
 
             var lineAfter = textManager.GetLineText(startline);
-            var selectionAfter = new TextSelection(cursorPosition);
+            var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
 
-            AddUndoItem(selectionBefore, selectionAfter, startline, lineBefore, lineAfter, 1, 1);
+            AddUndoItem(startline, lineBefore, lineAfter, 1, 1, cursorBefore, cursorAfter);
         }
 
-        public void RecordUndoAction(Action action, int startline, int undocount, int redoCount, CursorPosition cursorposition)
+        public void RecordUndoAction(Action action, int startline, int undocount, int redoCount)
         {
             if (undocount == 1 && redoCount == 1)
             {
-                RecordSingleLine(action, startline, cursorposition);
+                RecordSingleLine(action, startline);
                 return;
             }
-            var selectionBefore = new TextSelection(cursorposition);
+            var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
             var linesBefore = textManager.GetLinesAsString(startline, undocount);
             action.Invoke();
             var linesAfter = textManager.GetLinesAsString(startline, redoCount);
-            var selectionAfter = new TextSelection(cursorposition);
+            var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
 
             AddUndoItem(
-                selectionBefore,
-                selectionAfter,
                 startline,
                 linesBefore,
                 linesAfter,
                 undocount,
-                redoCount
+                redoCount,
+                cursorBefore,
+                cursorAfter
                 );
         }
         public void RecordUndoAction(Action action, TextSelection selection, int numberOfAddedLines)
@@ -102,27 +106,32 @@ namespace TextControlBoxNS.Core.Text
                 numberOfAddedLines += 1;
             }
 
+            var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
             var selectionBefore = new TextSelection(selection);
             var linesBefore = textManager.GetLinesAsString(orderedSel.startLine, numberOfRemovedLines);
             action.Invoke();
+
             var linesAfter = textManager.GetLinesAsString(orderedSel.startLine, numberOfAddedLines);
             var selectionAfter = new TextSelection(selection);
+            var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
 
             AddUndoItem(
-                selectionBefore,
-                selectionAfter,
                 orderedSel.startLine,
                 linesBefore,
                 linesAfter,
                 numberOfRemovedLines,
-                numberOfAddedLines
+                numberOfAddedLines,
+                cursorBefore,
+                cursorAfter,
+                selectionBefore,
+                selectionAfter
                 );
         }
 
-        public TextSelection Undo(StringManager stringManager)
+        public (CursorPosition cursor, TextSelection selection) Undo(StringManager stringManager)
         {
             if (UndoStack.Count < 1)
-                return null;
+                return (null, null);
 
             if (HasRedone)
             {
@@ -152,13 +161,13 @@ namespace TextControlBoxNS.Core.Text
                 }
             }
 
-            return item.SelectionBefore;
+            return (item.CursorBefore, item.SelectionBefore);
         }
 
-        public TextSelection Redo(StringManager stringManager)
+        public (CursorPosition cursor, TextSelection selection) Redo(StringManager stringManager)
         {
             if (RedoStack.Count < 1)
-                return null;
+                return (null, null);
 
             UndoRedoItem item = RedoStack.Pop();
             RecordUndo(item);
@@ -181,7 +190,7 @@ namespace TextControlBoxNS.Core.Text
                     textManager.InsertOrAddRange(cleanedLines, item.StartLine);
                 }
             }
-            return item.SelectionAfter;
+            return (item.CursorAfter, item.SelectionAfter);
         }
 
         /// <summary>
