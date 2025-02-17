@@ -65,7 +65,7 @@ internal class ReplaceManager
                     textManager.SetLineText(i, Regex.Replace(textManager.totalLines[i], searchParameter.SearchExpression, replaceWord));
                 }
             }
-        }, 0, textManager.LinesCount, textManager.LinesCount, cursorManager.currentCursorPosition);
+        }, 0, textManager.LinesCount, textManager.LinesCount);
 
         eventsManager.CallTextChanged();
 
@@ -86,13 +86,12 @@ internal class ReplaceManager
             undoRedo.RecordUndoAction(() =>
             {
                 selectionManager.Replace(replaceWord);
-
-                var start = res.Selection.StartPosition;
-                selectionManager.SetSelection(start.LineNumber, start.CharacterPosition, start.LineNumber, start.CharacterPosition + replaceWord.Length);
-
             }, selectionManager.currentTextSelection, 1);
 
             eventsManager.CallTextChanged();
+
+            var start = res.Selection.StartPosition;
+            selectionManager.SetSelection(start.LineNumber, start.CharacterPosition, start.LineNumber, start.CharacterPosition + replaceWord.Length);
         }
         return res;
     }
