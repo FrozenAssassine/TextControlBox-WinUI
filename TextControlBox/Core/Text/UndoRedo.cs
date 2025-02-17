@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.ConstrainedExecution;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
@@ -70,8 +71,12 @@ namespace TextControlBoxNS.Core.Text
                 return;
             }
             var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
+            undocount = Math.Min(undocount, textManager.LinesCount - startline);
             var linesBefore = textManager.GetLinesAsString(startline, undocount);
+            
             action.Invoke();
+
+            redoCount = Math.Min(redoCount, textManager.LinesCount - startline);
             var linesAfter = textManager.GetLinesAsString(startline, redoCount);
             var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
 

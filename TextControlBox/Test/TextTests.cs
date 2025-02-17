@@ -361,11 +361,11 @@ namespace TextControlBoxNS.Test
 
             CheckUndoRedo();
 
-            coreTextbox.SetText(originalText); // reset content
-
             string expected = TestHelper.GetLineText(originalText, coreTextbox, 1).Substring(0, 2) + TestHelper.GetLineText(originalText, coreTextbox, 2).Substring(4);
             bool res = coreTextbox.GetLineText(1) == expected &&
                        coreTextbox.textManager.LinesCount == 19;
+
+            coreTextbox.SetText(originalText); // reset content
             return res;
         }
         public bool Test_18()
