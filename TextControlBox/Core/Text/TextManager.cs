@@ -45,7 +45,7 @@ internal class TextManager
             return totalLines[^1];
 
         if (line >= totalLines.Count || line < 0)
-            throw new ArgumentOutOfRangeException("GetLineText provided line index out of range of valid values.");
+            throw new IndexOutOfRangeException("GetLineText provided line index out of range of valid values.");
 
         return totalLines[line];
     }

@@ -865,12 +865,13 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public void SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true)
     {
+        
         if (lineNumber > textManager.LinesCount - 1)
             lineNumber = textManager.LinesCount - 1;
 
         int lineLength = textManager.GetLineLength(lineNumber) - 1;
         if (characterPos > lineLength)
-            characterPos = lineLength;
+            characterPos = lineLength + 1;
 
         cursorManager.currentCursorPosition.LineNumber = lineNumber;
         cursorManager.currentCursorPosition.CharacterPosition = characterPos;
