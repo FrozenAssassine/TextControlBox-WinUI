@@ -347,7 +347,15 @@ internal class SelectionManager
 
         StringBuilder stringBuilder = new StringBuilder();
 
-        if (startLine == endLine) //Singleline
+        string currentLine = textManager.GetLineText(endLine);
+
+        //single line, whole line selected: indicated by the length + 1:
+        if (startLine == endLine && startIndex == 0 && endIndex == currentLine.Length + 1)
+        {
+            stringBuilder.Append(currentLine);
+            stringBuilder.Append(textManager.NewLineCharacter);
+        }
+        else if (startLine == endLine) //Singleline
         {
             string line = textManager.GetLineText(startLine < textManager.LinesCount ? startLine : textManager.LinesCount - 1);
 
@@ -373,8 +381,6 @@ internal class SelectionManager
                 stringBuilder.Append(textManager.GetLinesAsString(startLine + 1, endLine - startLine - 1) + textManager.NewLineCharacter);
 
             //Endline
-            string currentLine = textManager.GetLineText(endLine);
-
             stringBuilder.Append(endIndex >= currentLine.Length ? currentLine : currentLine.SafeRemove(endIndex));
         }
         return stringBuilder.ToString();
@@ -436,7 +442,7 @@ internal class SelectionManager
         }
     }
 
-    
+ 
     public void ClearSelectionIfNeeded(CoreTextControlBox textbox)
     {
         //If the selection is visible, but is not getting set, clear the selection

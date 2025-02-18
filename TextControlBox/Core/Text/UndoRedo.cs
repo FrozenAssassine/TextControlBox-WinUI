@@ -111,6 +111,12 @@ namespace TextControlBoxNS.Core.Text
                 numberOfAddedLines += 1;
             }
 
+            //triple click selection is one character longer than normal selection and removes the whole line instead of the line content
+            if(orderedSel.startLine == orderedSel.endLine && orderedSel.startChar == 0 && orderedSel.endChar == textManager.GetLineLength(orderedSel.startLine) + 1)
+            {
+                numberOfRemovedLines += 1;
+            }
+
             var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
             var selectionBefore = new TextSelection(selection);
             var linesBefore = textManager.GetLinesAsString(orderedSel.startLine, numberOfRemovedLines);

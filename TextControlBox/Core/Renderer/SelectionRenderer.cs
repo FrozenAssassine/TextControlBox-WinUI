@@ -58,6 +58,7 @@ namespace TextControlBoxNS.Core.Renderer
             int startLine = selectionManager.selectionStart.LineNumber;
             int endLine = selectionManager.selectionEnd.LineNumber;
 
+            int lineEndingLength = textManager.NewLineCharacter.Length;
 
             if (characterPosStart > textManager.totalLines.Span[startLine].Length)
                 characterPosStart = textManager.totalLines.Span[startLine].Length;
@@ -87,8 +88,6 @@ namespace TextControlBoxNS.Core.Renderer
                 if (endLine < unrenderedLinesToRenderStart + 1)
                     characterPosEnd = 0;
             }
-
-            int lineEndingLength = textManager.NewLineCharacter.Length;
 
             if (startLine == endLine)
             {
@@ -135,11 +134,17 @@ namespace TextControlBoxNS.Core.Renderer
             CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
             for (int i = 0; i < regions.Length; i++)
             {
-                //Change the width if selection in an emty line or starts at a line end
-                if (regions[i].LayoutBounds.Width == 0 && regions.Length > 0)
+                //Change the width if selection in an empty line or starts at a line end
+                if (regions[i].LayoutBounds.Width == 0)
                 {
                     var bounds = regions[i].LayoutBounds;
-                    regions[i].LayoutBounds = new Rect { Width = fontSize / 4, Height = bounds.Height, X = bounds.X, Y = bounds.Y };
+                    regions[i].LayoutBounds = new Rect
+                    {
+                        Width = fontSize / 4,
+                        Height = bounds.Height,
+                        X = bounds.X,
+                        Y = bounds.Y
+                    };
                 }
 
                 args.DrawingSession.FillRectangle(Utils.CreateRect(regions[i].LayoutBounds, marginLeft, marginTop), selectionColor);

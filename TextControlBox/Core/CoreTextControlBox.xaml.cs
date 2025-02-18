@@ -566,8 +566,8 @@ internal sealed partial class CoreTextControlBox : UserControl
             return false;
 
         int lineLength = textManager.GetLineLength(line);
-        selectionManager.SetSelection(line, 0, line, lineLength);
-        cursorManager.SetCursorPosition(line, lineLength);
+        selectionManager.SetSelection(line, 0, line, lineLength + 1);
+        cursorManager.SetCursorPosition(line, 0);
 
         canvasUpdateManager.UpdateSelection();
         canvasUpdateManager.UpdateCursor();

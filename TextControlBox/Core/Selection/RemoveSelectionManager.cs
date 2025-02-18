@@ -19,12 +19,19 @@ internal class RemoveSelectionManager
     {
         string lineText = textManager.GetLineText(line);
 
-        string updatedText =
-            startPosition == 0 && endPosition == lineText.Length
-                ? ""
-                : lineText.SafeRemove(startPosition, endPosition - startPosition);
+        if (startPosition == 0 && endPosition == lineText.Length + 1)
+        {
+            textManager.DeleteAt(line);
+        }
+        else
+        {
+            string updatedText =
+                startPosition == 0 && endPosition == lineText.Length
+                    ? ""
+                    : lineText.SafeRemove(startPosition, endPosition - startPosition);
 
-        textManager.SetLineText(line, updatedText);
+            textManager.SetLineText(line, updatedText);
+        }
     }
 
     //handle remove when the whole text is selected
