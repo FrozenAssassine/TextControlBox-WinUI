@@ -1,7 +1,7 @@
 ﻿
 namespace TextControlBoxNS.Models;
 
-internal struct UndoRedoItem
+internal class UndoRedoItem
 {
     public int StartLine { get; set; }
     public string UndoText { get; set; }

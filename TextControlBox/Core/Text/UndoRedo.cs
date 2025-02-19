@@ -154,35 +154,19 @@ namespace TextControlBoxNS.Core.Text
 
             // Calculate actual lines that can be removed
             int actualLinesToRemove = Math.Min(item.RedoCount, textManager.LinesCount - item.StartLine);
-
+            
             // Record an adjusted redo item if needed
             if (actualLinesToRemove < item.RedoCount)
             {
                 string currentText = "";
                 if (actualLinesToRemove > 0)
-                {
                     currentText = textManager.GetLinesAsString(item.StartLine, actualLinesToRemove);
-                }
 
-                UndoRedoItem newRedoItem = new UndoRedoItem
-                {
-                    StartLine = item.StartLine,
-                    UndoText = item.UndoText,
-                    RedoText = currentText,
-                    UndoCount = item.UndoCount,
-                    RedoCount = actualLinesToRemove,
-                    SelectionBefore = item.SelectionBefore,
-                    SelectionAfter = item.SelectionAfter,
-                    CursorBefore = item.CursorBefore,
-                    CursorAfter = item.CursorAfter
-                };
-
-                RecordRedo(newRedoItem);
+                item.RedoText = currentText;
+                item.RedoCount = actualLinesToRemove;
             }
-            else
-            {
-                RecordRedo(item);
-            }
+            
+            RecordRedo(item);
 
             //Faster for singleline
             if (item.UndoCount == 1 && item.RedoCount == 1)
