@@ -151,7 +151,38 @@ namespace TextControlBoxNS.Core.Text
             }
 
             var item = UndoStack.Pop();
-            RecordRedo(item);
+
+            // Calculate actual lines that can be removed
+            int actualLinesToRemove = Math.Min(item.RedoCount, textManager.LinesCount - item.StartLine);
+
+            // Record an adjusted redo item if needed
+            if (actualLinesToRemove < item.RedoCount)
+            {
+                string currentText = "";
+                if (actualLinesToRemove > 0)
+                {
+                    currentText = textManager.GetLinesAsString(item.StartLine, actualLinesToRemove);
+                }
+
+                UndoRedoItem newRedoItem = new UndoRedoItem
+                {
+                    StartLine = item.StartLine,
+                    UndoText = item.UndoText,
+                    RedoText = currentText,
+                    UndoCount = item.UndoCount,
+                    RedoCount = actualLinesToRemove,
+                    SelectionBefore = item.SelectionBefore,
+                    SelectionAfter = item.SelectionAfter,
+                    CursorBefore = item.CursorBefore,
+                    CursorAfter = item.CursorAfter
+                };
+
+                RecordRedo(newRedoItem);
+            }
+            else
+            {
+                RecordRedo(item);
+            }
 
             //Faster for singleline
             if (item.UndoCount == 1 && item.RedoCount == 1)
@@ -160,7 +191,11 @@ namespace TextControlBoxNS.Core.Text
             }
             else
             {
-                textManager.RemoveRange(item.StartLine, item.RedoCount);
+                if (actualLinesToRemove > 0)
+                {
+                    textManager.RemoveRange(item.StartLine, actualLinesToRemove);
+                }
+
                 if (item.UndoCount > 0)
                 {
                     var cleanedLines = ListHelper.GetLinesFromString(
@@ -168,30 +203,72 @@ namespace TextControlBoxNS.Core.Text
                         textManager.NewLineCharacter
                     );
 
-                    textManager.InsertOrAddRange(cleanedLines, item.StartLine);
+                    //prevent over inserting
+                    if (item.StartLine <= textManager.LinesCount)
+                        textManager.InsertOrAddRange(cleanedLines, item.StartLine);
                 }
             }
 
             return (item.CursorBefore, item.SelectionBefore);
         }
-
         public (CursorPosition cursor, TextSelection selection) Redo(StringManager stringManager)
         {
             if (RedoStack.Count < 1)
                 return (null, null);
 
             UndoRedoItem item = RedoStack.Pop();
-            RecordUndo(item);
+
+            // Calculate how many lines can actually be removed
+            int actualLinesToRemove = Math.Min(item.UndoCount, textManager.LinesCount - item.StartLine);
+            Debug.WriteLine($"Redoing: StartLine={item.StartLine}, UndoCount={item.UndoCount}, ActualToRemove={actualLinesToRemove}, RedoCount={item.RedoCount}");
+
+            if (actualLinesToRemove < item.UndoCount)
+            {
+                // Capture current state before changes
+                string currentText = "";
+                if (actualLinesToRemove > 0)
+                {
+                    currentText = textManager.GetLinesAsString(item.StartLine, actualLinesToRemove);
+                }
+
+                // Create a completely new UndoRedoItem with correct values
+                UndoRedoItem newUndoItem = new UndoRedoItem
+                {
+                    StartLine = item.StartLine,
+                    UndoText = currentText,
+                    RedoText = item.RedoText,
+                    UndoCount = actualLinesToRemove,
+                    RedoCount = item.RedoCount,
+                    SelectionBefore = item.SelectionBefore,
+                    SelectionAfter = item.SelectionAfter,
+                    CursorBefore = item.CursorBefore,
+                    CursorAfter = item.CursorAfter
+                };
+
+                // Record the adjusted undo record
+                RecordUndo(newUndoItem);
+            }
+            else
+            {
+                // Normal case - record the original item
+                RecordUndo(item);
+            }
+
             HasRedone = true;
 
-            //Faster for singleline
+            // Perform the actual operation
             if (item.UndoCount == 1 && item.RedoCount == 1)
             {
                 textManager.SetLineText(item.StartLine, stringManager.CleanUpString(item.RedoText));
             }
             else
             {
-                textManager.RemoveRange(item.StartLine, item.UndoCount);
+                // Remove only what exists
+                if (actualLinesToRemove > 0)
+                {
+                    textManager.RemoveRange(item.StartLine, actualLinesToRemove);
+                }
+
                 if (item.RedoCount > 0)
                 {
                     var cleanedLines = ListHelper.GetLinesFromString(
@@ -201,9 +278,10 @@ namespace TextControlBoxNS.Core.Text
                     textManager.InsertOrAddRange(cleanedLines, item.StartLine);
                 }
             }
-            return (item.CursorAfter, item.SelectionAfter);
-        }
 
+            return (item.CursorAfter, item.SelectionAfter);
+        }        
+        
         /// <summary>
         /// Clears all the items in the undo and redo stack
         /// </summary>

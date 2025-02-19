@@ -133,9 +133,12 @@ internal class CursorManager
         }
         return count;
     }
-    public int CalculateStepsToMoveLeft(int cursorCharPosition)
+    public int CalculateStepsToMoveLeft(int cursorCharPosition, bool? controlIsPressed = null)
     {
-        if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
+        if (!controlIsPressed.HasValue && !Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
+            return 1;
+
+        if (controlIsPressed.HasValue && !controlIsPressed.Value)
             return 1;
 
         int filledRes = IsFilledWithTabsAndSpacesToCursor(currentLineManager.CurrentLine, cursorCharPosition);

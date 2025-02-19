@@ -27,7 +27,7 @@ internal class RemoveTextAction
     {
         string curLine = currentLineManager.CurrentLine;
         var charPos = cursorManager.GetCurPosInLine();
-        var stepsToMove = controlIsPressed ? cursorManager.CalculateStepsToMoveLeft(charPos) : 1;
+        var stepsToMove = controlIsPressed ? cursorManager.CalculateStepsToMoveLeft(charPos, controlIsPressed) : 1;
 
         if (charPos - stepsToMove >= 0)
         {

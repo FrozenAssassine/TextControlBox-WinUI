@@ -60,6 +60,9 @@ namespace TextControlBoxNS.Core.Renderer
 
             int lineEndingLength = textManager.NewLineCharacter.Length;
 
+            if (endLine > textManager.totalLines.Count)
+                endLine = textManager.totalLines.Count - 1;
+
             if (characterPosStart > textManager.totalLines.Span[startLine].Length)
                 characterPosStart = textManager.totalLines.Span[startLine].Length;
 

@@ -84,17 +84,15 @@ namespace TextControlBoxNS.Core.Text
             canvasUpdateManager.UpdateCursor();
         }
 
-        private bool ResetUndoRedoSelection(CursorPosition cursor, TextSelection selection)
+        private void ResetUndoRedoSelection(CursorPosition cursor, TextSelection selection)
         {
-            if (selection == null && cursor == null)
-                return false;
-
             if (cursor != null)
                 cursorManager.SetCursorPositionCopyValues(cursor);
 
-            if(selection != null)
+            if (selection != null)
                 selectionManager.SetSelection(selection);
-            return true;
+            else
+                selectionManager.ClearSelection();
         }
 
         public void Undo()
@@ -110,8 +108,7 @@ namespace TextControlBoxNS.Core.Text
 
             longestLineManager.needsRecalculation = true;
 
-            if (!ResetUndoRedoSelection(cursor, selection))
-                return;
+            ResetUndoRedoSelection(cursor, selection);
 
             scrollManager.UpdateScrollToShowCursor(false);
             canvasUpdateManager.UpdateAll();
@@ -129,8 +126,7 @@ namespace TextControlBoxNS.Core.Text
 
             longestLineManager.needsRecalculation = true;
 
-            if (!ResetUndoRedoSelection(cursor, selection))
-                return;
+            ResetUndoRedoSelection(cursor, selection);
 
             scrollManager.UpdateScrollToShowCursor(false);
             canvasUpdateManager.UpdateAll();
