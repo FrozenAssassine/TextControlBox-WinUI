@@ -24,7 +24,7 @@ namespace TextControlBoxNS.Test
         {
             originalText = coreTextbox.GetText();
 
-            //return [this.Test_7];
+            //return [this.Test_20];
             return [
                 this.Test_1,
                 this.Test_2,
@@ -45,6 +45,7 @@ namespace TextControlBoxNS.Test
                 this.Test_17,
                 this.Test_18,
                 this.Test_19,
+                this.Test_20,
                 ];
         }
 
@@ -102,7 +103,7 @@ namespace TextControlBoxNS.Test
             Debug.Write("Add Line 5");
 
             int linesBefore = coreTextbox.NumberOfLines;
-            var sel = coreTextbox.textActionManager.AddLine(5, "Hello World this is the text of line 5");
+            var sel = coreTextbox.textActionManager.AddLine(3, "Hello World this is the text of line 5");
 
             CheckUndoRedo();
 
@@ -430,6 +431,44 @@ namespace TextControlBoxNS.Test
             coreTextbox.Undo();
             coreTextbox.Undo();
             coreTextbox.Undo();
+
+            bool res = false;
+
+            //coreTextbox.SetText(originalText); // reset content
+
+            //coreTextbox.ClearUndoRedoHistory();
+
+            //TODO! CRASH!!
+
+            return res;
+        }
+
+        public bool Test_20()
+        {
+            Debug.Write("Test Crash 2");
+
+            coreTextbox.ClearUndoRedoHistory();
+            coreTextbox.SetCursorPosition(4, 100); //end of text
+
+            coreTextbox.SelectAll();
+            coreTextbox.textActionManager.DeleteSelection();
+            coreTextbox.Undo();
+            coreTextbox.ClearSelection();
+
+            for(int i = 0; i<34; i++)
+            {
+                coreTextbox.textActionManager.RemoveText(true);
+            }
+            for(int i = 0; i<34; i++)
+            {
+                coreTextbox.Undo();
+            }
+            for (int i = 0; i < 34; i++)
+            {
+                coreTextbox.Redo();
+            }
+
+            coreTextbox.Redo();
 
             bool res = false;
 
