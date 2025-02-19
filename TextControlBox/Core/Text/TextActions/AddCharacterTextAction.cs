@@ -68,12 +68,13 @@ internal class AddCharacterTextAction
 
     public void HandleMultiLineTextWithoutSelection(string text, int splittedTextLength)
     {
-        longestLineManager.CheckRecalculateLongestLine(text);
 
         undoRedo.RecordUndoAction(() =>
         {
             selectionManager.InsertText(text);
         }, cursorManager.LineNumber, 1, splittedTextLength);
+        
+        longestLineManager.CheckRecalculateLongestLine(text);
     }
 
     public void HandleTextWithSelection(string text, int splittedTextLength)
@@ -82,12 +83,13 @@ internal class AddCharacterTextAction
         if (text == null)
             return;
 
-        longestLineManager.CheckRecalculateLongestLine(text);
 
         undoRedo.RecordUndoAction(() =>
         {
             selectionManager.Replace(text);
             selectionManager.ForceClearSelection(canvasUpdateHelper);
         }, selectionManager.currentTextSelection, splittedTextLength);
+        
+        longestLineManager.CheckRecalculateLongestLine(text);
     }
 }

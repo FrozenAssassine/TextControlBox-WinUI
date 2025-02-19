@@ -56,6 +56,8 @@ internal class LongestLineManager
                 oldLenght = lenght;
             }
         }
+
+        Debug.WriteLine("Longest index: " + longestIndex);
         return longestIndex;
     }
     private int GetLongestLineLength(string text)
@@ -78,6 +80,8 @@ internal class LongestLineManager
         }
         if (currentLength > maxLength)
             maxLength = currentLength;
+
+        Debug.WriteLine("Longest line: " + maxLength);
         return maxLength;
     }
 
