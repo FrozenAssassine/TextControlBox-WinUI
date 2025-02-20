@@ -52,6 +52,9 @@ internal class TextManager
 
     public string GetLinesAsString()
     {
+        if (totalLines.Count == 1 && totalLines[0].Length == 0)
+            return "";
+        
         return string.Join(NewLineCharacter, totalLines);
     }
     public string GetLinesAsString(int start, int count)
@@ -63,7 +66,7 @@ internal class TextManager
             return GetLinesAsString();
 
         if (start + count > totalLines.Count)
-            throw new ArgumentOutOfRangeException("GetLinesAsString start + count is out of range of the size of the collection");
+            throw new IndexOutOfRangeException("GetLinesAsString start + count is out of range of the size of the collection");
 
         return string.Join(NewLineCharacter, totalLines.Skip(start).Take(count));
     }

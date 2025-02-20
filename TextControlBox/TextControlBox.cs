@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using TextControlBoxNS.Core;
+using TextControlBoxNS.Models;
 using TextControlBoxNS.Test;
 using Windows.Foundation;
 
@@ -51,7 +52,7 @@ public partial class TextControlBox : UserControl
             this.LoadLines(Enumerable.Range(0, 5).Select(x => "Line " + x + " is cool right?"));
 
             TestHelper testHelper = new TestHelper(coreTextBox);
-            //testHelper.Evaluate();
+            testHelper.Evaluate();
         }
 
     }
@@ -480,10 +481,14 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
-    /// Gets the current cursor position in the textbox.
+    /// Set the position of the cursor. 
+    /// If autoclamp is set to false and invalid values are provided it throws IndexOutOfRangeException.
     /// </summary>
-    /// <returns>The current cursor position represented by a Point object (X, Y).</returns>
-    public void SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true)
+    /// <param name="lineNumber">Line number to move the cursor to</param>
+    /// <param name="characterPos">Character position to move the cursor to</param>
+    /// <param name="scrollIntoView">Scroll the cursor into view</param>
+    /// <param name="autoClamp">Automatically clamp invalid values to the correct bounds</param>
+    public void SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true, bool autoClamp = true)
     {
         coreTextBox.SetCursorPosition(lineNumber, characterPos, scrollIntoView);
     }
@@ -816,10 +821,23 @@ public partial class TextControlBox : UserControl
     public bool HasSelection => coreTextBox.HasSelection;
 
     /// <summary>
+    /// Get the current selection of the textbox in any order. Start may be greater than the end position. 
+    /// Returns null if no text is selected
+    /// </summary>
+    public TextControlBoxSelection? CurrentSelection => coreTextBox.CurrentSelection;
+
+    /// <summary>
+    /// Get the current selection of the textbox ordered, so start is always smaller than the end position.
+    /// Returns null if no text is selected
+    /// </summary>
+    public TextControlBoxSelection? CurrentSelectionOrdered => coreTextBox.CurrentSelectionOrdered;
+
+    /// <summary>
     /// Represents a delegate used for handling the text changed event in the TextControlBox.
     /// </summary>
     /// <param name="sender">The instance of the TextControlBox that raised the event.</param>
     public delegate void TextChangedEvent(TextControlBox sender);
+    
     /// <summary>
     /// Occurs when the text is changed in the TextControlBox.
     /// </summary>

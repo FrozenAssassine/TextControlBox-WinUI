@@ -12,6 +12,7 @@ using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Languages;
+using TextControlBoxNS.Models;
 using TextControlBoxNS.Models.Enums;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
@@ -864,16 +865,17 @@ internal sealed partial class CoreTextControlBox : UserControl
         };
     }
 
-    public void SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true)
+    public void SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true, bool autoClamp = true)
     {
+        if (autoClamp)
+        {
+            lineNumber = Math.Clamp(lineNumber, 0, textManager.totalLines.Count - 1);
+            int length = textManager.GetLineLength(lineNumber);
+            characterPos = Math.Clamp(characterPos, 0, length);
+        }
+        else if (lineNumber < 0 || lineNumber >= textManager.totalLines.Count || characterPos < 0 || characterPos >= textManager.GetLineLength(lineNumber))
+                throw new IndexOutOfRangeException("Invalid line number or character position provided for SetCursorPosition");
         
-        if (lineNumber > textManager.LinesCount - 1)
-            lineNumber = textManager.LinesCount - 1;
-
-        int lineLength = textManager.GetLineLength(lineNumber) - 1;
-        if (characterPos > lineLength)
-            characterPos = lineLength + 1;
-
         cursorManager.currentCursorPosition.LineNumber = lineNumber;
         cursorManager.currentCursorPosition.CharacterPosition = characterPos;
 
@@ -1032,6 +1034,8 @@ internal sealed partial class CoreTextControlBox : UserControl
     public bool DoAutoPairing { get; set; } = true;
     public bool ControlW_SelectWord = true;
     public bool HasSelection => selectionManager.HasSelection;
+    public TextControlBoxSelection? CurrentSelection => selectionManager.HasSelection ? new TextControlBoxSelection(this.selectionManager.currentTextSelection) : null;
+    public TextControlBoxSelection? CurrentSelectionOrdered => selectionManager.HasSelection ? new TextControlBoxSelection(selectionManager) : null;
 
     public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {
