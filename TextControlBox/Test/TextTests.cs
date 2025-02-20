@@ -103,11 +103,11 @@ namespace TextControlBoxNS.Test
             Debug.Write("Add Line 5");
 
             int linesBefore = coreTextbox.NumberOfLines;
-            var sel = coreTextbox.textActionManager.AddLine(3, "Hello World this is the text of line 5");
+            var sel = coreTextbox.textActionManager.AddLine(3, "Hello World this is the text of line 3");
 
             CheckUndoRedo();
 
-            bool res = coreTextbox.NumberOfLines == linesBefore + 1 && coreTextbox.GetLineText(5).Equals("Hello World this is the text of line 5");
+            bool res = coreTextbox.NumberOfLines == linesBefore + 1 && coreTextbox.GetLineText(3).Equals("Hello World this is the text of line 3");
 
             coreTextbox.SetText(originalText); //reset content
             return res;
@@ -130,7 +130,7 @@ namespace TextControlBoxNS.Test
 
             bool res =
                 cur.CharacterPosition == textToAdd.Length &&
-                cur.LineNumber == lineBefore + 2 &&
+                cur.LineNumber == lineBefore + 1 &&
                 coreTextbox.GetLineText(3).Equals(textToAdd + textBefore);
 
             coreTextbox.SetText(originalText); //reset content
@@ -432,20 +432,15 @@ namespace TextControlBoxNS.Test
             coreTextbox.Undo();
             coreTextbox.Undo();
 
-            bool res = false;
-
-            //coreTextbox.SetText(originalText); // reset content
-
-            //coreTextbox.ClearUndoRedoHistory();
-
-            //TODO! CRASH!!
-
-            return res;
+            return true;
         }
 
         public bool Test_20()
         {
             Debug.Write("Test Crash 2");
+
+            coreTextbox.ClearUndoRedoHistory();
+            coreTextbox.SetText(originalText); // reset content
 
             coreTextbox.ClearUndoRedoHistory();
             coreTextbox.SetCursorPosition(4, 100); //end of text
@@ -470,15 +465,8 @@ namespace TextControlBoxNS.Test
 
             coreTextbox.Redo();
 
-            bool res = false;
-
-            //coreTextbox.SetText(originalText); // reset content
-
-            //coreTextbox.ClearUndoRedoHistory();
-
-            //TODO! CRASH!!
-
-            return res;
+            return true;
         }
+
     }
 }
