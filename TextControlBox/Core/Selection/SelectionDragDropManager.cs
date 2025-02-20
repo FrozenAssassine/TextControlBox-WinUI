@@ -1,7 +1,9 @@
 ﻿using Microsoft.UI.Input;
+using System.Diagnostics;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
+using TextControlBoxNS.Models;
 using Windows.Foundation;
 
 namespace TextControlBoxNS.Core.Selection;
@@ -18,7 +20,7 @@ internal class SelectionDragDropManager
     private CanvasUpdateManager canvasUpdateManager;
     private SelectionRenderer selectionRenderer;
     private TextRenderer textRenderer;
-
+    private UndoRedo undoRedo;
     public void Init(
         CoreTextControlBox textbox,
         CursorManager cursorManager,
@@ -27,16 +29,18 @@ internal class SelectionDragDropManager
         TextActionManager textActionManager,
         CanvasUpdateManager canvasUpdateManager,
         SelectionRenderer selectionRenderer,
-        TextRenderer textRenderer)
+        TextRenderer textRenderer,
+        UndoRedo undoRedo)
     {
         this.cursorManager = cursorManager;
         this.textManager = textManager;
-        coreTextbox = textbox;
+        this.coreTextbox = textbox;
         this.textActionManager = textActionManager;
         this.canvasUpdateManager = canvasUpdateManager;
         this.selectionManager = selectionManager;
         this.textRenderer = textRenderer;
         this.selectionRenderer = selectionRenderer;
+        this.undoRedo = undoRedo;
     }
 
     public void DoDragDropSelection()
@@ -53,11 +57,18 @@ internal class SelectionDragDropManager
         }
 
         string textToInsert = coreTextbox.SelectedText;
+        var selection = new TextSelection(selectionManager.currentTextSelection);
+
+        undoRedo.EnableCombineNextUndoItems = true;
 
         //Delete the selection
-        textActionManager.RemoveText();
-
+        selectionManager.ClearSelection();
         textActionManager.AddCharacter(textToInsert, false);
+
+        selectionManager.SetSelection(selection);
+        textActionManager.DeleteSelection();
+
+        undoRedo.EnableCombineNextUndoItems = false;
 
         coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
         isDragDropSelection = false;

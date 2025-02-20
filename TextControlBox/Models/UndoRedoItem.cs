@@ -12,4 +12,5 @@ internal class UndoRedoItem
     public TextSelection SelectionAfter { get; set; }
     public CursorPosition CursorBefore { get; set; }
     public CursorPosition CursorAfter { get; set; }
+    public bool HandleNextItemToo { get; set; }
 }

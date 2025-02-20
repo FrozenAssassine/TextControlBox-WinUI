@@ -15,6 +15,7 @@ namespace TextControlBoxNS.Core.Text
         private TextManager textManager;
         private SelectionManager selectionManager;
         private CursorManager cursorManager;
+        public bool EnableCombineNextUndoItems = false;
 
         public void Init(TextManager textManager, SelectionManager selectionManager, CursorManager cursorManager)
         {
@@ -45,6 +46,7 @@ namespace TextControlBoxNS.Core.Text
                 StartLine = startLine,
                 UndoCount = undoCount,
                 RedoCount = redoCount,
+                HandleNextItemToo = EnableCombineNextUndoItems
             });
         }
 
@@ -149,7 +151,6 @@ namespace TextControlBoxNS.Core.Text
             }
 
             var item = UndoStack.Pop();
-
             //calculate actual lines that can be removed
             int actualLinesToRemove = Math.Min(item.RedoCount, textManager.LinesCount - item.StartLine);
             
@@ -189,6 +190,12 @@ namespace TextControlBoxNS.Core.Text
                     if (item.StartLine <= textManager.LinesCount)
                         textManager.InsertOrAddRange(cleanedLines, item.StartLine);
                 }
+            }
+
+
+            if (item.HandleNextItemToo)
+            {
+                Undo(stringManager);
             }
 
             return (item.CursorBefore, item.SelectionBefore);
@@ -236,6 +243,12 @@ namespace TextControlBoxNS.Core.Text
                     );
                     textManager.InsertOrAddRange(cleanedLines, item.StartLine);
                 }
+            }
+
+
+            if (item.HandleNextItemToo)
+            {
+                Redo(stringManager);
             }
 
             return (item.CursorAfter, item.SelectionAfter);
