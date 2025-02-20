@@ -68,7 +68,6 @@ internal class AddCharacterTextAction
 
     public void HandleMultiLineTextWithoutSelection(string text, int splittedTextLength)
     {
-
         undoRedo.RecordUndoAction(() =>
         {
             selectionManager.InsertText(text);

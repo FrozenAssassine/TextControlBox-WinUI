@@ -1,7 +1,6 @@
 ﻿using Collections.Pooled;
 using Microsoft.Graphics.Canvas;
 using System;
-using System.Diagnostics;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
@@ -57,7 +56,6 @@ internal class LongestLineManager
             }
         }
 
-        Debug.WriteLine("Longest index: " + longestIndex);
         return longestIndex;
     }
     private int GetLongestLineLength(string text)
@@ -81,7 +79,6 @@ internal class LongestLineManager
         if (currentLength > maxLength)
             maxLength = currentLength;
 
-        Debug.WriteLine("Longest line: " + maxLength);
         return maxLength;
     }
 

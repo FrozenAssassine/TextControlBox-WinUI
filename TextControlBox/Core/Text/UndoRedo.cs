@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.ConstrainedExecution;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
@@ -152,10 +150,10 @@ namespace TextControlBoxNS.Core.Text
 
             var item = UndoStack.Pop();
 
-            // Calculate actual lines that can be removed
+            //calculate actual lines that can be removed
             int actualLinesToRemove = Math.Min(item.RedoCount, textManager.LinesCount - item.StartLine);
             
-            // Record an adjusted redo item if needed
+            //record an adjusted redo item if needed
             if (actualLinesToRemove < item.RedoCount)
             {
                 string currentText = "";
@@ -168,7 +166,7 @@ namespace TextControlBoxNS.Core.Text
             
             RecordRedo(item);
 
-            //Faster for singleline
+            //faster for singleline
             if (item.UndoCount == 1 && item.RedoCount == 1)
             {
                 textManager.SetLineText(item.StartLine, stringManager.CleanUpString(item.UndoText));
@@ -202,52 +200,29 @@ namespace TextControlBoxNS.Core.Text
 
             UndoRedoItem item = RedoStack.Pop();
 
-            // Calculate how many lines can actually be removed
+            //calculate how many lines can actually be removed
             int actualLinesToRemove = Math.Min(item.UndoCount, textManager.LinesCount - item.StartLine);
-            Debug.WriteLine($"Redoing: StartLine={item.StartLine}, UndoCount={item.UndoCount}, ActualToRemove={actualLinesToRemove}, RedoCount={item.RedoCount}");
 
             if (actualLinesToRemove < item.UndoCount)
             {
-                // Capture current state before changes
                 string currentText = "";
                 if (actualLinesToRemove > 0)
-                {
                     currentText = textManager.GetLinesAsString(item.StartLine, actualLinesToRemove);
-                }
 
-                // Create a completely new UndoRedoItem with correct values
-                UndoRedoItem newUndoItem = new UndoRedoItem
-                {
-                    StartLine = item.StartLine,
-                    UndoText = currentText,
-                    RedoText = item.RedoText,
-                    UndoCount = actualLinesToRemove,
-                    RedoCount = item.RedoCount,
-                    SelectionBefore = item.SelectionBefore,
-                    SelectionAfter = item.SelectionAfter,
-                    CursorBefore = item.CursorBefore,
-                    CursorAfter = item.CursorAfter
-                };
-
-                // Record the adjusted undo record
-                RecordUndo(newUndoItem);
+                item.UndoText = currentText;
+                item.UndoCount = actualLinesToRemove;
             }
-            else
-            {
-                // Normal case - record the original item
                 RecordUndo(item);
-            }
 
             HasRedone = true;
 
-            // Perform the actual operation
             if (item.UndoCount == 1 && item.RedoCount == 1)
             {
                 textManager.SetLineText(item.StartLine, stringManager.CleanUpString(item.RedoText));
             }
             else
             {
-                // Remove only what exists
+                //remove only what exists
                 if (actualLinesToRemove > 0)
                 {
                     textManager.RemoveRange(item.StartLine, actualLinesToRemove);

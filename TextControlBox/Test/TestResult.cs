@@ -13,7 +13,7 @@ namespace TextControlBoxNS.Test
         public abstract string name { get; set; }
         public TestResult Evaluate()
         {
-            foreach(var function in GetAllTests())
+            foreach (var function in GetAllTests())
             {
                 bool res = function.Invoke();
                 totalTests++;
@@ -23,6 +23,10 @@ namespace TextControlBoxNS.Test
                 Debug.WriteLine(" => " + (res ? "Success" : "Failed"));
                 //Debug.Assert(res);
             }
+
+
+            Debug.WriteLine(new string('=', 20));
+            Debug.WriteLine($"Success: {totalTests - failRate} Failed: {failRate} ({((totalTests - failRate) / (double)totalTests) * 100.0}%)");
 
             if (failRate == 0)
                 return TestResult.Success;
