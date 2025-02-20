@@ -303,8 +303,9 @@ namespace TextControlBoxNS.Core.Text
                 {
                     selectionManager.ClearSelection();
 
-                    selectionManager.ReplaceLines(0, textManager.LinesCount, stringManager.CleanUpString(text).Split(textManager.NewLineCharacter));
-                    if (text.Length == 0) //Create a new line when the text gets cleared
+                    var splitted = stringManager.CleanUpString(text).Split(textManager.NewLineCharacter);
+                    selectionManager.ReplaceLines(0, textManager.LinesCount, splitted);
+                    if (textManager.LinesCount == 0) 
                         textManager.AddLine();
 
                 }, 0, textManager.LinesCount, text.CountLines(textManager.NewLineCharacter));
