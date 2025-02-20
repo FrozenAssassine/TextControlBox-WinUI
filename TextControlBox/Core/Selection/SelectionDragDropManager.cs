@@ -78,11 +78,12 @@ internal class SelectionDragDropManager
     {
         isDragDropSelection = false;
         if (clearSelectedText)
-            selectionManager.ForceClearSelection(canvasUpdateManager);
+            selectionManager.ClearSelection();
 
         coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
         selectionManager.IsSelecting = false;
         canvasUpdateManager.UpdateCursor();
+        canvasUpdateManager.UpdateSelection();
     }
     public bool DragDropOverSelection(Point curPos)
     {

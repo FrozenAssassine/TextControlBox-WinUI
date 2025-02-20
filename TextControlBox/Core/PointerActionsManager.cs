@@ -151,7 +151,7 @@ internal class PointerActionsManager
         //Clear the selection when pressing anywhere
         if (selectionManager.HasSelection)
         {
-            selectionManager.ForceClearSelection(canvasUpdateManager);
+            selectionManager.ClearSelection();
             selectionManager.SetSelectionStart(cursorManager.currentCursorPosition);
         }
         else
@@ -190,6 +190,7 @@ internal class PointerActionsManager
         {
             HandleSingleLeftClick(pointerPosition);
         }
+        canvasUpdateManager.UpdateSelection();
         canvasUpdateManager.UpdateCursor();
     }
 

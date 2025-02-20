@@ -197,7 +197,9 @@ namespace TextControlBoxNS.Core.Text
 
                 dataPackage.RequestedOperation = DataPackageOperation.Move;
                 Clipboard.SetContent(dataPackage);
-                selectionManager.ForceClearSelection(canvasUpdateManager);
+
+                selectionManager.ClearSelection();
+                canvasUpdateManager.UpdateAll();
             }
             catch (OutOfMemoryException)
             {
@@ -358,7 +360,7 @@ namespace TextControlBoxNS.Core.Text
 
             eventsManager.CallTextChanged();
 
-            scrollManager.UpdateScrollToShowCursor();
+            scrollManager.UpdateScrollToShowCursor(false);
             canvasUpdateManager.UpdateText();
             canvasUpdateManager.UpdateCursor();
         }
@@ -382,7 +384,7 @@ namespace TextControlBoxNS.Core.Text
                 addNewLineTextAction.ReplaceSelectionWithNewLine();
             }
 
-            selectionManager.ForceClearSelection(canvasUpdateManager);
+            selectionManager.ClearSelection();
             if (!selectionManager.HasSelection &&
                 cursorManager.LineNumber == textRenderer.NumberOfRenderedLines + textRenderer.NumberOfStartLine)
             {
@@ -390,7 +392,7 @@ namespace TextControlBoxNS.Core.Text
             }
             else
             {
-                scrollManager.UpdateScrollToShowCursor();
+                scrollManager.UpdateScrollToShowCursor(false);
             }
 
             eventsManager.CallTextChanged();
@@ -418,8 +420,6 @@ namespace TextControlBoxNS.Core.Text
 
             eventsManager.CallTextChanged();
             scrollManager.UpdateScrollToShowCursor();
-            canvasUpdateManager.UpdateText();
-            canvasUpdateManager.UpdateCursor();
         }
 
         public void AddCharacter(string text, bool ignoreSelection = false)
@@ -428,7 +428,7 @@ namespace TextControlBoxNS.Core.Text
                 return;
 
             if (ignoreSelection)
-                selectionManager.ForceClearSelection(canvasUpdateManager);
+                selectionManager.ClearSelection();
 
             int splittedTextLength = addCharacterTextAction.CalculateSplitTextLength(text);
             bool hasSelection = selectionManager.HasSelection;
@@ -451,9 +451,9 @@ namespace TextControlBoxNS.Core.Text
             }
 
             eventsManager.CallTextChanged();
-            scrollManager.ScrollLineIntoViewIfOutside(cursorManager.LineNumber);
-            canvasUpdateManager.UpdateText();
-            canvasUpdateManager.UpdateCursor();
+            scrollManager.ScrollLineIntoViewIfOutside(cursorManager.LineNumber, false);
+            
+            canvasUpdateManager.UpdateAll();
         }
 
         public bool DeleteLine(int line)

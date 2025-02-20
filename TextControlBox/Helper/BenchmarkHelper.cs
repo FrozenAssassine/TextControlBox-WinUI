@@ -28,11 +28,12 @@ internal class BenchmarkHelper
 
         //Calculate results.
         long elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+        long elapsedTicks = stopwatch.ElapsedTicks;
         long memoryUsed = finalMemory - initialMemory;
 
         //Log results.
         Debug.WriteLine("Benchmark: " + name);
-        Debug.WriteLine($"Execution Time: {elapsedMilliseconds} ms");
+        Debug.WriteLine($"Execution Time: {elapsedMilliseconds} ms | {elapsedTicks} Ticks");
         Debug.WriteLine($"Memory Used: {memoryUsed / 1024.0:F2} KB");
     }
 }

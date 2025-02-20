@@ -118,13 +118,6 @@ internal class SelectionManager
         eventsManager.CallSelectionChanged();
     }
 
-
-    public void ForceClearSelection(CanvasUpdateManager canvasHelper)
-    {
-        ClearSelection();
-        canvasHelper.UpdateSelection();
-    }
-
     public void StartSelectionIfNeeded()
     {
         if (!HasSelection)

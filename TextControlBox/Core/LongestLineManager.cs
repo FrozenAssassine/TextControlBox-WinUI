@@ -55,7 +55,6 @@ internal class LongestLineManager
                 oldLenght = lenght;
             }
         }
-
         return longestIndex;
     }
     private int GetLongestLineLength(string text)
@@ -78,7 +77,6 @@ internal class LongestLineManager
         }
         if (currentLength > maxLength)
             maxLength = currentLength;
-
         return maxLength;
     }
 

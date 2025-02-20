@@ -27,7 +27,7 @@ internal class ScrollManager
     private TextRenderer textRenderer;
     private CursorManager cursorManager;
     private TextManager textManager;
-    private CoreTextControlBox textbox;
+    private CoreTextControlBox coreTextbox;
     private Grid scrollGrid;
 
     public void Init(CoreTextControlBox coreTextbox, CanvasUpdateManager canvasHelper, TextManager textManager, TextRenderer textRenderer, CursorManager cursorManager, ScrollBar verticalScrollBar, ScrollBar horizontalScrollBar)
@@ -39,7 +39,7 @@ internal class ScrollManager
         this.textRenderer = textRenderer;
         this.cursorManager = cursorManager;
         this.textManager = textManager;
-        this.textbox = coreTextbox;
+        this.coreTextbox = coreTextbox;
         verticalScrollBar.Loaded += VerticalScrollbar_Loaded;
         verticalScrollBar.Scroll += VerticalScrollBar_Scroll;
         horizontalScrollBar.Scroll += HorizontalScrollBar_Scroll;
@@ -48,7 +48,7 @@ internal class ScrollManager
     private void VerticalScrollbar_Loaded(object sender, RoutedEventArgs e)
     {
         verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * textRenderer.SingleLineHeight - scrollGrid.ActualHeight) / DefaultVerticalScrollSensitivity;
-        verticalScrollBar.ViewportSize = textbox.ActualHeight;
+        verticalScrollBar.ViewportSize = coreTextbox.ActualHeight;
     }
     private void HorizontalScrollBar_Scroll(object sender, ScrollEventArgs e)
     {
@@ -72,10 +72,10 @@ internal class ScrollManager
         }
     }
 
-    public void ScrollLineIntoViewIfOutside(int line)
+    public void ScrollLineIntoViewIfOutside(int line, bool update = true)
     {
         if (textRenderer.OutOfRenderedArea(line))
-            ScrollLineIntoView(line);
+            ScrollLineIntoView(line, update);
     }
 
     public void ScrollOneLineUp(bool update = true)
@@ -91,10 +91,12 @@ internal class ScrollManager
             canvasHelper.UpdateAll();
     }
 
-    public void ScrollLineIntoView(int line)
+    public void ScrollLineIntoView(int line, bool update = true)
     {
         verticalScrollBar.Value = (line - textRenderer.NumberOfRenderedLines / 2) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
-        canvasHelper.UpdateAll();
+        
+        if(update)
+            canvasHelper.UpdateAll();
     }
 
     public void ScrollTopIntoView(bool update = true)
@@ -164,7 +166,7 @@ internal class ScrollManager
         }
         OldHorizontalScrollValue = curPosInLine;
 
-        if(update)
+        if (update)
             canvasHelper.UpdateAll();
     }
 }

@@ -55,7 +55,7 @@ internal class AddNewLineTextAction
                 cursorManager.SetCursorPosition(0, 1);
             }, 0, textManager.LinesCount, 2);
 
-            selectionManager.ForceClearSelection(canvasUpdateManager);
+            selectionManager.ClearSelection();
             canvasUpdateManager.UpdateAll();
             eventsManager.CallTextChanged();
             return true;

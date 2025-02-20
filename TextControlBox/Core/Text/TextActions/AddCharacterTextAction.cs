@@ -14,7 +14,7 @@ internal class AddCharacterTextAction
     private LongestLineManager longestLineManager;
     private CursorManager cursorManager;
     private SelectionManager selectionManager;
-    private CanvasUpdateManager canvasUpdateHelper;
+    private CanvasUpdateManager canvasUpdateManager;
 
     public void Init(
         TextManager textManager,
@@ -33,7 +33,7 @@ internal class AddCharacterTextAction
         this.longestLineManager = longestLineManager;
         this.cursorManager = cursorManager;
         this.selectionManager = selectionManager;
-        this.canvasUpdateHelper = canvasUpdateHelper;
+        this.canvasUpdateManager = canvasUpdateHelper;
     }
 
     public int CalculateSplitTextLength(string text)
@@ -86,9 +86,11 @@ internal class AddCharacterTextAction
         undoRedo.RecordUndoAction(() =>
         {
             selectionManager.Replace(text);
-            selectionManager.ForceClearSelection(canvasUpdateHelper);
+            selectionManager.ClearSelection();
         }, selectionManager.currentTextSelection, splittedTextLength);
         
         longestLineManager.CheckRecalculateLongestLine(text);
+
+        canvasUpdateManager.UpdateAll();
     }
 }

@@ -145,7 +145,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         cursorManager.SetCursorPosition(0, 0);
 
-        selectionManager.ForceClearSelection(canvasUpdateManager);
+        selectionManager.ClearSelection();
         RequestedTheme = ElementTheme.Default;
         LineEnding = LineEnding.CRLF;
 
@@ -670,7 +670,8 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public void ClearSelection()
     {
-        selectionManager.ForceClearSelection(canvasUpdateManager);
+        selectionManager.ClearSelection();
+        canvasUpdateManager.UpdateAll();
     }
 
     public void Undo()

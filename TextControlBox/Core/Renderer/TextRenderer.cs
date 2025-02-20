@@ -75,6 +75,21 @@ internal class TextRenderer
             canvasText.Size) :
             null;
     }
+    public (int startLine, int linesToRender) CalculateLinesToRender()
+    {
+        var singleLineHeight = SingleLineHeight;
+
+        //Measure textposition and apply the value to the scrollbar
+        scrollManager.verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * singleLineHeight - scrollGrid.ActualHeight) / scrollManager.DefaultVerticalScrollSensitivity;
+        scrollManager.verticalScrollBar.ViewportSize = coreTextbox.canvasText.ActualHeight;
+
+        //Calculate number of lines that needs to be rendered
+        int linesToRenderCount = (int)(coreTextbox.canvasText.ActualHeight / singleLineHeight);
+        int startLine = (int)((scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity) / singleLineHeight);
+        int linesToRender = linesToRenderCount + startLine > textManager.LinesCount ? textManager.LinesCount : linesToRenderCount;
+
+        return (startLine, linesToRender);
+    }
 
     public void Draw(CanvasControl canvasText, CanvasDrawEventArgs args)
     {
@@ -87,14 +102,7 @@ internal class TextRenderer
             designHelper.CreateColorResources(args.DrawingSession);
         }
 
-        //Measure textposition and apply the value to the scrollbar
-        scrollManager.verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * SingleLineHeight - scrollGrid.ActualHeight) / scrollManager.DefaultVerticalScrollSensitivity;
-        scrollManager.verticalScrollBar.ViewportSize = canvasText.ActualHeight;
-
-        //Calculate number of lines that needs to be rendered
-        int linesToRenderCount = (int)(canvasText.ActualHeight / SingleLineHeight);
-        NumberOfStartLine = (int)((scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity) / SingleLineHeight);
-        NumberOfRenderedLines = linesToRenderCount + NumberOfStartLine > textManager.LinesCount ? textManager.LinesCount : linesToRenderCount;
+        (NumberOfStartLine, NumberOfRenderedLines) = CalculateLinesToRender();
 
         RenderedText = textManager.GetLinesAsString(NumberOfStartLine, NumberOfRenderedLines);
 
@@ -114,7 +122,11 @@ internal class TextRenderer
         scrollManager.ScrollIntoViewHorizontal(canvasText, false);
 
         //Only update the textformat when the text changes:
-        if (OldRenderedText != null && !RenderedText.Equals(OldRenderedText, System.StringComparison.OrdinalIgnoreCase) || NeedsUpdateTextLayout)
+        if (OldRenderedText != null && 
+            OldRenderedText.Length != RenderedText.Length || 
+            !RenderedText.Equals(OldRenderedText, System.StringComparison.Ordinal) || 
+            NeedsUpdateTextLayout
+            )
         {
             NeedsUpdateTextLayout = false;
             OldRenderedText = RenderedText;

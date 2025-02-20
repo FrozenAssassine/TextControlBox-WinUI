@@ -9,7 +9,6 @@ namespace TextControlBoxNS.Core.Renderer
     internal class CanvasBatchRedrawer
     {
         private readonly Dictionary<CanvasControl, bool> _redrawRequests = new();
-        private bool _isBatching;
         private readonly int _batchIntervalMs;
 
         public CanvasBatchRedrawer(int batchIntervalMs = 16)
@@ -38,7 +37,7 @@ namespace TextControlBoxNS.Core.Renderer
 
         private void StartBatching()
         {
-            if (_batchTimer != null) return; // Prevent multiple timers
+            if (_batchTimer != null) return;
 
             _batchTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
             _batchTimer.Interval = TimeSpan.FromMilliseconds(_batchIntervalMs);
