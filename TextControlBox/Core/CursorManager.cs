@@ -1,4 +1,5 @@
 ﻿using System;
+using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 
@@ -259,5 +260,13 @@ internal class CursorManager
     public void MoveToLineStart(CursorPosition cursorPosition)
     {
         cursorPosition.CharacterPosition = 0;
+    }
+
+    public void SetToTextEnd()
+    {
+        if (textManager.LinesCount == 1 && textManager.GetLineLength(0) == 0)
+            SetCursorPosition(0,0);
+
+        SetCursorPosition(textManager.LinesCount - 1, textManager.GetLineLength(-1));
     }
 }

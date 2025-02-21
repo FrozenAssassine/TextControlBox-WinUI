@@ -81,7 +81,7 @@ internal class TextManager
         }
 
         if (line >= totalLines.Count || line < 0)
-            throw new ArgumentOutOfRangeException("SetLineText provided line index out of range of valid values.");
+            throw new IndexOutOfRangeException("SetLineText provided line index out of range of valid values.");
 
         totalLines.Span[line] = text;
     }

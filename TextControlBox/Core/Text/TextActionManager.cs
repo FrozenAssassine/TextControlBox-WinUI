@@ -240,9 +240,11 @@ namespace TextControlBoxNS.Core.Text
                 undoRedo.ClearAll();
 
                 textManager.ClearText();
-                textManager.totalLines.AddRange(lines);
+                textManager.totalLines = new Collections.Pooled.PooledList<string>(lines);
 
                 textManager.LineEnding = lineEnding;
+
+                cursorManager.SetToTextEnd();
 
                 longestLineManager.needsRecalculation = true;
                 canvasUpdateManager.UpdateAll();
@@ -278,6 +280,8 @@ namespace TextControlBoxNS.Core.Text
                 else
                     selectionManager.ReplaceLines(0, textManager.LinesCount, stringManager.CleanUpString(text).Split(textManager.NewLineCharacter));
 
+                cursorManager.SetToTextEnd();
+
                 canvasUpdateManager.UpdateAll();
             }
             catch (OutOfMemoryException)
@@ -305,8 +309,11 @@ namespace TextControlBoxNS.Core.Text
 
                     var splitted = stringManager.CleanUpString(text).Split(textManager.NewLineCharacter);
                     selectionManager.ReplaceLines(0, textManager.LinesCount, splitted);
+
                     if (textManager.LinesCount == 0) 
                         textManager.AddLine();
+
+                    cursorManager.SetToTextEnd();
 
                 }, 0, textManager.LinesCount, text.CountLines(textManager.NewLineCharacter));
 
