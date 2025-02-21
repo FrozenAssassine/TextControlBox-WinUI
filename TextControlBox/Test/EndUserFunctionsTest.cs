@@ -27,6 +27,16 @@ internal class EndUserFunctionsTest : TestCase
             this.Test_5,
             this.Test_6,
             this.Test_7,
+            this.Test_8,
+            this.Test_9,
+            this.Test_10,
+            this.Test_11,
+            this.Test_12,
+            this.Test_13,
+            this.Test_14,
+            this.Test_15,
+            this.Test_16,
+            this.Test_17,
             ];
     }
 
@@ -80,8 +90,6 @@ internal class EndUserFunctionsTest : TestCase
 
         var text = coreTextbox.GetText();
 
-        Debug.WriteLine("TEXT:" + text + ":END");
-
         return text.Length == 0;
     }
 
@@ -116,6 +124,116 @@ internal class EndUserFunctionsTest : TestCase
             return false;
         }
         //should be no selection
-        return !coreTextbox.CurrentSelectionOrdered.HasValue;
+        return !coreTextbox.CurrentSelectionOrdered.HasValue && !coreTextbox.CurrentSelection.HasValue;
+    }
+
+    public bool Test_8()
+    {
+        Debug.WriteLine("Function get Selected Text equals text in textbox");
+
+        var text = "Line1\nLine2\nLine3\n";
+
+        coreTextbox.SetText(text);
+
+        coreTextbox.SelectAll();
+        //should be no selection
+        return coreTextbox.SelectedText.Equals(coreTextbox.stringManager.CleanUpString(text));
+    }
+
+    public bool Test_9()
+    {
+        Debug.WriteLine("Function set Selected Text no text in textbox equals text in textbox");
+        coreTextbox.SetText("");
+
+        var text = "Line1\nLine2\nLine3\n";
+
+        coreTextbox.SelectedText = text;
+
+        //should be no selection
+        return coreTextbox.GetText().Equals(coreTextbox.stringManager.CleanUpString(text));
+    }
+
+    public bool Test_10()
+    {
+        Debug.WriteLine("Function SetText empty");
+        coreTextbox.SetText("");
+
+        return coreTextbox.GetText().Length == 0 &&
+            coreTextbox.CursorPosition.LineNumber == 0 &&
+            coreTextbox.CursorPosition.CharacterPosition == 0;
+    }
+
+    public bool Test_11()
+    {
+        Debug.WriteLine("Function LoadLines empty");
+        coreTextbox.LoadLines([""]);
+
+        return coreTextbox.GetText().Length == 0 &&
+            coreTextbox.CursorPosition.LineNumber == 0 &&
+            coreTextbox.CursorPosition.CharacterPosition == 0;
+    }
+
+    public bool Test_12()
+    {
+        Debug.WriteLine("Function LoadText empty");
+        coreTextbox.LoadText("");
+
+        return coreTextbox.GetText().Length == 0 &&
+            coreTextbox.CursorPosition.LineNumber == 0 &&
+            coreTextbox.CursorPosition.CharacterPosition == 0;
+    }
+
+    public bool Test_13()
+    {
+        Debug.WriteLine("Function select all, set SelectedText equals text in textbox");
+        var text = "Line1\nLine2\nLine3\n";
+        
+        coreTextbox.SetText("Line100\nLine200\nLine300\n");
+
+        coreTextbox.SelectAll();
+
+        coreTextbox.SelectedText = text;
+
+        return coreTextbox.GetText().Equals(coreTextbox.stringManager.CleanUpString(text));
+    }
+
+    public bool Test_14()
+    {
+        Debug.WriteLine("Function SetText");
+        var text = "Line1\nLine2\nLine3\n";
+
+        coreTextbox.SetText(text);
+
+        return coreTextbox.GetText().Equals(coreTextbox.stringManager.CleanUpString(text));
+    }
+    public bool Test_15()
+    {
+        Debug.WriteLine("Function SetText 3 lines");
+        var text = "Line1\nLine2\nLine3";
+
+        coreTextbox.SetText(text);
+
+        return coreTextbox.GetText().Equals(coreTextbox.stringManager.CleanUpString(text)) &&
+            coreTextbox.cursorManager.LineNumber == 2 && coreTextbox.cursorManager.CharacterPosition == 5;
+    }
+    public bool Test_16()
+    {
+        Debug.WriteLine("Function LoadText 3 lines");
+        var text = "Line1\nLine2\nLine3";
+
+        coreTextbox.LoadText(text);
+
+        return coreTextbox.GetText().Equals(coreTextbox.stringManager.CleanUpString(text)) &&
+            coreTextbox.cursorManager.LineNumber == 2 && coreTextbox.cursorManager.CharacterPosition == 5;
+    }
+    public bool Test_17()
+    {
+        Debug.WriteLine("Function LoadLines 3 lines");
+        var text = "Line1\nLine2\nLine3";
+
+        coreTextbox.LoadLines(["Line1", "Line2", "Line3"]);
+
+        return coreTextbox.GetText().Equals(coreTextbox.stringManager.CleanUpString(text)) && 
+            coreTextbox.cursorManager.LineNumber == 2 && coreTextbox.cursorManager.CharacterPosition == 5;
     }
 }
