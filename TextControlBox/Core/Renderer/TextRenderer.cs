@@ -1,6 +1,7 @@
 ﻿using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using Windows.Foundation;
@@ -79,14 +80,18 @@ internal class TextRenderer
     {
         var singleLineHeight = SingleLineHeight;
 
-        //Measure textposition and apply the value to the scrollbar
+        //Measure text position and apply the value to the scrollbar
         scrollManager.verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * singleLineHeight - scrollGrid.ActualHeight) / scrollManager.DefaultVerticalScrollSensitivity;
         scrollManager.verticalScrollBar.ViewportSize = coreTextbox.canvasText.ActualHeight;
 
-        //Calculate number of lines that needs to be rendered
+        //Calculate number of lines that need to be rendered
         int linesToRenderCount = (int)(coreTextbox.canvasText.ActualHeight / singleLineHeight);
+        linesToRenderCount = Math.Min(linesToRenderCount, textManager.LinesCount);
+
         int startLine = (int)((scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity) / singleLineHeight);
-        int linesToRender = linesToRenderCount + startLine > textManager.LinesCount ? textManager.LinesCount : linesToRenderCount;
+        startLine = Math.Min(startLine, textManager.LinesCount);
+
+        int linesToRender = Math.Min(linesToRenderCount, textManager.LinesCount - startLine);
 
         return (startLine, linesToRender);
     }
@@ -103,7 +108,6 @@ internal class TextRenderer
         }
 
         (NumberOfStartLine, NumberOfRenderedLines) = CalculateLinesToRender();
-
         RenderedText = textManager.GetLinesAsString(NumberOfStartLine, NumberOfRenderedLines);
 
         //check rendering and calculation updates
