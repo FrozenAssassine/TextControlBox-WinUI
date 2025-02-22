@@ -12,7 +12,7 @@
 
 <br/>
 
-A powerful and customizable text input control for Windows UI applications. TextControlBox is designed to offer rich text editing features with support for syntax highlighting, search & replace, zooming, and much more.
+TextControlBox is a powerful and highly customizable textbox control for WinUI 3 applications. It provides an advanced text editing experience with features like syntax highlighting for multiple programming languages, intuitive search and replace functionality, zooming, line numbering, and smooth scrolling. With support for undo/redo, customizable themes, and efficient performance.
 
 ## 🛠️ Features
 
