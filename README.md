@@ -12,6 +12,7 @@
 
 <br/>
 
+## 🤔 What is TextControlBox?
 TextControlBox is a powerful and highly customizable textbox control for WinUI 3 applications. It provides an advanced text editing experience with features like syntax highlighting for multiple programming languages, intuitive search and replace functionality, zooming, line numbering, and smooth scrolling. With support for undo/redo, customizable themes, and efficient performance.
 
 ## 🛠️ Features
@@ -42,7 +43,6 @@ TextControlBox is a powerful and highly customizable textbox control for WinUI 3
 <a href='https://ko-fi.com/K3K819KSLG' target='_blank'>  
     <img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' />
 </a>
-
 
 ## 🏗️ Getting Started
 
