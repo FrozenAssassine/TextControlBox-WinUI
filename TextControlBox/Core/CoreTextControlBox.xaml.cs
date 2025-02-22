@@ -920,7 +920,8 @@ internal sealed partial class CoreTextControlBox : UserControl
         {
             textManager._SyntaxHighlighting = value;
 
-            textManager._SyntaxHighlighting.CompileAllRegex();
+            if (textManager._SyntaxHighlighting != null)
+                textManager._SyntaxHighlighting.CompileAllRegex();
 
             textRenderer.NeedsUpdateTextLayout = true;
             canvasUpdateManager.UpdateText();

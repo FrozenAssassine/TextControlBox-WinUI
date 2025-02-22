@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.UI.Xaml.Controls;
+using System;
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using TextControlBoxNS.Core;
 
 namespace TextControlBoxNS.Test;
@@ -37,6 +39,8 @@ internal class EndUserFunctionsTest : TestCase
             this.Test_15,
             this.Test_16,
             this.Test_17,
+            this.Test_18,
+            this.Test_19,
             ];
     }
 
@@ -235,5 +239,48 @@ internal class EndUserFunctionsTest : TestCase
 
         return coreTextbox.GetText().Equals(coreTextbox.stringManager.CleanUpString(text)) && 
             coreTextbox.cursorManager.LineNumber == 2 && coreTextbox.cursorManager.CharacterPosition == 5;
+    }
+    public bool Test_18()
+    {
+        Debug.WriteLine("Function SelectSyntaxHighlightingById");
+
+        coreTextbox.LoadLines(["Line1", "Line2", "Line3"]);
+
+        try
+        {
+            foreach (SyntaxHighlightID item in Enum.GetValues(typeof(SyntaxHighlightID)))
+            {
+                coreTextbox.SelectSyntaxHighlightingById(item);
+            }
+        }
+        catch
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool Test_19()
+    {
+        Debug.WriteLine("Static Function GetSyntaxHighlightingFromID");
+
+        coreTextbox.LoadLines(["Line1", "Line2", "Line3"]);
+
+        try
+        {
+            foreach (SyntaxHighlightID item in Enum.GetValues(typeof(SyntaxHighlightID)))
+            {
+                coreTextbox.SyntaxHighlighting = TextControlBox.GetSyntaxHighlightingFromID(item);
+            }
+
+            coreTextbox.SyntaxHighlighting = null;
+        }
+        catch
+        {
+            return false;
+        }
+
+        return true;
     }
 }
