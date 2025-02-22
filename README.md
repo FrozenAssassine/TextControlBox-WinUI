@@ -1,6 +1,3 @@
-‼️Update in Progress (16.01.2025)‼️
-
-
 <div align="center">
 <img src="images/Icon1.png" height="150px" width="auto">
 <h1>TextControlBox-WinUI</h1>
@@ -11,106 +8,101 @@
 <img src="https://img.shields.io/github/stars/FrozenAssassine/TextControlBox-WinUI.svg?style=flat">
 <img src="https://img.shields.io/github/repo-size/FrozenAssassine/TextControlBox-WinUI?style=flat">
 
-<!--[![NuGet version (TextControlBox)](https://img.shields.io/nuget/v/TextControlBox.JuliusKirsch)](https://www.nuget.org/packages/TextControlBox.JuliusKirsch)-->
-
 </div>
 
-<h3 align="center">A textbox for WinUI3 with syntax highlighting, line numbering, and support for a large amount of text</h3>
+<br/>
 
-## 📥 Download Nuget
-### [Nuget.org](https://www.nuget.org/packages/TextControlBox.WinUI.JuliusKirsch/1.1.0-alpha)
+## 🤔 What is TextControlBox?
+TextControlBox is a powerful and highly customizable textbox control for WinUI 3 applications. It provides an advanced text editing experience with features like syntax highlighting for multiple programming languages, intuitive search and replace functionality, zooming, line numbering, and smooth scrolling. With support for undo/redo, customizable themes, and efficient performance.
 
-## 🔎 Features:
-- Viewing files with a million lines or more without performance issues
-- Syntax highlighting
-- Outstanding performance because it only renders the lines that are needed to display
-- Line numbers
-- Line highlighter
-- Use JSON to create custom syntax highlighting
-- Highly customizable
-- Fast
+## 🛠️ Features
 
+- **Basic Text Editing**: Cut, copy, paste, undo, redo, and full text selection capabilities.
+- **Navigation & Selection**:
+  - Go to a specific line.
+  - Select specific lines or the entire text.
+- **Scrolling & Zooming**:
+  - Scroll to specific lines or pages.
+  - Zoom in and out for better readability.
+- **Syntax Highlighting**:
+  - Built-in support for multiple programming languages.
+  - Easily toggle syntax highlighting on and off.
+- **Search & Replace**:
+  - Multi highlight search
+  - Find and replace text with options for case sensitivity and whole-word matching.
+- **Customization Options**:
+  - Show or hide line numbers.
+  - Customize font, theme, and cursor appearance.
+  - Configure spaces vs. tabs for indentation.
+- **Other Features**:
+  - Drag & drop text support.
+  - Surround selected text with custom characters.
+  - Get cursor position and manage selections programmatically.
 
-## ❗ Problems:
-- Current text limit is 100 million characters
-- Currently, there is no text wrapping
+## ❤️ Support my work  
+<a href='https://ko-fi.com/K3K819KSLG' target='_blank'>  
+    <img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' />
+</a>
 
-## 🚩 Available languages:
-- Batch
-- Config file
-- C++
-- C#
-- CSV
-- CSS
-- GCode
-- Hex
-- Html
-- Java
-- Javascript
-- JSON
-- Markdown
-- LaTex
-- PHP
-- Python
-- QSharp
-- SQL
-- Toml
-- XML
+## 🏗️ Getting Started
 
-## Create custom syntax highlighting languages with JSON:
-```json
-{
-  "Highlights": [
-    {
-      "CodeStyle": { //optional delete when not used
-        "Bold": true, 
-        "Underlined": true, 
-        "Italic": true
-      },
-      "Pattern": "REGEX PATTERN",
-      "ColorDark": "#ffffff", //color in dark theme
-      "ColorLight": "#000000" //color in light theme
-    },
-  ],
-  "Name": "NAME",
-  "Filter": "EXTENSION1|EXTENSION2", //.cpp|.c
-  "Description": "DESCRIPTION",
-  "Author": "AUTHOR"
-}  
+### Installation
+### 📥 [Download Nuget.org](https://www.nuget.org/packages/TextControlBox.WinUI.JuliusKirsch/1.1.0-alpha)
+
+Add TextControlBox to your WinUI 3 project and include the necessary namespace in your XAML or C# file.
+
+```csharp
+using TextControlBoxNS;
 ```
 
-### To bind it to the textbox you can use one of these ways:
-```cs
+### Basic Usage
 
-TextControlBox textbox = new TextControlBox();
-
-//Use a built in language -> see list a bit higher
-textbox.CodeLanguage = TextControlBox.GetCodeLanguageFromId(CodeLanguageId.CSharp");
-
-//Use a custom language:
-var result = TextControlBox.GetCodeLanguageFromJson("JSON DATA");
-if(result.Succeed)
-     textbox.CodeLanguage = result.CodeLanguage; 
+```csharp
+TextControlBox textBox = new TextControlBox();
+textBox.LoadText("Hello, world!");
+textBox.ShowLineNumbers = true;
+textBox.EnableSyntaxHighlighting = true;
 ```
 
-## Create custom designs in C#:
-```cs
-textbox.Design = new TextControlBoxDesign(
-    new SolidColorBrush(Color.FromArgb(255, 30, 30, 30)), //Background brush
-    Color.FromArgb(255, 255, 255, 255), //Text color
-    Color.FromArgb(100, 0, 100, 255), //Selection color
-    Color.FromArgb(255, 255, 255, 255), //Cursor color
-    Color.FromArgb(50, 100, 100, 100), //Linehighlighter color
-    Color.FromArgb(255, 100, 100, 100), //Linenumber color
-    Color.FromArgb(0, 0, 0, 0), //Linenumber background
-    Color.FromArgb(100,255,150,0) //Search highlight color
-    );
+## 🚀 Events
+
+TextControlBox provides several events to handle user interactions:
+
+- `TextChanged`: Triggered when the text content changes.
+- `SelectionChanged`: Fires when the user changes the selected text.
+- `ZoomChanged`: Called when the zoom factor is adjusted.
+- `GotFocus` / `LostFocus`: Handle focus changes.
+
+## 🎨 Syntax Highlighting
+
+TextControlBox includes built-in support for multiple languages:
+
+- C#, C++, Java, Python, JavaScript, JSON, HTML, CSS, SQL, Markdown, Batch, Config, CSV, LaTex, PHP, QSharp, TOML, XML
+
+Enable syntax highlighting:
+
+```csharp
+textBox.SelectSyntaxHighlightingById(SyntaxHighlightID.CSharp);
 ```
 
+## 🔎 Search & Replace
 
-## Contributors:
-If you want to contribute for this project, feel free to open an <a href="https://github.com/FrozenAssassine/TextControlBox-WinUI/issues/new">issue</a> or a <a href="https://github.com/FrozenAssassine/TextControlBox-WinUI/pulls">pull request</a>.
+Start a search:
 
-#
+```csharp
+textBox.BeginSearch("example", wholeWord: false, matchCase: true);
+```
 
-<img src="images/image1.png">
+Replace occurrences:
+
+```csharp
+textBox.ReplaceAll("oldText", "newText", matchCase: true, wholeWord: false);
+```
+
+## 👨‍👩‍👧‍👦 Contributing
+
+Contributions are welcome! Feel free to submit a pull request or open an issue.
+
+## 🧾 License
+
+This project is licensed under the MIT License.
