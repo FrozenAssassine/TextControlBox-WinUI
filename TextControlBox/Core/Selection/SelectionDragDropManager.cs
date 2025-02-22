@@ -11,6 +11,7 @@ namespace TextControlBoxNS.Core.Selection;
 internal class SelectionDragDropManager
 {
     public bool isDragDropSelection = false;
+    public bool dragDropSelectionEnabled = true;
 
     private CursorManager cursorManager;
     private SelectionManager selectionManager;
@@ -45,7 +46,7 @@ internal class SelectionDragDropManager
 
     public void DoDragDropSelection()
     {
-        if (!selectionManager.HasSelection || textManager._IsReadonly)
+        if (!dragDropSelectionEnabled && !selectionManager.HasSelection || textManager._IsReadonly)
             return;
 
         //Position to insert is selection start or selection end -> no need to drag
@@ -87,7 +88,10 @@ internal class SelectionDragDropManager
     }
     public bool DragDropOverSelection(Point curPos)
     {
-        bool res = SelectionHelper.CursorIsInSelection(selectionManager, cursorManager.currentCursorPosition) ||
+        if (!dragDropSelectionEnabled)
+            return false;
+
+            bool res = SelectionHelper.CursorIsInSelection(selectionManager, cursorManager.currentCursorPosition) ||
             SelectionHelper.PointerIsOverSelection(textRenderer, selectionManager, curPos);
 
         coreTextbox.ChangeCursor(res ? InputSystemCursorShape.UniversalNo : InputSystemCursorShape.IBeam);

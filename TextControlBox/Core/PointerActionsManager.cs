@@ -133,7 +133,7 @@ internal class PointerActionsManager
         //Text drag/drop
         if (selectionManager.HasSelection)
         {
-            if (SelectionHelper.PointerIsOverSelection(textRenderer, selectionManager, pointerPosition) && !selectionDragDropManager.isDragDropSelection)
+            if (selectionDragDropManager.dragDropSelectionEnabled && SelectionHelper.PointerIsOverSelection(textRenderer, selectionManager, pointerPosition) && !selectionDragDropManager.isDragDropSelection)
             {
                 PointerClickCount = 0;
                 selectionDragDropManager.isDragDropSelection = true;

@@ -1,19 +1,15 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using TextControlBoxNS.Core;
 using TextControlBoxNS.Models;
-using TextControlBoxNS.Test;
 using Windows.Foundation;
 
 namespace TextControlBoxNS;
 
 /// <summary>
-/// 
+/// A custom textbox control with a lot of features
 /// </summary>
 public partial class TextControlBox : UserControl
 {
@@ -47,13 +43,13 @@ public partial class TextControlBox : UserControl
         Loaded?.Invoke(this);
 
         //start testings:
-        if (Debugger.IsAttached)
-        {
-            this.LoadLines(Enumerable.Range(0, 5).Select(x => "Line " + x + " is cool right?"));
+        //if (Debugger.IsAttached)
+        //{
+        //    this.LoadLines(Enumerable.Range(0, 5).Select(x => "Line " + x + " is cool right?"));
 
-            TestHelper testHelper = new TestHelper(coreTextBox);
-            testHelper.Evaluate();
-        }
+        //    TestHelper testHelper = new TestHelper(coreTextBox);
+        //    testHelper.Evaluate();
+        //}
 
     }
 
@@ -831,6 +827,15 @@ public partial class TextControlBox : UserControl
     /// Returns null if no text is selected
     /// </summary>
     public TextControlBoxSelection? CurrentSelectionOrdered => coreTextBox.CurrentSelectionOrdered;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether text can be dragged and dropped within the textbox.
+    /// </summary>
+    public bool CanDragDropText
+    {
+        get => coreTextBox.CanDragDropText;
+        set => coreTextBox.CanDragDropText = value;
+    }
 
     /// <summary>
     /// Represents a delegate used for handling the text changed event in the TextControlBox.

@@ -1036,6 +1036,11 @@ internal sealed partial class CoreTextControlBox : UserControl
     public bool HasSelection => selectionManager.HasSelection;
     public TextControlBoxSelection? CurrentSelection => selectionManager.HasSelection ? new TextControlBoxSelection(this.selectionManager.currentTextSelection) : null;
     public TextControlBoxSelection? CurrentSelectionOrdered => selectionManager.HasSelection ? new TextControlBoxSelection(selectionManager) : null;
+    public bool CanDragDropText
+    {
+        get => selectionDragDropManager.dragDropSelectionEnabled;
+        set => selectionDragDropManager.dragDropSelectionEnabled = value;
+    }
 
     public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {
