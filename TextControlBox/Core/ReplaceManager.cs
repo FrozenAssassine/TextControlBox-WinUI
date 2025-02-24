@@ -28,10 +28,10 @@ internal class ReplaceManager
         TextManager textManager,
         SearchManager searchManager,
         CursorManager cursorManager,
-    TextActionManager textActionManager,
-    SelectionRenderer selectionRenderer,
-    SelectionManager selectionManager,
-    EventsManager eventsManager)
+        TextActionManager textActionManager,
+        SelectionRenderer selectionRenderer,
+        SelectionManager selectionManager,
+        EventsManager eventsManager)
     {
         this.canvasUpdateManager = canvasUpdateManager;
         this.undoRedo = undoRedo;
@@ -48,6 +48,8 @@ internal class ReplaceManager
     {
         if (word.Length == 0)
             return SearchResult.InvalidInput;
+
+        selectionManager.ClearSelection();
 
         SearchParameter searchParameter = new SearchParameter(word, wholeWord, matchCase);
 
@@ -88,7 +90,8 @@ internal class ReplaceManager
             eventsManager.CallTextChanged();
 
             var start = res.Selection.StartPosition;
-            selectionManager.SetSelection(start.LineNumber, start.CharacterPosition, start.LineNumber, start.CharacterPosition + replaceWord.Length);
+            selectionManager.ClearSelection();
+            cursorManager.SetCursorPosition(start.LineNumber, start.CharacterPosition + replaceWord.Length);
         }
         return res;
     }
