@@ -22,7 +22,6 @@ internal class PointerActionsManager
     private bool isPendingCursorPlacement = false;
 
     private SelectionRenderer selectionRenderer;
-    private SelectionDragDropManager selectionDragDropManager;
     private CoreTextControlBox coreTextbox;
     private ScrollManager scrollManager;
     private CanvasUpdateManager canvasUpdateManager;
@@ -40,14 +39,12 @@ internal class PointerActionsManager
         CanvasUpdateManager canvasUpdateManager,
         ScrollManager scrollManager,
         SelectionRenderer selectionRenderer,
-        SelectionDragDropManager selectionDragDropManager,
         CurrentLineManager currentLineManager,
         SelectionManager selectionManager
         )
     {
         this.currentLineManager = currentLineManager;
         this.selectionRenderer = selectionRenderer;
-        this.selectionDragDropManager = selectionDragDropManager;
         this.coreTextbox = coreTextbox;
         this.cursorManager = cursorManager;
         this.textManager = textManager;
@@ -129,24 +126,6 @@ internal class PointerActionsManager
             scrollManager,
             pointerPosition,
             cursorManager.currentCursorPosition);
-
-        //Text drag/drop
-        if (selectionManager.HasSelection)
-        {
-            if (selectionDragDropManager.dragDropSelectionEnabled && SelectionHelper.PointerIsOverSelection(textRenderer, selectionManager, pointerPosition) && !selectionDragDropManager.isDragDropSelection)
-            {
-                PointerClickCount = 0;
-                selectionDragDropManager.isDragDropSelection = true;
-
-                return;
-            }
-
-            //End the selection by pressing on it
-            if (selectionDragDropManager.isDragDropSelection && selectionDragDropManager.DragDropOverSelection(pointerPosition))
-            {
-                selectionDragDropManager.EndDragDropSelection(true);
-            }
-        }
 
         //Clear the selection when pressing anywhere
         if (selectionManager.HasSelection)
@@ -231,11 +210,6 @@ internal class PointerActionsManager
         OldTouchPosition = null;
         selectionManager.IsSelectingOverLinenumbers = false;
 
-        if (selectionDragDropManager.isDragDropSelection && !selectionDragDropManager.DragDropOverSelection(point))
-            selectionDragDropManager.DoDragDropSelection();
-        else if (selectionDragDropManager.isDragDropSelection)
-            selectionDragDropManager.EndDragDropSelection();
-
         if (selectionManager.IsSelecting)
             coreTextbox.Focus(FocusState.Programmatic);
 
@@ -295,7 +269,6 @@ internal class PointerActionsManager
     
     private void PointerMovedDragDrop(Point point)
     {
-        selectionDragDropManager.DragDropOverSelection(point);
         CursorHelper.UpdateCursorPosFromPoint(
             coreTextbox.canvasText,
             currentLineManager,
@@ -330,17 +303,13 @@ internal class PointerActionsManager
     public void PointerMovedAction(Point point)
     {
         //if the user moves the pointer before the delay expires, it is a selection
-        if (selectionManager.IsSelecting || selectionDragDropManager.isDragDropSelection)
+        if (selectionManager.IsSelecting)
         {
             //handle pointer moved
             HandleScrollingWhileSelecting(point);
 
             //Drag drop text -> move the cursor to get the insertion point
-            if (selectionDragDropManager.isDragDropSelection)
-            {
-                PointerMovedDragDrop(point);
-            }
-            else if (selectionManager.IsSelecting)
+            if (selectionManager.IsSelecting)
             {
                 //Selection over linenumbers
                 if (selectionManager.IsSelectingOverLinenumbers)

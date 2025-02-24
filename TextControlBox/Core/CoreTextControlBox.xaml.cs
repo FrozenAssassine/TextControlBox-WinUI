@@ -44,7 +44,6 @@ internal sealed partial class CoreTextControlBox : UserControl
     public readonly LineHighlighterManager lineHighlighterManager;
     public readonly LineNumberManager lineNumberManager;
     public readonly EventsManager eventsManager;
-    public readonly SelectionDragDropManager selectionDragDropManager;
     public readonly FocusManager focusManager;
     public readonly PointerActionsManager pointerActionsManager;
     public readonly TextLayoutManager textLayoutManager;
@@ -99,7 +98,6 @@ internal sealed partial class CoreTextControlBox : UserControl
         eventsManager = new EventsManager();
         lineNumberRenderer = new LineNumberRenderer();
         zoomManager = new ZoomManager();
-        selectionDragDropManager = new SelectionDragDropManager();
         focusManager = new FocusManager();
         pointerActionsManager = new PointerActionsManager();
         textLayoutManager = new TextLayoutManager();
@@ -129,9 +127,8 @@ internal sealed partial class CoreTextControlBox : UserControl
         eventsManager.Init(searchManager, cursorManager);
         lineNumberRenderer.Init(textManager, textLayoutManager, textRenderer, designHelper, lineNumberManager);
         zoomManager.Init(textManager, textRenderer, scrollManager, canvasUpdateManager, lineNumberRenderer, eventsManager);
-        selectionDragDropManager.Init(this, cursorManager, selectionManager, textManager, textActionManager, canvasUpdateManager, selectionRenderer, textRenderer, undoRedo);
         focusManager.Init(this, canvasUpdateManager, inputHandler, eventsManager);
-        pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, selectionDragDropManager, currentLineManager, selectionManager);
+        pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, currentLineManager, selectionManager);
         textLayoutManager.Init(textManager, zoomManager);
         autoIndentionManager.Init(textManager, tabSpaceHelper);
         replaceManager.Init(canvasUpdateManager, undoRedo, textManager, searchManager, cursorManager, textActionManager, selectionRenderer, selectionManager, eventsManager);
@@ -342,7 +339,6 @@ internal sealed partial class CoreTextControlBox : UserControl
                 }
             case VirtualKey.Escape:
                 {
-                    selectionDragDropManager.EndDragDropSelection();
                     ClearSelection();
                     break;
                 }
@@ -1037,11 +1033,6 @@ internal sealed partial class CoreTextControlBox : UserControl
     public bool HasSelection => selectionManager.HasSelection;
     public TextControlBoxSelection? CurrentSelection => selectionManager.HasSelection ? new TextControlBoxSelection(this.selectionManager.currentTextSelection) : null;
     public TextControlBoxSelection? CurrentSelectionOrdered => selectionManager.HasSelection ? new TextControlBoxSelection(selectionManager) : null;
-    public bool CanDragDropText
-    {
-        get => selectionDragDropManager.dragDropSelectionEnabled;
-        set => selectionDragDropManager.dragDropSelectionEnabled = value;
-    }
 
     public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {
