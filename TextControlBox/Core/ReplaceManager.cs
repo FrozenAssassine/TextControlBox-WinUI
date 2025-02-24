@@ -46,7 +46,7 @@ internal class ReplaceManager
 
     public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord)
     {
-        if (word.Length == 0 || replaceWord.Length == 0)
+        if (word.Length == 0)
             return SearchResult.InvalidInput;
 
         SearchParameter searchParameter = new SearchParameter(word, wholeWord, matchCase);
