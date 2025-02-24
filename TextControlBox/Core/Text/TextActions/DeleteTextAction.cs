@@ -27,6 +27,10 @@ internal class DeleteTextAction
 
     public void DeleteCurrentLine()
     {
+        //Do not delete empty line
+        if (cursorManager.LineNumber == 0 && textManager.GetLineLength(cursorManager.LineNumber) == 0)
+            return;
+
         coreTextbox.DeleteLine(cursorManager.LineNumber);
     }
 
