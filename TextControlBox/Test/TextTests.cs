@@ -119,9 +119,9 @@ namespace TextControlBoxNS.Test
 
             string textBefore = coreTextbox.GetLineText(3);
             string textToAdd = "Add single line character";
-            int lineBefore = coreTextbox.cursorManager.currentCursorPosition.LineNumber;
 
             coreTextbox.SetCursorPosition(3, 0);
+            int lineBefore = coreTextbox.cursorManager.currentCursorPosition.LineNumber;
             coreTextbox.textActionManager.AddCharacter(coreTextbox.stringManager.CleanUpString(textToAdd));
 
             var cur = coreTextbox.cursorManager.currentCursorPosition;
@@ -130,7 +130,7 @@ namespace TextControlBoxNS.Test
 
             bool res =
                 cur.CharacterPosition == textToAdd.Length &&
-                cur.LineNumber == lineBefore + 1 &&
+                cur.LineNumber == lineBefore &&
                 coreTextbox.GetLineText(3).Equals(textToAdd + textBefore);
 
             coreTextbox.SetText(originalText); //reset content
@@ -141,16 +141,16 @@ namespace TextControlBoxNS.Test
         {
             Debug.Write("Add Character (multi line text, no selection)");
 
-            int lineBefore = coreTextbox.cursorManager.currentCursorPosition.LineNumber;
             string textToAdd = "Add Line 1\nAdd Line 2\nAdd Line 3";
             coreTextbox.SetCursorPosition(2, 10);
+            int lineBefore = coreTextbox.cursorManager.currentCursorPosition.LineNumber;
             coreTextbox.textActionManager.AddCharacter(coreTextbox.stringManager.CleanUpString(textToAdd));
 
             CheckUndoRedo();
 
             var cur = coreTextbox.cursorManager.currentCursorPosition;
             bool res =
-                cur.LineNumber == lineBefore + 1 &&
+                cur.LineNumber == lineBefore + 2 &&
                 coreTextbox.GetLineText(2).Substring(10, 10).Equals("Add Line 1") &&
                 coreTextbox.GetLineText(3).Substring(0, 10).Equals("Add Line 2") &&
                 coreTextbox.GetLineText(4).Substring(0, 10).Equals("Add Line 3") &&
