@@ -112,9 +112,13 @@ namespace TextControlBoxNS.Core.Text
             }
 
             //triple click selection is one character longer than normal selection and removes the whole line instead of the line content
-            if(orderedSel.startLine == orderedSel.endLine && orderedSel.startChar == 0 && orderedSel.endChar == textManager.GetLineLength(orderedSel.startLine) + 1)
+            if(orderedSel.startLine == orderedSel.endLine && 
+                orderedSel.startChar == 0 && 
+                orderedSel.endChar == textManager.GetLineLength(orderedSel.startLine) + 1
+                )
             {
-                numberOfRemovedLines += 1;
+                numberOfRemovedLines = 1;
+                numberOfAddedLines = 0;
             }
 
             var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);

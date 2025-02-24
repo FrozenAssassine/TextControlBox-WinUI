@@ -58,6 +58,11 @@ internal class TextSelection
     {
         return Math.Max(StartPosition.CharacterPosition, EndPosition.CharacterPosition);
     }
+    internal new string ToString()
+    {
+        return StartPosition.LineNumber + ":" + StartPosition.CharacterPosition + "||" + EndPosition.LineNumber + ":" + EndPosition.CharacterPosition;
+    }
+
     public bool IsLineInSelection(int line)
     {
         if (!this.StartPosition.IsNull && !this.EndPosition.IsNull)

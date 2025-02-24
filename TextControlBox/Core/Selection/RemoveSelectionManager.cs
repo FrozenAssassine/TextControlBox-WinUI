@@ -19,6 +19,7 @@ internal class RemoveSelectionManager
     {
         string lineText = textManager.GetLineText(line);
 
+        //Whole line selected triple click
         if (startPosition == 0 && endPosition == lineText.Length + 1)
         {
             textManager.DeleteAt(line);

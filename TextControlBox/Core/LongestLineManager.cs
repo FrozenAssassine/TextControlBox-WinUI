@@ -88,6 +88,9 @@ internal class LongestLineManager
         else
             _longestIndex = index;
 
+        if (_longestIndex >= textManager.LinesCount || textManager.LinesCount == 0)
+            return;
+
         longestLineLength = textManager.totalLines[_longestIndex].Length;
         longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[longestIndex], textRenderer.TextFormat);
         HasLongestLineChanged = true;
