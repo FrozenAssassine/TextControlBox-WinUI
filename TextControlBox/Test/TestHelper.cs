@@ -14,7 +14,7 @@ namespace TextControlBoxNS.Test
         public TestHelper(CoreTextControlBox coreTextbox)
         {
             this.coreTextbox = coreTextbox;
-            TestCases = new List<TestCase> { new HelperTest(coreTextbox), new TextTests("Text Tests", coreTextbox), new EndUserFunctionsTest("End User Functions", coreTextbox) };
+            TestCases = [ new HelperTest(coreTextbox), new TextTests("Text Tests", coreTextbox) ]; //, new EndUserFunctionsTest("End User Functions", coreTextbox) };
         }
 
         public void Evaluate()

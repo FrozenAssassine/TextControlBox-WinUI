@@ -236,11 +236,19 @@ namespace TextControlBoxNS.Core.Text
         {
             try
             {
+                if (lines == null)
+                {
+                    Safe_LoadLines([]);
+                    return;
+                }
+
                 selectionManager.ClearSelection();
                 undoRedo.ClearAll();
 
                 textManager.ClearText();
                 textManager.totalLines = new Collections.Pooled.PooledList<string>(lines);
+                if (textManager.LinesCount == 0)
+                    textManager.AddLine();
 
                 textManager.LineEnding = lineEnding;
 
@@ -264,6 +272,12 @@ namespace TextControlBoxNS.Core.Text
         {
             try
             {
+                if (text == null)
+                {
+                    Safe_LoadText("");
+                    return;
+                }
+
                 if (await Utils.IsOverTextLimit(text.Length))
                     return;
 
@@ -299,6 +313,12 @@ namespace TextControlBoxNS.Core.Text
         {
             try
             {
+                if (text == null)
+                {
+                    Safe_SetText("");
+                    return;
+                }
+
                 if (await Utils.IsOverTextLimit(text.Length))
                     return;
 

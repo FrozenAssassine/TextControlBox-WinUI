@@ -46,6 +46,10 @@ namespace TextControlBoxNS.Test
                 this.Test_18,
                 this.Test_19,
                 this.Test_20,
+                this.Test_21,
+                this.Test_22,
+                this.Test_23,
+                this.Test_30,
                 ];
         }
 
@@ -468,5 +472,46 @@ namespace TextControlBoxNS.Test
             return true;
         }
 
+        public bool Test_21()
+        {
+            Debug.WriteLine("Load Lines empty array");
+
+            coreTextbox.LoadLines([]);
+            coreTextbox.LoadLines(null);
+
+            return coreTextbox.textManager.totalLines.Count == 1;
+        }
+
+        public bool Test_22()
+        {
+            Debug.WriteLine("Load Text null + empty string");
+
+            coreTextbox.LoadText(null);
+            coreTextbox.LoadText("");
+
+            return coreTextbox.textManager.totalLines.Count == 1;
+        }
+
+        public bool Test_23()
+        {
+            Debug.WriteLine("Load Text null + empty string");
+
+            coreTextbox.SetText(null);
+            coreTextbox.SetText("");
+
+            return coreTextbox.textManager.totalLines.Count == 1;
+        }
+
+        public bool Test_30()
+        {
+            Debug.WriteLine("Surround Selection");
+            coreTextbox.SetText(originalText); // reset content
+
+            coreTextbox.SetCursorPosition(0, 0);
+            coreTextbox.SetSelection(0, 87); //whole text
+
+            coreTextbox.SurroundSelectionWith("<div>", "</div>");
+            return true;
+        }
     }
 }

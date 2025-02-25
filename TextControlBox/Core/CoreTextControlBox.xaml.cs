@@ -754,7 +754,6 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public void SurroundSelectionWith(string text)
     {
-        text = stringManager.CleanUpString(text);
         SurroundSelectionWith(text, text);
     }
 
