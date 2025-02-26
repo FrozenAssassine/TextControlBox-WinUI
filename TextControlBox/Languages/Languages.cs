@@ -104,7 +104,7 @@
             
             //Try/Catch/Finally Blocks
             new SyntaxHighlights("\\b(try|catch|finally)\\b", "#9922ff", "#6666ff"),
-            
+                        
             //Preprocessor Directives
             new SyntaxHighlights("#region.*$", "#ff0000", "#ff0000", true),
             new SyntaxHighlights("#endregion", "#ff0000", "#ff0000", true),
@@ -132,25 +132,16 @@
             this.Filter = new string[5] { ".ngc", ".tap", ".gcode", ".nc", ".cnc" };
             this.Description = "Syntax highlighting for GCode language";
             this.Highlights = new SyntaxHighlights[]
-            {
-            // Coordinate Axes
-            new SyntaxHighlights("\\b[XYZ](?=[+-]?\\d+(?:\\.\\d+)?)", "#00ff00", "#00ff00"),
-            new SyntaxHighlights("\\bA(?=[+-]?\\d+(?:\\.\\d+)?)", "#ff00ff", "#ff00ff"),
-            
-            // Extruder and Feedrate
-            new SyntaxHighlights("\\b[EF](?=[+-]?\\d+(?:\\.\\d+)?)", "#ffAA00", "#ffAA00"),
-            
-            // Spindle and Tool Commands
-            new SyntaxHighlights("\\b[ST](?=[+-]?\\d+(?:\\.\\d+)?)", "#ffff00", "#ffff00"),
-            
-            // G and M Codes
-            new SyntaxHighlights("\\b[G|M]\\d+\b", "#00aaaa", "#00ffff"),
-            
-            // Numeric Values (handles floating point and scientific notation)
-            new SyntaxHighlights("[+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?", "#ff00ff", "#9f009f"),
-            
-            // Comments (handles inline and full-line comments)
-            new SyntaxHighlights("(;|\\/\\/|\\brem\\b).*", "#888888", "#888888"),
+            { 
+                new SyntaxHighlights("\\bY(?=([0-9]|(\\.|\\+|\\-)[0-9]))", "#00ff00", "#00ff00"),
+                new SyntaxHighlights("\\bX(?=([0-9]|(\\.|\\+|\\-)[0-9]))", "#ff0000", "#ff0000"),
+                new SyntaxHighlights("\\bZ(?=([0-9]|(\\.|\\+|\\-)[0-9]))", "#0077ff", "#0077ff"),
+                new SyntaxHighlights("\\bA(?=([0-9]|(\\+|\\-)[0-9]))", "#ff00ff", "#ff00ff"),
+                new SyntaxHighlights("\\b(E|F)(?=(\\-.|\\.|[0-9]|(\\+|\\-)[0-9]))", "#ffAA00", "#ffAA00"),
+                new SyntaxHighlights("\\b(S|T)(?=(\\-.|\\.|[0-9]|(\\+|\\-)[0-9]))", "#ffff00", "#ffff00"),
+                new SyntaxHighlights("([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?", "#ff00ff", "#9f009f"),
+                new SyntaxHighlights("[G|M][0-999].*?[\\s|\\n]", "#00aaaa", "#00ffff"),
+                new SyntaxHighlights("(;|\\/\\/|\\brem\\b).*", "#888888", "#888888"),
             };
         }
     }
