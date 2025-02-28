@@ -41,6 +41,13 @@ internal class EndUserFunctionsTest : TestCase
             this.Test_17,
             this.Test_18,
             this.Test_19,
+            this.Test_20,
+            this.Test_21,
+            this.Test_22,
+            this.Test_23,
+            this.Test_24,
+            this.Test_25,
+            this.Test_26,
             ];
     }
 
@@ -191,7 +198,7 @@ internal class EndUserFunctionsTest : TestCase
     {
         Debug.WriteLine("Function select all, set SelectedText equals text in textbox");
         var text = "Line1\nLine2\nLine3\n";
-        
+
         coreTextbox.SetText("Line100\nLine200\nLine300\n");
 
         coreTextbox.SelectAll();
@@ -237,7 +244,7 @@ internal class EndUserFunctionsTest : TestCase
 
         coreTextbox.LoadLines(["Line1", "Line2", "Line3"]);
 
-        return coreTextbox.GetText().Equals(coreTextbox.stringManager.CleanUpString(text)) && 
+        return coreTextbox.GetText().Equals(coreTextbox.stringManager.CleanUpString(text)) &&
             coreTextbox.cursorManager.LineNumber == 2 && coreTextbox.cursorManager.CharacterPosition == 5;
     }
     public bool Test_18()
@@ -282,5 +289,125 @@ internal class EndUserFunctionsTest : TestCase
         }
 
         return true;
+    }
+
+    public bool Test_20()
+    {
+        Debug.WriteLine("Search Replace All");
+
+        coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+
+        string textBefore = coreTextbox.GetText();
+        coreTextbox.ReplaceAll("line", "Test", false, false);
+
+        bool res = coreTextbox.GetText().Equals(textBefore.Replace("Line", "Test"));
+        return res;
+    }
+
+    public bool Test_21()
+    {
+        Debug.WriteLine("Search Replace All (Match Case)");
+
+        coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+
+        string textBefore = coreTextbox.GetText();
+
+        //should replace nothing
+        coreTextbox.ReplaceAll("line", "Test", true, false);
+        bool res1 = coreTextbox.GetText().Equals(textBefore);
+
+        coreTextbox.ReplaceAll("Line", "Test", true, false);
+
+        bool res2 = coreTextbox.GetText().Equals(textBefore.Replace("Line", "Test"));
+        return res1 && res2;
+    }
+
+    public bool Test_22()
+    {
+        Debug.WriteLine("Search Replace All (Whole word)");
+
+        //nothign should change
+        coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+        string textBefore = coreTextbox.GetText();
+        coreTextbox.ReplaceAll("Line", "Test", false, true);
+
+        bool res1 = coreTextbox.GetText().Equals(textBefore);
+
+        //replace them
+        coreTextbox.SetText("Line 1\nLine 2\nLine 3\nLine 4\nLine 5");
+
+        textBefore = coreTextbox.GetText();
+        coreTextbox.ReplaceAll("Line", "Test", false, true);
+
+        bool res2 = coreTextbox.GetText().Equals(textBefore.Replace("Line", "Test"));
+        return res1 && res2;
+    }
+
+    public bool Test_23()
+    {
+        Debug.WriteLine("Search Replace next");
+
+        coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+        coreTextbox.SetCursorPosition(0, 0);
+
+        coreTextbox.BeginSearch("Line", false, false);
+        string textBefore = coreTextbox.GetText();
+        for (int i = 0; i < 5; i++)
+        {
+            coreTextbox.ReplaceNext("Test");
+        }
+
+        return coreTextbox.GetText().Equals(textBefore.Replace("Line", "Test")) && !coreTextbox.selectionManager.HasSelection && !coreTextbox.HasSelection;
+    }
+
+    public bool Test_24()
+    {
+        Debug.WriteLine("Search Find next");
+
+        coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+        coreTextbox.SetCursorPosition(0, 0);
+
+        coreTextbox.BeginSearch("Line", false, false);
+        string textBefore = coreTextbox.GetText();
+
+        bool invalidRes = false;
+        for (int i = 0; i < 5; i++)
+        {
+            if (coreTextbox.FindNext() != SearchResult.Found)
+                invalidRes = true;
+        }
+        return !invalidRes;
+    }
+
+    public bool Test_25()
+    {
+        Debug.WriteLine("Search Find previous");
+
+        coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+        coreTextbox.SetCursorPosition(5, 5);
+
+        coreTextbox.BeginSearch("Line", false, false);
+        string textBefore = coreTextbox.GetText();
+
+        bool invalidRes = false;
+        for (int i = 0; i < 5; i++)
+        {
+            if (coreTextbox.FindPrevious() != SearchResult.Found)
+                invalidRes = true;
+        }
+        return !invalidRes;
+    }
+
+    public bool Test_26()
+    {
+        Debug.WriteLine("Search Replace All with nothing");
+
+        coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+
+        string textBefore = coreTextbox.GetText();
+        coreTextbox.ReplaceAll("line", "", false, false);
+
+        bool res = coreTextbox.GetText().Equals(textBefore.Replace("Line", ""));
+        return res;
     }
 }
