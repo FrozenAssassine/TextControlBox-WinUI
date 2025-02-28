@@ -11,7 +11,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageId>TextControlBox.WinUI.JuliusKirsch</PackageId>
 		<Title>TextControlBox WinUI</Title>
-		<Version>1.1.0-alpha.2</Version>
+		<Version>1.1.0-alpha.3</Version>
 		<Authors>Julius Kirsch</Authors>
 		<Product>TextControlBox WinUI</Product>
 		<Description>A powerful and highly customizable textbox control for WinUI 3 applications. It provides an advanced text editing experience with features like syntax highlighting for multiple programming languages, intuitive search and replace functionality, zooming, line numbering, and smooth scrolling. With support for undo/redo, customizable themes, and efficient performance.</Description>
@@ -20,9 +20,13 @@
 		<RepositoryUrl>https://github.com/FrozenAssassine/TextControlBox-WinUI</RepositoryUrl>
 		<PackageTags>TextControlBox; Textbox; WinUI; C#; SyntaxHighlighting; LineNumbers</PackageTags>
 		<PackageReleaseNotes>
-			New Features: Cursor auto-clamp, triple-click selects lines, improved batch redrawing
-			Fixes: Cursor glitches, selection issues, undo/redo improvements, search fixes
-			Improvements: Optimized syntax highlighting regex, better error handling, cleanup and performance tweaks
+			Fixed issues with loading lines, SetText, LoadText, and allowing null/empty arrays.
+			Fixed "Replace All" not working with an empty string.
+			Fixed requirement to open search before using "Replace All".
+			Fixed drag-and-drop behavior for selected lines.
+			Fixed deletion of the last line, ensuring it works even when no text is present.
+			Fixed syntax highlighting crashes when encountering null values.
+			Removed selection drag-and-drop due to multiple issues.
 		</PackageReleaseNotes>
 		<PackageIcon>Icon1.png</PackageIcon>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
