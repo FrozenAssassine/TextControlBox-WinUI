@@ -34,11 +34,11 @@
             };
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("[\\[\\]]", "#0000FF", "#0000FF"),
-                new SyntaxHighlights("\\[[\\t\\s]*(\\w+)[\\t\\s]*\\]", "#9900FF", "#9900FF"),
-                new SyntaxHighlights("(\\w+)\\=", "#DDDD00", "#DDDD00"),
-                new SyntaxHighlights("\\=(.+)", "#EE0000", "#EE0000"),
-                new SyntaxHighlights(";.*", "#888888", "#888888"),
+                new SyntaxHighlights("\\[[\\t\\s]*(.+?)[\\t\\s]*\\]", "#9900FF", "#9900FF"), //section name
+                new SyntaxHighlights("[\\[\\]]", "#0000FF", "#0000FF"), //brackets around section name
+                new SyntaxHighlights("(\\w+)\\=", "#DDDD00", "#DDDD00"), //keys
+                new SyntaxHighlights("\\=(.+)", "#EE0000", "#EE0000"), //values
+                new SyntaxHighlights(";.*", "#888888", "#888888"), //comments
             };
         }
     }
@@ -90,13 +90,13 @@
             };
             this.Highlights = new SyntaxHighlights[]
                     {
-            //Number Matching (optimized)
+            //Number Matching
             new SyntaxHighlights("\\b[+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?\\b", "#ff00ff", "#ff00ff"),
             
-            //Function Names (optimized)
+            //Function Names
             new SyntaxHighlights("\\b[a-zA-Z_]\\w*(?=\\()", "#880088", "#ffbb00"),
             
-            //C# Keywords (optimized)
+            //C# Keywords
             new SyntaxHighlights("\\b(abstract|as|base|bool|break|byte|case|catch|char|checked|class|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|external|false|final|finally|fixed|float|for|foreach|get|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|partial|private|protected|public|readonly|ref|return|sbyte|sealed|set|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|value|var|virtual|void|volatile|while)\\b", "#0066bb", "#00ffff"),
             
             //Common C# Types
@@ -109,7 +109,7 @@
             new SyntaxHighlights("#region.*$", "#ff0000", "#ff0000", true),
             new SyntaxHighlights("#endregion", "#ff0000", "#ff0000", true),
             
-            //String Literals (handles escapes and verbatim strings)
+            //String Literals
             new SyntaxHighlights("@\".*?\"|\"(?:\\\\.|[^\"\\\\])*\"", "#ff5500", "#00FF00"),
             
             //Character Literals
@@ -118,7 +118,7 @@
             //Single-line Comments
             new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
             
-            //Multi-line Comments (handles better nesting cases)
+            //Multi-line Comments
             new SyntaxHighlights("/\\*(?:[^*]|\\*[^/])*\\*/", "#888888", "#646464"),
                     };
         }
@@ -414,7 +414,7 @@
             this.Description = "Syntax highlighting for CSV language";
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("[\\:\\,\\;]", "#1b9902", "#1b9902")
+                new SyntaxHighlights("[\\:\\,\\;\\|]", "#1b9902", "#1b9902")
             };
         }
     }
