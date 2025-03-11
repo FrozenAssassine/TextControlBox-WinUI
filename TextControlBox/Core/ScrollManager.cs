@@ -156,13 +156,13 @@ internal class ScrollManager
         double visibleStart = horizontalScrollBar.Value;
         double visibleEnd = visibleStart + canvasText.ActualWidth;
 
-        if (curPosInLine < visibleStart + 20)
+        if (curPosInLine < visibleStart + 3)
         {
-            horizontalScrollBar.Value = Math.Max(curPosInLine - 20, horizontalScrollBar.Minimum);
+            horizontalScrollBar.Value = Math.Max(curPosInLine - 3, horizontalScrollBar.Minimum);
         }
-        else if (curPosInLine > visibleEnd - 60)
+        else if (curPosInLine > visibleEnd - 3)
         {
-            horizontalScrollBar.Value = Math.Min(curPosInLine - canvasText.ActualWidth + 60, horizontalScrollBar.Maximum);
+            horizontalScrollBar.Value = Math.Min(curPosInLine - canvasText.ActualWidth + 3, horizontalScrollBar.Maximum);
         }
         OldHorizontalScrollValue = curPosInLine;
 
