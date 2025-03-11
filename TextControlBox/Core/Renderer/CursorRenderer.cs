@@ -81,6 +81,7 @@ internal class CursorRenderer
             return;
 
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
+        scrollManager.ScrollIntoViewHorizontal(canvasText, false);
 
         int characterPos = cursorManager.CharacterPosition;
         if (characterPos > currentLineLength)
