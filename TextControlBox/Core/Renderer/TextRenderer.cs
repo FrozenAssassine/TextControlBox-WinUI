@@ -2,6 +2,7 @@
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Diagnostics;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using Windows.Foundation;
@@ -132,7 +133,7 @@ internal class TextRenderer
             SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting, RenderedText);
         }
 
-        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, zoomManager.ZoomNeedsRecalculateLongestLine);
+        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false, zoomManager.ZoomNeedsRecalculateLongestLine);
         if (zoomManager.ZoomNeedsRecalculateLongestLine)
             zoomManager.ZoomNeedsRecalculateLongestLine = false;
 

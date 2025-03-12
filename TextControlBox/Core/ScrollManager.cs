@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using System;
+using System.Diagnostics;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
@@ -142,7 +143,7 @@ internal class ScrollManager
             canvasHelper.UpdateAll();
     }
 
-    public void ScrollIntoViewHorizontal(CanvasControl canvasText, bool update = true)
+    public bool ScrollIntoViewHorizontal(CanvasControl canvasText, bool update = true)
     {
         float curPosInLine = CursorHelper.GetCursorPositionInLine(
             textRenderer.CurrentLineTextLayout,
@@ -151,26 +152,32 @@ internal class ScrollManager
         );
 
         if (curPosInLine == OldHorizontalScrollValue)
-            return;
+            return false;
 
         double visibleStart = horizontalScrollBar.Value;
         double visibleEnd = visibleStart + canvasText.ActualWidth;
 
+        bool changed = false;
         if (curPosInLine < visibleStart + 3)
         {
+            changed = true;
             horizontalScrollBar.Value = Math.Max(curPosInLine - 3, horizontalScrollBar.Minimum);
         }
         else if (curPosInLine > visibleEnd)
         {
+            changed = true;
             horizontalScrollBar.Value = Math.Min(curPosInLine - canvasText.ActualWidth + 5, horizontalScrollBar.Maximum + 10);
         }
+
         OldHorizontalScrollValue = curPosInLine;
 
         if (update)
             canvasHelper.UpdateAll();
+
+        return changed;
     }
 
-    public void EnsureHorizontalScrollBounds(CanvasControl canvasText, LongestLineManager longestLineManager, bool forceRecalculateLongestLine = false)
+    public void EnsureHorizontalScrollBounds(CanvasControl canvasText, LongestLineManager longestLineManager, bool triggeredByCursor, bool forceRecalculateLongestLine = false)
     {
         longestLineManager.CheckRecalculateLongestLine(forceRecalculateLongestLine);
 
@@ -178,6 +185,12 @@ internal class ScrollManager
         horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
         horizontalScrollBar.Maximum = (longestLineManager.longestLineWidth.Width <= canvasText.ActualWidth ? 0 : longestLineManager.longestLineWidth.Width - canvasText.ActualWidth);
 
-        ScrollIntoViewHorizontal(canvasText, false);
+        if(ScrollIntoViewHorizontal(canvasText, false))
+        {
+            if (triggeredByCursor)
+                canvasHelper.UpdateText();
+            else
+                canvasHelper.UpdateCursor();
+        }
     }
 }

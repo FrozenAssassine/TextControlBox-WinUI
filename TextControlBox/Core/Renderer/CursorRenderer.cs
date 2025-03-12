@@ -1,6 +1,7 @@
 ﻿using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
+using System.Diagnostics;
 using System.Numerics;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
@@ -87,7 +88,7 @@ internal class CursorRenderer
 
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
 
-        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager);
+        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, true);
 
         int characterPos = cursorManager.CharacterPosition;
         if (characterPos > currentLineLength)
