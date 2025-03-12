@@ -160,13 +160,24 @@ internal class ScrollManager
         {
             horizontalScrollBar.Value = Math.Max(curPosInLine - 3, horizontalScrollBar.Minimum);
         }
-        else if (curPosInLine > visibleEnd - 3)
+        else if (curPosInLine > visibleEnd)
         {
-            horizontalScrollBar.Value = Math.Min(curPosInLine - canvasText.ActualWidth + 3, horizontalScrollBar.Maximum);
+            horizontalScrollBar.Value = Math.Min(curPosInLine - canvasText.ActualWidth + 5, horizontalScrollBar.Maximum + 10);
         }
         OldHorizontalScrollValue = curPosInLine;
 
         if (update)
             canvasHelper.UpdateAll();
+    }
+
+    public void EnsureHorizontalScrollBounds(CanvasControl canvasText, LongestLineManager longestLineManager)
+    {
+        longestLineManager.CheckRecalculateLongestLine();
+
+        //Apply longest width to scrollbar
+        horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
+        horizontalScrollBar.Maximum = (longestLineManager.longestLineWidth.Width <= canvasText.ActualWidth ? 0 : longestLineManager.longestLineWidth.Width - canvasText.ActualWidth);
+
+        ScrollIntoViewHorizontal(canvasText, false);
     }
 }

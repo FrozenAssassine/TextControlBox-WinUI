@@ -21,6 +21,7 @@ internal class CursorRenderer
     private DesignHelper designHelper;
     private LineHighlighterRenderer lineHighlighterRenderer;
     private EventsManager eventsManager;
+    private LongestLineManager longestLineManager;
 
     public void Init(
         CursorManager cursorManager,
@@ -32,7 +33,8 @@ internal class CursorRenderer
         ZoomManager zoomManager,
         DesignHelper designHelper,
         LineHighlighterRenderer lineHighlighterRenderer,
-        EventsManager eventsManager)
+        EventsManager eventsManager,
+        LongestLineManager longestLineManager)
     {
         this.cursorManager = cursorManager;
         this.currentLineManager = currentLineManager;
@@ -44,12 +46,14 @@ internal class CursorRenderer
         this.designHelper = designHelper;
         this.lineHighlighterRenderer = lineHighlighterRenderer;
         this.eventsManager = eventsManager;
+        this.longestLineManager = longestLineManager;
     }
 
     public void RenderCursor(CanvasTextLayout textLayout, int characterPosition, float xOffset, float y, float fontSize, CursorSize customSize, CanvasDrawEventArgs args, CanvasSolidColorBrush cursorColorBrush)
     {
         if (textLayout == null)
             return;
+
 
         Vector2 vector = textLayout.GetCaretPosition(characterPosition < 0 ? 0 : characterPosition, false);
         if (customSize == null)
@@ -63,6 +67,7 @@ internal class CursorRenderer
         currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
         if (textRenderer.DrawnTextLayout == null || !focusManager.HasFocus)
             return;
+
         int currentLineLength = currentLineManager.Length;
         if (cursorManager.LineNumber >= textManager.LinesCount)
         {
@@ -81,7 +86,8 @@ internal class CursorRenderer
             return;
 
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
-        scrollManager.ScrollIntoViewHorizontal(canvasText, false);
+
+        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager);
 
         int characterPos = cursorManager.CharacterPosition;
         if (characterPos > currentLineLength)

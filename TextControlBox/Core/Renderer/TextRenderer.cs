@@ -112,18 +112,6 @@ internal class TextRenderer
 
         //check rendering and calculation updates
         lineNumberRenderer.CheckGenerateLineNumberText();
-        longestLineManager.CheckRecalculateLongestLine();
-
-        if (longestLineManager.HasLongestLineChanged)
-        {
-            longestLineManager.HasLongestLineChanged = false;
-
-            //Apply longest width to scrollbar
-            scrollManager.horizontalScrollBar.Maximum = (longestLineManager.longestLineWidth.Width <= canvasText.ActualWidth - 30 ? 0 : longestLineManager.longestLineWidth.Width - canvasText.ActualWidth + 30);
-            scrollManager.horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
-        }
-
-        scrollManager.ScrollIntoViewHorizontal(canvasText, false);
 
         //Only update the textformat when the text changes:
         if (OldRenderedText != null && 
@@ -139,6 +127,8 @@ internal class TextRenderer
 
             SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting, RenderedText);
         }
+
+        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager);
 
         //render the search highlights
         if (searchManager.IsSearchOpen)

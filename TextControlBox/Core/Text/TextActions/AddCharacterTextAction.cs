@@ -82,14 +82,13 @@ internal class AddCharacterTextAction
         if (text == null)
             return;
 
-
         undoRedo.RecordUndoAction(() =>
         {
             selectionManager.Replace(text);
             selectionManager.ClearSelection();
         }, selectionManager.currentTextSelection, splittedTextLength);
         
-        longestLineManager.CheckRecalculateLongestLine(text);
+        longestLineManager.Recalculate();
 
         canvasUpdateManager.UpdateAll();
     }
