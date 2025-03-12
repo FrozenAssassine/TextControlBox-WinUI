@@ -107,9 +107,9 @@ internal class LongestLineManager
         }
     }
 
-    public void CheckRecalculateLongestLine()
+    public void CheckRecalculateLongestLine(bool force = false)
     {
-        if (needsRecalculation)
+        if (needsRecalculation || force)
         {
             Recalculate();
         }

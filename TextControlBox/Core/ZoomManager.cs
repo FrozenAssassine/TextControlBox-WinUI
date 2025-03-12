@@ -12,35 +12,25 @@ internal class ZoomManager
     public float ZoomedFontSize = 0;
     public int _ZoomFactor = 100; //%
     private int OldZoomFactor = 0;
-
+    public bool ZoomNeedsRecalculateLongestLine = false;
     private TextManager textManager;
     private TextRenderer textRenderer;
     private CanvasUpdateManager canvasHelper;
-    private LineNumberRenderer lineNumberRenderer;
     private EventsManager eventsManager;
-    private LongestLineManager longestLineManager;
-    private ScrollManager scrollManager;
-    private CoreTextControlBox coreTextBox;
     
     public void Init(
         TextManager textManager,
         TextRenderer textRenderer,
         ScrollManager scrollManager,
         CanvasUpdateManager canvasHelper,
-        LineNumberRenderer lineNumberRenderer,
         EventsManager eventsManager,
-        LongestLineManager longestLineManager,
         CoreTextControlBox coreTextBox
         )
     {
         this.textManager = textManager;
         this.textRenderer = textRenderer;
         this.canvasHelper = canvasHelper;
-        this.lineNumberRenderer = lineNumberRenderer;
         this.eventsManager = eventsManager;
-        this.longestLineManager = longestLineManager;
-        this.scrollManager = scrollManager;
-        this.coreTextBox = coreTextBox;
     }
 
     public void UpdateZoom()
@@ -54,8 +44,8 @@ internal class ZoomManager
             OldZoomFactor = _ZoomFactor;
             eventsManager.CallZoomChanged(_ZoomFactor);
 
+            ZoomNeedsRecalculateLongestLine = true;
             textRenderer.NeedsTextFormatUpdate = true;
-            lineNumberRenderer.NeedsUpdateLineNumbers();
             canvasHelper.UpdateAll();
         }
     }

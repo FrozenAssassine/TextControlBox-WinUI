@@ -170,9 +170,9 @@ internal class ScrollManager
             canvasHelper.UpdateAll();
     }
 
-    public void EnsureHorizontalScrollBounds(CanvasControl canvasText, LongestLineManager longestLineManager)
+    public void EnsureHorizontalScrollBounds(CanvasControl canvasText, LongestLineManager longestLineManager, bool forceRecalculateLongestLine = false)
     {
-        longestLineManager.CheckRecalculateLongestLine();
+        longestLineManager.CheckRecalculateLongestLine(forceRecalculateLongestLine);
 
         //Apply longest width to scrollbar
         horizontalScrollBar.ViewportSize = canvasText.ActualWidth;

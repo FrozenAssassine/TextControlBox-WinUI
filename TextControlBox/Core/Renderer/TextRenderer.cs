@@ -34,6 +34,8 @@ internal class TextRenderer
     private SearchManager searchManager;
     private CoreTextControlBox coreTextbox;
     private CanvasUpdateManager canvasUpdateManager;
+    private ZoomManager zoomManager;
+
     public void Init(
         CursorManager cursorManager,
         DesignHelper designHelper,
@@ -44,7 +46,8 @@ internal class TextRenderer
         LongestLineManager longestLineManager,
         CoreTextControlBox textbox,
         SearchManager searchManager,
-        CanvasUpdateManager canvasUpdateManager)
+        CanvasUpdateManager canvasUpdateManager,
+        ZoomManager zoomManager)
     {
         this.cursorManager = cursorManager;
         this.textManager = textManager;
@@ -57,6 +60,7 @@ internal class TextRenderer
         this.coreTextbox = textbox;
         this.scrollGrid = textbox.scrollGrid;
         this.canvasUpdateManager = canvasUpdateManager;
+        this.zoomManager = zoomManager;
     }
 
     //Check whether the current line is outside the bounds of the visible area
@@ -128,7 +132,9 @@ internal class TextRenderer
             SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting, RenderedText);
         }
 
-        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager);
+        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, zoomManager.ZoomNeedsRecalculateLongestLine);
+        if (zoomManager.ZoomNeedsRecalculateLongestLine)
+            zoomManager.ZoomNeedsRecalculateLongestLine = false;
 
         //render the search highlights
         if (searchManager.IsSearchOpen)
