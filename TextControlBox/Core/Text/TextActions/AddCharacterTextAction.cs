@@ -63,6 +63,7 @@ internal class AddCharacterTextAction
         if (currentLineManager.Length > longestLineManager.longestLineLength)
         {
             longestLineManager.longestIndex = cursorManager.LineNumber;
+            longestLineManager.MeasureActualLineLength();
         }
     }
 

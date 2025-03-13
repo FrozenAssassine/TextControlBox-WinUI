@@ -1,7 +1,6 @@
 ﻿using Collections.Pooled;
 using Microsoft.Graphics.Canvas;
 using System;
-using System.Diagnostics;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
@@ -81,6 +80,18 @@ internal class LongestLineManager
         return maxLength;
     }
 
+    public void MeasureActualLineLength()
+    {
+        if (_longestIndex >= textManager.LinesCount || textManager.LinesCount == 0)
+            return;
+
+        longestLineLength = textManager.totalLines[_longestIndex].Length;
+        if (textRenderer.TextFormat != null)
+        {
+            longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[longestIndex], textRenderer.TextFormat);
+        }
+    }
+
     public void Recalculate(int index = -1)
     {
         needsRecalculation = false;
@@ -89,12 +100,7 @@ internal class LongestLineManager
         else
             _longestIndex = index;
 
-        if (_longestIndex >= textManager.LinesCount || textManager.LinesCount == 0)
-            return;
-
-        longestLineLength = textManager.totalLines[_longestIndex].Length;
-        if(textRenderer.TextFormat != null)
-            longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[longestIndex], textRenderer.TextFormat);
+        MeasureActualLineLength();
         HasLongestLineChanged = true;
     }
 
