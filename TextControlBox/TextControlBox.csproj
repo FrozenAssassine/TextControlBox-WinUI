@@ -24,6 +24,7 @@
 			Fixed textbox in tabview triggering load event on every tab switch
 			Fixed wrong and missing horizontal scroll position calculations while typing
 			Fixed zooming not calculating horizontal scroll offset
+			Fixed tab character with wrong cursor/selection and undo redo buggy
 		</PackageReleaseNotes>
 		<PackageIcon>Icon1.png</PackageIcon>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
