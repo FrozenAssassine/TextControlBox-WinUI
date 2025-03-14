@@ -11,7 +11,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageId>TextControlBox.WinUI.JuliusKirsch</PackageId>
 		<Title>TextControlBox WinUI</Title>
-		<Version>1.1.2</Version>
+		<Version>1.1.3</Version>
 		<Authors>Julius Kirsch</Authors>
 		<Product>TextControlBox WinUI</Product>
 		<Description>A powerful and highly customizable textbox control for WinUI 3 applications. It provides an advanced text editing experience with features like syntax highlighting for multiple programming languages, intuitive search and replace functionality, zooming, line numbering, and smooth scrolling. With support for undo/redo, customizable themes, and efficient performance.</Description>
@@ -20,8 +20,10 @@
 		<RepositoryUrl>https://github.com/FrozenAssassine/TextControlBox-WinUI</RepositoryUrl>
 		<PackageTags>TextControlBox; Textbox; WinUI; C#; SyntaxHighlighting; LineNumbers</PackageTags>
 		<PackageReleaseNotes>
-			Fixed cursor rendering on the right side of the screen with auto scroll
-			Fixed syntax highlighting in config file
+			Added horizontal scroll margin to the right, so cursor is always visible
+			Fixed textbox in tabview triggering load event on every tab switch
+			Fixed wrong and missing horizontal scroll position calculations while typing
+			Fixed zooming not calculating horizontal scroll offset
 		</PackageReleaseNotes>
 		<PackageIcon>Icon1.png</PackageIcon>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
