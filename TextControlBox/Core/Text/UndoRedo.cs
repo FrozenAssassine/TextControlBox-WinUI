@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
@@ -50,6 +51,14 @@ namespace TextControlBoxNS.Core.Text
             });
         }
 
+        private bool BeforeAndAfterAreEqual(string linesBefore, string linesAfter)
+        {
+            if (linesBefore.Length != linesAfter.Length)
+                return false;
+
+            return linesBefore.Equals(linesAfter, StringComparison.Ordinal);
+        }
+
         private void RecordSingleLine(Action action, int startline)
         {
             var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
@@ -59,6 +68,9 @@ namespace TextControlBoxNS.Core.Text
 
             var lineAfter = textManager.GetLineText(startline);
             var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
+
+            if (BeforeAndAfterAreEqual(lineBefore, lineAfter))
+                return;
 
             AddUndoItem(startline, lineBefore, lineAfter, 1, 1, cursorBefore, cursorAfter);
         }
@@ -80,6 +92,9 @@ namespace TextControlBoxNS.Core.Text
             var linesAfter = textManager.GetLinesAsString(startline, redoCount);
             var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
 
+            if (BeforeAndAfterAreEqual(linesBefore, linesAfter))
+                return;
+
             AddUndoItem(
                 startline,
                 linesBefore,
@@ -90,6 +105,36 @@ namespace TextControlBoxNS.Core.Text
                 cursorAfter
                 );
         }
+
+        public void RecordUndoActionTab(Action action, TextSelection selection, int numberOfAddedRemovedLines)
+        {
+            var orderedSel = SelectionHelper.OrderTextSelectionSeparated(selection);
+            var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
+            var selectionBefore = new TextSelection(selection);
+            var linesBefore = textManager.GetLinesAsString(orderedSel.startLine, numberOfAddedRemovedLines);
+
+            action.Invoke();
+
+            var linesAfter = textManager.GetLinesAsString(orderedSel.startLine, numberOfAddedRemovedLines);
+            var selectionAfter = new TextSelection(selection);
+            var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
+
+            if (BeforeAndAfterAreEqual(linesBefore, linesAfter))
+                return;
+
+            AddUndoItem(
+                orderedSel.startLine,
+                linesBefore,
+                linesAfter,
+                numberOfAddedRemovedLines,
+                numberOfAddedRemovedLines,
+                cursorBefore,
+                cursorAfter,
+                selectionBefore,
+                selectionAfter
+                );
+        }
+
         public void RecordUndoAction(Action action, TextSelection selection, int numberOfAddedLines)
         {
             var orderedSel = SelectionHelper.OrderTextSelectionSeparated(selection);
@@ -129,6 +174,9 @@ namespace TextControlBoxNS.Core.Text
             var linesAfter = textManager.GetLinesAsString(orderedSel.startLine, numberOfAddedLines);
             var selectionAfter = new TextSelection(selection);
             var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
+
+            if (BeforeAndAfterAreEqual(linesBefore, linesAfter))
+                return;
 
             AddUndoItem(
                 orderedSel.startLine,

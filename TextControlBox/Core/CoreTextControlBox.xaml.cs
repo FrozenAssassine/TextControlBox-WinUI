@@ -122,7 +122,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         currentLineManager.Init(cursorManager, textManager);
         longestLineManager.Init(selectionManager, textManager, textRenderer);
         designHelper.Init(this, textRenderer, canvasUpdateManager);
-        tabSpaceHelper.Init(textManager, selectionManager, cursorManager, textActionManager, undoRedo);
+        tabSpaceHelper.Init(textManager, selectionManager, cursorManager, textActionManager, undoRedo, longestLineManager, eventsManager);
         searchManager.Init(textManager);
         eventsManager.Init(searchManager, cursorManager);
         lineNumberRenderer.Init(textManager, textLayoutManager, textRenderer, designHelper, lineNumberManager);
