@@ -80,7 +80,19 @@ internal class LongestLineManager
         return maxLength;
     }
 
-    private void Recalculate(int index = -1)
+    public void MeasureActualLineLength()
+    {
+        if (_longestIndex >= textManager.LinesCount || textManager.LinesCount == 0)
+            return;
+
+        longestLineLength = textManager.totalLines[_longestIndex].Length;
+        if (textRenderer.TextFormat != null)
+        {
+            longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[longestIndex], textRenderer.TextFormat);
+        }
+    }
+
+    public void Recalculate(int index = -1)
     {
         needsRecalculation = false;
         if (index == -1)
@@ -88,11 +100,7 @@ internal class LongestLineManager
         else
             _longestIndex = index;
 
-        if (_longestIndex >= textManager.LinesCount || textManager.LinesCount == 0)
-            return;
-
-        longestLineLength = textManager.totalLines[_longestIndex].Length;
-        longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[longestIndex], textRenderer.TextFormat);
+        MeasureActualLineLength();
         HasLongestLineChanged = true;
     }
 
@@ -104,9 +112,10 @@ internal class LongestLineManager
             Recalculate();
         }
     }
-    public void CheckRecalculateLongestLine()
+
+    public void CheckRecalculateLongestLine(bool force = false)
     {
-        if (needsRecalculation)
+        if (needsRecalculation || force)
         {
             Recalculate();
         }

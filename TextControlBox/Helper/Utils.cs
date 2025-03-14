@@ -27,15 +27,33 @@ internal class Utils
         //get the actual width of the line, because tabs and whitespaces at the beginning are not counted to the lenght
         //Do the same for the end
         double placeholderWidth = 0;
-        if (text.StartsWith('\t') || text.StartsWith(' '))
+
+        ReadOnlySpan<char> span = text.AsSpan();
+        bool startsWithWhitespace = span[0] == '\t' || span[0] == ' ';
+        bool endsWithWhitespace = span[^1] == '\t' || span[^1] == ' ';
+
+        if (startsWithWhitespace || endsWithWhitespace)
         {
-            text = text.Insert(0, "|");
-            placeholderWidth += MeasureTextSize(device, "|", textFormat).Width;
-        }
-        if (text.EndsWith('\t') || text.EndsWith(' '))
-        {
-            text = text += "|";
-            placeholderWidth += MeasureTextSize(device, "|", textFormat).Width;
+            int newLength = text.Length + (startsWithWhitespace ? 1 : 0) + (endsWithWhitespace ? 1 : 0);
+            Span<char> newText = stackalloc char[newLength];
+            int index = 0;
+
+            if (startsWithWhitespace)
+            {
+                newText[index++] = '|';
+                placeholderWidth += MeasureTextSize(device, "|", textFormat).Width;
+            }
+
+            span.CopyTo(newText.Slice(index));
+            index += span.Length;
+
+            if (endsWithWhitespace)
+            {
+                newText[index] = '|';
+                placeholderWidth += MeasureTextSize(device, "|", textFormat).Width;
+            }
+
+            text = new string(newText);
         }
 
         CanvasTextLayout layout = new CanvasTextLayout(device, text, textFormat, 0, 0);

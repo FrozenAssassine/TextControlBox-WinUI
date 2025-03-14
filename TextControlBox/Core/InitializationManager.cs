@@ -5,7 +5,7 @@ internal class InitializationManager
 {
     private EventsManager eventsManager;
 
-    private bool initDone = false;
+    public bool initDone = false;
     public int[] canvasDrawed = [0, 0, 0];
     private bool loaded =false;
     public void Init(EventsManager eventsManager)

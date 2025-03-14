@@ -20,9 +20,10 @@ internal class TextLayoutManager
     {
         if (textLayout != null)
             textLayout.Dispose();
-
+        
         textLayout = CreateTextLayout(resourceCreator, textFormat, text, targetSize);
         textLayout.Options = CanvasDrawTextOptions.EnableColorFont;
+
         return textLayout;
     }
     public CanvasTextFormat CreateCanvasTextFormat()

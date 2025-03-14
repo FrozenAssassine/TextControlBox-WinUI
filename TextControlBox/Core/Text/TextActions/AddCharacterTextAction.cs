@@ -63,6 +63,7 @@ internal class AddCharacterTextAction
         if (currentLineManager.Length > longestLineManager.longestLineLength)
         {
             longestLineManager.longestIndex = cursorManager.LineNumber;
+            longestLineManager.MeasureActualLineLength();
         }
     }
 
@@ -82,14 +83,13 @@ internal class AddCharacterTextAction
         if (text == null)
             return;
 
-
         undoRedo.RecordUndoAction(() =>
         {
             selectionManager.Replace(text);
             selectionManager.ClearSelection();
         }, selectionManager.currentTextSelection, splittedTextLength);
         
-        longestLineManager.CheckRecalculateLongestLine(text);
+        longestLineManager.Recalculate();
 
         canvasUpdateManager.UpdateAll();
     }

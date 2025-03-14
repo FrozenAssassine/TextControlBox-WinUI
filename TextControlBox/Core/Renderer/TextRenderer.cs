@@ -2,6 +2,7 @@
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Diagnostics;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using Windows.Foundation;
@@ -34,6 +35,8 @@ internal class TextRenderer
     private SearchManager searchManager;
     private CoreTextControlBox coreTextbox;
     private CanvasUpdateManager canvasUpdateManager;
+    private ZoomManager zoomManager;
+
     public void Init(
         CursorManager cursorManager,
         DesignHelper designHelper,
@@ -44,7 +47,8 @@ internal class TextRenderer
         LongestLineManager longestLineManager,
         CoreTextControlBox textbox,
         SearchManager searchManager,
-        CanvasUpdateManager canvasUpdateManager)
+        CanvasUpdateManager canvasUpdateManager,
+        ZoomManager zoomManager)
     {
         this.cursorManager = cursorManager;
         this.textManager = textManager;
@@ -57,6 +61,7 @@ internal class TextRenderer
         this.coreTextbox = textbox;
         this.scrollGrid = textbox.scrollGrid;
         this.canvasUpdateManager = canvasUpdateManager;
+        this.zoomManager = zoomManager;
     }
 
     //Check whether the current line is outside the bounds of the visible area
@@ -112,18 +117,6 @@ internal class TextRenderer
 
         //check rendering and calculation updates
         lineNumberRenderer.CheckGenerateLineNumberText();
-        longestLineManager.CheckRecalculateLongestLine();
-
-        if (longestLineManager.HasLongestLineChanged)
-        {
-            longestLineManager.HasLongestLineChanged = false;
-
-            //Apply longest width to scrollbar
-            scrollManager.horizontalScrollBar.Maximum = (longestLineManager.longestLineWidth.Width <= canvasText.ActualWidth - 30 ? 0 : longestLineManager.longestLineWidth.Width - canvasText.ActualWidth + 30);
-            scrollManager.horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
-        }
-
-        scrollManager.ScrollIntoViewHorizontal(canvasText, false);
 
         //Only update the textformat when the text changes:
         if (OldRenderedText != null && 
@@ -139,6 +132,10 @@ internal class TextRenderer
 
             SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting, RenderedText);
         }
+
+        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false, zoomManager.ZoomNeedsRecalculateLongestLine);
+        if (zoomManager.ZoomNeedsRecalculateLongestLine)
+            zoomManager.ZoomNeedsRecalculateLongestLine = false;
 
         //render the search highlights
         if (searchManager.IsSearchOpen)

@@ -2,7 +2,6 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using TextControlBoxNS.Core;
 using TextControlBoxNS.Models;
@@ -38,6 +37,12 @@ public partial class TextControlBox : UserControl
 
     private void TextControlBox_Loaded(object sender, RoutedEventArgs e)
     {
+        if (coreTextBox.IsLoaded)
+        {
+            this.Focus(FocusState.Programmatic);
+            return;
+        }
+
         coreTextBox.InitialiseOnStart();
     }
 
@@ -48,12 +53,11 @@ public partial class TextControlBox : UserControl
         //start testings:
         //if (Debugger.IsAttached)
         //{
-        //    this.LoadLines(Enumerable.Range(0, 5).Select(x => "Line " + x + " is cool right?"));
+        //this.LoadLines(Enumerable.Range(0, 5).Select(x => "Line " + x + " is cool right?"));
         
-        //    TestHelper testHelper = new TestHelper(coreTextBox);
-        //    testHelper.Evaluate();
+        //TestHelper testHelper = new TestHelper(coreTextBox);
+        //testHelper.Evaluate();
         //}
-
     }
 
     private void EventsManager_LostFocus()
