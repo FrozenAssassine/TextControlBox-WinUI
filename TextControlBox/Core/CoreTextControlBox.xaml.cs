@@ -1032,7 +1032,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public bool HasSelection => selectionManager.HasSelection;
     public TextControlBoxSelection? CurrentSelection => selectionManager.HasSelection ? new TextControlBoxSelection(this.selectionManager.currentTextSelection) : null;
     public TextControlBoxSelection? CurrentSelectionOrdered => selectionManager.HasSelection ? new TextControlBoxSelection(selectionManager) : null;
-
+    public new bool IsLoaded => initializationManager.initDone;
     public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {
             { SyntaxHighlightID.Batch, new Batch() },
