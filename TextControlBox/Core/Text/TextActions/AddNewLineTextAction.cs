@@ -12,6 +12,7 @@ internal class AddNewLineTextAction
     private CanvasUpdateManager canvasUpdateManager;
     private EventsManager eventsManager;
     private AutoIndentionManager autoIndentionManager;
+    private TextActionManager textActionManager;
 
     public void Init(
         TextManager textManager,
@@ -21,7 +22,8 @@ internal class AddNewLineTextAction
         EventsManager eventsManager,
         CanvasUpdateManager canvasUpdateManager,
         SelectionManager selectionManager,
-        AutoIndentionManager autoIndentionManager
+        AutoIndentionManager autoIndentionManager,
+        TextActionManager textActionsManager
         )
     {
         this.textManager = textManager;
@@ -31,6 +33,7 @@ internal class AddNewLineTextAction
         this.canvasUpdateManager = canvasUpdateManager;
         this.selectionManager = selectionManager;
         this.autoIndentionManager = autoIndentionManager;
+        this.textActionManager = textActionsManager;
     }
 
 
@@ -86,6 +89,7 @@ internal class AddNewLineTextAction
 
     public void ReplaceSelectionWithNewLine()
     {
+        //TODO not workign with undo redo!
         undoRedo.RecordUndoAction(() =>
         {
             selectionManager.Replace(textManager.NewLineCharacter);

@@ -69,7 +69,7 @@ namespace TextControlBoxNS.Core.Text
             removeTextAction.Init(textManager, undoRedo, currentLineManager, longestLineManager, cursorManager);
             deleteTextAction.Init(textManager, coreTextbox, undoRedo, currentLineManager, longestLineManager, cursorManager);
             addCharacterTextAction.Init(textManager, coreTextbox, undoRedo, currentLineManager, longestLineManager, cursorManager, selectionManager, canvasUpdateHelper);
-            addNewLineTextAction.Init(textManager, undoRedo, currentLineManager, cursorManager, eventsManager, canvasUpdateManager, selectionManager, autoIndentionManager);
+            addNewLineTextAction.Init(textManager, undoRedo, currentLineManager, cursorManager, eventsManager, canvasUpdateManager, selectionManager, autoIndentionManager, this);
         }
 
         public void SelectAll()
@@ -364,7 +364,7 @@ namespace TextControlBoxNS.Core.Text
                 selectionManager.Remove();
                 selectionManager.ClearSelection();
 
-            }, selectionManager.currentTextSelection, 0);
+            }, selectionManager.currentTextSelection, 1);
 
             canvasUpdateManager.UpdateSelection();
             canvasUpdateManager.UpdateCursor();
@@ -397,13 +397,13 @@ namespace TextControlBoxNS.Core.Text
             if (textManager._IsReadonly)
                 return;
 
-            if (addNewLineTextAction.HandleEmptyDocument()) return;
+            if (addNewLineTextAction.HandleEmptyDocument())
+                return;
 
-            bool hasSelection = selectionManager.HasSelection;
+            if (addNewLineTextAction.HandleFullTextSelection())
+                return;
 
-            if (addNewLineTextAction.HandleFullTextSelection()) return;
-
-            if (!hasSelection)
+            if (!selectionManager.HasSelection)
             {
                 addNewLineTextAction.ApplyLineSplitWithIndentation();
             }
@@ -495,7 +495,7 @@ namespace TextControlBoxNS.Core.Text
             undoRedo.RecordUndoAction(() =>
             {
                 textManager.totalLines.RemoveAt(line);
-            }, line, 2, 1);
+            }, line, 1, 1);
 
             if (textManager.LinesCount == 0)
             {
