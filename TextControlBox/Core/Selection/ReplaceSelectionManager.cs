@@ -17,6 +17,10 @@ internal class ReplaceSelectionManager
 
     public void ReplaceSingleLineSelection(int line, int start, int end, string text, string originalLine)
     {
+        //for triple click selected lines:
+        if (end > originalLine.Length)
+            end = originalLine.Length;
+
         string updatedLine = originalLine.SafeRemove(start, end - start).AddText(text, start);
         textManager.SetLineText(line, updatedLine);
         cursorManager.SetCursorPosition(line, start + text.Length);
