@@ -495,13 +495,13 @@ namespace TextControlBoxNS.Core.Text
 
             undoRedo.RecordUndoAction(() =>
             {
-                textManager.totalLines.RemoveAt(line);
-            }, line, 1, 0);
+                if(textManager.LinesCount == 1)
+                    textManager.SetLineText(0, "");
+                else
+                    textManager.totalLines.RemoveAt(line);
 
-            if (textManager.LinesCount == 0)
-            {
-                textManager.AddLine();
-            }
+            }, line, 1, textManager.LinesCount == 1 ? 1 : 0);
+
 
             eventsManager.CallTextChanged();
             canvasUpdateManager.UpdateText();
