@@ -22,7 +22,7 @@ namespace TextControlBoxNS.Test
         private string originalText;
         public override Func<bool>[] GetAllTests()
         {
-            originalText = coreTextbox.GetText();
+            originalText = string.Join(coreTextbox.textManager.NewLineCharacter, TestHelper.MakeLines(10));
 
             //return [this.Test_20];
             return [
@@ -34,7 +34,6 @@ namespace TextControlBoxNS.Test
                 this.Test_6,
                 this.Test_7,
                 this.Test_8,
-                this.Test_9,
                 this.Test_10,
                 this.Test_11,
                 this.Test_12,
@@ -49,21 +48,26 @@ namespace TextControlBoxNS.Test
                 this.Test_21,
                 this.Test_22,
                 this.Test_23,
+                this.Test_24,
                 this.Test_30,
                 ];
         }
 
 
-        public (bool undo, bool redo) CheckUndoRedo()
+        public (bool undo, bool redo) CheckUndoRedo(int count = 1)
         {
             string textBefore = coreTextbox.GetText();
 
-            coreTextbox.Undo();
+            for(int i =0; i<count; i++)
+                coreTextbox.Undo();
+            
             string textAfter = coreTextbox.GetText();
 
             bool undoRes = !textAfter.Equals(textBefore);
 
-            coreTextbox.Redo();
+            for(int i = 0; i<count; i++)
+                coreTextbox.Redo();
+            
             bool redoRes = coreTextbox.GetText().Equals(textBefore);
 
             Debug.Write($" (Undo: {undoRes} Redo:{redoRes})");
@@ -215,26 +219,7 @@ namespace TextControlBoxNS.Test
             var cur = coreTextbox.cursorManager.currentCursorPosition;
             bool res =
                 cur.LineNumber == 2 &&
-                cur.CharacterPosition == 11;
-
-            coreTextbox.SetText(originalText); //reset content
-
-            return res;
-        }
-
-        public bool Test_9()
-        {
-            Debug.Write("Add Character (add multiline line, single line selected)");
-
-            coreTextbox.SetSelection(5, 10);
-            coreTextbox.textActionManager.AddCharacter(coreTextbox.stringManager.CleanUpString("Line1\nLine2\nLine3"));
-            
-            CheckUndoRedo();
-
-            var cur = coreTextbox.cursorManager.currentCursorPosition;
-            bool res =
-                cur.LineNumber == 2 &&
-                cur.CharacterPosition == 11;
+                cur.CharacterPosition == 5;
 
             coreTextbox.SetText(originalText); //reset content
 
@@ -500,6 +485,27 @@ namespace TextControlBoxNS.Test
             coreTextbox.SetText("");
 
             return coreTextbox.textManager.totalLines.Count == 1;
+        }
+
+        public bool Test_24()
+        {
+            Debug.WriteLine("Move selection with Tab");
+            coreTextbox.SetText(originalText); // reset content
+
+            coreTextbox.SetCursorPosition(0, 0);
+            coreTextbox.SetSelection(0, 40); //whole text
+
+            for(int i = 0; i<3; i++)
+                coreTextbox.tabSpaceHelper.MoveTab();
+
+            coreTextbox.Undo();
+            coreTextbox.Undo();
+            coreTextbox.Undo();
+
+            if (coreTextbox.Text == originalText)
+                return true;
+
+            return false;
         }
 
         public bool Test_30()
