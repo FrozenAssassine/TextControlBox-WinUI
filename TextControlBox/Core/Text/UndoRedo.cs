@@ -92,7 +92,7 @@ namespace TextControlBoxNS.Core.Text
             var linesAfter = textManager.GetLinesAsString(startline, redoCount);
             var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
 
-            if (BeforeAndAfterAreEqual(linesBefore, linesAfter))
+            if (linesBefore.Length > 0 && linesAfter.Length > 0 && BeforeAndAfterAreEqual(linesBefore, linesAfter))
                 return;
 
             AddUndoItem(
