@@ -6,7 +6,7 @@
     xmlns:controls="using:TextControlBoxNS.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-    xmlns:xaml="using:Microsoft.Graphics.Canvas.UI.Xaml" 
+    xmlns:xaml="using:Microsoft.Graphics.Canvas.UI.Xaml" xmlns:core="using:TextControlBoxNS.Core"
     mc:Ignorable="d"
     TabIndex="0" IsTabStop="True" AllowFocusOnInteraction="false"
     PointerWheelChanged="Canvas_Selection_PointerWheelChanged"

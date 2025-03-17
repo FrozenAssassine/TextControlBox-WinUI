@@ -1,3 +1,4 @@
+using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
@@ -7,6 +8,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using TextControlBoxNS.Controls;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
@@ -17,6 +19,7 @@ using TextControlBoxNS.Models.Enums;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
 using Windows.System;
+using Windows.UI;
 
 namespace TextControlBoxNS.Core;
 
@@ -52,6 +55,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public readonly ReplaceManager replaceManager;
     public readonly InitializationManager initializationManager;
     private readonly MoveLineManager moveLineManager;
+    private readonly AutoSuggestFlyout autoSuggestFlyout;
 
     public CanvasControl canvasText;
     public CanvasControl canvasCursor;
@@ -106,6 +110,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         replaceManager = new ReplaceManager();
         initializationManager = new InitializationManager();
         moveLineManager = new MoveLineManager();
+        autoSuggestFlyout = new AutoSuggestFlyout();
 
         stringManager.Init(textManager, tabSpaceHelper);
         lineHighlighterRenderer.Init(lineHighlighterManager, selectionManager, textRenderer);
@@ -222,6 +227,12 @@ internal sealed partial class CoreTextControlBox : UserControl
                     if (ControlW_SelectWord)
                         selectionManager.SelectSingleWord(canvasUpdateManager);
                     break;
+                case VirtualKey.Space:
+                    var pos = this.GetCursorPosition();
+                    pos.Y += zoomManager.ZoomedFontSize;
+                    autoSuggestFlyout.ShowAt(scrollGrid, new FlyoutShowOptions {Placement = FlyoutPlacementMode.BottomEdgeAlignedRight, ShowMode = FlyoutShowMode.Transient, Position = pos});
+                    break;
+
             }
 
             if (e.Key != VirtualKey.Left && e.Key != VirtualKey.Right && e.Key != VirtualKey.Back && e.Key != VirtualKey.Delete)
@@ -1070,4 +1081,11 @@ internal sealed partial class CoreTextControlBox : UserControl
         return SyntaxHighlightingRenderer.GetSyntaxHighlightingFromJson(Json);
     }
 
+
+    private void textSuggestionCanvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
+    {
+        var brush = new CanvasSolidColorBrush(args.DrawingSession, Color.FromArgb(255, 0, 255, 0));
+        var curPos = this.GetCursorPosition();
+        args.DrawingSession.DrawRectangle(new Rect { X = curPos.X, Y = curPos.Y, Height = 150, Width  = 300}, brush);
+    }
 }
