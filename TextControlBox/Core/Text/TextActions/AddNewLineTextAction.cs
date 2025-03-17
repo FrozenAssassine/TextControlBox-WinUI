@@ -55,7 +55,7 @@ internal class AddNewLineTextAction
             {
                 textManager.ClearText(true);
                 textManager.InsertOrAdd(-1, "");
-                cursorManager.SetCursorPosition(0, 1);
+                cursorManager.SetCursorPosition(1, 1);
             }, 0, textManager.LinesCount, 2);
 
             selectionManager.ClearSelection();
@@ -89,10 +89,6 @@ internal class AddNewLineTextAction
 
     public void ReplaceSelectionWithNewLine()
     {
-        //TODO not workign with undo redo!
-        undoRedo.RecordUndoAction(() =>
-        {
-            selectionManager.Replace(textManager.NewLineCharacter);
-        }, selectionManager.currentTextSelection, 2);
+        textActionManager.AddCharacter(textManager.NewLineCharacter);
     }
 }

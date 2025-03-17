@@ -135,21 +135,11 @@ namespace TextControlBoxNS.Core.Text
                 );
         }
 
-        public void RecordUndoAction(Action action, TextSelection selection, int numberOfAddedLines)
+        public void RecordUndoAction(Action action, TextSelection selection, int numberOfAddedLines, int numberOfRemovedLines = -1)
         {
             var orderedSel = SelectionHelper.OrderTextSelectionSeparated(selection);
-            int numberOfRemovedLines = orderedSel.endLine - orderedSel.startLine + 1;
-
-            //triple click selection is one character longer than normal selection and removes the whole line instead of the line content
-            if (orderedSel.startLine == orderedSel.endLine &&
-                orderedSel.startChar == 0 &&
-                orderedSel.endChar == textManager.GetLineLength(orderedSel.startLine) + 1
-                )
-            {
-                numberOfRemovedLines = 1;
-                numberOfAddedLines = 0;
-            }
-
+            if(numberOfRemovedLines == -1)
+                numberOfRemovedLines = orderedSel.endLine - orderedSel.startLine + 1;
 
             var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
             var selectionBefore = new TextSelection(selection);

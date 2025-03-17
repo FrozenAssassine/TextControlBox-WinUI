@@ -87,7 +87,7 @@ internal class AddCharacterTextAction
         {
             selectionManager.Replace(text);
             selectionManager.ClearSelection();
-        }, selectionManager.currentTextSelection, splittedTextLength);
+        }, selectionManager.currentTextSelection, splittedTextLength, selectionManager.WholeLineSelected() ? 1 : -1);
         
         longestLineManager.Recalculate();
 

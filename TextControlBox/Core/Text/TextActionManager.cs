@@ -359,12 +359,13 @@ namespace TextControlBoxNS.Core.Text
             //line gets deleted -> recalculate the longest line:
             longestLineManager.CheckSelection();
 
+            bool wholeLineSelected = selectionManager.WholeLineSelected();
+
             undoRedo.RecordUndoAction(() =>
             {
                 selectionManager.Remove();
                 selectionManager.ClearSelection();
-
-            }, selectionManager.currentTextSelection, 1);
+            }, selectionManager.currentTextSelection, wholeLineSelected ? 0 : 1, wholeLineSelected ? 1 : -1);
 
             canvasUpdateManager.UpdateSelection();
             canvasUpdateManager.UpdateCursor();
@@ -495,7 +496,7 @@ namespace TextControlBoxNS.Core.Text
             undoRedo.RecordUndoAction(() =>
             {
                 textManager.totalLines.RemoveAt(line);
-            }, line, 1, 1);
+            }, line, 1, 0);
 
             if (textManager.LinesCount == 0)
             {
