@@ -139,7 +139,15 @@ internal class SelectionManager
     {
         return SelectionHelper.OrderTextSelectionSeparated(currentTextSelection, HasSelection);
     }
+    //line was triple clicked, so completely selected
+    public bool WholeLineSelected()
+    {
+        var sel = OrderTextSelectionSeparated();
+        if (sel.startNull && sel.endNull)
+            return false;
 
+        return sel.startLine == sel.endLine && sel.startChar == 0 && sel.endChar == textManager.GetLineLength(sel.endLine) + 1;
+    }
     public bool WholeTextSelected()
     {
         var sel = OrderTextSelectionSeparated();

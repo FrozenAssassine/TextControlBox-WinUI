@@ -69,7 +69,7 @@ namespace TextControlBoxNS.Core.Text
             removeTextAction.Init(textManager, undoRedo, currentLineManager, longestLineManager, cursorManager);
             deleteTextAction.Init(textManager, coreTextbox, undoRedo, currentLineManager, longestLineManager, cursorManager);
             addCharacterTextAction.Init(textManager, coreTextbox, undoRedo, currentLineManager, longestLineManager, cursorManager, selectionManager, canvasUpdateHelper);
-            addNewLineTextAction.Init(textManager, undoRedo, currentLineManager, cursorManager, eventsManager, canvasUpdateManager, selectionManager, autoIndentionManager);
+            addNewLineTextAction.Init(textManager, undoRedo, currentLineManager, cursorManager, eventsManager, canvasUpdateManager, selectionManager, autoIndentionManager, this);
         }
 
         public void SelectAll()
@@ -359,12 +359,13 @@ namespace TextControlBoxNS.Core.Text
             //line gets deleted -> recalculate the longest line:
             longestLineManager.CheckSelection();
 
+            bool wholeLineSelected = selectionManager.WholeLineSelected();
+
             undoRedo.RecordUndoAction(() =>
             {
                 selectionManager.Remove();
                 selectionManager.ClearSelection();
-
-            }, selectionManager.currentTextSelection, 0);
+            }, selectionManager.currentTextSelection, wholeLineSelected ? 0 : 1, wholeLineSelected ? 1 : -1);
 
             canvasUpdateManager.UpdateSelection();
             canvasUpdateManager.UpdateCursor();
@@ -397,13 +398,13 @@ namespace TextControlBoxNS.Core.Text
             if (textManager._IsReadonly)
                 return;
 
-            if (addNewLineTextAction.HandleEmptyDocument()) return;
+            if (addNewLineTextAction.HandleEmptyDocument())
+                return;
 
-            bool hasSelection = selectionManager.HasSelection;
+            if (addNewLineTextAction.HandleFullTextSelection())
+                return;
 
-            if (addNewLineTextAction.HandleFullTextSelection()) return;
-
-            if (!hasSelection)
+            if (!selectionManager.HasSelection)
             {
                 addNewLineTextAction.ApplyLineSplitWithIndentation();
             }
@@ -494,13 +495,13 @@ namespace TextControlBoxNS.Core.Text
 
             undoRedo.RecordUndoAction(() =>
             {
-                textManager.totalLines.RemoveAt(line);
-            }, line, 2, 1);
+                if(textManager.LinesCount == 1)
+                    textManager.SetLineText(0, "");
+                else
+                    textManager.totalLines.RemoveAt(line);
 
-            if (textManager.LinesCount == 0)
-            {
-                textManager.AddLine();
-            }
+            }, line, 1, textManager.LinesCount == 1 ? 1 : 0);
+
 
             eventsManager.CallTextChanged();
             canvasUpdateManager.UpdateText();

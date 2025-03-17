@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using System.IO;
+using System.Linq;
 using TextControlBoxNS;
 
 namespace TextControlBox_TestApp
@@ -9,7 +10,10 @@ namespace TextControlBox_TestApp
         public MainWindow()
         {
             this.InitializeComponent();
-            textbox.LoadLines(File.ReadAllLines("C:\\Users\\Juliu\\Desktop\\Cable_Clip_Large.gcode"));
+
+            textbox.LoadLines(Enumerable.Range(0, 5).Select(x => "Line " + x + " is cool right?"));
+
+            //textbox.LoadLines(File.ReadAllLines("C:\\Users\\Juliu\\Desktop\\Cable_Clip_Large.gcode"));
 
             textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.CSharp);
 
