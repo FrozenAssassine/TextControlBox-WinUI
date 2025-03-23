@@ -1,4 +1,6 @@
-﻿namespace TextControlBoxNS.Languages
+﻿using TextControlBoxNS.Models;
+
+namespace TextControlBoxNS.Languages
 {
     internal class Batch : SyntaxHighlightLanguage
     {
@@ -88,6 +90,11 @@
                 new AutoPairingPair("\""),
                 new AutoPairingPair("\'")
             };
+            this.CodeCommentPairs = new CodeCommentPair[1]
+            {
+                new CodeCommentPair("/*", "*/")
+            };
+
             this.Highlights = new SyntaxHighlights[]
                     {
             //Number Matching
@@ -120,8 +127,8 @@
             
             //Multi-line Comments
             new SyntaxHighlights("/\\*(?:[^*]|\\*[^/])*\\*/", "#888888", "#646464"),
-                    };
-        }
+            };
+        } 
     }
     internal class GCode : SyntaxHighlightLanguage
     {

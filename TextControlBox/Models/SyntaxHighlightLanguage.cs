@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Text.RegularExpressions;
+using TextControlBoxNS.Models;
 using Windows.Devices.Power;
 
 namespace TextControlBoxNS;
@@ -38,6 +39,8 @@ public class SyntaxHighlightLanguage
     /// Gets or sets an array of auto-pairing pairs for the code language.
     /// </summary>
     public AutoPairingPair[] AutoPairingPair { get; set; }
+
+    public CodeCommentPair[] CodeCommentPairs { get; set; } = null;
 
     internal void CompileAllRegex()
     {
