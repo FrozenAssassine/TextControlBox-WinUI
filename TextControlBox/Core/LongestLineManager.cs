@@ -40,7 +40,7 @@ internal class LongestLineManager
     }
 
     //Get the longest line in the textbox
-    private int GetLongestLineIndex(PooledList<string> totalLines)
+    public int GetLongestLineIndex(PooledList<string> totalLines)
     {
         var span = totalLines.Span;
         int longestIndex = 0;
@@ -57,14 +57,14 @@ internal class LongestLineManager
         }
         return longestIndex;
     }
-    private int GetLongestLineLength(string text)
+    public int GetLongestLineLength(string text)
     {
         int maxLength = 0;
         int currentLength = 0;
         ReadOnlySpan<char> spanText = text.AsSpan();
         foreach (char c in spanText)
         {
-            if (c == '\n')
+            if (c == '\n' ||c == '\r')
             {
                 if (currentLength > maxLength)
                     maxLength = currentLength;
