@@ -53,9 +53,9 @@ public partial class TextControlBox : UserControl
         //start testings:
         //if (Debugger.IsAttached)
         //{
-        //this.LoadLines(Enumerable.Range(0, 5).Select(x => "Line " + x + " is cool right?"));
-        //TestHelper testHelper = new TestHelper(coreTextBox);
-        //testHelper.Evaluate();
+        this.LoadLines(Enumerable.Range(0, 5).Select(x => "Line " + x + " is cool right?"));
+        TestHelper testHelper = new TestHelper(coreTextBox);
+        testHelper.Evaluate();
         //}
     }
 

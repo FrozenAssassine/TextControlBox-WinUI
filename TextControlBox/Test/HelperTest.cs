@@ -1,8 +1,12 @@
-﻿using System;
+﻿using Collections.Pooled;
+using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using TextControlBoxNS.Core;
 using TextControlBoxNS.Core.Text;
+using Windows.ApplicationModel.Activation;
 
 namespace TextControlBoxNS.Test
 {
@@ -22,6 +26,8 @@ namespace TextControlBoxNS.Test
             return [
                 this.Test_1,
                 this.Test_2,
+                this.Test_3,
+                this.Test_4,
                 ];
         }
 
@@ -72,6 +78,47 @@ namespace TextControlBoxNS.Test
 
             coreTextbox.LineEnding = LineEnding.CRLF;
             return res.All(x => x);
+        }
+
+        private bool Test_3()
+        {
+            (string text, int longest) MakeText(LineEnding lineEnding)
+            {
+                int longest = Random.Shared.Next(0, 200);
+                StringBuilder sb = new StringBuilder();
+                string le = LineEndings.LineEndingToString(lineEnding);
+                for (int i = 0; i < 200; i++)
+                {
+                    if (i == longest)
+                        sb.Append($"This is the longest line with a more content {i * 100} {le}");
+                    else
+                        sb.Append($"This is the content of line {i} {le}");
+                }
+                return (sb.ToString(), longest);
+            }
+
+            var c1 = MakeText(LineEnding.LF);
+            bool res1 = coreTextbox.longestLineManager.GetLongestLineLength(c1.text) == c1.text.Split("\n")[c1.longest].Length;
+
+            var c2 = MakeText(LineEnding.CR);
+            bool res2 = coreTextbox.longestLineManager.GetLongestLineLength(c2.text) == c2.text.Split("\r")[c2.longest].Length;
+
+            var c3 = MakeText(LineEnding.CRLF);
+            bool res3 = coreTextbox.longestLineManager.GetLongestLineLength(c3.text) == c3.text.Split("\r\n")[c3.longest].Length;
+
+            return res1 && res2 && res3;
+        }
+
+        private bool Test_4()
+        {
+            PooledList<string> list = new();
+            list.AddRange(Enumerable.Range(0, 100).Select(i => $"Line {i} is an awesome line!"));
+
+            int longest = Random.Shared.Next(0, 99);
+            list.Insert(longest, "This is the longest line of the text. At least it should be!");
+
+            int longestIndex = coreTextbox.longestLineManager.GetLongestLineIndex(list);
+            return longestIndex == longest;
         }
     }
 }
