@@ -1,4 +1,4 @@
-<!-- Copyright (c) Microsoft Corporation and Contributors. -->
+﻿<!-- Copyright (c) Microsoft Corporation and Contributors. -->
 <!-- Licensed under the MIT License. -->
 
 <Window
@@ -13,6 +13,20 @@
     <Window.SystemBackdrop>
         <MicaBackdrop Kind="Base"/>
     </Window.SystemBackdrop>
-    
-    <textcontrolbox:TextControlBox x:Name="textbox"/>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <ToggleSwitch x:Name="LineNumberToggle"
+                      Header="Show line numbers"
+                      Margin="12,12,0,0"
+                      Grid.Column="0"
+                      VerticalAlignment="Top"
+                      IsOn="{Binding ElementName=textbox, Path=ShowLineNumbers, Mode=TwoWay}" />
+
+        <textcontrolbox:TextControlBox x:Name="textbox" Grid.Column="1"/>
+    </Grid>
 </Window>

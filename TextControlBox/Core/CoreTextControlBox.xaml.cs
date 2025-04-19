@@ -1,4 +1,4 @@
-using Microsoft.Graphics.Canvas.UI.Xaml;
+﻿using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -134,6 +134,8 @@ internal sealed partial class CoreTextControlBox : UserControl
         replaceManager.Init(canvasUpdateManager, undoRedo, textManager, searchManager, cursorManager, textActionManager, selectionRenderer, selectionManager, eventsManager);
         initializationManager.Init(eventsManager);
         moveLineManager.Init(selectionManager, cursorManager, textManager, undoRedo);
+
+        this.Loaded += CoreTextControlBox_Loaded_Handler;
     }
 
     public void InitialiseOnStart()
@@ -906,6 +908,47 @@ internal sealed partial class CoreTextControlBox : UserControl
         return textManager.CountWords();
     }
 
+    private static void OnShowLineNumbersChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is CoreTextControlBox control)
+        {
+            control.UpdateLineNumberColumnVisibility();
+        }
+    }
+
+    private void UpdateLineNumberColumnVisibility()
+    {
+        if (MainGrid == null || MainGrid.ColumnDefinitions.Count == 0 || Canvas_LineNumber == null || lineNumberManager == null || textRenderer == null || lineNumberRenderer == null || canvasUpdateManager == null)
+        {
+            return;
+        }
+
+        var lineNumColumn = MainGrid.ColumnDefinitions[0];
+        bool shouldShow = this.ShowLineNumbers;
+
+        lineNumberManager._ShowLineNumbers = shouldShow;
+
+        if (shouldShow)
+        {
+            lineNumColumn.Width = new GridLength(1, GridUnitType.Auto);
+            Canvas_LineNumber.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            lineNumColumn.Width = new GridLength(0);
+            Canvas_LineNumber.Visibility = Visibility.Collapsed;
+        }
+
+        textRenderer.NeedsUpdateTextLayout = true;
+        lineNumberRenderer.NeedsUpdateLineNumbers();
+        canvasUpdateManager.UpdateAll();
+    }
+
+    private void CoreTextControlBox_Loaded_Handler(object sender, RoutedEventArgs e)
+    {
+        UpdateLineNumberColumnVisibility();
+    }
+
     public bool EnableSyntaxHighlighting { get; set; } = true;
 
     public SyntaxHighlightLanguage SyntaxHighlighting
@@ -960,16 +1003,18 @@ internal sealed partial class CoreTextControlBox : UserControl
         set => designHelper.Design = value;
     }
 
+    public static readonly DependencyProperty ShowLineNumbersProperty =
+        DependencyProperty.Register(
+            nameof(ShowLineNumbers),
+            typeof(bool),
+            typeof(CoreTextControlBox),
+            new PropertyMetadata(true, OnShowLineNumbersChanged)
+        );
+
     public bool ShowLineNumbers
     {
-        get => lineNumberManager._ShowLineNumbers;
-        set
-        {
-            lineNumberManager._ShowLineNumbers = value;
-            textRenderer.NeedsUpdateTextLayout = true;
-            lineNumberRenderer.NeedsUpdateLineNumbers();
-            canvasUpdateManager.UpdateAll();
-        }
+        get { return (bool)GetValue(ShowLineNumbersProperty); }
+        set { SetValue(ShowLineNumbersProperty, value); }
     }
 
     public bool ShowLineHighlighter
