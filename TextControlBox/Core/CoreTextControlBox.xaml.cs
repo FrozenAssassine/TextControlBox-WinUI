@@ -1048,6 +1048,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             { SyntaxHighlightID.Javascript, new Javascript() },
             { SyntaxHighlightID.Json, new Json() },
             { SyntaxHighlightID.Latex, new LaTex() },
+            { SyntaxHighlightID.Lua, new Lua() },
             { SyntaxHighlightID.Markdown, new Markdown() },
             { SyntaxHighlightID.PHP, new PHP() },
             { SyntaxHighlightID.Python, new Python() },

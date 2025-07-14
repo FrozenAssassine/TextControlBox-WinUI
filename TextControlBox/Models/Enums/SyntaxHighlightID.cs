@@ -71,6 +71,10 @@ public enum SyntaxHighlightID
     Latex,
 
     /// <summary>
+    /// Identifier for Lua programminglanguage.
+    /// </summary>
+    Lua,
+    /// <summary>
     /// Identifier for Markdown code language.
     /// </summary>
     Markdown,

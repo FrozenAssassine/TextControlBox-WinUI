@@ -534,4 +534,45 @@
             };
         }
     }
+    internal class Lua : SyntaxHighlightLanguage
+    {
+        public Lua()
+        {
+            this.Name = "Lua";
+            this.Author = "Julius Kirsch";
+            this.Filter = new string[1] { ".lua" };
+            this.Description = "Syntax highlighting for Lua language";
+            this.AutoPairingPair = new AutoPairingPair[6]
+            {
+            new AutoPairingPair("{", "}"),
+            new AutoPairingPair("[", "]"),
+            new AutoPairingPair("(", ")"),
+            new AutoPairingPair("`", "`"),
+            new AutoPairingPair("\""),
+            new AutoPairingPair("\'")
+            };
+
+            this.Highlights = new SyntaxHighlights[]
+            {
+            // Numbers (decimal, hexadecimal, with/without decimal point)
+            new SyntaxHighlights("\\b(0x[\\da-fA-F]+|\\d+\\.?\\d*|\\.\\d+)([eE][+-]?\\d+)?\\b", "#dd00dd", "#ff00ff"),
+
+            // Keywords
+            new SyntaxHighlights("\\b(and|break|do|else|elseif|end|false|for|function|goto|if|in|local|nil|not|or|repeat|return|then|true|until|while)\\b", "#aa00cc", "#cc00ff"),
+
+            // Function names (assuming they are followed by `(` and may be prefixed like `mod.func`)
+            new SyntaxHighlights("\\b\\w+(?=\\s*\\()", "#cc9900", "#ffbb00"),
+
+            // Strings (single-line)
+            new SyntaxHighlights("\"([^\"\\\\]|\\\\.)*\"", "#ff5500", "#00FF00"),
+            new SyntaxHighlights("'([^'\\\\]|\\\\.)*'", "#00CA00", "#00FF00"),
+
+            // Comments (single-line starting with `--`)
+            new SyntaxHighlights("--.*", "#888888", "#646464"),
+
+            // Multi-line comments (between --[[ and ]])
+            new SyntaxHighlights("--\\[\\[(.|\\r|\\n)*?\\]\\]", "#888888", "#646464")
+            };
+        }
+    }
 }
