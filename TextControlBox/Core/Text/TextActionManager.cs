@@ -48,7 +48,8 @@ namespace TextControlBoxNS.Core.Text
             EventsManager eventsManager,
             StringManager stringManager,
             SelectionManager selectionManager,
-            AutoIndentionManager autoIndentationManager
+            AutoIndentionManager autoIndentationManager,
+            MultilineCommentManager multiLineCommentManager
             )
         {
             this.canvasUpdateManager = canvasUpdateHelper;
@@ -68,7 +69,7 @@ namespace TextControlBoxNS.Core.Text
 
             removeTextAction.Init(textManager, undoRedo, currentLineManager, longestLineManager, cursorManager);
             deleteTextAction.Init(textManager, coreTextbox, undoRedo, currentLineManager, longestLineManager, cursorManager);
-            addCharacterTextAction.Init(textManager, coreTextbox, undoRedo, currentLineManager, longestLineManager, cursorManager, selectionManager, canvasUpdateHelper);
+            addCharacterTextAction.Init(textManager, coreTextbox, undoRedo, currentLineManager, longestLineManager, cursorManager, selectionManager, canvasUpdateHelper, multiLineCommentManager);
             addNewLineTextAction.Init(textManager, undoRedo, currentLineManager, cursorManager, eventsManager, canvasUpdateManager, selectionManager, autoIndentionManager, this);
         }
 

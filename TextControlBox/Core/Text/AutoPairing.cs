@@ -23,11 +23,11 @@ internal class AutoPairing
         if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.SyntaxHighlighting == null || textbox.SyntaxHighlighting.AutoPairingPair == null)
             return inputtext;
 
-        var res = textbox.SyntaxHighlighting.AutoPairingPair.Where(x => x.Value.Equals(inputtext));
-        if (res.Count() == 0)
+        var res = textbox.SyntaxHighlighting.AutoPairingPair.Where(x => x.Value.Equals(inputtext)).ToArray();
+        if (res.Length == 0)
             return inputtext;
 
-        if (res.ElementAt(0) is AutoPairingPair pair)
+        if (res[0] is AutoPairingPair pair)
         {
             textbox.SurroundSelectionWith(inputtext, pair.Pair);
             return null;

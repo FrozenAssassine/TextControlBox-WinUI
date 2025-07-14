@@ -15,7 +15,7 @@ internal class AddCharacterTextAction
     private CursorManager cursorManager;
     private SelectionManager selectionManager;
     private CanvasUpdateManager canvasUpdateManager;
-
+    private MultilineCommentManager multiLineCommentsManager;
     public void Init(
         TextManager textManager,
         CoreTextControlBox coreTextbox,
@@ -24,7 +24,8 @@ internal class AddCharacterTextAction
         LongestLineManager longestLineManager,
         CursorManager cursorManager,
         SelectionManager selectionManager,
-        CanvasUpdateManager canvasUpdateHelper)
+        CanvasUpdateManager canvasUpdateHelper,
+        MultilineCommentManager multiLineCommentsManager)
     {
         this.textManager = textManager;
         this.coreTextbox = coreTextbox;
@@ -34,10 +35,13 @@ internal class AddCharacterTextAction
         this.cursorManager = cursorManager;
         this.selectionManager = selectionManager;
         this.canvasUpdateManager = canvasUpdateHelper;
+        this.multiLineCommentsManager = multiLineCommentsManager;
     }
 
     public int CalculateSplitTextLength(string text)
     {
+        multiLineCommentsManager.AddText(text);
+
         return text.Length > 1 && text.Contains(textManager.NewLineCharacter, StringComparison.Ordinal)
             ? text.CountLines(textManager.NewLineCharacter)
             : 1;
@@ -47,6 +51,8 @@ internal class AddCharacterTextAction
     {
         var res = AutoPairing.AutoPair(coreTextbox, text);
         text = res.text;
+
+        multiLineCommentsManager.AddText(text);
 
         undoRedo.RecordUndoAction(() =>
         {
@@ -69,6 +75,8 @@ internal class AddCharacterTextAction
 
     public void HandleMultiLineTextWithoutSelection(string text, int splittedTextLength)
     {
+        multiLineCommentsManager.AddText(text);
+
         undoRedo.RecordUndoAction(() =>
         {
             selectionManager.InsertText(text);
@@ -82,6 +90,8 @@ internal class AddCharacterTextAction
         text = AutoPairing.AutoPairSelection(coreTextbox, text);
         if (text == null)
             return;
+
+        multiLineCommentsManager.FindCharacters();
 
         undoRedo.RecordUndoAction(() =>
         {

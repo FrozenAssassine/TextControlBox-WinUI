@@ -52,6 +52,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public readonly ReplaceManager replaceManager;
     public readonly InitializationManager initializationManager;
     private readonly MoveLineManager moveLineManager;
+    private readonly MultilineCommentManager multiLineCommentManager;
 
     public CanvasControl canvasText;
     public CanvasControl canvasCursor;
@@ -106,6 +107,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         replaceManager = new ReplaceManager();
         initializationManager = new InitializationManager();
         moveLineManager = new MoveLineManager();
+        multiLineCommentManager = new MultilineCommentManager();
 
         stringManager.Init(textManager, tabSpaceHelper);
         lineHighlighterRenderer.Init(lineHighlighterManager, selectionManager, textRenderer);
@@ -115,7 +117,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         selectionRenderer.Init(selectionManager, textRenderer, eventsManager, scrollManager, zoomManager, designHelper, textManager);
         flyoutHelper.Init(this);
         canvasUpdateManager.Init(this);
-        textActionManager.Init(this, textRenderer, undoRedo, currentLineManager, longestLineManager, canvasUpdateManager, textManager, selectionRenderer, cursorManager, scrollManager, eventsManager, stringManager, selectionManager, autoIndentionManager);
+        textActionManager.Init(this, textRenderer, undoRedo, currentLineManager, longestLineManager, canvasUpdateManager, textManager, selectionRenderer, cursorManager, scrollManager, eventsManager, stringManager, selectionManager, autoIndentionManager, multiLineCommentManager);
         textRenderer.Init(cursorManager, designHelper, textLayoutManager, textManager, scrollManager, lineNumberRenderer, longestLineManager, this, searchManager, canvasUpdateManager, zoomManager);
         cursorRenderer.Init(cursorManager, currentLineManager, textRenderer, focusManager, textManager, scrollManager, zoomManager, designHelper, lineHighlighterRenderer, eventsManager, longestLineManager);
         scrollManager.Init(this, canvasUpdateManager, textManager, textRenderer, cursorManager, zoomManager, VerticalScrollbar, HorizontalScrollbar);
@@ -134,6 +136,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         replaceManager.Init(canvasUpdateManager, undoRedo, textManager, searchManager, cursorManager, textActionManager, selectionRenderer, selectionManager, eventsManager);
         initializationManager.Init(eventsManager);
         moveLineManager.Init(selectionManager, cursorManager, textManager, undoRedo);
+        multiLineCommentManager.Init(this, textManager);
     }
 
     public void InitialiseOnStart()
@@ -917,6 +920,8 @@ internal sealed partial class CoreTextControlBox : UserControl
 
             if (textManager._SyntaxHighlighting != null)
                 textManager._SyntaxHighlighting.CompileAllRegex();
+
+            multiLineCommentManager.ChangeSyntaxHighlighting();
 
             textRenderer.NeedsUpdateTextLayout = true;
             canvasUpdateManager.UpdateText();

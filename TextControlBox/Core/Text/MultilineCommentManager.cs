@@ -1,6 +1,7 @@
 ﻿using Collections.Pooled;
 using System.Collections.Generic;
 using System;
+using System.Diagnostics;
 
 namespace TextControlBoxNS.Core.Text;
 
@@ -13,9 +14,18 @@ internal struct CommentCharacterPosition
 internal class MultilineCommentManager
 {
     private CoreTextControlBox coreTextbox;
+    private TextManager textManager;
     private HashSet<string> searchChars = new();
     public List<CommentCharacterPosition> MultilineCommentCharacterLines = new();
-    private bool MultiLineCommentsEnabled = false;
+    private bool MultiLineCommentsEnabled = true;
+    
+    public void Init(CoreTextControlBox coreTextbox, TextManager textManager)
+    {
+        this.textManager = textManager;
+        this.coreTextbox = coreTextbox;
+    }
+
+    private string lastIncompleteMatch = ""; // Track unfinished sequences
 
     private CommentCharacterPosition[] FindCharacters(string text)
     {
@@ -24,20 +34,46 @@ internal class MultilineCommentManager
             return positions.ToArray();
 
         var span = text.AsSpan();
-        for (int i = 0; i < span.Length; i++)
+        int i = 0;
+
+        // Check if lastIncompleteMatch + first character in new text completes a comment sequence
+        if (!string.IsNullOrEmpty(lastIncompleteMatch))
         {
             foreach (var searchChar in searchChars)
             {
-                if (span.Slice(i).StartsWith(searchChar.AsSpan(), StringComparison.Ordinal))
+                if ((lastIncompleteMatch + span[0]).Equals(searchChar, StringComparison.Ordinal))
                 {
-                    positions.Add(new CommentCharacterPosition { line = 0, character = i });
-                    i += searchChar.Length - 1;
+                    positions.Add(new CommentCharacterPosition { line = 0, character = 0 });
+                    i = searchChar.Length - 1; // Skip past matched sequence
                     break;
                 }
             }
         }
+
+        for (; i < span.Length;)
+        {
+            bool matched = false;
+            foreach (var searchChar in searchChars)
+            {
+                if (i + searchChar.Length <= span.Length && span.Slice(i, searchChar.Length).Equals(searchChar.AsSpan(), StringComparison.Ordinal))
+                {
+                    positions.Add(new CommentCharacterPosition { line = 0, character = i });
+                    i += searchChar.Length; // Move ahead by full match length
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (!matched)
+                i++;
+        }
+
+        // Store last character in case a partial sequence is being typed
+        lastIncompleteMatch = span.Length > 0 ? span[^1].ToString() : "";
+
         return positions.ToArray();
     }
+
 
     private CommentCharacterPosition[] FindCharacters(PooledList<string> totalLines)
     {
@@ -48,30 +84,61 @@ internal class MultilineCommentManager
         for (int lineIndex = 0; lineIndex < totalLines.Count; lineIndex++)
         {
             var span = totalLines[lineIndex].AsSpan();
-            for (int i = 0; i < span.Length; i++)
+            int i = 0;
+
+            // Check if lastIncompleteMatch + first character in new line completes a comment sequence
+            if (!string.IsNullOrEmpty(lastIncompleteMatch) && span.Length > 0)
             {
                 foreach (var searchChar in searchChars)
                 {
-                    if (span.Slice(i).StartsWith(searchChar.AsSpan(), StringComparison.Ordinal))
+                    if ((lastIncompleteMatch + span[0]).Equals(searchChar, StringComparison.Ordinal))
                     {
-                        positions.Add(new CommentCharacterPosition { line = lineIndex, character = i });
-                        i += searchChar.Length - 1;
+                        positions.Add(new CommentCharacterPosition { line = lineIndex, character = 0 });
+                        i = searchChar.Length - 1; // Move past the matched sequence
                         break;
                     }
                 }
             }
+
+            for (; i < span.Length;)
+            {
+                bool matched = false;
+                foreach (var searchChar in searchChars)
+                {
+                    if (i + searchChar.Length <= span.Length && span.Slice(i, searchChar.Length).Equals(searchChar.AsSpan(), StringComparison.Ordinal))
+                    {
+                        positions.Add(new CommentCharacterPosition { line = lineIndex, character = i });
+                        i += searchChar.Length; // Move ahead by full match length
+                        matched = true;
+                        break;
+                    }
+                }
+
+                if (!matched)
+                    i++;
+            }
+
+            // Store last character of this line in case it's part of an incomplete comment sequence
+            lastIncompleteMatch = span.Length > 0 ? span[^1].ToString() : "";
         }
+
         return positions.ToArray();
     }
 
-    private void AddText(string text)
+    public void FindCharacters()
+    {
+        MultilineCommentCharacterLines.Clear();
+        MultilineCommentCharacterLines.AddRange(this.FindCharacters(textManager.totalLines));
+    }
+
+    public void AddText(string text)
     {
         if (string.IsNullOrEmpty(text)) return;
         var newPositions = FindCharacters(text);
         MultilineCommentCharacterLines.AddRange(newPositions);
     }
 
-    private void RemoveText(string text)
+    public void RemoveText(string text)
     {
         if (string.IsNullOrEmpty(text)) return;
         var removedPositions = FindCharacters(text);

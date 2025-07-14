@@ -11,7 +11,7 @@ namespace TextControlBox_TestApp
         {
             this.InitializeComponent();
 
-            textbox.LoadLines(Enumerable.Range(0, 5).Select(x => "Line " + x + " is cool right?"));
+            textbox.LoadLines(Enumerable.Range(0, 20).Select(x => "def test" + x + "():"));
 
             //textbox.LoadLines(File.ReadAllLines("C:\\Users\\Juliu\\Desktop\\Cable_Clip_Large.gcode"));
 
