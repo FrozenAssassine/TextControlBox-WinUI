@@ -18,6 +18,21 @@ namespace TextControlBoxNS.Core.Text
         private CursorManager cursorManager;
         public bool EnableCombineNextUndoItems = false;
 
+        private bool _UndoRedoEnabled = true;
+        public bool UndoRedoEnabled
+        {
+            get => _UndoRedoEnabled;
+            set
+            {
+                _UndoRedoEnabled = value;
+
+                //clear the items, since change on the text, while undo redo disabled
+                //break the text. They depend on eachother.
+                UndoStack.Clear();
+                RedoStack.Clear();
+            }
+        }
+
         public void Init(TextManager textManager, SelectionManager selectionManager, CursorManager cursorManager)
         {
             this.textManager = textManager;
@@ -61,6 +76,12 @@ namespace TextControlBoxNS.Core.Text
 
         private void RecordSingleLine(Action action, int startline)
         {
+            if (!UndoRedoEnabled)
+            {
+                action.Invoke();
+                return;
+            }
+
             var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
             var lineBefore = textManager.GetLineText(startline);
             action.Invoke();
@@ -77,6 +98,12 @@ namespace TextControlBoxNS.Core.Text
 
         public void RecordUndoAction(Action action, int startline, int undocount, int redoCount)
         {
+            if (!UndoRedoEnabled)
+            {
+                action.Invoke();
+                return;
+            }
+
             if (undocount == 1 && redoCount == 1)
             {
                 RecordSingleLine(action, startline);
@@ -108,6 +135,11 @@ namespace TextControlBoxNS.Core.Text
 
         public void RecordUndoActionTab(Action action, TextSelection selection, int numberOfAddedRemovedLines)
         {
+            if (!UndoRedoEnabled)
+            {
+                action.Invoke();
+                return;
+            }
             var orderedSel = SelectionHelper.OrderTextSelectionSeparated(selection);
             var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
             var selectionBefore = new TextSelection(selection);
@@ -137,7 +169,13 @@ namespace TextControlBoxNS.Core.Text
 
         public void RecordUndoAction(Action action, TextSelection selection, int numberOfAddedLines, int numberOfRemovedLines = -1)
         {
-            var orderedSel = SelectionHelper.OrderTextSelectionSeparated(selection);
+            if (!UndoRedoEnabled)
+            {
+                action.Invoke();
+                return;
+            }
+
+                var orderedSel = SelectionHelper.OrderTextSelectionSeparated(selection);
             if(numberOfRemovedLines == -1)
                 numberOfRemovedLines = orderedSel.endLine - orderedSel.startLine + 1;
 
@@ -168,6 +206,9 @@ namespace TextControlBoxNS.Core.Text
 
         public (CursorPosition cursor, TextSelection selection) Undo(StringManager stringManager)
         {
+            if (!UndoRedoEnabled)
+                return (null, null);
+
             if (UndoStack.Count < 1)
                 return (null, null);
 
@@ -229,6 +270,9 @@ namespace TextControlBoxNS.Core.Text
         }
         public (CursorPosition cursor, TextSelection selection) Redo(StringManager stringManager)
         {
+            if (!UndoRedoEnabled)
+                return (null, null);
+
             if (RedoStack.Count < 1)
                 return (null, null);
 
@@ -246,7 +290,7 @@ namespace TextControlBoxNS.Core.Text
                 item.UndoText = currentText;
                 item.UndoCount = actualLinesToRemove;
             }
-                RecordUndo(item);
+            RecordUndo(item);
 
             HasRedone = true;
 

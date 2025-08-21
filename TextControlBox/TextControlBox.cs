@@ -834,6 +834,14 @@ public partial class TextControlBox : UserControl
     /// </summary>
     public TextControlBoxSelection? CurrentSelectionOrdered => coreTextBox.CurrentSelectionOrdered;
 
+    /// <summary>
+    /// Enabled or disable undo redo collection and execution. 
+    /// Changing this at runtime, clears the existing undo/redo items, 
+    /// since changes on the text while disabled break the system.
+    /// </summary>
+    public bool UndoRedoEnabled { get => coreTextBox.undoRedo.UndoRedoEnabled; set => coreTextBox.undoRedo.UndoRedoEnabled = value; }
+
+
 
     /// <summary>
     /// Represents a delegate used for handling the text changed event in the TextControlBox.
