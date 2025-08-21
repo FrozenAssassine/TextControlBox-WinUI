@@ -101,6 +101,7 @@ textBox.EnableSyntaxHighlighting = true;
 - `ContextFlyoutDisabled`: Disables the context menu.
 - `IsReadonly`: Determines if the control is read-only.
 - `CursorSize`: Gets or sets the cursor size.
+- `UndoRedoEnabled`: Enables/disables undo/redo functionality
 - `Focus(FocusState state)`: Sets focus to the control.
 - `SelectLine(int line)`: Selects a specific line.
 - `SelectLines(int start, int count)`: Selects a range of lines.
