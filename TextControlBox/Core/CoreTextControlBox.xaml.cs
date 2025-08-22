@@ -751,6 +751,10 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         return textActionManager.AddLine(line, text);
     }
+    public bool AddLines(int start, string[] text)
+    {
+        return textActionManager.AddLines(start, text);
+    }
 
     public void SurroundSelectionWith(string text)
     {
@@ -905,6 +909,22 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         return textManager.CountWords();
     }
+
+    public void ExecuteActionGroup(Action actionGroup)
+    {
+        undoRedo.ExecuteActionGroup(actionGroup);
+    }
+
+    public void BeginActionGroup()
+    {
+        undoRedo.BeginActionGroup();
+    }
+
+    public void EndActionGroup()
+    {
+        undoRedo.EndActionGroup();
+    }
+    public bool IsGroupingActions => undoRedo.IsGroupingActions;
 
     public bool EnableSyntaxHighlighting { get; set; } = true;
 

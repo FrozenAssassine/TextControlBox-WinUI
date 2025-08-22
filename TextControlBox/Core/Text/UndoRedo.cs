@@ -18,6 +18,8 @@ namespace TextControlBoxNS.Core.Text
         private CursorManager cursorManager;
         public bool EnableCombineNextUndoItems = false;
 
+        private bool _isGroupingActions = false;
+
         private bool _UndoRedoEnabled = true;
         public bool UndoRedoEnabled
         {
@@ -38,6 +40,48 @@ namespace TextControlBoxNS.Core.Text
             this.textManager = textManager;
             this.selectionManager = selectionManager;
             this.cursorManager = cursorManager;
+        }
+
+        public void BeginActionGroup()
+        {
+            if (!UndoRedoEnabled)
+                return;
+
+            _isGroupingActions = true;
+        }
+
+        public void EndActionGroup()
+        {
+            if (!UndoRedoEnabled)
+                return;
+
+            _isGroupingActions = false;
+
+            if (UndoStack.Count > 0)
+            {
+                var lastItem = UndoStack.Pop();
+                lastItem.HandleNextItemToo = false;
+                UndoStack.Push(lastItem);
+            }
+        }
+
+        public void ExecuteActionGroup(Action actionGroup)
+        {
+            if (!UndoRedoEnabled)
+            {
+                actionGroup.Invoke();
+                return;
+            }
+
+            BeginActionGroup();
+            try
+            {
+                actionGroup.Invoke();
+            }
+            finally
+            {
+                EndActionGroup();
+            }
         }
 
         private void RecordRedo(UndoRedoItem item)
@@ -62,7 +106,7 @@ namespace TextControlBoxNS.Core.Text
                 StartLine = startLine,
                 UndoCount = undoCount,
                 RedoCount = redoCount,
-                HandleNextItemToo = EnableCombineNextUndoItems
+                HandleNextItemToo = _isGroupingActions || EnableCombineNextUndoItems
             });
         }
 
@@ -112,7 +156,7 @@ namespace TextControlBoxNS.Core.Text
             var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
             undocount = Math.Min(undocount, textManager.LinesCount - startline);
             var linesBefore = textManager.GetLinesAsString(startline, undocount);
-            
+
             action.Invoke();
 
             redoCount = Math.Min(redoCount, textManager.LinesCount - startline);
@@ -175,8 +219,8 @@ namespace TextControlBoxNS.Core.Text
                 return;
             }
 
-                var orderedSel = SelectionHelper.OrderTextSelectionSeparated(selection);
-            if(numberOfRemovedLines == -1)
+            var orderedSel = SelectionHelper.OrderTextSelectionSeparated(selection);
+            if (numberOfRemovedLines == -1)
                 numberOfRemovedLines = orderedSel.endLine - orderedSel.startLine + 1;
 
             var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
@@ -221,7 +265,7 @@ namespace TextControlBoxNS.Core.Text
             var item = UndoStack.Pop();
             //calculate actual lines that can be removed
             int actualLinesToRemove = Math.Min(item.RedoCount, textManager.LinesCount - item.StartLine);
-            
+
             //record an adjusted redo item if needed
             if (actualLinesToRemove < item.RedoCount)
             {
@@ -232,7 +276,7 @@ namespace TextControlBoxNS.Core.Text
                 item.RedoText = currentText;
                 item.RedoCount = actualLinesToRemove;
             }
-            
+
             RecordRedo(item);
 
             //faster for singleline
@@ -260,10 +304,13 @@ namespace TextControlBoxNS.Core.Text
                 }
             }
 
-
-            if (item.HandleNextItemToo)
+            if (UndoStack.Count > 0)
             {
-                Undo(stringManager);
+                var nextItem = UndoStack.Peek();
+                if (nextItem.HandleNextItemToo)
+                {
+                    Undo(stringManager);
+                }
             }
 
             return (item.CursorBefore, item.SelectionBefore);
@@ -316,15 +363,14 @@ namespace TextControlBoxNS.Core.Text
                 }
             }
 
-
             if (item.HandleNextItemToo)
             {
                 Redo(stringManager);
             }
 
             return (item.CursorAfter, item.SelectionAfter);
-        }        
-        
+        }
+
         /// <summary>
         /// Clears all the items in the undo and redo stack
         /// </summary>
@@ -354,5 +400,10 @@ namespace TextControlBoxNS.Core.Text
         /// Gets if the redo stack contains actions
         /// </summary>
         public bool CanRedo { get => RedoStack.Count > 0; }
+
+        /// <summary>
+        /// Gets if an action group is currently being recorded
+        /// </summary>
+        public bool IsGroupingActions { get => _isGroupingActions; }
     }
 }

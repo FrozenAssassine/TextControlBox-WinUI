@@ -1,9 +1,11 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TextControlBoxNS.Core;
+using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Models;
 using TextControlBoxNS.Test;
 using Windows.Foundation;
@@ -53,9 +55,9 @@ public partial class TextControlBox : UserControl
         //start testings:
         //if (Debugger.IsAttached)
         //{
-        //this.LoadLines(Enumerable.Range(0, 5).Select(x => "Line " + x + " is cool right?"));
-        //TestHelper testHelper = new TestHelper(coreTextBox);
-        //testHelper.Evaluate();
+            //this.LoadLines(Enumerable.Range(0, 5).Select(x => "Line " + x + " is cool right?"));
+            //TestHelper testHelper = new TestHelper(coreTextBox);
+            //testHelper.Evaluate();
         //}
     }
 
@@ -530,6 +532,48 @@ public partial class TextControlBox : UserControl
     public int WordCount()
     {
         return coreTextBox.WordCount();
+    }
+
+    /// <summary>
+    /// Executes multiple text operations as a single undo/redo action
+    /// </summary>
+    /// <param name="actionGroup">A delegate containing all the operations to group</param>
+    public void ExecuteActionGroup(Action actionGroup)
+    {
+        coreTextBox.ExecuteActionGroup(actionGroup);
+    }
+
+    /// <summary>
+    /// Begins a group of actions that will be treated as a single undo/redo operation.
+    /// Must be paired with EndActionGroup().
+    /// </summary>
+    public void BeginActionGroup()
+    {
+        coreTextBox.BeginActionGroup();
+    }
+
+    /// <summary>
+    /// Ends the current action group and records it as a single undo item
+    /// </summary>
+    public void EndActionGroup()
+    {
+        coreTextBox.EndActionGroup();
+    }
+
+    /// <summary>
+    /// Gets whether an action group is currently being recorded
+    /// </summary>
+    public bool IsGroupingActions => coreTextBox.IsGroupingActions;
+
+    /// <summary>
+    /// Add lines starting at start
+    /// </summary>
+    /// <param name="start">The zero based index to start from</param>
+    /// <param name="text">The array of lines to add</param>
+    /// <returns>True if successfull</returns>
+    public bool AddLines(int start, string[] text)
+    {
+        return coreTextBox.AddLines(start, text);
     }
 
 

@@ -527,6 +527,25 @@ namespace TextControlBoxNS.Core.Text
             return true;
         }
 
+        public bool AddLines(int atLine, string[] lines)
+        {
+            if (atLine > textManager.LinesCount || atLine < 0)
+                return false;
+
+            longestLineManager.longestIndex = atLine;
+
+            undoRedo.RecordUndoAction(() =>
+            {
+                textManager.InsertOrAddRange(lines, atLine);
+
+            }, atLine, 0, lines.Length);
+
+            eventsManager.CallTextChanged();
+            canvasUpdateManager.UpdateText();
+            return true;
+        }
+
+
         public bool SetLineText(int line, string text)
         {
             if (line >= textManager.LinesCount || line < 0)
