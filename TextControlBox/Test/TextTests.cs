@@ -55,6 +55,8 @@ namespace TextControlBoxNS.Test
                 this.Test_33,
                 this.Test_34,
                 this.Test_35,
+                this.Test_36,
+                this.Test_37,
                 ];
         }
 
@@ -570,7 +572,6 @@ namespace TextControlBoxNS.Test
             return res.undo && res.redo && textBefore.Equals(coreTextbox.GetText());
         }
 
-
         public bool Test_34()
         {
             Debug.WriteLine("Undo Grouping");
@@ -622,6 +623,39 @@ namespace TextControlBoxNS.Test
             coreTextbox.Undo();
 
             return res.undo && res.redo && textBefore.Equals(coreTextbox.GetText());
+        }
+
+        public bool Test_36()
+        {
+            Debug.WriteLine("Delete all Lines");
+
+            coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+            string textBefore = coreTextbox.GetText();
+
+            coreTextbox.DeleteLines(0,5);
+
+            var res = CheckUndoRedo();
+            coreTextbox.Undo();
+
+            var count = coreTextbox.GetText().Split("\r\n");
+
+            return res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()) && count.Length == 1;
+        }
+        public bool Test_37()
+        {
+            Debug.WriteLine("Delete 0-3 Lines");
+
+            coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+            string textBefore = coreTextbox.GetText();
+
+            coreTextbox.DeleteLines(0, 3);
+
+            var res = CheckUndoRedo();
+            coreTextbox.Undo();
+
+            var count = coreTextbox.GetText().Split("\r\n");
+
+            return res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()) && count.Length == 2;
         }
     }
 }

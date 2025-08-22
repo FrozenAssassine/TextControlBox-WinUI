@@ -747,6 +747,11 @@ internal sealed partial class CoreTextControlBox : UserControl
         return textActionManager.DeleteLine(line);
     }
 
+    public bool DeleteLines(int start, int count)
+    {
+        return textActionManager.DeleteLines(start, count);
+    }
+
     public bool AddLine(int line, string text)
     {
         return textActionManager.AddLine(line, text);

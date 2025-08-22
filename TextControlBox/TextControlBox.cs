@@ -346,6 +346,18 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Deletes the lines specified by the zero based start from the textbox until the start + count line
+    /// This action will record an undo step
+    /// </summary>
+    /// <param name="start">The beginning of the line to delete</param>
+    /// <param name="count">The amount of lines to delete</param>
+    /// <returns>Returns true if the line was deleted successfully and false if not</returns>
+    public bool DeleteLines(int start, int count)
+    {
+        return coreTextBox.DeleteLines(start, count);
+    }
+
+    /// <summary>
     /// Adds a new line with the text specified
     /// This action will record an undo step
     /// </summary>

@@ -23,6 +23,8 @@ namespace TextControlBox_TestApp
             textbox.NumberOfSpacesForTab = 4;
             textbox.Loaded += Textbox_Loaded;
 
+            textbox.DeleteLines(0, 5);
+
             //ActionGrouping();
         }
 

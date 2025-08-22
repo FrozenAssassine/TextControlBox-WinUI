@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Input;
+﻿using Collections.Pooled;
+using Microsoft.UI.Input;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -507,6 +508,42 @@ namespace TextControlBoxNS.Core.Text
             canvasUpdateManager.UpdateText();
             return true;
         }
+
+        public bool DeleteLines(int start, int count)
+        {
+            if (start < 0 || count <= 0 || start >= textManager.LinesCount)
+                return false;
+
+            if (start + count > textManager.LinesCount)
+                count = textManager.LinesCount - start;
+
+            if (longestLineManager.longestIndex >= start && longestLineManager.longestIndex < start + count)
+                longestLineManager.needsRecalculation = true;
+
+            //whole text is selected:
+            if (textManager.LinesCount == count)
+            {
+                undoRedo.RecordUndoAction(() =>
+                {
+                    textManager.SetLineText(0, "");
+                    if (count > 1)
+                        textManager.RemoveRange(start, count);
+
+                }, start, start + count, 0);
+            }
+            else
+            {
+                undoRedo.RecordUndoAction(() =>
+                {
+                    textManager.RemoveRange(start, count);
+                }, start, start + count, 0);
+            }
+
+            eventsManager.CallTextChanged();
+            canvasUpdateManager.UpdateText();
+            return true;
+        }
+
 
         public bool AddLine(int line, string text)
         {
