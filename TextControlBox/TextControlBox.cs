@@ -834,7 +834,15 @@ public partial class TextControlBox : UserControl
     /// </summary>
     public TextControlBoxSelection? CurrentSelectionOrdered => coreTextBox.CurrentSelectionOrdered;
 
-
+    /// <summary>
+    /// Gets or sets a value indicating whether whitespace characters (spaces and tabs)
+    /// are visually displayed in the text box (e.g., as dots or arrows).
+    /// </summary>
+    public bool ShowWhitespaceCharacters
+    {
+        get => coreTextBox.ShowWhitespaceCharacters;
+        set => coreTextBox.ShowWhitespaceCharacters = value;
+    }
     /// <summary>
     /// Represents a delegate used for handling the text changed event in the TextControlBox.
     /// </summary>

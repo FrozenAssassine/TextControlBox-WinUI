@@ -3,6 +3,8 @@ using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Diagnostics;
+using System.Numerics;
+using System.Runtime.InteropServices;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using Windows.Foundation;
@@ -14,6 +16,7 @@ internal class TextRenderer
     public CanvasTextFormat TextFormat = null;
     public CanvasTextLayout DrawnTextLayout = null;
     public CanvasTextLayout CurrentLineTextLayout = null;
+
 
     public bool NeedsUpdateTextLayout = true;
     public bool NeedsTextFormatUpdate = true;
@@ -36,6 +39,7 @@ internal class TextRenderer
     private CoreTextControlBox coreTextbox;
     private CanvasUpdateManager canvasUpdateManager;
     private ZoomManager zoomManager;
+    private WhitespaceCharactersRenderer invisibleCharactersRenderer;
 
     public void Init(
         CursorManager cursorManager,
@@ -48,7 +52,8 @@ internal class TextRenderer
         CoreTextControlBox textbox,
         SearchManager searchManager,
         CanvasUpdateManager canvasUpdateManager,
-        ZoomManager zoomManager)
+        ZoomManager zoomManager,
+        WhitespaceCharactersRenderer invisibleCharactersRenderer)
     {
         this.cursorManager = cursorManager;
         this.textManager = textManager;
@@ -62,6 +67,7 @@ internal class TextRenderer
         this.scrollGrid = textbox.scrollGrid;
         this.canvasUpdateManager = canvasUpdateManager;
         this.zoomManager = zoomManager;
+        this.invisibleCharactersRenderer = invisibleCharactersRenderer;
     }
 
     //Check whether the current line is outside the bounds of the visible area
@@ -101,6 +107,7 @@ internal class TextRenderer
         return (startLine, linesToRender);
     }
 
+
     public void Draw(CanvasControl canvasText, CanvasDrawEventArgs args)
     {
         //Create resources and layouts:
@@ -108,6 +115,8 @@ internal class TextRenderer
         {
             lineNumberRenderer.CreateLineNumberTextFormat();
             TextFormat = textLayoutManager.CreateCanvasTextFormat();
+
+            invisibleCharactersRenderer.UpdateTextFormat(canvasText, TextFormat);
 
             designHelper.CreateColorResources(args.DrawingSession);
         }
@@ -151,6 +160,8 @@ internal class TextRenderer
                 );
 
         args.DrawingSession.DrawTextLayout(DrawnTextLayout, (float)-scrollManager.HorizontalScroll, SingleLineHeight, designHelper.TextColorBrush);
+
+        invisibleCharactersRenderer.DrawTabsAndSpaces(args, RenderedText, DrawnTextLayout, SingleLineHeight);
 
         //Only update if needed, to reduce updates when scrolling
         if (lineNumberRenderer.CanUpdateCanvas())

@@ -71,4 +71,13 @@ internal class TextLayoutManager
         return textFormat;
     }
 
+    public (CanvasTextLayout spaceGlyph, CanvasTextLayout tabGlyph) CreateGlyphs(ICanvasResourceCreator resourceCreator, CanvasTextFormat textFormat)
+    {
+        float width = zoomManager.ZoomedFontSize * 2;
+        float height = zoomManager.ZoomedFontSize * 2;
+        CanvasTextLayout spaceGlyph = new CanvasTextLayout(resourceCreator, "·", textFormat, width, height);
+        CanvasTextLayout tabGlyph = new CanvasTextLayout(resourceCreator, "→", textFormat, width, height);
+
+        return (spaceGlyph, tabGlyph);
+    }
 }

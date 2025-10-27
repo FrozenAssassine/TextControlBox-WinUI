@@ -52,6 +52,8 @@ internal sealed partial class CoreTextControlBox : UserControl
     public readonly ReplaceManager replaceManager;
     public readonly InitializationManager initializationManager;
     private readonly MoveLineManager moveLineManager;
+    private readonly WhitespaceCharactersRenderer invisibleCharactersRenderer;
+    private readonly WhitespaceCharactersManager whitespaceCharactersManager;
 
     public CanvasControl canvasText;
     public CanvasControl canvasCursor;
@@ -106,6 +108,8 @@ internal sealed partial class CoreTextControlBox : UserControl
         replaceManager = new ReplaceManager();
         initializationManager = new InitializationManager();
         moveLineManager = new MoveLineManager();
+        invisibleCharactersRenderer = new WhitespaceCharactersRenderer();
+        whitespaceCharactersManager = new WhitespaceCharactersManager();
 
         stringManager.Init(textManager, tabSpaceHelper);
         lineHighlighterRenderer.Init(lineHighlighterManager, selectionManager, textRenderer);
@@ -116,7 +120,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         flyoutHelper.Init(this);
         canvasUpdateManager.Init(this);
         textActionManager.Init(this, textRenderer, undoRedo, currentLineManager, longestLineManager, canvasUpdateManager, textManager, selectionRenderer, cursorManager, scrollManager, eventsManager, stringManager, selectionManager, autoIndentionManager);
-        textRenderer.Init(cursorManager, designHelper, textLayoutManager, textManager, scrollManager, lineNumberRenderer, longestLineManager, this, searchManager, canvasUpdateManager, zoomManager);
+        textRenderer.Init(cursorManager, designHelper, textLayoutManager, textManager, scrollManager, lineNumberRenderer, longestLineManager, this, searchManager, canvasUpdateManager, zoomManager, invisibleCharactersRenderer);
         cursorRenderer.Init(cursorManager, currentLineManager, textRenderer, focusManager, textManager, scrollManager, zoomManager, designHelper, lineHighlighterRenderer, eventsManager, longestLineManager);
         scrollManager.Init(this, canvasUpdateManager, textManager, textRenderer, cursorManager, zoomManager, VerticalScrollbar, HorizontalScrollbar);
         currentLineManager.Init(cursorManager, textManager);
@@ -134,6 +138,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         replaceManager.Init(canvasUpdateManager, undoRedo, textManager, searchManager, cursorManager, textActionManager, selectionRenderer, selectionManager, eventsManager);
         initializationManager.Init(eventsManager);
         moveLineManager.Init(selectionManager, cursorManager, textManager, undoRedo);
+        invisibleCharactersRenderer.Init(designHelper, scrollManager, zoomManager, textLayoutManager, whitespaceCharactersManager);
     }
 
     public void InitialiseOnStart()
@@ -1033,6 +1038,8 @@ internal sealed partial class CoreTextControlBox : UserControl
     public TextControlBoxSelection? CurrentSelection => selectionManager.HasSelection ? new TextControlBoxSelection(this.selectionManager.currentTextSelection) : null;
     public TextControlBoxSelection? CurrentSelectionOrdered => selectionManager.HasSelection ? new TextControlBoxSelection(selectionManager) : null;
     public new bool IsLoaded => initializationManager.initDone;
+    public bool ShowWhitespaceCharacters { get => whitespaceCharactersManager.ShowWhitespaceCharacters; set { whitespaceCharactersManager.ShowWhitespaceCharacters = value; canvasUpdateManager.UpdateText(); } }
+
     public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {
             { SyntaxHighlightID.Batch, new Batch() },

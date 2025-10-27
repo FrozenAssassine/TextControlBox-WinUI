@@ -11,14 +11,15 @@ namespace TextControlBox_TestApp
         {
             this.InitializeComponent();
 
-            textbox.LoadLines(Enumerable.Range(0, 5).Select(x => "Line " + x + " is cool right?"));
+            textbox.LoadLines(Enumerable.Range(0, 1_000_000).Select(x => "Line " + x + " is cool right?"));
 
             //textbox.LoadLines(File.ReadAllLines("C:\\Users\\Juliu\\Desktop\\Cable_Clip_Large.gcode"));
 
             textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.CSharp);
 
-            textbox.UseSpacesInsteadTabs = true;
+            textbox.UseSpacesInsteadTabs = false;
             textbox.NumberOfSpacesForTab = 4;
+            textbox.ShowWhitespaceCharacters = true;
             textbox.Loaded += Textbox_Loaded;
         }
 

@@ -21,6 +21,7 @@ public class TextControlBoxDesign
         this.LineHighlighterColor = design.LineHighlighterColor;
         this.LineNumberColor = design.LineNumberColor;
         this.LineNumberBackground = design.LineNumberBackground;
+        this.SearchHighlightColor = design.SearchHighlightColor;
     }
 
     /// <summary>
@@ -34,7 +35,7 @@ public class TextControlBoxDesign
     /// <param name="lineNumberColor">The color of the linenumber</param>
     /// <param name="lineNumberBackground">The background color of the linenumbers</param>
     /// <param name="searchHighlightColor">The color of the search highlights</param>
-    public TextControlBoxDesign(Brush background, Color textColor, Color selectionColor, Color cursorColor, Color lineHighlighterColor, Color lineNumberColor, Color lineNumberBackground, Color searchHighlightColor)
+    public TextControlBoxDesign(Brush background, Color textColor, Color selectionColor, Color cursorColor, Color lineHighlighterColor, Color lineNumberColor, Color lineNumberBackground, Color searchHighlightColor, Color InvisibleCharacterColor)
     {
         this.Background = background;
         this.TextColor = textColor;
@@ -44,6 +45,7 @@ public class TextControlBoxDesign
         this.LineNumberColor = lineNumberColor;
         this.LineNumberBackground = lineNumberBackground;
         this.SearchHighlightColor = searchHighlightColor;
+        this.InvisibleCharacterColor = InvisibleCharacterColor;
     }
 
     /// <summary>
@@ -85,4 +87,9 @@ public class TextControlBoxDesign
     /// Gets or sets the color used to highlight search results in the textbox.
     /// </summary>
     public Color SearchHighlightColor { get; set; }
+
+    /// <summary>
+    /// Gets or sets the color used to highlight invisible characters like tabs and spaces.
+    /// </summary>
+    public Color InvisibleCharacterColor { get; set; }
 }
