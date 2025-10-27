@@ -954,6 +954,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         set
         {
             textManager.LineEnding = value;
+            eventsManager.CallTextChanged();
         }
     }
 
