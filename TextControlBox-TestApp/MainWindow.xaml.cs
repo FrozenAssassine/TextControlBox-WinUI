@@ -1,6 +1,8 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using TextControlBoxNS;
 
 namespace TextControlBox_TestApp
@@ -21,11 +23,37 @@ namespace TextControlBox_TestApp
             textbox.NumberOfSpacesForTab = 4;
             textbox.ShowWhitespaceCharacters = true;
             textbox.Loaded += Textbox_Loaded;
+
+            //ActionGrouping();
         }
 
         private void Textbox_Loaded(TextControlBox sender)
         {
             textbox.SetCursorPosition(100, 5);
         }
+
+        void ActionGrouping()
+        {
+
+            textbox.BeginActionGroup();
+
+            textbox.DeleteLine(3);
+            textbox.DeleteLine(0);
+            textbox.AddLine(3, "New");
+            textbox.SetLineText(1, "Edit");
+
+            for (int i = 0; i < 10; i++)
+            {
+                textbox.AddLines(4, ["Hello", "Baum", "Nudel", "Kuchen"]);
+            }
+
+            for (int i = 5; i < 20; i++)
+            {
+                textbox.DeleteLine(i);
+            }
+
+            textbox.EndActionGroup();
+        }
+
     }
 }

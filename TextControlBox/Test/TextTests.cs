@@ -50,6 +50,11 @@ namespace TextControlBoxNS.Test
                 this.Test_23,
                 this.Test_24,
                 this.Test_30,
+                this.Test_31,
+                this.Test_32,
+                this.Test_33,
+                this.Test_34,
+                this.Test_35,
                 ];
         }
 
@@ -58,16 +63,16 @@ namespace TextControlBoxNS.Test
         {
             string textBefore = coreTextbox.GetText();
 
-            for(int i =0; i<count; i++)
+            for (int i = 0; i < count; i++)
                 coreTextbox.Undo();
-            
+
             string textAfter = coreTextbox.GetText();
 
             bool undoRes = !textAfter.Equals(textBefore);
 
-            for(int i = 0; i<count; i++)
+            for (int i = 0; i < count; i++)
                 coreTextbox.Redo();
-            
+
             bool redoRes = coreTextbox.GetText().Equals(textBefore);
 
             Debug.Write($" (Undo: {undoRes} Redo:{redoRes})");
@@ -179,8 +184,8 @@ namespace TextControlBoxNS.Test
 
             var cur = coreTextbox.cursorManager.currentCursorPosition;
             bool res =
-                cur.LineNumber == 0 && 
-                coreTextbox.GetText().Length == 0 && 
+                cur.LineNumber == 0 &&
+                coreTextbox.GetText().Length == 0 &&
                 cur.CharacterPosition == 0;
 
             coreTextbox.SetText(originalText); //reset content
@@ -194,7 +199,7 @@ namespace TextControlBoxNS.Test
 
             coreTextbox.SetSelection(5, 10);
             coreTextbox.textActionManager.AddCharacter("Hello World");
-            
+
             CheckUndoRedo();
 
             var cur = coreTextbox.cursorManager.currentCursorPosition;
@@ -213,7 +218,7 @@ namespace TextControlBoxNS.Test
 
             coreTextbox.SetSelection(5, 10);
             coreTextbox.textActionManager.AddCharacter(coreTextbox.stringManager.CleanUpString("Line1\nLine2\nLine3"));
-            
+
             CheckUndoRedo();
 
             var cur = coreTextbox.cursorManager.currentCursorPosition;
@@ -233,7 +238,7 @@ namespace TextControlBoxNS.Test
             coreTextbox.SelectAll();
             string text = coreTextbox.stringManager.CleanUpString("Line1\nLine2\nLine3");
             coreTextbox.textActionManager.AddCharacter(text);
-            
+
             CheckUndoRedo();
 
             var cur = coreTextbox.cursorManager.currentCursorPosition;
@@ -276,7 +281,7 @@ namespace TextControlBoxNS.Test
             coreTextbox.textActionManager.DeleteSelection();
 
             CheckUndoRedo();
-            
+
             string line1 = TestHelper.GetFirstLine(originalText, coreTextbox.textManager.NewLineCharacter).ToString();
             var expected = line1.Substring(0, 4) + line1.Substring(14);
             var cur = coreTextbox.cursorManager.currentCursorPosition;
@@ -355,11 +360,11 @@ namespace TextControlBoxNS.Test
             coreTextbox.textActionManager.DeleteSelection();
 
             CheckUndoRedo();
-            
+
             var text = coreTextbox.GetLineText(1);
             string expected = TestHelper.GetLineText(originalText, coreTextbox, 1).Substring(0, 3);
 
-            bool res = text.Equals(expected) && 
+            bool res = text.Equals(expected) &&
                 coreTextbox.textManager.LinesCount == linesBefore - 1;
 
             coreTextbox.SetText(originalText); // reset content
@@ -439,11 +444,11 @@ namespace TextControlBoxNS.Test
             coreTextbox.Undo();
             coreTextbox.ClearSelection();
 
-            for(int i = 0; i<34; i++)
+            for (int i = 0; i < 34; i++)
             {
                 coreTextbox.textActionManager.RemoveText(true);
             }
-            for(int i = 0; i<34; i++)
+            for (int i = 0; i < 34; i++)
             {
                 coreTextbox.Undo();
             }
@@ -495,7 +500,7 @@ namespace TextControlBoxNS.Test
             coreTextbox.SetCursorPosition(0, 0);
             coreTextbox.SetSelection(0, 40); //whole text
 
-            for(int i = 0; i<3; i++)
+            for (int i = 0; i < 3; i++)
                 coreTextbox.tabSpaceHelper.MoveTab();
 
             coreTextbox.Undo();
@@ -518,6 +523,105 @@ namespace TextControlBoxNS.Test
 
             coreTextbox.SurroundSelectionWith("<div>", "</div>");
             return true;
+        }
+
+        public bool Test_31()
+        {
+            Debug.WriteLine("Add Lines at index 3");
+
+            coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+            string textBefore = coreTextbox.GetText();
+
+            coreTextbox.AddLines(3, ["Hello", "Baum", "Nudel", "Kuchen", "Wurst"]);
+
+            var res = CheckUndoRedo();
+            coreTextbox.Undo();
+
+            return res.undo && res.redo && textBefore.Equals(coreTextbox.GetText());
+        }
+
+        public bool Test_32()
+        {
+            Debug.WriteLine("Add Lines at beginning");
+
+            coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+            string textBefore = coreTextbox.GetText();
+
+            coreTextbox.AddLines(0, ["Hello", "Baum", "Nudel", "Kuchen", "Wurst"]);
+
+            var res = CheckUndoRedo();
+            coreTextbox.Undo();
+
+            return res.undo && res.redo && textBefore.Equals(coreTextbox.GetText());
+        }
+
+        public bool Test_33()
+        {
+            Debug.WriteLine("Add Lines at end");
+
+            coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+            string textBefore = coreTextbox.GetText();
+
+            coreTextbox.AddLines(4, ["Hello", "Baum", "Nudel", "Kuchen", "Wurst"]);
+
+            var res = CheckUndoRedo();
+            coreTextbox.Undo();
+
+            return res.undo && res.redo && textBefore.Equals(coreTextbox.GetText());
+        }
+
+
+        public bool Test_34()
+        {
+            Debug.WriteLine("Undo Grouping");
+
+            coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+            string textBefore = coreTextbox.GetText();
+
+            coreTextbox.BeginActionGroup();
+
+            coreTextbox.DeleteLine(3);
+            coreTextbox.AddLine(3, "New");
+            coreTextbox.SetLineText(1, "Edit");
+            coreTextbox.AddLines(4, ["Hello", "Baum", "Nudel", "Kuchen", "Wurst"]);
+
+            coreTextbox.EndActionGroup();
+
+            var res = CheckUndoRedo();
+            coreTextbox.Undo();
+
+            return res.undo && res.redo && textBefore.Equals(coreTextbox.GetText());
+        }
+        public bool Test_35()
+        {
+            Debug.WriteLine("Undo Grouping Extended");
+
+            coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
+            string textBefore = coreTextbox.GetText();
+
+            coreTextbox.BeginActionGroup();
+
+            coreTextbox.DeleteLine(3);
+            coreTextbox.DeleteLine(0);
+            coreTextbox.AddLine(3, "New");
+            coreTextbox.SetLineText(1, "Edit");
+
+            for(int i = 0; i<10; i++)
+            {
+                coreTextbox.AddLines(4, ["Hello", "Baum", "Nudel", "Kuchen", "Wurst"]);
+            }
+
+            for(int i =5; i<20; i++)
+            {
+                coreTextbox.DeleteLine(i);
+            }
+
+            coreTextbox.EndActionGroup();
+
+            var res = CheckUndoRedo();
+            coreTextbox.Undo();
+
+            return res.undo && res.redo && textBefore.Equals(coreTextbox.GetText());
         }
     }
 }

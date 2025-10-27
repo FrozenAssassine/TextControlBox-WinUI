@@ -40,9 +40,7 @@ TextControlBox is a powerful and highly customizable textbox control for WinUI 3
   - Get cursor position and manage selections programmatically.
 
 ## ❤️ Support my work  
-<a href='https://ko-fi.com/K3K819KSLG' target='_blank'>  
-    <img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' />
-</a>
+[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=PPME7KF7KF7QS)
 
 ## 🏗️ Getting Started
 
@@ -101,6 +99,10 @@ textBox.EnableSyntaxHighlighting = true;
 - `ContextFlyoutDisabled`: Disables the context menu.
 - `IsReadonly`: Determines if the control is read-only.
 - `CursorSize`: Gets or sets the cursor size.
+- `UndoRedoEnabled`: Enables/disables undo/redo functionality
+- `IsGroupingActions`: Gets whether grouping of undo redo is enabled or disabled
+- `BeginActionGroup`: Starts the grouping of undo redo items
+- `EndActionGroup`: Ends the grouping of undo redo items 
 - `Focus(FocusState state)`: Sets focus to the control.
 - `SelectLine(int line)`: Selects a specific line.
 - `SelectLines(int start, int count)`: Selects a range of lines.
@@ -128,6 +130,7 @@ textBox.EnableSyntaxHighlighting = true;
 - `SetLineText(int line, string text)`: Replaces the text of a line.
 - `DeleteLine(int line)`: Deletes a specific line.
 - `AddLine(int line, string text)`: Adds a new line at a position.
+- `AddLines(int start, string[] lines)`: Adds the array of lines at the given position.
 - `SurroundSelectionWith(string text)`: Surrounds selection with a string.
 - `SurroundSelectionWith(string text1, string text2)`: Surrounds with prefix/suffix.
 - `DuplicateLine(int line)`: Duplicates the specified line.
