@@ -1,6 +1,7 @@
 ﻿using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml.Media;
+using System;
 using TextControlBoxNS.Core.Text;
 using Windows.Foundation;
 
@@ -41,7 +42,7 @@ internal class TextLayoutManager
             WordWrapping = CanvasWordWrapping.NoWrap,
             LineSpacing = lineSpacing,
         };
-        textFormat.IncrementalTabStop = zoomedFontSize * 3; //default 137px
+        textFormat.IncrementalTabStop = (float)Math.Round(zoomedFontSize * 3f); //default 137px
         textFormat.FontFamily = fontFamily.Source;
         textFormat.TrimmingGranularity = CanvasTextTrimmingGranularity.None;
         textFormat.TrimmingSign = CanvasTrimmingSign.None;
