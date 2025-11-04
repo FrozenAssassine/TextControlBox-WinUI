@@ -256,6 +256,8 @@ namespace TextControlBoxNS.Core.Text
 
                 longestLineManager.needsRecalculation = true;
                 canvasUpdateManager.UpdateAll();
+
+                eventsManager.CallTextLoaded();
             }
             catch (OutOfMemoryException)
             {
@@ -297,6 +299,7 @@ namespace TextControlBoxNS.Core.Text
                 cursorManager.SetToTextEnd();
 
                 canvasUpdateManager.UpdateAll();
+                eventsManager.CallTextLoaded();
             }
             catch (OutOfMemoryException)
             {

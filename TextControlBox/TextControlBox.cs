@@ -33,7 +33,7 @@ public partial class TextControlBox : UserControl
         coreTextBox.eventsManager.SelectionChanged += EventsManager_SelectionChanged;
         coreTextBox.eventsManager.GotFocus += EventsManager_GotFocus;
         coreTextBox.eventsManager.LostFocus += EventsManager_LostFocus;
-
+        coreTextBox.eventsManager.TextLoaded += EventsManager_TextLoaded;
         this.Content = coreTextBox;
     }
 
@@ -80,6 +80,10 @@ public partial class TextControlBox : UserControl
     private void ZoomManager_ZoomChanged(int zoomFactor)
     {
         ZoomChanged?.Invoke(this, zoomFactor);
+    }
+    private void EventsManager_TextLoaded()
+    {
+        TextLoaded?.Invoke(this);
     }
 
     /// <summary>
@@ -963,6 +967,20 @@ public partial class TextControlBox : UserControl
     /// Occurs when the TextControlBox finished loading and all components initialized
     /// </summary>
     public new event LoadedEvent Loaded;
+
+    /// <summary>
+    /// Occurs when the TextControlBox finished loading the text.
+    /// !Does NOT work with SetText function. 
+    /// Works with LoadText and LoadLines function.
+    /// </summary>
+    /// <param name="sender">The TextControlBox instance which loaded the text</param>
+    public delegate void TextLoadedEvent(TextControlBox sender);
+
+    /// <summary>
+    /// Occurs when the TextControlBox finished loading all the text
+    /// </summary>
+    public event TextLoadedEvent TextLoaded;
+
 
     //static functions
     /// <summary>

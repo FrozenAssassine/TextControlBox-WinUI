@@ -24,6 +24,10 @@ internal class EventsManager
     public delegate void LoadedEvent();
     public event LoadedEvent Loaded;
 
+    public delegate void TextLoadedEvent();
+    public event TextLoadedEvent TextLoaded;
+
+
     private SelectionChangedEventHandler args = new SelectionChangedEventHandler();
 
     public void Init(SearchManager searchManager, CursorManager cursorManager)
@@ -71,5 +75,9 @@ internal class EventsManager
     public void CallLoaded()
     {
         Loaded?.Invoke();
+    }
+    public void CallTextLoaded()
+    {
+        TextLoaded?.Invoke();
     }
 }
