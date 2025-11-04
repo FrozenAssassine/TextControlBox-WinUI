@@ -460,8 +460,11 @@ internal sealed partial class CoreTextControlBox : UserControl
     //Canvas event
     private void Canvas_Text_Draw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        textRenderer.Draw(sender, args);
-        initializationManager.CanvasDrawed(0);
+        BenchmarkHelper.Run(() =>
+        {
+            textRenderer.Draw(sender, args);
+            initializationManager.CanvasDrawed(0);
+        }, "Draw canvas");
     }
     private void Canvas_Selection_Draw(CanvasControl sender, CanvasDrawEventArgs args)
     {

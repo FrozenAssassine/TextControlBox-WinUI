@@ -13,7 +13,9 @@ namespace TextControlBox_TestApp
         {
             this.InitializeComponent();
 
-            textbox.LoadLines(Enumerable.Range(0, 1_000_000).Select(x => "Line " + x + " is cool right?"));
+            //textbox.LoadLines(Enumerable.Range(0, 1_000_000).Select(x => "Line " + x + " is cool right?"));
+
+            textbox.SetText(new string('\t', 10));
 
             //textbox.LoadLines(File.ReadAllLines("C:\\Users\\Juliu\\Desktop\\Cable_Clip_Large.gcode"));
 
@@ -22,14 +24,10 @@ namespace TextControlBox_TestApp
             textbox.UseSpacesInsteadTabs = false;
             textbox.NumberOfSpacesForTab = 4;
             textbox.ShowWhitespaceCharacters = true;
-            textbox.Loaded += Textbox_Loaded;
+
+            File.WriteAllText("C:\\Users\\Juliu\\Desktop\\mixedLineEndings.txt", "Hello World\nThis is file content \r\n And this is another line \r");
 
             //ActionGrouping();
-        }
-
-        private void Textbox_Loaded(TextControlBox sender)
-        {
-            textbox.SetCursorPosition(100, 5);
         }
 
         void ActionGrouping()

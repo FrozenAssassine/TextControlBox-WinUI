@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas.Text;
+﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -127,41 +128,48 @@ internal class TextRenderer
         //check rendering and calculation updates
         lineNumberRenderer.CheckGenerateLineNumberText();
 
-        //Only update the textformat when the text changes:
-        if (OldRenderedText != null && 
-            OldRenderedText.Length != RenderedText.Length || 
-            !RenderedText.Equals(OldRenderedText, System.StringComparison.Ordinal) || 
+
+        CanvasCommandList canvasCommandList = new CanvasCommandList(args.DrawingSession);
+        if (OldRenderedText != null &&
+            OldRenderedText.Length != RenderedText.Length ||
+            !RenderedText.Equals(OldRenderedText, System.StringComparison.Ordinal) ||
             NeedsUpdateTextLayout
-            )
+        )
         {
             NeedsUpdateTextLayout = false;
             OldRenderedText = RenderedText;
 
             DrawnTextLayout = textLayoutManager.CreateTextResource(canvasText, DrawnTextLayout, TextFormat, RenderedText, new Size { Height = canvasText.Size.Height, Width = coreTextbox.ActualWidth });
-
             SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting, RenderedText);
         }
 
-        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false, zoomManager.ZoomNeedsRecalculateLongestLine);
-        if (zoomManager.ZoomNeedsRecalculateLongestLine)
-            zoomManager.ZoomNeedsRecalculateLongestLine = false;
+            scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false, zoomManager.ZoomNeedsRecalculateLongestLine);
+            if (zoomManager.ZoomNeedsRecalculateLongestLine)
+                zoomManager.ZoomNeedsRecalculateLongestLine = false;
 
-        //render the search highlights
-        if (searchManager.IsSearchOpen)
-            SearchHighlightsRenderer.RenderHighlights(
-                args,
-                DrawnTextLayout,
-                RenderedText,
-                searchManager.MatchingSearchLines,
-                searchManager.searchParameter.SearchExpression,
-                (float)-scrollManager.HorizontalScroll,
-                SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
-                designHelper._Design.SearchHighlightColor
-                );
+        using (var ccls = canvasCommandList.CreateDrawingSession())
+        {
+            //Only update the textformat when the text changes:
+            //render the search highlights
+            if (searchManager.IsSearchOpen)
+                SearchHighlightsRenderer.RenderHighlights(
+                    args,
+                    ccls,
+                    DrawnTextLayout,
+                    RenderedText,
+                    searchManager.MatchingSearchLines,
+                    searchManager.searchParameter.SearchExpression,
+                    (float)-scrollManager.HorizontalScroll,
+                    SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
+                    designHelper._Design.SearchHighlightColor
+                    );
 
-        args.DrawingSession.DrawTextLayout(DrawnTextLayout, (float)-scrollManager.HorizontalScroll, SingleLineHeight, designHelper.TextColorBrush);
+            ccls.DrawTextLayout(DrawnTextLayout, (float)-scrollManager.HorizontalScroll, SingleLineHeight, designHelper.TextColorBrush);
 
-        invisibleCharactersRenderer.DrawTabsAndSpaces(args, RenderedText, DrawnTextLayout, SingleLineHeight);
+            invisibleCharactersRenderer.DrawTabsAndSpaces(args, ccls, RenderedText, DrawnTextLayout, SingleLineHeight);
+        }
+        args.DrawingSession.DrawImage(canvasCommandList);
+
 
         //Only update if needed, to reduce updates when scrolling
         if (lineNumberRenderer.CanUpdateCanvas())
