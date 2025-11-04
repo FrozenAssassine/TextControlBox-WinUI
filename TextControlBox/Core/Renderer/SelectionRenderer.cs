@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas.Text;
+﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
 using TextControlBoxNS.Core.Selection;
@@ -134,24 +135,29 @@ namespace TextControlBoxNS.Core.Renderer
                 selEndIndex - selStartIndex :
                 selStartIndex - selEndIndex;
 
-            CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
-            for (int i = 0; i < regions.Length; i++)
+            CanvasCommandList canvasCommandList = new CanvasCommandList(args.DrawingSession);
+            using (var ccls = canvasCommandList.CreateDrawingSession())
             {
-                //Change the width if selection in an empty line or starts at a line end
-                if (regions[i].LayoutBounds.Width == 0)
+                CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
+                for (int i = 0; i < regions.Length; i++)
                 {
-                    var bounds = regions[i].LayoutBounds;
-                    regions[i].LayoutBounds = new Rect
+                    //Change the width if selection in an empty line or starts at a line end
+                    if (regions[i].LayoutBounds.Width == 0)
                     {
-                        Width = fontSize / 4,
-                        Height = bounds.Height,
-                        X = bounds.X,
-                        Y = bounds.Y
-                    };
-                }
+                        var bounds = regions[i].LayoutBounds;
+                        regions[i].LayoutBounds = new Rect
+                        {
+                            Width = fontSize / 4,
+                            Height = bounds.Height,
+                            X = bounds.X,
+                            Y = bounds.Y
+                        };
+                    }
 
-                args.DrawingSession.FillRectangle(Utils.CreateRect(regions[i].LayoutBounds, marginLeft, marginTop), selectionColor);
+                    ccls.FillRectangle(Utils.CreateRect(regions[i].LayoutBounds, marginLeft, marginTop), selectionColor);
+                }
             }
+            args.DrawingSession.DrawImage(canvasCommandList);
 
             selectionManager.currentTextSelection.renderedIndex = renderedSelectionStart;
             selectionManager.currentTextSelection.renderedLength = renderedSelectionLength;
@@ -177,7 +183,6 @@ namespace TextControlBoxNS.Core.Renderer
                     zoomManager.ZoomedFontSize,
                     designHelper._Design.SelectionColor
                     );
-
             }
 
             if (selectionManager.HasSelection && !selectionManager.Equals(selectionManager.OldTextSelection, selectionManager.currentTextSelection))
