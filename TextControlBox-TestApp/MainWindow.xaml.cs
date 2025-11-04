@@ -15,45 +15,11 @@ namespace TextControlBox_TestApp
 
             textbox.LoadLines(Enumerable.Range(0, 1_000_000).Select(x => "Line " + x + " is cool right?"));
 
-            //textbox.LoadLines(File.ReadAllLines("C:\\Users\\Juliu\\Desktop\\Cable_Clip_Large.gcode"));
-
             textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.CSharp);
 
             textbox.UseSpacesInsteadTabs = false;
             textbox.NumberOfSpacesForTab = 4;
             textbox.ShowWhitespaceCharacters = true;
-            textbox.Loaded += Textbox_Loaded;
-
-            //ActionGrouping();
         }
-
-        private void Textbox_Loaded(TextControlBox sender)
-        {
-            textbox.SetCursorPosition(100, 5);
-        }
-
-        void ActionGrouping()
-        {
-
-            textbox.BeginActionGroup();
-
-            textbox.DeleteLine(3);
-            textbox.DeleteLine(0);
-            textbox.AddLine(3, "New");
-            textbox.SetLineText(1, "Edit");
-
-            for (int i = 0; i < 10; i++)
-            {
-                textbox.AddLines(4, ["Hello", "Baum", "Nudel", "Kuchen"]);
-            }
-
-            for (int i = 5; i < 20; i++)
-            {
-                textbox.DeleteLine(i);
-            }
-
-            textbox.EndActionGroup();
-        }
-
     }
 }

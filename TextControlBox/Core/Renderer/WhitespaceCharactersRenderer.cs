@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using TextControlBoxNS.Helper;
@@ -35,12 +36,19 @@ internal class WhitespaceCharactersRenderer
         (SpaceGlyph, TabGlyph) = textLayoutManager.CreateGlyphs(canvasText, canvasTextFormat);
     }
 
-    public void DrawTabsAndSpaces(CanvasDrawEventArgs args, string renderedText, CanvasTextLayout drawnTextLayout, float SingleLineHeight)
+    public void DrawTabsAndSpaces(
+        CanvasDrawEventArgs args, 
+        CanvasDrawingSession drawingSession,
+        string renderedText, 
+        CanvasTextLayout drawnTextLayout, 
+        float SingleLineHeight
+        )
     {
         if (!whitespaceCharactersManager.ShowWhitespaceCharacters)
             return;
 
-        var ds = args.DrawingSession;
+        //do not render the images directly, add all of them to the
+        //drawingSession which consists out of a CanvasCommandList 
 
         var color = designHelper._Design.InvisibleCharacterColor;
 
@@ -57,15 +65,13 @@ internal class WhitespaceCharactersRenderer
 
                 if (c == ' ')
                 {
-                    ds.DrawTextLayout(SpaceGlyph, x, y, color);
+                    drawingSession.DrawTextLayout(SpaceGlyph, x, y, color);
                 }
                 else if (c == '\t')
                 {
-                    ds.DrawTextLayout(TabGlyph, x + (zoomManager._ZoomFactor / 50), y, color);
+                    drawingSession.DrawTextLayout(TabGlyph, x + (zoomManager._ZoomFactor / 50), y, color);
                 }
             }
         }
     }
-
-
 }

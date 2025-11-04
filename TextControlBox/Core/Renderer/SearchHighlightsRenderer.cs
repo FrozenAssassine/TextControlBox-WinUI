@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas.Text;
+﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System.Text.RegularExpressions;
 using TextControlBoxNS.Helper;
@@ -10,6 +11,7 @@ namespace TextControlBoxNS.Core.Renderer
     {
         public static void RenderHighlights(
             CanvasDrawEventArgs args,
+            CanvasDrawingSession drawingSession,
             CanvasTextLayout drawnTextLayout,
             string renderedText,
             int[] possibleLines,
@@ -21,6 +23,9 @@ namespace TextControlBoxNS.Core.Renderer
             if (searchRegex == null || possibleLines == null || possibleLines.Length == 0)
                 return;
 
+            //draw the characters only to the drawingSession, which gets passed as a 
+            //CanvasCommandList instance for efficient batched rendering 
+
             MatchCollection matches = Regex.Matches(renderedText, searchRegex);
             for (int j = 0; j < matches.Count; j++)
             {
@@ -29,7 +34,7 @@ namespace TextControlBoxNS.Core.Renderer
                 var layoutRegion = drawnTextLayout.GetCharacterRegions(match.Index, match.Length);
                 if (layoutRegion.Length > 0)
                 {
-                    args.DrawingSession.FillRectangle(Utils.CreateRect(layoutRegion[0].LayoutBounds, scrollOffsetX, offsetTop), searchHighlightColor);
+                    drawingSession.FillRectangle(Utils.CreateRect(layoutRegion[0].LayoutBounds, scrollOffsetX, offsetTop), searchHighlightColor);
                 }
             }
             return;
