@@ -58,6 +58,11 @@ namespace TextControlBoxNS.Test
                 ];
         }
 
+        private void SetOriginalText()
+        {
+            coreTextbox.SetText(originalText); //reset content
+        }
+
 
         public (bool undo, bool redo) CheckUndoRedo(int count = 1)
         {
@@ -83,6 +88,7 @@ namespace TextControlBoxNS.Test
 
         public bool Test_1()
         {
+            SetOriginalText();
             Debug.Write("Clear selection");
 
             Random r = new Random();
@@ -92,12 +98,12 @@ namespace TextControlBoxNS.Test
             var sel = coreTextbox.selectionManager.currentTextSelection;
             bool res = sel.StartPosition.IsNull && sel.EndPosition.IsNull && !coreTextbox.selectionManager.HasSelection;
 
-            coreTextbox.SetText(originalText); //reset content
             return res;
         }
 
         public bool Test_2()
         {
+            SetOriginalText();
             Debug.Write("Delete Line 5");
 
             int linesBefore = coreTextbox.NumberOfLines;
@@ -107,12 +113,12 @@ namespace TextControlBoxNS.Test
 
             bool res = coreTextbox.NumberOfLines == linesBefore - 1;
 
-            coreTextbox.SetText(originalText); //reset content
             return res;
         }
 
         public bool Test_3()
         {
+            SetOriginalText();
             Debug.Write("Add Line 5");
 
             int linesBefore = coreTextbox.NumberOfLines;
@@ -122,12 +128,12 @@ namespace TextControlBoxNS.Test
 
             bool res = coreTextbox.NumberOfLines == linesBefore + 1 && coreTextbox.GetLineText(3).Equals("Hello World this is the text of line 3");
 
-            coreTextbox.SetText(originalText); //reset content
             return res;
         }
 
         public bool Test_4()
         {
+            SetOriginalText();
             Debug.Write("Add Character (single line text, no selection)");
 
             string textBefore = coreTextbox.GetLineText(3);
@@ -146,12 +152,12 @@ namespace TextControlBoxNS.Test
                 cur.LineNumber == lineBefore &&
                 coreTextbox.GetLineText(3).Equals(textToAdd + textBefore);
 
-            coreTextbox.SetText(originalText); //reset content
             return res;
         }
 
         public bool Test_5()
         {
+            SetOriginalText();
             Debug.Write("Add Character (multi line text, no selection)");
 
             string textToAdd = "Add Line 1\nAdd Line 2\nAdd Line 3";
@@ -168,13 +174,12 @@ namespace TextControlBoxNS.Test
                 coreTextbox.GetLineText(3).Substring(0, 10).Equals("Add Line 2") &&
                 coreTextbox.GetLineText(4).Substring(0, 10).Equals("Add Line 3") &&
                 cur.CharacterPosition == 10;
-
-            coreTextbox.SetText(originalText); //reset content
             return res;
         }
 
         public bool Test_6()
         {
+            SetOriginalText();
             Debug.Write("Add Character (no text, no selection)");
 
             coreTextbox.SelectAll();
@@ -188,13 +193,12 @@ namespace TextControlBoxNS.Test
                 coreTextbox.GetText().Length == 0 &&
                 cur.CharacterPosition == 0;
 
-            coreTextbox.SetText(originalText); //reset content
-
             return res;
         }
 
         public bool Test_7()
         {
+            SetOriginalText();
             Debug.Write("Add Character (add single line, single line selected)");
 
             coreTextbox.SetSelection(5, 10);
@@ -207,13 +211,12 @@ namespace TextControlBoxNS.Test
                 cur.LineNumber == 0 &&
                 cur.CharacterPosition == 16;
 
-            coreTextbox.SetText(originalText); //reset content
-
             return true;
         }
 
         public bool Test_8()
         {
+            SetOriginalText();
             Debug.Write("Add Character (add multiline line, single line selected)");
 
             coreTextbox.SetSelection(5, 10);
@@ -226,13 +229,12 @@ namespace TextControlBoxNS.Test
                 cur.LineNumber == 2 &&
                 cur.CharacterPosition == 5;
 
-            coreTextbox.SetText(originalText); //reset content
-
             return res;
         }
 
         public bool Test_10()
         {
+            SetOriginalText();
             Debug.Write("Add Character (add multi line, multi line selection, everything selected)");
 
             coreTextbox.SelectAll();
@@ -247,13 +249,12 @@ namespace TextControlBoxNS.Test
                 cur.CharacterPosition == 5 &&
                 coreTextbox.GetText().Equals(text);
 
-            coreTextbox.SetText(originalText); //reset content
-
             return res;
         }
 
         public bool Test_11()
         {
+            SetOriginalText();
             Debug.Write("Delete Selection (multi line selection, whole lines)");
 
             coreTextbox.SelectLines(1, 3);
@@ -270,13 +271,13 @@ namespace TextControlBoxNS.Test
                 cur.CharacterPosition == 0 &&
                 coreTextbox.GetLineText(1).Length == 0 && coreTextbox.GetLineText(0) == originalText.Split(coreTextbox.textManager.NewLineCharacter)[0];
 
-            coreTextbox.SetText(originalText); //reset content
-
             return res;
         }
 
         public bool Test_12()
         {
+            SetOriginalText();
+
             coreTextbox.SetSelection(4, 10);
             coreTextbox.textActionManager.DeleteSelection();
 
@@ -291,13 +292,12 @@ namespace TextControlBoxNS.Test
                 cur.CharacterPosition == 4 &&
                 t.Trim().Equals(expected.Trim());
 
-            coreTextbox.SetText(originalText); //reset content
-
             return res;
         }
 
         public bool Test_13()
         {
+            SetOriginalText();
             Debug.Write("Delete Selection (single line selection, whole line)");
 
             coreTextbox.SelectLine(0);
@@ -310,13 +310,12 @@ namespace TextControlBoxNS.Test
                 cur.CharacterPosition == 0 &&
                 coreTextbox.GetLineText(0) == originalText.Split(coreTextbox.textManager.NewLineCharacter)[1];
 
-            coreTextbox.SetText(originalText); //reset content
-
             return res;
         }
 
         public bool Test_14()
         {
+            SetOriginalText();
             Debug.Write("Delete Selection (lines selected completely (not whole text selected!))");
             int linesBefore = coreTextbox.textManager.LinesCount;
 
@@ -329,12 +328,12 @@ namespace TextControlBoxNS.Test
             bool res = coreTextbox.textManager.LinesCount == linesBefore - 2 &&
                        lineText == "";
 
-            coreTextbox.SetText(originalText); // reset content
             return res;
         }
 
         public bool Test_15()
         {
+            SetOriginalText();
             Debug.Write("Delete Selection (only start line fully selected)");
             int linesBefore = coreTextbox.textManager.LinesCount;
 
@@ -347,12 +346,12 @@ namespace TextControlBoxNS.Test
             bool res = coreTextbox.GetLineText(0) == expected &&
                        coreTextbox.textManager.LinesCount == linesBefore - 1;
 
-            coreTextbox.SetText(originalText); // reset content
             return res;
         }
 
         public bool Test_16()
         {
+            SetOriginalText();
             Debug.Write("Delete Selection (only end line fully selected)");
             int linesBefore = coreTextbox.textManager.LinesCount;
 
@@ -366,14 +365,14 @@ namespace TextControlBoxNS.Test
 
             bool res = text.Equals(expected) &&
                 coreTextbox.textManager.LinesCount == linesBefore - 1;
-
-            coreTextbox.SetText(originalText); // reset content
             return res;
         }
 
         public bool Test_17()
         {
+            SetOriginalText();
             Debug.Write("Delete Selection (neither start nor end line fully selected)");
+            
             int linesBefore = coreTextbox.textManager.LinesCount;
 
             coreTextbox.SetSelection(1, 2, 2, 4);
@@ -385,11 +384,11 @@ namespace TextControlBoxNS.Test
             bool res = coreTextbox.GetLineText(1) == expected &&
                        coreTextbox.textManager.LinesCount == linesBefore - 1;
 
-            coreTextbox.SetText(originalText); // reset content
             return res;
         }
         public bool Test_18()
         {
+            SetOriginalText();
             Debug.Write("Duplicate Line");
             int linesBefore = coreTextbox.textManager.LinesCount;
 
@@ -401,12 +400,12 @@ namespace TextControlBoxNS.Test
             bool res = coreTextbox.GetLineText(3).Equals(coreTextbox.GetLineText(4)) &&
                        coreTextbox.textManager.LinesCount == linesBefore + 1 && coreTextbox.CursorPosition.LineNumber == 5 && coreTextbox.CursorPosition.CharacterPosition == 10;
 
-            coreTextbox.SetText(originalText); // reset content
             return res;
         }
 
         public bool Test_19()
         {
+            SetOriginalText();
             Debug.Write("Test Crash");
 
             coreTextbox.ClearUndoRedoHistory();
@@ -464,6 +463,7 @@ namespace TextControlBoxNS.Test
 
         public bool Test_21()
         {
+            SetOriginalText();
             Debug.WriteLine("Load Lines empty array");
 
             coreTextbox.LoadLines([]);
@@ -474,6 +474,7 @@ namespace TextControlBoxNS.Test
 
         public bool Test_22()
         {
+            SetOriginalText();
             Debug.WriteLine("Load Text null + empty string");
 
             coreTextbox.LoadText(null);
@@ -484,6 +485,7 @@ namespace TextControlBoxNS.Test
 
         public bool Test_23()
         {
+            SetOriginalText();
             Debug.WriteLine("Load Text null + empty string");
 
             coreTextbox.SetText(null);
@@ -494,8 +496,8 @@ namespace TextControlBoxNS.Test
 
         public bool Test_24()
         {
+            SetOriginalText();
             Debug.WriteLine("Move selection with Tab");
-            coreTextbox.SetText(originalText); // reset content
 
             coreTextbox.SetCursorPosition(0, 0);
             coreTextbox.SetSelection(0, 40); //whole text
@@ -515,8 +517,9 @@ namespace TextControlBoxNS.Test
 
         public bool Test_30()
         {
+            SetOriginalText();
             Debug.WriteLine("Surround Selection");
-            coreTextbox.SetText(originalText); // reset content
+            
 
             coreTextbox.SetCursorPosition(0, 0);
             coreTextbox.SetSelection(0, 87); //whole text

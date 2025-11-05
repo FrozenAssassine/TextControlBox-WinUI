@@ -8,11 +8,13 @@ namespace TextControlBoxNS.Test;
 
 internal class EndUserFunctionsTest : TestCase
 {
+    private TextControlBox textbox;
     public CoreTextControlBox coreTextbox;
 
-    public EndUserFunctionsTest(string name, CoreTextControlBox coreTextbox)
+    public EndUserFunctionsTest(string name, CoreTextControlBox coreTextbox, TextControlBox textbox)
     {
         this.coreTextbox = coreTextbox;
+        this.textbox = textbox;
         coreTextbox.LineEnding = LineEnding.LF;
         this.name = name;
     }
@@ -48,11 +50,14 @@ internal class EndUserFunctionsTest : TestCase
             this.Test_24,
             this.Test_25,
             this.Test_26,
+            this.Test_27,
             ];
     }
 
     public bool Test_1()
     {
+        TestHelper.ResetContent(textbox, 20);
+
         Debug.WriteLine("End User Function AddLine with out of range line");
 
         //addline should return false, line 100 does not exist
@@ -63,6 +68,7 @@ internal class EndUserFunctionsTest : TestCase
 
     public bool Test_2()
     {
+        TestHelper.ResetContent(textbox, 10);
         Debug.WriteLine("Function GetLinesText with out of range line");
 
         try
@@ -78,6 +84,7 @@ internal class EndUserFunctionsTest : TestCase
 
     public bool Test_3()
     {
+        TestHelper.ResetContent(textbox, 30);
         Debug.WriteLine("Function GetLineText with out of range line");
 
         try
@@ -93,6 +100,7 @@ internal class EndUserFunctionsTest : TestCase
 
     public bool Test_4()
     {
+        TestHelper.ResetContent(textbox, 0);
         Debug.WriteLine("Function GetText without text");
 
         coreTextbox.SetText("");
@@ -106,6 +114,7 @@ internal class EndUserFunctionsTest : TestCase
 
     public bool Test_5()
     {
+        TestHelper.ResetContent(textbox, 10);
         Debug.WriteLine("Function SetCursorPosition too high");
 
         coreTextbox.SetCursorPosition(500, 1000, true);
@@ -115,6 +124,7 @@ internal class EndUserFunctionsTest : TestCase
 
     public bool Test_6()
     {
+        TestHelper.ResetContent(textbox, 10);
         Debug.WriteLine("Function SetCursorPosition negative");
 
         coreTextbox.SetCursorPosition(-100, -500, true);
@@ -124,6 +134,7 @@ internal class EndUserFunctionsTest : TestCase
 
     public bool Test_7()
     {
+        TestHelper.ResetContent(textbox, 10);
         Debug.WriteLine("Function SetSelection too high");
 
         try
@@ -140,10 +151,10 @@ internal class EndUserFunctionsTest : TestCase
 
     public bool Test_8()
     {
+        TestHelper.ResetContent(textbox, 0);
         Debug.WriteLine("Function get Selected Text equals text in textbox");
 
-        var text = "Line1\nLine2\nLine3\n";
-
+        const string text = "Line1\nLine2\nLine3\n";
         coreTextbox.SetText(text);
 
         coreTextbox.SelectAll();
@@ -153,6 +164,7 @@ internal class EndUserFunctionsTest : TestCase
 
     public bool Test_9()
     {
+        TestHelper.ResetContent(textbox, 0);
         Debug.WriteLine("Function set Selected Text no text in textbox equals text in textbox");
         coreTextbox.SetText("");
 
@@ -186,6 +198,7 @@ internal class EndUserFunctionsTest : TestCase
 
     public bool Test_12()
     {
+        TestHelper.ResetContent(textbox, 0);
         Debug.WriteLine("Function LoadText empty");
         coreTextbox.LoadText("");
 
@@ -196,6 +209,8 @@ internal class EndUserFunctionsTest : TestCase
 
     public bool Test_13()
     {
+        TestHelper.ResetContent(textbox, 0);
+
         Debug.WriteLine("Function select all, set SelectedText equals text in textbox");
         var text = "Line1\nLine2\nLine3\n";
 
@@ -272,7 +287,7 @@ internal class EndUserFunctionsTest : TestCase
     {
         Debug.WriteLine("Static Function GetSyntaxHighlightingFromID");
 
-        coreTextbox.LoadLines(["Line1", "Line2", "Line3"]);
+        TestHelper.ResetContent(textbox);
 
         try
         {
@@ -408,6 +423,27 @@ internal class EndUserFunctionsTest : TestCase
         coreTextbox.ReplaceAll("line", "", false, false);
 
         bool res = coreTextbox.GetText().Equals(textBefore.Replace("Line", ""));
+        return res;
+    }
+
+    public bool Test_27()
+    {
+        Debug.WriteLine("TextLoadedEvent");
+
+        const string textToLoad = "Hello World";
+        bool eventTriggered = false;
+
+        void Textbox_TextLoaded(TextControlBox sender)
+        {
+            eventTriggered = true;
+        }
+
+        textbox.TextLoaded += Textbox_TextLoaded;
+        coreTextbox.LoadText(textToLoad);
+
+        bool res = eventTriggered && coreTextbox.GetText() == textToLoad;
+        textbox.TextLoaded -= Textbox_TextLoaded;
+
         return res;
     }
 }
