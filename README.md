@@ -102,7 +102,9 @@ textBox.EnableSyntaxHighlighting = true;
 - `UndoRedoEnabled`: Enables/disables undo/redo functionality
 - `IsGroupingActions`: Gets whether grouping of undo redo is enabled or disabled
 - `BeginActionGroup`: Starts the grouping of undo redo items
-- `EndActionGroup`: Ends the grouping of undo redo items 
+- `EndActionGroup`: Ends the grouping of undo redo items
+- `SelectionScrollStartBorderDistance`: Gets or sets the mouse distance from the text box edge that triggers auto-scroll during selection
+- `ShowWhitespaceCharacters`: Gets or sets whether spaces and tabs are visually shown in the text box (e.g. as dots or arrows)
 - `Focus(FocusState state)`: Sets focus to the control.
 - `SelectLine(int line)`: Selects a specific line.
 - `SelectLines(int start, int count)`: Selects a range of lines.
@@ -165,12 +167,14 @@ TextControlBox provides several events to handle user interactions:
 - `SelectionChanged`: Fires when the user changes the selected text.
 - `ZoomChanged`: Called when the zoom factor is adjusted.
 - `GotFocus` / `LostFocus`: Handle focus changes.
+- `TextLoadedEvent`: Occurs when the TextControlBox finished loading the text.
+- `Loaded`: Occurs when the TextControlBox finished loading and all components initialized
 
 ## 🎨 Syntax Highlighting
 
 TextControlBox includes built-in support for multiple languages:
 
-- C#, C++, Java, Python, JavaScript, JSON, HTML, CSS, SQL, Markdown, Batch, Config, CSV, LaTex, PHP, QSharp, TOML, XML
+- C#, C++, Java, Python, JavaScript, JSON, HTML, CSS, SQL, Markdown, Batch, Config, CSV, LaTex, PHP, QSharp, TOML, XML, G-Code, Lua, Hex
 
 Enable syntax highlighting:
 
