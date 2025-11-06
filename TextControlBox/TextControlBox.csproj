@@ -22,8 +22,10 @@
 		<PackageReleaseNotes>
 			Added whitespace and tab visualizer using dots and arrows symbols in text
 			Drastically improved rendering speed for text and selection
+			Added a property to control the padding in which selection scrolling activates (SelectionScrollStartBorderDistance)
 			Text changed event now triggers, when the line ending changes.
 			Fixed an issue, where tabs did not zoom correctly due to rounding errors
+			Fixed selection rendering issues
 		</PackageReleaseNotes>
 		<PackageIcon>Icon1.png</PackageIcon>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
