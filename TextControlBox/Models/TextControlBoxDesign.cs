@@ -22,6 +22,7 @@ public class TextControlBoxDesign
         this.LineNumberColor = design.LineNumberColor;
         this.LineNumberBackground = design.LineNumberBackground;
         this.SearchHighlightColor = design.SearchHighlightColor;
+        this.InvisibleCharacterColor = design.InvisibleCharacterColor;
     }
 
     /// <summary>
@@ -35,7 +36,8 @@ public class TextControlBoxDesign
     /// <param name="lineNumberColor">The color of the linenumber</param>
     /// <param name="lineNumberBackground">The background color of the linenumbers</param>
     /// <param name="searchHighlightColor">The color of the search highlights</param>
-    public TextControlBoxDesign(Brush background, Color textColor, Color selectionColor, Color cursorColor, Color lineHighlighterColor, Color lineNumberColor, Color lineNumberBackground, Color searchHighlightColor, Color InvisibleCharacterColor)
+    /// <param name="invisibleCharacterColor">The color of the invisible characters rendered as arrow and dots</param>
+    public TextControlBoxDesign(Brush background, Color textColor, Color selectionColor, Color cursorColor, Color lineHighlighterColor, Color lineNumberColor, Color lineNumberBackground, Color searchHighlightColor, Color invisibleCharacterColor)
     {
         this.Background = background;
         this.TextColor = textColor;
@@ -45,7 +47,7 @@ public class TextControlBoxDesign
         this.LineNumberColor = lineNumberColor;
         this.LineNumberBackground = lineNumberBackground;
         this.SearchHighlightColor = searchHighlightColor;
-        this.InvisibleCharacterColor = InvisibleCharacterColor;
+        this.InvisibleCharacterColor = invisibleCharacterColor;
     }
 
     /// <summary>

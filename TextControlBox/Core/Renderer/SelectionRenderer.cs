@@ -140,8 +140,6 @@ namespace TextControlBoxNS.Core.Renderer
                 selEndIndex - selStartIndex :
                 selStartIndex - selEndIndex;
 
-            Debug.WriteLine(renderedSelectionStart + ":" + renderedSelectionLength);
-
             //no selection can be rendered. 
             //GetCharacterRegions(0,0) still returns a "ghost" region, so stop rendering here
             if(renderedSelectionLength == 0)
