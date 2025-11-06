@@ -2,6 +2,7 @@
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
+using System.Diagnostics;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
@@ -71,26 +72,30 @@ namespace TextControlBoxNS.Core.Renderer
                 characterPosEnd = textManager.totalLines.Span[endLine].Length;
 
             //Render the selection on position 0 if the user scrolled the start away
-            if (endLine < startLine)
+            if (startLine < unrenderedLinesToRenderStart)
             {
-                if (endLine < unrenderedLinesToRenderStart)
-                    characterPosEnd = 0;
-                if (startLine < unrenderedLinesToRenderStart + 1)
-                    characterPosStart = 0;
+                startLine = unrenderedLinesToRenderStart;
+                characterPosStart = 0;
             }
-            else if (endLine == startLine)
+
+            if (endLine < unrenderedLinesToRenderStart)
             {
-                if (startLine < unrenderedLinesToRenderStart)
-                    characterPosStart = 0;
-                if (endLine < unrenderedLinesToRenderStart)
-                    characterPosEnd = 0;
+                endLine = unrenderedLinesToRenderStart;
+                characterPosEnd = 0;
             }
-            else
+
+            // If start is beyond visible area, clamp it to the end of the visible region
+            int lastRenderedLine = unrenderedLinesToRenderStart + numberOfRenderedLines - 1;
+            if (startLine > lastRenderedLine)
             {
-                if (startLine < unrenderedLinesToRenderStart)
-                    characterPosStart = 0;
-                if (endLine < unrenderedLinesToRenderStart + 1)
-                    characterPosEnd = 0;
+                startLine = lastRenderedLine;
+                characterPosStart = textManager.totalLines.Span[startLine].Length;
+            }
+
+            if (endLine > lastRenderedLine)
+            {
+                endLine = lastRenderedLine;
+                characterPosEnd = textManager.totalLines.Span[endLine].Length;
             }
 
             if (startLine == endLine)
@@ -134,6 +139,17 @@ namespace TextControlBoxNS.Core.Renderer
             renderedSelectionLength = selEndIndex > selStartIndex ?
                 selEndIndex - selStartIndex :
                 selStartIndex - selEndIndex;
+
+            Debug.WriteLine(renderedSelectionStart + ":" + renderedSelectionLength);
+
+            //no selection can be rendered. 
+            //GetCharacterRegions(0,0) still returns a "ghost" region, so stop rendering here
+            if(renderedSelectionLength == 0)
+            {
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
+            }
 
             CanvasCommandList canvasCommandList = new CanvasCommandList(args.DrawingSession);
             using (var ccls = canvasCommandList.CreateDrawingSession())
