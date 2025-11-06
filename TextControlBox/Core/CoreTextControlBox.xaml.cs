@@ -1060,6 +1060,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public TextControlBoxSelection? CurrentSelectionOrdered => selectionManager.HasSelection ? new TextControlBoxSelection(selectionManager) : null;
     public new bool IsLoaded => initializationManager.initDone;
     public bool ShowWhitespaceCharacters { get => whitespaceCharactersManager.ShowWhitespaceCharacters; set { whitespaceCharactersManager.ShowWhitespaceCharacters = value; canvasUpdateManager.UpdateText(); } }
+    public Thickness SelectionScrollStartBorderDistance { get; set; } = new Thickness(0, 0, 0, 0);
 
     public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {

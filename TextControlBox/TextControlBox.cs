@@ -53,8 +53,7 @@ public partial class TextControlBox : UserControl
         Loaded?.Invoke(this);
 
         //start testings:
-        //TestHelper testHelper = new TestHelper(coreTextBox, this);
-        //testHelper.Evaluate();
+        new TestHelper(coreTextBox, this).Evaluate();
     }
 
     private void EventsManager_LostFocus()
@@ -885,8 +884,6 @@ public partial class TextControlBox : UserControl
     /// </summary>
     public bool UndoRedoEnabled { get => coreTextBox.undoRedo.UndoRedoEnabled; set => coreTextBox.undoRedo.UndoRedoEnabled = value; }
 
-
-
     /// <summary>
     /// Gets or sets a value indicating whether whitespace characters (spaces and tabs)
     /// are visually displayed in the text box (e.g., as dots or arrows).
@@ -896,6 +893,19 @@ public partial class TextControlBox : UserControl
         get => coreTextBox.ShowWhitespaceCharacters;
         set => coreTextBox.ShowWhitespaceCharacters = value;
     }
+
+    /// <summary>
+    /// Gets or sets the distance from the text box borders within which the mouse must be positioned 
+    /// to start automatic scrolling during text selection. 
+    /// This acts like a padding zone that defines how close the mouse needs to be to the edges 
+    /// before the text begins to scroll up, down, left, or right.
+    /// </summary>
+    public Thickness SelectionScrollStartBorderDistance 
+    { 
+        get => coreTextBox.SelectionScrollStartBorderDistance; 
+        set => SelectionScrollStartBorderDistance = value;
+    }
+
     /// <summary>
     /// Represents a delegate used for handling the text changed event in the TextControlBox.
     /// </summary>

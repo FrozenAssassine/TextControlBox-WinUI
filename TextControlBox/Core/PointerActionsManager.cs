@@ -225,15 +225,15 @@ internal class PointerActionsManager
 
         //vertical Scrolling
         double verticalSpeed = 0;
-        if (curPosY > canvasHeight - 50)  //near bottom
+        if (curPosY > canvasHeight - coreTextbox.SelectionScrollStartBorderDistance.Bottom)  //near bottom
         {
-            double distance = curPosY - (canvasHeight - 50); 
+            double distance = curPosY - (canvasHeight - coreTextbox.SelectionScrollStartBorderDistance.Bottom); 
             verticalSpeed = Math.Pow(distance / 10, 1.5);
             verticalSpeed = Math.Min(verticalSpeed, 20);
         }
-        else if (curPosY < 50)  //near top
+        else if (curPosY < coreTextbox.SelectionScrollStartBorderDistance.Top)  //near top
         {
-            double distance = 50 - curPosY;
+            double distance = coreTextbox.SelectionScrollStartBorderDistance.Top - curPosY;
             verticalSpeed = -Math.Pow(distance / 10, 1.5);
             verticalSpeed = Math.Max(verticalSpeed, -20);
         }
@@ -246,15 +246,15 @@ internal class PointerActionsManager
 
         //horizontal scrolling
         double horizontalSpeed = 0;
-        if (curPosX > canvasWidth - 80)  //near right edge
+        if (curPosX > canvasWidth - coreTextbox.SelectionScrollStartBorderDistance.Right)  //near right edge
         {
-            double distance = curPosX - (canvasWidth - 80);
+            double distance = curPosX - (canvasWidth - coreTextbox.SelectionScrollStartBorderDistance.Right);
             horizontalSpeed = Math.Pow(distance / 10, 1.5);
             horizontalSpeed = Math.Min(horizontalSpeed, 15);
         }
-        else if (curPosX < 80)  //near left edge
+        else if (curPosX < coreTextbox.SelectionScrollStartBorderDistance.Left)  //near left edge
         {
-            double distance = 80 - curPosX;
+            double distance = coreTextbox.SelectionScrollStartBorderDistance.Left - curPosX;
             horizontalSpeed = -Math.Pow(distance / 10, 1.5);
             horizontalSpeed = Math.Max(horizontalSpeed, -15);
         }
