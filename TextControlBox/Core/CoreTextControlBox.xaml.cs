@@ -951,11 +951,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public LineEnding LineEnding
     {
         get => textManager.LineEnding;
-        set
-        {
-            textManager.LineEnding = value;
-            eventsManager.CallTextChanged();
-        }
+        set => textManager.LineEnding = value;
     }
 
     public float SpaceBetweenLineNumberAndText { get => lineNumberManager._SpaceBetweenLineNumberAndText; set { lineNumberManager._SpaceBetweenLineNumberAndText = value; lineNumberRenderer.NeedsUpdateLineNumbers(); canvasUpdateManager.UpdateAll(); } }

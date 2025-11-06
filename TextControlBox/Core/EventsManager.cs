@@ -27,7 +27,6 @@ internal class EventsManager
     public delegate void TextLoadedEvent();
     public event TextLoadedEvent TextLoaded;
 
-
     private SelectionChangedEventHandler args = new SelectionChangedEventHandler();
 
     public void Init(SearchManager searchManager, CursorManager cursorManager)
