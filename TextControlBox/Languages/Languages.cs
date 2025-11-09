@@ -467,22 +467,51 @@
         public Markdown()
         {
             this.Name = "Markdown";
-            this.Author = "Finn Freitag";
+            this.Author = "Julius Kirsch";
             this.Filter = new string[1] { ".md" };
             this.Description = "Syntax highlighting for Markdown language";
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("[>~\"'`\\-\\+|\\^\\!_]", "#FF0000", "#FF0000"),
-                new SyntaxHighlights("#", "#0000FF", "#0000FF"),
-                new SyntaxHighlights("\\*.*\\*", "#000000", "#FFFFFF", false, true),
-                new SyntaxHighlights("_.*_", "#000000", "#FFFFFF", false, true),
-                new SyntaxHighlights("\\*\\*.*\\*\\*", "#000000", "#FFFFFF", true),
-                new SyntaxHighlights("__.*__", "#000000", "#FFFFFF", true),
-                new SyntaxHighlights("\\d+\\.", "#00FF00", "#00FF00"),
-                new SyntaxHighlights("[\\[\\]\\(\\)]", "#FFFF00", "#FFFF00")
+            // Headers (#, ##, ### etc.) - vibrant purple
+            new SyntaxHighlights(@"(?m)^#{1,6} .*$", "#FF2E7E", "#FF2E7E", true),
+
+            // Bold **text** or __text__ - bright pink
+            new SyntaxHighlights(@"\*\*(.*?)\*\*", "#E18800", "#E18800", true),
+            new SyntaxHighlights(@"__(.*?)__", "#E18800", "#E18800", true),
+
+            // Italic *text* or _text_ - soft magenta
+            new SyntaxHighlights(@"\*(.*?)\*", "#C61AFF", "#C61AFF", false, true),
+            new SyntaxHighlights(@"_(.*?)_", "#C61AFF", "#C61AFF", false, true),
+
+            // Bold + Italic ***text*** or ___text___ - vibrant magenta
+            new SyntaxHighlights(@"\*\*\*(.*?)\*\*\*", "#C61AFF", "#C61AFF", true, true),
+            new SyntaxHighlights(@"___(.*?)___", "#C61AFF", "#C61AFF", true, true),
+
+            // Inline code `code` - soft yellow
+            new SyntaxHighlights(@"`.*?`", "#F1C40F", "#F1C40F"),
+
+            // Code blocks ```code``` - golden yellow
+            new SyntaxHighlights(@"```[\s\S]*?```", "#F39C12", "#F39C12"),
+
+            // Blockquotes > text - soft teal
+            new SyntaxHighlights(@"(?m)^> .*", "#8DA284", "#8DA284"),
+
+            // Lists - numbers or bullets - light green
+            new SyntaxHighlights(@"(?m)^\d+\..*", "#2ECC71", "#2ECC71"),
+            new SyntaxHighlights(@"(?m)^[-\+\*] .*", "#2ECC71", "#2ECC71"),
+
+            // Links [text](url) - light sky blue
+            new SyntaxHighlights(@"\[.*?\]\(.*?\)", "#3498DB", "#3498DB"),
+
+            // Images ![alt](url) - pink-orange
+            new SyntaxHighlights(@"!\[.*?\]\(.*?\)", "#FF6F61", "#FF6F61"),
+
+            // Inline special characters - soft red
+            new SyntaxHighlights(@"[~`_\^\*\+\-\!\|]", "#E74C3C", "#E74C3C")
             };
         }
     }
+
     internal class CSS : SyntaxHighlightLanguage
     {
         public CSS()
