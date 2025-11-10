@@ -120,38 +120,40 @@
                 new AutoPairingPair("\'")
             };
             this.Highlights = new SyntaxHighlights[]
-                    {
-            //Number Matching
-            new SyntaxHighlights("\\b[+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?\\b", "#ff00ff", "#ff00ff"),
+            {
+                //Number Matching
+                new SyntaxHighlights(
+                    @"\b(?:0[xX][0-9A-Fa-f]+(?:_[0-9A-Fa-f]+)*|0[bB][01]+(?:_[01]+)*|\d+(?:_\d+)*\.\d*(?:_\d*)?(?:[eE][+-]?\d+(?:_\d+)*)?|\.\d+(?:_\d*)?(?:[eE][+-]?\d+(?:_\d+)*)?|\d+(?:_\d+)*(?:[eE][+-]?\d+(?:_\d+)*)?)(?:[fFlLuU]{0,3})\b",
+                    "#ff00ff", "#ff00ff"),
             
-            //Function Names
-            new SyntaxHighlights("\\b[a-zA-Z_]\\w*(?=\\()", "#880088", "#ffbb00"),
+                //Function Names
+                new SyntaxHighlights("\\b[a-zA-Z_]\\w*(?=\\()", "#880088", "#ffbb00"),
             
-            //C# Keywords
-            new SyntaxHighlights("\\b(abstract|as|base|bool|break|byte|case|catch|char|checked|class|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|external|false|final|finally|fixed|float|for|foreach|get|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|partial|private|protected|public|readonly|ref|return|sbyte|sealed|set|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|value|var|virtual|void|volatile|while)\\b", "#0066bb", "#00ffff"),
+                //C# Keywords
+                new SyntaxHighlights("\\b(abstract|as|async|await|base|bool|break|byte|case|catch|char|checked|class|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|external|false|final|finally|fixed|float|for|foreach|get|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|partial|private|protected|public|readonly|ref|return|sbyte|sealed|set|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|value|var|virtual|void|volatile|while)\\b", "#0066bb", "#00ffff"),
             
-            //Common C# Types
-            new SyntaxHighlights("\\b(List|Color|Console|Debug|Dictionary|Stack|Queue|GC)\\b", "#008000", "#ff9900"),
+                //Common C# Types
+                new SyntaxHighlights("\\b(List|Color|Console|Debug|Dictionary|Stack|Queue|GC)\\b", "#008000", "#ff9900"),
             
-            //Try/Catch/Finally Blocks
-            new SyntaxHighlights("\\b(try|catch|finally)\\b", "#9922ff", "#6666ff"),
+                //Try/Catch/Finally Blocks
+                new SyntaxHighlights("\\b(try|catch|finally)\\b", "#9922ff", "#6666ff"),
                         
-            //Preprocessor Directives
-            new SyntaxHighlights("#region.*$", "#ff0000", "#ff0000", true),
-            new SyntaxHighlights("#endregion", "#ff0000", "#ff0000", true),
+                //Preprocessor Directives
+                new SyntaxHighlights("#region.*$", "#ff0000", "#ff0000", true),
+                new SyntaxHighlights("#endregion", "#ff0000", "#ff0000", true),
             
-            //String Literals
-            new SyntaxHighlights("@\".*?\"|\"(?:\\\\.|[^\"\\\\])*\"", "#ff5500", "#00FF00"),
+                //String Literals
+                new SyntaxHighlights("@\".*?\"|\"(?:\\\\.|[^\"\\\\])*\"", "#ff5500", "#00FF00"),
             
-            //Character Literals
-            new SyntaxHighlights("'[^\\n]*?'", "#00CA00", "#00FF00"),
+                //Character Literals
+                new SyntaxHighlights("'[^\\n]*?'", "#ff5500", "#00FF00"),
             
-            //Single-line Comments
-            new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
+                //Single-line Comments
+                new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
             
-            //Multi-line Comments
-            new SyntaxHighlights("/\\*(?:[^*]|\\*[^/])*\\*/", "#888888", "#646464"),
-                    };
+                //Multi-line Comments
+                new SyntaxHighlights("/\\*(?:[^*]|\\*[^/])*\\*/", "#888888", "#646464"),
+            };
         }
     }
     internal class GCode : SyntaxHighlightLanguage
