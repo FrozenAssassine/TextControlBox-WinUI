@@ -35,6 +35,8 @@ public partial class TextControlBox : UserControl
         coreTextBox.eventsManager.LostFocus += EventsManager_LostFocus;
         coreTextBox.eventsManager.TextLoaded += EventsManager_TextLoaded;
         this.Content = coreTextBox;
+
+        this.RequestedTheme = ElementTheme.Default;
     }
 
     private void TextControlBox_Loaded(object sender, RoutedEventArgs e)
