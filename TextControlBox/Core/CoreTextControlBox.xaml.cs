@@ -149,8 +149,6 @@ internal sealed partial class CoreTextControlBox : UserControl
         cursorManager.SetCursorPosition(0, 0);
 
         selectionManager.ClearSelection();
-        RequestedTheme = ElementTheme.Default;
-        LineEnding = LineEnding.CRLF;
 
         zoomManager.UpdateZoom();
         focusManager.SetFocus();
