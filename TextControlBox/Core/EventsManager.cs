@@ -27,7 +27,11 @@ internal class EventsManager
     public delegate void TextLoadedEvent();
     public event TextLoadedEvent TextLoaded;
 
+    public delegate void LinkClickedEvent(string url);
+    public event LinkClickedEvent LinkClicked;
+
     private SelectionChangedEventHandler args = new SelectionChangedEventHandler();
+
 
     public void Init(SearchManager searchManager, CursorManager cursorManager)
     {
@@ -78,5 +82,10 @@ internal class EventsManager
     public void CallTextLoaded()
     {
         TextLoaded?.Invoke();
+    }
+
+    public void CallLinkClicked(string url)
+    {
+        LinkClicked?.Invoke(url);
     }
 }

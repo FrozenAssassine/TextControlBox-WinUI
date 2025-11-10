@@ -41,6 +41,8 @@ internal class TextRenderer
     private CanvasUpdateManager canvasUpdateManager;
     private ZoomManager zoomManager;
     private WhitespaceCharactersRenderer invisibleCharactersRenderer;
+    private LinkRenderer linkRenderer;
+    private LinkHighlightManager linkHighlightManager;
 
     public void Init(
         CursorManager cursorManager,
@@ -54,7 +56,9 @@ internal class TextRenderer
         SearchManager searchManager,
         CanvasUpdateManager canvasUpdateManager,
         ZoomManager zoomManager,
-        WhitespaceCharactersRenderer invisibleCharactersRenderer)
+        WhitespaceCharactersRenderer invisibleCharactersRenderer,
+        LinkRenderer linkRenderer,
+        LinkHighlightManager linkHighlightManager)
     {
         this.cursorManager = cursorManager;
         this.textManager = textManager;
@@ -69,6 +73,8 @@ internal class TextRenderer
         this.canvasUpdateManager = canvasUpdateManager;
         this.zoomManager = zoomManager;
         this.invisibleCharactersRenderer = invisibleCharactersRenderer;
+        this.linkRenderer = linkRenderer;
+        this.linkHighlightManager = linkHighlightManager;
     }
 
     //Check whether the current line is outside the bounds of the visible area
@@ -128,7 +134,6 @@ internal class TextRenderer
         //check rendering and calculation updates
         lineNumberRenderer.CheckGenerateLineNumberText();
 
-
         CanvasCommandList canvasCommandList = new CanvasCommandList(args.DrawingSession);
         if (OldRenderedText != null &&
             OldRenderedText.Length != RenderedText.Length ||
@@ -143,9 +148,15 @@ internal class TextRenderer
             SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting, RenderedText);
         }
 
-            scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false, zoomManager.ZoomNeedsRecalculateLongestLine);
-            if (zoomManager.ZoomNeedsRecalculateLongestLine)
-                zoomManager.ZoomNeedsRecalculateLongestLine = false;
+        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false, zoomManager.ZoomNeedsRecalculateLongestLine);
+        if (zoomManager.ZoomNeedsRecalculateLongestLine)
+            zoomManager.ZoomNeedsRecalculateLongestLine = false;
+
+        if (linkHighlightManager.HighlightLinks)
+        {
+            linkHighlightManager.FindAndComputeLinkPositions();
+            linkRenderer.HighlightLinks();
+        }
 
         using (var ccls = canvasCommandList.CreateDrawingSession())
         {
@@ -169,6 +180,8 @@ internal class TextRenderer
             invisibleCharactersRenderer.DrawTabsAndSpaces(args, ccls, RenderedText, DrawnTextLayout, SingleLineHeight);
         }
         args.DrawingSession.DrawImage(canvasCommandList);
+
+
 
 
         //Only update if needed, to reduce updates when scrolling

@@ -30,6 +30,7 @@ internal class PointerActionsManager
     private TextRenderer textRenderer;
     private CurrentLineManager currentLineManager;
     private SelectionManager selectionManager;
+    private LinkHighlightManager linkHighlightManager;
 
     public void Init(
         CoreTextControlBox coreTextbox,
@@ -40,7 +41,8 @@ internal class PointerActionsManager
         ScrollManager scrollManager,
         SelectionRenderer selectionRenderer,
         CurrentLineManager currentLineManager,
-        SelectionManager selectionManager
+        SelectionManager selectionManager,
+        LinkHighlightManager linkHighlightManager
         )
     {
         this.currentLineManager = currentLineManager;
@@ -52,6 +54,7 @@ internal class PointerActionsManager
         this.scrollManager = scrollManager;
         this.canvasUpdateManager = canvasUpdateManager;
         this.selectionManager = selectionManager;
+        this.linkHighlightManager = linkHighlightManager;
         InitTimer();
     }
 
@@ -126,6 +129,16 @@ internal class PointerActionsManager
             scrollManager,
             pointerPosition,
             cursorManager.currentCursorPosition);
+
+        //change cursor when clicking on links
+        if (linkHighlightManager.NeedsCheckLinkHighlights())
+        {
+            if (Utils.IsKeyPressed(VirtualKey.Control))
+            {
+                linkHighlightManager.CheckLinkClicked(pointerPosition);
+                return;
+            }
+        }
 
         //Clear the selection when pressing anywhere
         if (selectionManager.HasSelection)
@@ -332,6 +345,15 @@ internal class PointerActionsManager
                 canvasUpdateManager.UpdateSelection();
             }
             return;
+        }
+
+        //change cursor over links
+        if (linkHighlightManager.NeedsCheckLinkHighlights())
+        {
+            if (Utils.IsKeyPressed(VirtualKey.Control))
+                linkHighlightManager.CheckLinkHover(point);
+            else
+                linkHighlightManager.ResetCursorAfterHover();
         }
 
         if (isPendingCursorPlacement)
