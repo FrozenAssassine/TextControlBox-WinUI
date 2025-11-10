@@ -77,7 +77,7 @@ public class SyntaxHighlights
     {
         if (!string.IsNullOrEmpty(Pattern))
         {
-            PrecompiledRegex = new Regex(Pattern, RegexOptions.Compiled);
+            PrecompiledRegex = new Regex(Pattern, RegexOptions.Compiled |RegexOptions.Multiline);
         }
     }
 }

@@ -60,15 +60,46 @@
             };
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#dd00dd", "#00ff00"),
-                new SyntaxHighlights("(?<!(def\\s))(?<=^|\\s|.)[a-zA-Z_][\\w_]*(?=\\()", "#4455ff", "#ffbb00"),
-                new SyntaxHighlights("\\b(string|uint16_t|uint8_t|alignas|alignof|and|and_eq|asm|auto|bitand|bitor|bool|break|case|catch|char|char8_t|char16_t|char32_t|class|compl|concept|const|const_cast|consteval|constexpr|constinit|continue|co_await|co_return|co_yield|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|false|float|for|friend|goto|if|inline|int|long|mutable|namespace|new|noexcept|not|not_eq|nullptr|operator|or|or_eq|private|protected|public|register|reinterpret_cast|requires|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|true|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while|xor|xor_eq)\\b", "#dd00dd", "#dd00dd"),
-                new SyntaxHighlights("\\B#(define|elif|else|endif|error|ifndef|ifdef|if|import|include|line|pragma|region|undef|using)", "#bbbbbb", "#999999"),
-                new SyntaxHighlights("(\\\".+?\\\"|\\'.+?\\')", "#ffff00", "#ff000f"),
-                new SyntaxHighlights("\"[^\\n]*?\"", "#00CA00", "#00FF00"),
-                new SyntaxHighlights("'[^\\n]*?'", "#00CA00", "#00FF00"),
-                new SyntaxHighlights("/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/", "#888888", "#646464"),
-                new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
+                new SyntaxHighlights(
+                    // Numeric literals (int, float, hex, binary, scientific)
+                    @"\b(?:0[xX][0-9A-Fa-f]+(?:_[0-9A-Fa-f]+)*|0[bB][01]+(?:_[01]+)*|\d+(?:_\d+)*\.\d*(?:_\d*)?(?:[eE][+-]?\d+(?:_\d+)*)?|\.\d+(?:_\d*)?(?:[eE][+-]?\d+(?:_\d+)*)?|\d+(?:_\d+)*(?:[eE][+-]?\d+(?:_\d+)*)?)(?:[fFlLuU]{0,3})\b",
+                    "#dd00dd", "#00ff00"
+                ),
+                new SyntaxHighlights(
+                    // Function calls (identifier followed by parentheses)
+                    @"(?<!\w)([a-zA-Z_]\w*)(?=\s*\()",
+                    "#4455ff", "#ffbb00"
+                ),
+
+                new SyntaxHighlights(
+                    // Keywords
+                    @"\b(string|uint16_t|uint8_t|alignas|alignof|and|and_eq|asm|auto|bitand|bitor|bool|break|case|catch|char|char8_t|char16_t|char32_t|class|compl|concept|const|const_cast|consteval|constexpr|constinit|continue|co_await|co_return|co_yield|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|false|float|for|friend|goto|if|inline|int|long|mutable|namespace|new|noexcept|not|not_eq|nullptr|operator|or|or_eq|private|protected|public|register|reinterpret_cast|requires|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|true|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while|xor|xor_eq)\b",
+                    "#dd00dd", "#dd00dd"
+                ),
+
+                new SyntaxHighlights(
+                    // Preprocessor directives (#include, #define, etc.)
+                    @"^\s*#\s*(define|elif|else|endif|error|ifndef|ifdef|if|import|include|line|pragma|region|undef|using)\b",
+                    "#5F5E5E", "#999999"
+                ),
+
+                new SyntaxHighlights(
+                    // Strings and chars (handles escaped quotes)
+                    @"(""([^""\\]|\\.)*""|'([^'\\]|\\.)*')",
+                    "#D98300", "#00FF00"
+                ),
+
+                new SyntaxHighlights(
+                    // Block comments (/* ... */)
+                    @"/\*[\s\S]*?\*/",
+                    "#6B6A6A", "#646464"
+                ),
+
+                new SyntaxHighlights(
+                    // Line comments (// ...)
+                    @"//.*",
+                    "#6B6A6A", "#646464"
+                ),
             };
         }
     }
