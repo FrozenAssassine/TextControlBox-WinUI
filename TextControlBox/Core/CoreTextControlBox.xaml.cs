@@ -73,7 +73,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         canvasSelection = Canvas_Selection;
         canvasLineNumber = Canvas_LineNumber;
         mainGrid = MainGrid;
-        scrollGrid = ScrollGrid;
+        scrollGrid = ContentGrid;
         horizontalScrollBar = HorizontalScrollbar;
         verticalScrollBar = VerticalScrollbar;
 
@@ -145,6 +145,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         if (textManager.LinesCount == 0)
             textManager.AddLine();
+        
 
         cursorManager.SetCursorPosition(0, 0);
 
@@ -154,6 +155,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         focusManager.SetFocus();
 
         initializationManager.TextboxInitDone();
+
     }
 
 

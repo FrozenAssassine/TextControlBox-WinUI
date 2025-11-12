@@ -15,10 +15,10 @@ internal class ScrollManager
 
     public double _HorizontalScrollSensitivity = 1;
     public double _VerticalScrollSensitivity = 1;
-    public int DefaultVerticalScrollSensitivity = 4;
+    public int DefaultVerticalScrollSensitivity = 1;
     public float OldHorizontalScrollValue = 0;
 
-    public double VerticalScroll { get => verticalScrollBar.Value; set { verticalScrollBar.Value = value < 0 ? 0 : value; canvasHelper.UpdateAll(); } }
+    public double VerticalScroll { get => verticalScrollBar == null ? 0 : verticalScrollBar.Value; set { verticalScrollBar.Value = value < 0 ? 0 : value; canvasHelper.UpdateAll(); } }
     public double HorizontalScroll { get => horizontalScrollBar.Value; set { horizontalScrollBar.Value = value < 0 ? 0 : value; canvasHelper.UpdateAll(); } }
 
     public ScrollBar verticalScrollBar;

@@ -55,7 +55,6 @@ internal class CursorRenderer
         if (textLayout == null)
             return;
 
-
         Vector2 vector = textLayout.GetCaretPosition(characterPosition < 0 ? 0 : characterPosition, false);
         if (customSize == null)
             args.DrawingSession.FillRectangle(vector.X + xOffset, y, 2, fontSize, cursorColorBrush);
@@ -76,15 +75,17 @@ internal class CursorRenderer
             cursorManager.CharacterPosition = currentLineLength;
         }
 
-        var (startLine, linesToRender) = textRenderer.CalculateLinesToRender();
+        var (startLine, linesToRender, verticalOffset) = textRenderer.CalculateLinesToRender();
         float singleLineHeight = textRenderer.SingleLineHeight;
 
         //Calculate the distance to the top for the cursorposition and render the cursor
         float renderPosY = (float)((cursorManager.LineNumber - startLine) * singleLineHeight) + singleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
+        renderPosY += verticalOffset;
 
         //Out of display-region:
         if (renderPosY > linesToRender * singleLineHeight || renderPosY < 0)
             return;
+
 
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
 
