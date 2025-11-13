@@ -1,13 +1,12 @@
 ﻿using System;
-using TextControlBoxNS.Core;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Models;
 
-namespace TextControlBoxNS.Helper
+namespace TextControlBoxNS.Core
 {
-    internal class TabSpaceHelper
+    internal class TabSpaceManager
     {
         private int _NumberOfSpaces = 4;
         private string OldSpaces = "    ";
@@ -17,15 +16,30 @@ namespace TextControlBoxNS.Helper
             get => _NumberOfSpaces;
             set
             {
+                if(value <= 0)
+                    throw new ArgumentOutOfRangeException("Number of spaces must be greater than zero.");
+
                 if (value != _NumberOfSpaces)
                 {
                     OldSpaces = Spaces;
                     _NumberOfSpaces = value;
                     Spaces = new string(' ', _NumberOfSpaces);
+
+                    eventsManager.CallTabsSpacesChanged(UseSpacesInsteadTabs, value);
                 }
             }
         }
-        public bool UseSpacesInsteadTabs = false;
+
+        private bool _UseSpacesInsteadTabs = false;
+        public bool UseSpacesInsteadTabs
+        {
+            get => _UseSpacesInsteadTabs;
+            set
+            {
+                _UseSpacesInsteadTabs = value;
+                eventsManager.CallTabsSpacesChanged(value, _NumberOfSpaces);
+            }
+        }
         public string TabCharacter { get => UseSpacesInsteadTabs ? Spaces : Tab; }
         private string Spaces = "    ";
         public readonly string Tab = "\t";
@@ -179,7 +193,7 @@ namespace TextControlBoxNS.Helper
         {
             var cursorPosition = cursorManager.currentCursorPosition;
             var textSelection = selectionManager.currentTextSelection;
-            string tabCharacter = this.TabCharacter;
+            string tabCharacter = TabCharacter;
 
             if (selectionManager.HasSelection && selectionManager.selectionStart.LineNumber != selectionManager.selectionEnd.LineNumber)
             {
@@ -226,7 +240,7 @@ namespace TextControlBoxNS.Helper
         {
             var cursorPosition = cursorManager.currentCursorPosition;
             var textSelection = selectionManager.currentTextSelection;
-            string tabCharacter = this.TabCharacter;
+            string tabCharacter = TabCharacter;
 
             if (selectionManager.HasSelection)
             {

@@ -14,8 +14,8 @@ internal class CursorManager
 
     private TextManager textManager;
     private CurrentLineManager currentLineManager;
-    private TabSpaceHelper tabSpaceHelper;
-    public void Init(TextManager textManager, CurrentLineManager currentLineManager, TabSpaceHelper tabSpaceHelper)
+    private TabSpaceManager tabSpaceHelper;
+    public void Init(TextManager textManager, CurrentLineManager currentLineManager, TabSpaceManager tabSpaceHelper)
     {
         this.textManager = textManager;
         this.currentLineManager = currentLineManager;

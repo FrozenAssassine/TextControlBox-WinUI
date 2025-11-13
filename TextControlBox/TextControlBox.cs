@@ -34,9 +34,15 @@ public partial class TextControlBox : UserControl
         coreTextBox.eventsManager.GotFocus += EventsManager_GotFocus;
         coreTextBox.eventsManager.LostFocus += EventsManager_LostFocus;
         coreTextBox.eventsManager.TextLoaded += EventsManager_TextLoaded;
+        coreTextBox.eventsManager.TabsSpacesChanged += EventsManager_TabsSpacesChanged;
         this.Content = coreTextBox;
 
         this.RequestedTheme = ElementTheme.Default;
+    }
+
+    private void EventsManager_TabsSpacesChanged(bool spacesInsteadTabs, int spaces)
+    {
+        TabsSpacesChanged?.Invoke(this, spacesInsteadTabs, spaces);
     }
 
     private void TextControlBox_Loaded(object sender, RoutedEventArgs e)
@@ -988,6 +994,10 @@ public partial class TextControlBox : UserControl
     /// Occurs when the TextControlBox finished loading all the text
     /// </summary>
     public event TextLoadedEvent TextLoaded;
+
+    public delegate void TabsSpacesChangedEvent(TextControlBox sender, bool spacesInsteadTabs, int spaces);
+
+    public event TabsSpacesChangedEvent TabsSpacesChanged;
 
 
     //static functions

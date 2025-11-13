@@ -24,7 +24,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 {
     public readonly SelectionRenderer selectionRenderer;
     public readonly FlyoutHelper flyoutHelper;
-    public readonly TabSpaceHelper tabSpaceHelper;
+    public readonly TabSpaceManager tabSpaceHelper;
     public readonly StringManager stringManager;
     public readonly SearchManager searchManager;
     public readonly CanvasUpdateManager canvasUpdateManager;
@@ -93,7 +93,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         currentLineManager = new CurrentLineManager();
         longestLineManager = new LongestLineManager();
         designHelper = new DesignHelper();
-        tabSpaceHelper = new TabSpaceHelper();
+        tabSpaceHelper = new TabSpaceManager();
         lineHighlighterManager = new LineHighlighterManager();
         lineNumberManager = new LineNumberManager();
         searchManager = new SearchManager();

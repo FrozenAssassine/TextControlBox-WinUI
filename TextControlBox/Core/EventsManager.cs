@@ -27,6 +27,9 @@ internal class EventsManager
     public delegate void TextLoadedEvent();
     public event TextLoadedEvent TextLoaded;
 
+    public delegate void TabsSpacesChangedEvent(bool spacesInsteadTabs, int spaces);
+    public event TabsSpacesChangedEvent TabsSpacesChanged;
+
     private SelectionChangedEventHandler args = new SelectionChangedEventHandler();
 
     public void Init(SearchManager searchManager, CursorManager cursorManager)
@@ -78,5 +81,10 @@ internal class EventsManager
     public void CallTextLoaded()
     {
         TextLoaded?.Invoke();
+    }
+
+    public void CallTabsSpacesChanged(bool spacesInsteadTabs, int spaces)
+    {
+        TabsSpacesChanged?.Invoke(spacesInsteadTabs, spaces);
     }
 }
