@@ -33,7 +33,15 @@ public partial class TextControlBox : UserControl
         coreTextBox.eventsManager.LostFocus += EventsManager_LostFocus;
         coreTextBox.eventsManager.TextLoaded += EventsManager_TextLoaded;
         coreTextBox.eventsManager.LinkClicked += EventsManager_LinkClicked;
+        coreTextBox.eventsManager.TabsSpacesChanged += EventsManager_TabsSpacesChanged;
         this.Content = coreTextBox;
+
+        this.RequestedTheme = ElementTheme.Default;
+    }
+
+    private void EventsManager_TabsSpacesChanged(bool spacesInsteadTabs, int spaces)
+    {
+        TabsSpacesChanged?.Invoke(this, spacesInsteadTabs, spaces);
     }
 
     private void TextControlBox_Loaded(object sender, RoutedEventArgs e)
@@ -1008,6 +1016,10 @@ public partial class TextControlBox : UserControl
     /// Occurs when a link is clicked within the textbox.
     /// </summary>
     public event LinkClickedEvent LinkClicked;
+
+    public delegate void TabsSpacesChangedEvent(TextControlBox sender, bool spacesInsteadTabs, int spaces);
+
+    public event TabsSpacesChangedEvent TabsSpacesChanged;
 
     //static functions
     /// <summary>

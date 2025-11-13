@@ -30,6 +30,9 @@ internal class EventsManager
     public delegate void LinkClickedEvent(string url);
     public event LinkClickedEvent LinkClicked;
 
+    public delegate void TabsSpacesChangedEvent(bool spacesInsteadTabs, int spaces);
+    public event TabsSpacesChangedEvent TabsSpacesChanged;
+
     private SelectionChangedEventHandler args = new SelectionChangedEventHandler();
 
 
@@ -87,5 +90,10 @@ internal class EventsManager
     public void CallLinkClicked(string url)
     {
         LinkClicked?.Invoke(url);
+    }
+  
+    public void CallTabsSpacesChanged(bool spacesInsteadTabs, int spaces)
+    {
+        TabsSpacesChanged?.Invoke(spacesInsteadTabs, spaces);
     }
 }

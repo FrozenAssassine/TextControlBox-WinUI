@@ -20,25 +20,150 @@
             };
         }
     }
-    internal class ConfigFile : SyntaxHighlightLanguage
+    internal class IniHighlighter : SyntaxHighlightLanguage
     {
-        public ConfigFile()
+        public IniHighlighter()
         {
-            this.Name = "ConfigFile";
-            this.Author = "Finn Freitag";
-            this.Filter = new string[1] { ".ini" };
-            this.Description = "Syntax highlighting for configuration files";
+            this.Name = "INI";
+            this.Filter = new[] { ".ini" };
+            this.Description = "Syntax highlighting for INI configuration files";
             this.AutoPairingPair = new AutoPairingPair[]
             {
-                new AutoPairingPair("[", "]")
+            new AutoPairingPair("[", "]")
             };
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("\\[[\\t\\s]*(.+?)[\\t\\s]*\\]", "#9900FF", "#9900FF"), //section name
-                new SyntaxHighlights("[\\[\\]]", "#0000FF", "#0000FF"), //brackets around section name
-                new SyntaxHighlights("(\\w+)\\=", "#DDDD00", "#DDDD00"), //keys
-                new SyntaxHighlights("\\=(.+)", "#EE0000", "#EE0000"), //values
-                new SyntaxHighlights(";.*", "#888888", "#888888"), //comments
+            // Section names [section_name]
+            new SyntaxHighlights(@"(?<=\[)[^\]]+(?=\])", "#7C4DFF", "#B890FF"),
+            
+            // Brackets [ and ]
+            new SyntaxHighlights(@"\[|\]", "#5C6BC0", "#9FA8DA"),
+            
+            // Keys before = (supports spaces in keys)
+            new SyntaxHighlights(@"(?m)^\s*([^=;\[\]#]+?)(?=\s*=)", "#E65100", "#FFB74D"),
+            
+            // String values (quoted)
+            new SyntaxHighlights(@"(?<=[:=]\s*)([""'])(.*?)(\1)", "#00796B", "#80CBC4"),
+            
+            // Numeric values
+            new SyntaxHighlights(@"\b(?:0[xX][0-9A-Fa-f]+(?:_[0-9A-Fa-f]+)*|0[bB][01]+(?:_[01]+)*|\d+(?:_\d+)*\.\d*(?:_\d*)?(?:[eE][+-]?\d+(?:_\d+)*)?|\.\d+(?:_\d*)?(?:[eE][+-]?\d+(?:_\d+)*)?|\d+(?:_\d+)*(?:[eE][+-]?\d+(?:_\d+)*)?)(?:[fFlLuU]{0,3})\b",
+                "#1565C0", "#64B5F6"
+                ),
+            
+            // Boolean-like values (yes/no, true/false, on/off, 0/1)
+            new SyntaxHighlights(@"(?i)(?<=[:=]\s*)(yes|no|true|false|on|off|enabled?|disabled?)\b", "#FF5722", "#FFAB91"),
+            
+            // Comments starting with ; or #
+            new SyntaxHighlights(@"[;#].*", "#9E9E9E", "#BDBDBD"),
+            };
+        }
+    }
+    internal class TomlHighlighter : SyntaxHighlightLanguage
+    {
+        public TomlHighlighter()
+        {
+            this.Name = "TOML";
+            this.Filter = new[] { ".toml" };
+            this.Description = "Syntax highlighting for TOML configuration files";
+            this.AutoPairingPair = new AutoPairingPair[]
+            {
+            new AutoPairingPair("[", "]"),
+            new AutoPairingPair("{", "}")
+            };
+            this.Highlights = new SyntaxHighlights[]
+            {
+            // Table headers [[array.of.tables]]
+            new SyntaxHighlights(@"(?<=\[\[)[^\]]+(?=\]\])", "#9C27B0", "#CE93D8"),
+            
+            // Section headers [table.name]
+            new SyntaxHighlights(@"(?<=\[)[^\]]+(?=\])", "#7C4DFF", "#B890FF"),
+            
+            // Double brackets for arrays of tables
+            new SyntaxHighlights(@"\[\[|\]\]", "#5C6BC0", "#9FA8DA"),
+            
+            // Single brackets
+            new SyntaxHighlights(@"\[|\]", "#5C6BC0", "#9FA8DA"),
+            
+            // Braces { and } for inline tables
+            new SyntaxHighlights(@"\{|\}", "#5C6BC0", "#9FA8DA"),
+            
+            // Keys before = (dotted keys supported)
+            new SyntaxHighlights(@"(?m)^\s*([\w\.-]+)(?=\s*=)", "#E65100", "#FFB74D"),
+            
+            // Keys in inline tables
+            new SyntaxHighlights(@"(?<=[\{,]\s*)([\w\.-]+)(?=\s*=)", "#E65100", "#FFB74D"),
+            
+            // Multi-line strings '''..''' or """..."""
+            new SyntaxHighlights(@"('''[\s\S]*?'''|""""""[\s\S]*?"""""")", "#00796B", "#80CBC4"),
+            
+            // Basic strings "..." or '...'
+            new SyntaxHighlights(@"([""'])((?:\\.|(?!\1).)*?)\1", "#00796B", "#80CBC4"),
+            
+            // Dates and times (ISO 8601)
+            new SyntaxHighlights(@"\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?", "#1565C0", "#64B5F6"),
+            
+            // Floats (including scientific notation, inf, nan)
+            new SyntaxHighlights(@"(?i)(?<=[:=]\s*)([-+]?(\d+\.\d*|\.\d+|\d+)([eE][-+]?\d+)?|[-+]?inf|[-+]?nan)\b", "#1565C0", "#64B5F6"),
+            
+            // Integers (including hex, octal, binary)
+            new SyntaxHighlights(@"(?<=[:=]\s*)([-+]?(0x[0-9a-fA-F_]+|0o[0-7_]+|0b[01_]+|\d[0-9_]*))\b", "#1565C0", "#64B5F6"),
+            
+            // Booleans
+            new SyntaxHighlights(@"(?<=[:=]\s*)(true|false)\b", "#FF5722", "#FFAB91"),
+            
+            // Commas
+            new SyntaxHighlights(@",", "#5C6BC0", "#9FA8DA"),
+            
+            // Comments starting with #
+            new SyntaxHighlights(@"#.*", "#9E9E9E", "#BDBDBD"),
+            };
+        }
+    }
+    internal class KlipperHighlighter : SyntaxHighlightLanguage
+    {
+        public KlipperHighlighter()
+        {
+            this.Name = "Klipper";
+            this.Filter = new[] { ".cfg", ".conf" };
+            this.Description = "Syntax highlighting for Klipper 3D printer configuration files";
+            this.AutoPairingPair = new AutoPairingPair[]
+            {
+            new AutoPairingPair("[", "]")
+            };
+            this.Highlights = new SyntaxHighlights[]
+            {
+            // Section names with optional parameters [stepper_x], [gcode_macro NAME]
+            new SyntaxHighlights(@"(?<=\[)[^\]]+(?=\])", "#7C4DFF", "#B890FF"),
+            
+            // Brackets [ and ]
+            new SyntaxHighlights(@"\[|\]", "#5C6BC0", "#9FA8DA"),
+            
+            // Keys before : (Klipper uses colons)
+            new SyntaxHighlights(@"(?m)^\s*([a-zA-Z_][\w]*?)(?=\s*:)", "#E65100", "#FFB74D"),
+            
+            // Pin names and hardware references (e.g., PA1, ar54, ^PA2, ~!PB3)
+            new SyntaxHighlights(@"(?<=[:\s])([~^!]*[PZ][A-Z]\d+|ar\d+)\b", "#00897B", "#4DB6AC"),
+            
+            // Gcode commands (G0, G1, M104, etc.)
+            new SyntaxHighlights(@"\b[GM]\d+\b", "#AD1457", "#F06292"),
+            
+            // String values (quoted)
+            new SyntaxHighlights(@"([""'])((?:\\.|(?!\1).)*?)\1", "#00796B", "#80CBC4"),
+            
+            // Numeric values with units (e.g., 100.0, 50mm, 0.2s, 45deg)
+            new SyntaxHighlights(@"(?<=[:\s])([-+]?\d*\.?\d+)\s*(mm|s|deg|%|°)?", "#1565C0", "#64B5F6"),
+            
+            // Boolean values (True/False, true/false)
+            new SyntaxHighlights(@"(?i)(?<=[:\s])(true|false)\b", "#FF5722", "#FFAB91"),
+            
+            // Template expressions {variable_name}
+            new SyntaxHighlights(@"\{[^}]+\}", "#6A1B9A", "#BA68C8"),
+            
+            // Commas in lists
+            new SyntaxHighlights(@",", "#5C6BC0", "#9FA8DA"),
+            
+            // Comments starting with #
+            new SyntaxHighlights(@"#.*", "#9E9E9E", "#BDBDBD"),
             };
         }
     }
@@ -60,15 +185,46 @@
             };
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#dd00dd", "#00ff00"),
-                new SyntaxHighlights("(?<!(def\\s))(?<=^|\\s|.)[a-zA-Z_][\\w_]*(?=\\()", "#4455ff", "#ffbb00"),
-                new SyntaxHighlights("\\b(string|uint16_t|uint8_t|alignas|alignof|and|and_eq|asm|auto|bitand|bitor|bool|break|case|catch|char|char8_t|char16_t|char32_t|class|compl|concept|const|const_cast|consteval|constexpr|constinit|continue|co_await|co_return|co_yield|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|false|float|for|friend|goto|if|inline|int|long|mutable|namespace|new|noexcept|not|not_eq|nullptr|operator|or|or_eq|private|protected|public|register|reinterpret_cast|requires|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|true|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while|xor|xor_eq)\\b", "#dd00dd", "#dd00dd"),
-                new SyntaxHighlights("\\B#(define|elif|else|endif|error|ifndef|ifdef|if|import|include|line|pragma|region|undef|using)", "#bbbbbb", "#999999"),
-                new SyntaxHighlights("(\\\".+?\\\"|\\'.+?\\')", "#ffff00", "#ff000f"),
-                new SyntaxHighlights("\"[^\\n]*?\"", "#00CA00", "#00FF00"),
-                new SyntaxHighlights("'[^\\n]*?'", "#00CA00", "#00FF00"),
-                new SyntaxHighlights("/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/", "#888888", "#646464"),
-                new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
+                new SyntaxHighlights(
+                    // Numeric literals (int, float, hex, binary, scientific)
+                    @"\b(?:0[xX][0-9A-Fa-f]+(?:_[0-9A-Fa-f]+)*|0[bB][01]+(?:_[01]+)*|\d+(?:_\d+)*\.\d*(?:_\d*)?(?:[eE][+-]?\d+(?:_\d+)*)?|\.\d+(?:_\d*)?(?:[eE][+-]?\d+(?:_\d+)*)?|\d+(?:_\d+)*(?:[eE][+-]?\d+(?:_\d+)*)?)(?:[fFlLuU]{0,3})\b",
+                    "#dd00dd", "#00ff00"
+                ),
+                new SyntaxHighlights(
+                    // Function calls (identifier followed by parentheses)
+                    @"(?<!\w)([a-zA-Z_]\w*)(?=\s*\()",
+                    "#4455ff", "#ffbb00"
+                ),
+
+                new SyntaxHighlights(
+                    // Keywords
+                    @"\b(string|uint16_t|uint8_t|alignas|alignof|and|and_eq|asm|auto|bitand|bitor|bool|break|case|catch|char|char8_t|char16_t|char32_t|class|compl|concept|const|const_cast|consteval|constexpr|constinit|continue|co_await|co_return|co_yield|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|false|float|for|friend|goto|if|inline|int|long|mutable|namespace|new|noexcept|not|not_eq|nullptr|operator|or|or_eq|private|protected|public|register|reinterpret_cast|requires|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|true|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while|xor|xor_eq)\b",
+                    "#dd00dd", "#dd00dd"
+                ),
+
+                new SyntaxHighlights(
+                    // Preprocessor directives (#include, #define, etc.)
+                    @"^\s*#\s*(define|elif|else|endif|error|ifndef|ifdef|if|import|include|line|pragma|region|undef|using)\b",
+                    "#5F5E5E", "#999999"
+                ),
+
+                new SyntaxHighlights(
+                    // Strings and chars (handles escaped quotes)
+                    @"(""([^""\\]|\\.)*""|'([^'\\]|\\.)*')",
+                    "#D98300", "#00FF00"
+                ),
+
+                new SyntaxHighlights(
+                    // Block comments (/* ... */)
+                    @"/\*[\s\S]*?\*/",
+                    "#6B6A6A", "#646464"
+                ),
+
+                new SyntaxHighlights(
+                    // Line comments (// ...)
+                    @"//.*",
+                    "#6B6A6A", "#646464"
+                ),
             };
         }
     }
@@ -89,38 +245,40 @@
                 new AutoPairingPair("\'")
             };
             this.Highlights = new SyntaxHighlights[]
-                    {
-            //Number Matching
-            new SyntaxHighlights("\\b[+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?\\b", "#ff00ff", "#ff00ff"),
+            {
+                //Number Matching
+                new SyntaxHighlights(
+                    @"\b(?:0[xX][0-9A-Fa-f]+(?:_[0-9A-Fa-f]+)*|0[bB][01]+(?:_[01]+)*|\d+(?:_\d+)*\.\d*(?:_\d*)?(?:[eE][+-]?\d+(?:_\d+)*)?|\.\d+(?:_\d*)?(?:[eE][+-]?\d+(?:_\d+)*)?|\d+(?:_\d+)*(?:[eE][+-]?\d+(?:_\d+)*)?)(?:[fFlLuU]{0,3})\b",
+                    "#ff00ff", "#ff00ff"),
             
-            //Function Names
-            new SyntaxHighlights("\\b[a-zA-Z_]\\w*(?=\\()", "#880088", "#ffbb00"),
+                //Function Names
+                new SyntaxHighlights("\\b[a-zA-Z_]\\w*(?=\\()", "#880088", "#ffbb00"),
             
-            //C# Keywords
-            new SyntaxHighlights("\\b(abstract|as|base|bool|break|byte|case|catch|char|checked|class|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|external|false|final|finally|fixed|float|for|foreach|get|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|partial|private|protected|public|readonly|ref|return|sbyte|sealed|set|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|value|var|virtual|void|volatile|while)\\b", "#0066bb", "#00ffff"),
+                //C# Keywords
+                new SyntaxHighlights("\\b(abstract|as|async|await|base|bool|break|byte|case|catch|char|checked|class|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|external|false|final|finally|fixed|float|for|foreach|get|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|partial|private|protected|public|readonly|ref|return|sbyte|sealed|set|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|value|var|virtual|void|volatile|while)\\b", "#0066bb", "#00ffff"),
             
-            //Common C# Types
-            new SyntaxHighlights("\\b(List|Color|Console|Debug|Dictionary|Stack|Queue|GC)\\b", "#008000", "#ff9900"),
+                //Common C# Types
+                new SyntaxHighlights("\\b(List|Color|Console|Debug|Dictionary|Stack|Queue|GC)\\b", "#008000", "#ff9900"),
             
-            //Try/Catch/Finally Blocks
-            new SyntaxHighlights("\\b(try|catch|finally)\\b", "#9922ff", "#6666ff"),
+                //Try/Catch/Finally Blocks
+                new SyntaxHighlights("\\b(try|catch|finally)\\b", "#9922ff", "#6666ff"),
                         
-            //Preprocessor Directives
-            new SyntaxHighlights("#region.*$", "#ff0000", "#ff0000", true),
-            new SyntaxHighlights("#endregion", "#ff0000", "#ff0000", true),
+                //Preprocessor Directives
+                new SyntaxHighlights("#region.*$", "#ff0000", "#ff0000", true),
+                new SyntaxHighlights("#endregion", "#ff0000", "#ff0000", true),
             
-            //String Literals
-            new SyntaxHighlights("@\".*?\"|\"(?:\\\\.|[^\"\\\\])*\"", "#ff5500", "#00FF00"),
+                //String Literals
+                new SyntaxHighlights("@\".*?\"|\"(?:\\\\.|[^\"\\\\])*\"", "#ff5500", "#00FF00"),
             
-            //Character Literals
-            new SyntaxHighlights("'[^\\n]*?'", "#00CA00", "#00FF00"),
+                //Character Literals
+                new SyntaxHighlights("'[^\\n]*?'", "#ff5500", "#00FF00"),
             
-            //Single-line Comments
-            new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
+                //Single-line Comments
+                new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
             
-            //Multi-line Comments
-            new SyntaxHighlights("/\\*(?:[^*]|\\*[^/])*\\*/", "#888888", "#646464"),
-                    };
+                //Multi-line Comments
+                new SyntaxHighlights("/\\*(?:[^*]|\\*[^/])*\\*/", "#888888", "#646464"),
+            };
         }
     }
     internal class GCode : SyntaxHighlightLanguage
@@ -436,32 +594,6 @@
             };
         }
     }
-    internal class TOML : SyntaxHighlightLanguage
-    {
-        public TOML()
-        {
-            this.Name = "TOML";
-            this.Author = "Finn Freitag";
-            this.Filter = new string[1] { ".toml" };
-            this.Description = "Syntax highlighting for TOML language";
-            this.AutoPairingPair = new AutoPairingPair[]
-            {
-                new AutoPairingPair("[", "]"),
-                new AutoPairingPair("\""),
-            };
-            this.Highlights = new SyntaxHighlights[]
-            {
-                new SyntaxHighlights("\\[.*\\]", "#0000FF", "#0000FF"),
-                new SyntaxHighlights("\\[[\\t\\s]*(\\w+)[\\t\\s]*\\]", "#9900FF", "#9900FF"),
-                new SyntaxHighlights("(\\w+)[\\s\\t]*\\=", "#DDDD00", "#DDDD00"),
-                new SyntaxHighlights("\\=\\s+(.+)", "#EE0000", "#EE0000"),
-                new SyntaxHighlights("[\\[\\]]", "#FFFF00", "#FFFF00"),
-                new SyntaxHighlights("\\b(true|false)\\b", "#00bb66", "#00ff00"),
-                new SyntaxHighlights("[\"'][^\\n]*?[\"']", "#D69D84", "#D69D84"),
-                new SyntaxHighlights("#.*", "#888888", "#888888")
-            };
-        }
-    }
     internal class Markdown : SyntaxHighlightLanguage
     {
         public Markdown()
@@ -511,7 +643,6 @@
             };
         }
     }
-
     internal class CSS : SyntaxHighlightLanguage
     {
         public CSS()

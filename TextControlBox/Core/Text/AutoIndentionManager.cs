@@ -1,13 +1,13 @@
 ﻿using System;
+using TextControlBoxNS.Core;
 using TextControlBoxNS.Core.Text;
-using TextControlBoxNS.Helper;
 
 internal class AutoIndentionManager
 {
     private TextManager textManager;
-    private TabSpaceHelper tabSpaceHelper;
+    private TabSpaceManager tabSpaceHelper;
 
-    public void Init(TextManager textManager, TabSpaceHelper tabSpaceHelper)
+    public void Init(TextManager textManager, TabSpaceManager tabSpaceHelper)
     {
         this.textManager = textManager;
         this.tabSpaceHelper = tabSpaceHelper;

@@ -1,13 +1,11 @@
-﻿using TextControlBoxNS.Helper;
-
-namespace TextControlBoxNS.Core.Text
+﻿namespace TextControlBoxNS.Core.Text
 {
     internal class StringManager
     {
         private TextManager textManager;
-        private TabSpaceHelper tabSpaceHelper;
+        private TabSpaceManager tabSpaceHelper;
 
-        public void Init(TextManager textManager, TabSpaceHelper tabSpaceHelper)
+        public void Init(TextManager textManager, TabSpaceManager tabSpaceHelper)
         {
             this.textManager = textManager;
             this.tabSpaceHelper = tabSpaceHelper;

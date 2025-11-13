@@ -24,7 +24,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 {
     public readonly SelectionRenderer selectionRenderer;
     public readonly FlyoutHelper flyoutHelper;
-    public readonly TabSpaceHelper tabSpaceHelper;
+    public readonly TabSpaceManager tabSpaceHelper;
     public readonly StringManager stringManager;
     public readonly SearchManager searchManager;
     public readonly CanvasUpdateManager canvasUpdateManager;
@@ -95,7 +95,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         currentLineManager = new CurrentLineManager();
         longestLineManager = new LongestLineManager();
         designHelper = new DesignHelper();
-        tabSpaceHelper = new TabSpaceHelper();
+        tabSpaceHelper = new TabSpaceManager();
         lineHighlighterManager = new LineHighlighterManager();
         lineNumberManager = new LineNumberManager();
         searchManager = new SearchManager();
@@ -1068,7 +1068,9 @@ internal sealed partial class CoreTextControlBox : UserControl
             { SyntaxHighlightID.Batch, new Batch() },
             { SyntaxHighlightID.Cpp, new Cpp() },
             { SyntaxHighlightID.CSharp, new CSharp() },
-            { SyntaxHighlightID.ConfigFile, new ConfigFile() },
+            { SyntaxHighlightID.Klipper, new KlipperHighlighter() },
+            { SyntaxHighlightID.TOML, new TomlHighlighter() },
+            { SyntaxHighlightID.Inifile, new IniHighlighter() },
             { SyntaxHighlightID.CSS, new CSS() },
             { SyntaxHighlightID.CSV, new CSV() },
             { SyntaxHighlightID.GCode, new GCode() },
@@ -1082,8 +1084,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             { SyntaxHighlightID.Markdown, new Markdown() },
             { SyntaxHighlightID.PHP, new PHP() },
             { SyntaxHighlightID.Python, new Python() },
-            { SyntaxHighlightID.QSharp, new QSharp() },
-            { SyntaxHighlightID.TOML, new TOML() },
+            { SyntaxHighlightID.QSharp, new QSharp() },            
             { SyntaxHighlightID.XML, new XML() },
             { SyntaxHighlightID.SQL, new SQL() },
             { SyntaxHighlightID.None, null },
