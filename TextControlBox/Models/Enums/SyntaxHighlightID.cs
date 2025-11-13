@@ -21,9 +21,15 @@ public enum SyntaxHighlightID
     CSharp,
 
     /// <summary>
-    /// Identifier for configuration file code language.
+    /// Identifier for klipper like config styles.
+    /// Klipper is a 3d printer firmware, which can be configured via printer.cfg files
     /// </summary>
-    ConfigFile,
+    Klipper,
+
+    /// <summary>
+    /// Identifier for ini configuration style.
+    /// </summary>
+    Inifile,
 
     /// <summary>
     /// Identifier for CSS code language.
@@ -100,7 +106,7 @@ public enum SyntaxHighlightID
     SQL,
 
     /// <summary>
-    /// Identifier for TOML code language.
+    /// Identifier for TOML style config files.
     /// </summary>
     TOML,
 
