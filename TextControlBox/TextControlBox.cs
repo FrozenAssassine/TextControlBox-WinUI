@@ -3,9 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TextControlBoxNS.Core;
-using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Models;
 using TextControlBoxNS.Test;
 using Windows.Foundation;
@@ -34,6 +32,7 @@ public partial class TextControlBox : UserControl
         coreTextBox.eventsManager.GotFocus += EventsManager_GotFocus;
         coreTextBox.eventsManager.LostFocus += EventsManager_LostFocus;
         coreTextBox.eventsManager.TextLoaded += EventsManager_TextLoaded;
+        coreTextBox.eventsManager.LinkClicked += EventsManager_LinkClicked;
         coreTextBox.eventsManager.TabsSpacesChanged += EventsManager_TabsSpacesChanged;
         this.Content = coreTextBox;
 
@@ -55,7 +54,10 @@ public partial class TextControlBox : UserControl
 
         coreTextBox.InitialiseOnStart();
     }
-
+    private void EventsManager_LinkClicked(string url)
+    {
+        LinkClicked?.Invoke(url);
+    }
     private void EventsManager_Loaded()
     {
         Loaded?.Invoke(this);
@@ -915,6 +917,15 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Gets or sets a value indicating whether hyperlinks within the text are highlighted.
+    /// </summary>
+    public bool HighlightLinks 
+    {
+        get => coreTextBox.HighlightLinks;
+        set => coreTextBox.HighlightLinks = value;
+    }
+
+    /// <summary>
     /// Represents a delegate used for handling the text changed event in the TextControlBox.
     /// </summary>
     /// <param name="sender">The instance of the TextControlBox that raised the event.</param>
@@ -995,10 +1006,20 @@ public partial class TextControlBox : UserControl
     /// </summary>
     public event TextLoadedEvent TextLoaded;
 
+    /// <summary>
+    /// Delegate for handling link click events.
+    /// </summary>
+    /// <param name="url">The URL of the clicked link.</param>
+    public delegate void LinkClickedEvent(string url);
+
+    /// <summary>
+    /// Occurs when a link is clicked within the textbox.
+    /// </summary>
+    public event LinkClickedEvent LinkClicked;
+
     public delegate void TabsSpacesChangedEvent(TextControlBox sender, bool spacesInsteadTabs, int spaces);
 
     public event TabsSpacesChangedEvent TabsSpacesChanged;
-
 
     //static functions
     /// <summary>

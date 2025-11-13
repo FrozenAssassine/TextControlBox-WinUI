@@ -54,6 +54,8 @@ internal sealed partial class CoreTextControlBox : UserControl
     private readonly MoveLineManager moveLineManager;
     private readonly WhitespaceCharactersRenderer invisibleCharactersRenderer;
     private readonly WhitespaceCharactersManager whitespaceCharactersManager;
+    private readonly LinkHighlightManager linkHighlightManager;
+    private readonly LinkRenderer linkRenderer;
 
     public CanvasControl canvasText;
     public CanvasControl canvasCursor;
@@ -110,6 +112,8 @@ internal sealed partial class CoreTextControlBox : UserControl
         moveLineManager = new MoveLineManager();
         invisibleCharactersRenderer = new WhitespaceCharactersRenderer();
         whitespaceCharactersManager = new WhitespaceCharactersManager();
+        linkHighlightManager = new LinkHighlightManager();
+        linkRenderer = new LinkRenderer();
 
         stringManager.Init(textManager, tabSpaceHelper);
         lineHighlighterRenderer.Init(lineHighlighterManager, selectionManager, textRenderer);
@@ -120,7 +124,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         flyoutHelper.Init(this);
         canvasUpdateManager.Init(this);
         textActionManager.Init(this, textRenderer, undoRedo, currentLineManager, longestLineManager, canvasUpdateManager, textManager, selectionRenderer, cursorManager, scrollManager, eventsManager, stringManager, selectionManager, autoIndentionManager);
-        textRenderer.Init(cursorManager, designHelper, textLayoutManager, textManager, scrollManager, lineNumberRenderer, longestLineManager, this, searchManager, canvasUpdateManager, zoomManager, invisibleCharactersRenderer);
+        textRenderer.Init(cursorManager, designHelper, textLayoutManager, textManager, scrollManager, lineNumberRenderer, longestLineManager, this, searchManager, canvasUpdateManager, zoomManager, invisibleCharactersRenderer, linkRenderer, linkHighlightManager);
         cursorRenderer.Init(cursorManager, currentLineManager, textRenderer, focusManager, textManager, scrollManager, zoomManager, designHelper, lineHighlighterRenderer, eventsManager, longestLineManager);
         scrollManager.Init(this, canvasUpdateManager, textManager, textRenderer, cursorManager, zoomManager, VerticalScrollbar, HorizontalScrollbar);
         currentLineManager.Init(cursorManager, textManager);
@@ -132,13 +136,15 @@ internal sealed partial class CoreTextControlBox : UserControl
         lineNumberRenderer.Init(textManager, textLayoutManager, textRenderer, designHelper, lineNumberManager);
         zoomManager.Init(textManager, textRenderer, canvasUpdateManager, eventsManager, lineNumberRenderer);
         focusManager.Init(this, canvasUpdateManager, inputHandler, eventsManager);
-        pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, currentLineManager, selectionManager);
+        pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, currentLineManager, selectionManager, linkHighlightManager);
         textLayoutManager.Init(textManager, zoomManager);
         autoIndentionManager.Init(textManager, tabSpaceHelper);
         replaceManager.Init(canvasUpdateManager, undoRedo, textManager, searchManager, cursorManager, textActionManager, selectionRenderer, selectionManager, eventsManager);
         initializationManager.Init(eventsManager);
         moveLineManager.Init(selectionManager, cursorManager, textManager, undoRedo);
         invisibleCharactersRenderer.Init(designHelper, scrollManager, zoomManager, textLayoutManager, whitespaceCharactersManager);
+        linkHighlightManager.Init(textRenderer, this, eventsManager);
+        linkRenderer.Init(textRenderer, linkHighlightManager);
     }
 
     public void InitialiseOnStart()
@@ -1055,7 +1061,8 @@ internal sealed partial class CoreTextControlBox : UserControl
     public new bool IsLoaded => initializationManager.initDone;
     public bool ShowWhitespaceCharacters { get => whitespaceCharactersManager.ShowWhitespaceCharacters; set { whitespaceCharactersManager.ShowWhitespaceCharacters = value; canvasUpdateManager.UpdateText(); } }
     public Thickness SelectionScrollStartBorderDistance { get; set; } = new Thickness(0, 0, 0, 0);
-
+    public bool HighlightLinks { get => linkHighlightManager.HighlightLinks; set { linkHighlightManager.HighlightLinks = value; canvasUpdateManager.UpdateAll(); } }
+    
     public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {
             { SyntaxHighlightID.Batch, new Batch() },
