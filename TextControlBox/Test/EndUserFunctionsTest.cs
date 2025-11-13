@@ -1,6 +1,8 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.ExceptionServices;
 using TextControlBoxNS.Core;
 
@@ -51,6 +53,7 @@ internal class EndUserFunctionsTest : TestCase
             this.Test_25,
             this.Test_26,
             this.Test_27,
+            this.Test_28,
             ];
     }
 
@@ -445,5 +448,58 @@ internal class EndUserFunctionsTest : TestCase
         textbox.TextLoaded -= Textbox_TextLoaded;
 
         return res;
+    }
+    public bool Test_28()
+    {
+        Debug.WriteLine("Test TabsSpacesChangedEvent");
+        bool[] success = new  bool[4];
+        int testCase = 0;
+        void Textbox_TabsSpacesChanged(TextControlBox sender, bool spacesInsteadTabs, int spaces)
+        {
+            switch (testCase)
+            {
+                case 0:
+                    success[0] = spacesInsteadTabs == false;
+                    break;
+                case 1:
+                    success[1] = spacesInsteadTabs == true;
+                    break;
+                case 2:
+                    success[2] = spacesInsteadTabs == true && spaces == 8;
+                    break;
+                case 3:
+                    success[3] = spacesInsteadTabs == true && spaces == 16;
+                    break;
+            }
+            testCase++;
+        }
+
+        textbox.TabsSpacesChanged += Textbox_TabsSpacesChanged;
+
+        textbox.UseSpacesInsteadTabs = false;
+        textbox.UseSpacesInsteadTabs = true;
+        textbox.NumberOfSpacesForTab = 8;
+        textbox.NumberOfSpacesForTab = 16;
+
+        int exceptionThrownCount = 0;
+        try
+        {
+            textbox.NumberOfSpacesForTab = 0;
+        }
+        catch (ArgumentOutOfRangeException _)
+        {
+            exceptionThrownCount++;
+        }
+        try
+        {
+            textbox.NumberOfSpacesForTab = -1;
+        }
+        catch (ArgumentOutOfRangeException _)
+        {
+            exceptionThrownCount++;
+        }
+
+        textbox.TabsSpacesChanged -= Textbox_TabsSpacesChanged;
+        return success.Any(item => item == true) && testCase == 4 && exceptionThrownCount == 2;
     }
 }
