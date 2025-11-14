@@ -39,6 +39,11 @@ TextControlBox is a powerful and highly customizable textbox control for WinUI 3
   - Surround selected text with custom characters.
   - Get cursor position and manage selections programmatically.
 
+## Limits & Missing features
+- No textwrapping (I have no idea how to implement this properly atm.)
+- 200 million lines of text (20 characters per line) and it started to consume around 20GB of ram, scrolling worked, but random freezes appeared (too much overhead).
+- Syntaxhighlighting for multi line comments or similar only works, if both start and end characters are in the visible view. (Due to performance I only do such actions on the visible rendered text)
+
 ## ❤️ Support my work  
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=PPME7KF7KF7QS)
 
