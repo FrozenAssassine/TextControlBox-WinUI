@@ -66,6 +66,9 @@ internal class TabSpaceManager
     public void UpdateNumberOfSpaces()
     {
         ReplaceSpacesToSpaces();
+
+        //longest line index must be the same, just recalculate its length
+        longestLineManager.MeasureActualLineLength();
     }
     public void UpdateTabs()
     {
@@ -73,6 +76,9 @@ internal class TabSpaceManager
             ReplaceTabsToSpaces();
         else
             ReplaceSpacesToTabs();
+
+        //longest line index must be the same, just recalculate its length
+        longestLineManager.MeasureActualLineLength();
     }
     public string UpdateTabs(string input)
     {
