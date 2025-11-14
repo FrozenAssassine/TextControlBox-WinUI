@@ -64,15 +64,6 @@ internal class Utils
     {
         return Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(key).HasFlag(CoreVirtualKeyStates.Down);
     }
-    public static async Task<bool> IsOverTextLimit(int textLength)
-    {
-        if (textLength > 100000000)
-        {
-            await new MessageDialog("Current textlimit is 100 million characters, but your file has " + textLength + " characters").ShowAsync();
-            return true;
-        }
-        return false;
-    }
 
     public static ApplicationTheme ConvertTheme(ElementTheme theme)
     {

@@ -151,9 +151,6 @@ namespace TextControlBoxNS.Core.Text
                         return;
                     }
 
-                    if (await Utils.IsOverTextLimit(text.Length))
-                        return;
-
                     AddCharacter(stringManager.CleanUpString(text));
                 }
             }
@@ -270,7 +267,7 @@ namespace TextControlBoxNS.Core.Text
                 throw new OutOfMemoryException();
             }
         }
-        public async void Safe_LoadText(string text, bool handleException = true)
+        public void Safe_LoadText(string text, bool handleException = true)
         {
             try
             {
@@ -279,9 +276,6 @@ namespace TextControlBoxNS.Core.Text
                     Safe_LoadText("");
                     return;
                 }
-
-                if (await Utils.IsOverTextLimit(text.Length))
-                    return;
 
                 //Get the LineEnding
                 textManager.LineEnding = LineEndings.FindLineEnding(text);
@@ -312,7 +306,7 @@ namespace TextControlBoxNS.Core.Text
                 throw new OutOfMemoryException();
             }
         }
-        public async void Safe_SetText(string text, bool handleException = true)
+        public void Safe_SetText(string text, bool handleException = true)
         {
             try
             {
@@ -321,9 +315,6 @@ namespace TextControlBoxNS.Core.Text
                     Safe_SetText("");
                     return;
                 }
-
-                if (await Utils.IsOverTextLimit(text.Length))
-                    return;
 
                 longestLineManager.needsRecalculation = true;
                 undoRedo.RecordUndoAction(() =>
