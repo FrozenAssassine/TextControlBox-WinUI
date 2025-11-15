@@ -66,6 +66,7 @@ internal class UndoRedoTests : TestCase
 
     private void ResetText()
     {
+        coreTextbox.LineEnding = LineEnding.CRLF;
         coreTextbox.SetText(originalText);
     }
 

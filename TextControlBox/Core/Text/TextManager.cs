@@ -11,6 +11,8 @@ namespace TextControlBoxNS.Core.Text;
 
 internal class TextManager
 {
+    private EventsManager eventsManager;
+
     public PooledList<string> totalLines = new PooledList<string>(0);
 
     public int _FontSize = 18;
@@ -20,9 +22,15 @@ internal class TextManager
         get => _LineEnding;
         set 
         {
-            _LineEnding = value; 
+            _LineEnding = value;
+            eventsManager.CallLineEndingChanged(value);
             NewLineCharacter = LineEndings.LineEndingToString(value);
         }
+    }
+
+    public void Init(EventsManager eventsManager)
+    {
+        this.eventsManager = eventsManager;
     }
 
     public FontFamily _FontFamily = new FontFamily("Consolas");

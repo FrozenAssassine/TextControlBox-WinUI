@@ -34,9 +34,15 @@ public partial class TextControlBox : UserControl
         coreTextBox.eventsManager.TextLoaded += EventsManager_TextLoaded;
         coreTextBox.eventsManager.LinkClicked += EventsManager_LinkClicked;
         coreTextBox.eventsManager.TabsSpacesChanged += EventsManager_TabsSpacesChanged;
+        coreTextBox.eventsManager.LineEndingChanged += EventsManager_LineEndingChanged;
         this.Content = coreTextBox;
 
         this.RequestedTheme = ElementTheme.Default;
+    }
+
+    private void EventsManager_LineEndingChanged(LineEnding lineEnding)
+    {
+        this.LineEndingChanged?.Invoke(lineEnding);
     }
 
     private void EventsManager_TabsSpacesChanged(bool spacesInsteadTabs, int spaces)
@@ -1017,9 +1023,29 @@ public partial class TextControlBox : UserControl
     /// </summary>
     public event LinkClickedEvent LinkClicked;
 
+    /// <summary>
+    /// Represents the method that handles events when the indentation style or number of spaces per indent changes in a
+    /// text control box.
+    /// </summary>
+    /// <param name="spacesInsteadTabs">Indicates whether spaces are used instead of tabs for indentation.</param>
+    /// 
     public delegate void TabsSpacesChangedEvent(TextControlBox sender, bool spacesInsteadTabs, int spaces);
 
+    /// <summary>
+    /// Occurs when the tabs or spaces configuration changes.
+    /// </summary>
     public event TabsSpacesChangedEvent TabsSpacesChanged;
+
+    /// <summary>
+    /// Represents the method that handles an event when the line ending style changes.
+    /// </summary>
+    /// <param name="lineEnding">The new line ending style that has been applied.</param>
+    public delegate void LineEndingChangedEvent(LineEnding lineEnding);
+
+    /// <summary>
+    /// Occurs when the line ending style of the document changes.
+    /// </summary>
+    public event LineEndingChangedEvent LineEndingChanged;
 
     //static functions
     /// <summary>

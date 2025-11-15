@@ -54,6 +54,7 @@ internal class EndUserFunctionsTest : TestCase
             this.Test_26,
             this.Test_27,
             this.Test_28,
+            this.Test_29,
             ];
     }
 
@@ -501,5 +502,35 @@ internal class EndUserFunctionsTest : TestCase
 
         textbox.TabsSpacesChanged -= Textbox_TabsSpacesChanged;
         return success.Any(item => item == true) && testCase == 4 && exceptionThrownCount == 2;
+    }
+
+    public bool Test_29()
+    {
+        Debug.WriteLine("Test LineEndingChangedEvent");
+        bool[] success = new bool[3];
+        int testCase = 0;
+        void Textbox_LineEndingChanged(LineEnding lineEnding)
+        {
+            switch (testCase)
+            {
+                case 0:
+                    success[0] = lineEnding == LineEnding.LF;
+                    break;
+                case 1:
+                    success[1] = lineEnding == LineEnding.CRLF;
+                    break;
+                case 2:
+                    success[2] = lineEnding == LineEnding.CR;
+                    break;
+            }
+            testCase++;
+        }
+        textbox.LineEndingChanged += Textbox_LineEndingChanged;
+        textbox.LineEnding = LineEnding.LF;
+        textbox.LineEnding = LineEnding.CR;
+        textbox.LineEnding = LineEnding.CRLF;
+        textbox.LineEndingChanged -= Textbox_LineEndingChanged;
+
+        return success.Any(item => item == true);
     }
 }

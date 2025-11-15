@@ -33,6 +33,10 @@ internal class EventsManager
     public delegate void TabsSpacesChangedEvent(bool spacesInsteadTabs, int spaces);
     public event TabsSpacesChangedEvent TabsSpacesChanged;
 
+    public delegate void LineEndingChangedEvent(LineEnding lineEnding);
+    public event LineEndingChangedEvent LineEndingChanged;
+
+
     private SelectionChangedEventHandler args = new SelectionChangedEventHandler();
 
 
@@ -95,5 +99,10 @@ internal class EventsManager
     public void CallTabsSpacesChanged(bool spacesInsteadTabs, int spaces)
     {
         TabsSpacesChanged?.Invoke(spacesInsteadTabs, spaces);
+    }
+
+    public void CallLineEndingChanged(LineEnding lineEnding)
+    {
+        this.LineEndingChanged?.Invoke(lineEnding);
     }
 }

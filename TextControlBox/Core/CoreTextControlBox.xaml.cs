@@ -115,6 +115,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         linkHighlightManager = new LinkHighlightManager();
         linkRenderer = new LinkRenderer();
 
+        textManager.Init(eventsManager);
         stringManager.Init(textManager, tabSpaceHelper);
         lineHighlighterRenderer.Init(lineHighlighterManager, selectionManager, textRenderer);
         cursorManager.Init(textManager, currentLineManager, tabSpaceHelper);
