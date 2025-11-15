@@ -509,7 +509,7 @@ internal class EndUserFunctionsTest : TestCase
         Debug.WriteLine("Test LineEndingChangedEvent");
         bool[] success = new bool[3];
         int testCase = 0;
-        void Textbox_LineEndingChanged(LineEnding lineEnding)
+        void Textbox_LineEndingChanged(TextControlBox sender, LineEnding lineEnding)
         {
             switch (testCase)
             {

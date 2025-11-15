@@ -14,7 +14,7 @@ namespace TextControlBox_TestApp
         {
             this.InitializeComponent();
 
-            //textbox.LoadLines(Enumerable.Range(0, 1_000_000).Select(x => "Line " + x + " is cool right?"));
+            textbox.LoadLines(Enumerable.Range(0, 2_000_000).Select(x => "Line " + x + " is cool right?"));
 
             textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.Markdown);
 
@@ -31,7 +31,7 @@ namespace TextControlBox_TestApp
             });
         }
 
-        private void Textbox_LinkClicked(string url)
+        private void Textbox_LinkClicked(TextControlBox sender,string url)
         {
             Process.Start(new ProcessStartInfo
             {

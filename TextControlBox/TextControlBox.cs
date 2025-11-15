@@ -42,7 +42,7 @@ public partial class TextControlBox : UserControl
 
     private void EventsManager_LineEndingChanged(LineEnding lineEnding)
     {
-        this.LineEndingChanged?.Invoke(lineEnding);
+        this.LineEndingChanged?.Invoke(this, lineEnding);
     }
 
     private void EventsManager_TabsSpacesChanged(bool spacesInsteadTabs, int spaces)
@@ -62,7 +62,7 @@ public partial class TextControlBox : UserControl
     }
     private void EventsManager_LinkClicked(string url)
     {
-        LinkClicked?.Invoke(url);
+        LinkClicked?.Invoke(this, url);
     }
     private void EventsManager_Loaded()
     {
@@ -1015,8 +1015,9 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Delegate for handling link click events.
     /// </summary>
+    /// <param name="sender">The instance of the TextControlBox that raised the event.</param>
     /// <param name="url">The URL of the clicked link.</param>
-    public delegate void LinkClickedEvent(string url);
+    public delegate void LinkClickedEvent(TextControlBox sender, string url);
 
     /// <summary>
     /// Occurs when a link is clicked within the textbox.
@@ -1027,8 +1028,9 @@ public partial class TextControlBox : UserControl
     /// Represents the method that handles events when the indentation style or number of spaces per indent changes in a
     /// text control box.
     /// </summary>
+    /// <param name="sender">The instance of the TextControlBox that raised the event.</param>
     /// <param name="spacesInsteadTabs">Indicates whether spaces are used instead of tabs for indentation.</param>
-    /// 
+    /// <param name="spaces">The number of spaces used for a single indentation level.</param>
     public delegate void TabsSpacesChangedEvent(TextControlBox sender, bool spacesInsteadTabs, int spaces);
 
     /// <summary>
@@ -1039,8 +1041,9 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Represents the method that handles an event when the line ending style changes.
     /// </summary>
+    /// <param name="sender">The instance of the TextControlBox that raised the event.</param>
     /// <param name="lineEnding">The new line ending style that has been applied.</param>
-    public delegate void LineEndingChangedEvent(LineEnding lineEnding);
+    public delegate void LineEndingChangedEvent(TextControlBox sender, LineEnding lineEnding);
 
     /// <summary>
     /// Occurs when the line ending style of the document changes.
