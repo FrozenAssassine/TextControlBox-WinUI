@@ -1,4 +1,9 @@
-﻿using System;
+﻿using Collections.Pooled;
+using Microsoft.UI.Xaml.Shapes;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Extensions;

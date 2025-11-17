@@ -14,6 +14,7 @@ namespace TextControlBoxNS.Test
 
         public TestHelper(CoreTextControlBox coreTextbox, TextControlBox textbox)
         {
+            Debug.Assert(false, "Tests are active");
             this.textbox = textbox;
             this.coreTextbox = coreTextbox;
             TestCases = [ new HelperTest(coreTextbox), new TextTests("Text Tests", coreTextbox), new EndUserFunctionsTest("End User Functions", coreTextbox, textbox), new UndoRedoTests("Undo Reddo Test", coreTextbox) ];

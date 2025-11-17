@@ -140,9 +140,10 @@ public partial class TextControlBox : UserControl
     /// Loads the specified text into the textbox, resetting all text and undo history.
     /// </summary>
     /// <param name="text">The text to load into the textbox.</param>
-    public void LoadText(string text)
+    /// <param name="autodetectTabsSpaces" >Whether to autodetect tabs and spaces settings from the text</param>
+    public void LoadText(string text, bool autodetectTabsSpaces = true)
     {
-        coreTextBox.LoadText(text);
+        coreTextBox.LoadText(text, autodetectTabsSpaces);
     }
 
     /// <summary>
@@ -159,9 +160,10 @@ public partial class TextControlBox : UserControl
     /// </summary>
     /// <param name="lines">An enumerable containing the lines to load into the textbox.</param>
     /// <param name="lineEnding">The line ending format used in the loaded lines (default is CRLF).</param>
-    public void LoadLines(IEnumerable<string> lines, LineEnding lineEnding = LineEnding.CRLF)
+    /// <param name="autodetectTabsSpaces" >Whether to autodetect tabs and spaces settings from the lines</param>
+    public void LoadLines(IEnumerable<string> lines, bool autodetectTabsSpaces = true, LineEnding lineEnding = LineEnding.CRLF)
     {
-        coreTextBox.LoadLines(lines, lineEnding);
+        coreTextBox.LoadLines(lines, autodetectTabsSpaces , lineEnding);
     }
 
     /// <summary>

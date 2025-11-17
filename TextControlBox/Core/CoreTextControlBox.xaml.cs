@@ -611,9 +611,9 @@ internal sealed partial class CoreTextControlBox : UserControl
         canvasUpdateManager.UpdateAll();
     }
 
-    public void LoadText(string text)
+    public void LoadText(string text, bool autodetectTabsSpaces = true)
     {
-        textActionManager.Safe_LoadText(text);
+        textActionManager.Safe_LoadText(text, autodetectTabsSpaces);
     }
 
     public void SetText(string text)
@@ -621,9 +621,9 @@ internal sealed partial class CoreTextControlBox : UserControl
         textActionManager.Safe_SetText(text);
     }
 
-    public void LoadLines(IEnumerable<string> lines, LineEnding lineEnding = LineEnding.CRLF)
+    public void LoadLines(IEnumerable<string> lines, bool autodetectTabsSpaces = true, LineEnding lineEnding = LineEnding.CRLF)
     {
-        textActionManager.Safe_LoadLines(lines, lineEnding);
+        textActionManager.Safe_LoadLines(lines, autodetectTabsSpaces, lineEnding);
     }
 
     public void Paste()

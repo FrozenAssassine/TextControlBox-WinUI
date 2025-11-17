@@ -229,13 +229,13 @@ namespace TextControlBoxNS.Core.Text
                 throw new OutOfMemoryException();
             }
         }
-        public void Safe_LoadLines(IEnumerable<string> lines, LineEnding lineEnding = LineEnding.CRLF, bool HandleException = true)
+        public void Safe_LoadLines(IEnumerable<string> lines, bool autodetectTabsSpaces = true, LineEnding lineEnding = LineEnding.CRLF, bool HandleException = true)
         {
             try
             {
                 if (lines == null)
                 {
-                    Safe_LoadLines([]);
+                    Safe_LoadLines([], false);
                     return;
                 }
 
@@ -249,6 +249,13 @@ namespace TextControlBoxNS.Core.Text
 
                 textManager.LineEnding = lineEnding;
 
+                if (autodetectTabsSpaces)
+                {
+                    (bool useSpaces, int spaces) = TabsSpacesHelper.DetectTabsSpaces(textManager.totalLines);
+                    coreTextbox.tabSpaceHelper.UseSpacesInsteadTabs = useSpaces;
+                    coreTextbox.tabSpaceHelper.NumberOfSpaces = spaces;
+                }
+
                 cursorManager.SetToTextEnd();
 
                 longestLineManager.needsRecalculation = true;
@@ -261,24 +268,31 @@ namespace TextControlBoxNS.Core.Text
                 if (HandleException)
                 {
                     textManager.CleanUp();
-                    Safe_LoadLines(lines, lineEnding, false);
+                    Safe_LoadLines(lines, autodetectTabsSpaces, lineEnding, false);
                     return;
                 }
                 throw new OutOfMemoryException();
             }
         }
-        public void Safe_LoadText(string text, bool handleException = true)
+        public void Safe_LoadText(string text, bool autodetectTabsSpaces = true, bool handleException = true)
         {
             try
             {
                 if (text == null)
                 {
-                    Safe_LoadText("");
+                    Safe_LoadText("", false);
                     return;
                 }
 
                 //Get the LineEnding
                 textManager.LineEnding = LineEndings.FindLineEnding(text);
+
+                if (autodetectTabsSpaces)
+                {
+                    (bool useSpaces, int spaces) = TabsSpacesHelper.DetectTabsSpaces(text, textManager.LineEnding);
+                    coreTextbox.tabSpaceHelper.UseSpacesInsteadTabs = useSpaces;
+                    coreTextbox.tabSpaceHelper.NumberOfSpaces = spaces;
+                }
 
                 selectionManager.ClearSelection();
                 undoRedo.ClearAll();
@@ -300,7 +314,7 @@ namespace TextControlBoxNS.Core.Text
                 if (handleException)
                 {
                     textManager.CleanUp();
-                    Safe_LoadText(text, false);
+                    Safe_LoadText(text, autodetectTabsSpaces, false);
                     return;
                 }
                 throw new OutOfMemoryException();

@@ -55,6 +55,12 @@ internal class EndUserFunctionsTest : TestCase
             this.Test_27,
             this.Test_28,
             this.Test_29,
+            this.Test_30,
+            this.Test_31,
+            this.Test_32,
+            this.Test_33,
+            this.Test_34,
+            this.Test_35,
             ];
     }
 
@@ -532,5 +538,66 @@ internal class EndUserFunctionsTest : TestCase
         textbox.LineEndingChanged -= Textbox_LineEndingChanged;
 
         return success.Any(item => item == true);
+    }
+    
+    public bool Test_30()
+    {
+        TestHelper.ResetContent(textbox, 0);
+        Debug.WriteLine("Loadlines with tab, detect tabsspaces (tabs)");
+
+        coreTextbox.LoadLines(["Line1", "\tLine2", "\t\tLine3"]);
+
+        //4 is the default value
+        return coreTextbox.UseSpacesInsteadTabs == false && coreTextbox.NumberOfSpacesForTab == 4;
+    }
+    public bool Test_31()
+    {
+        TestHelper.ResetContent(textbox, 0);
+        Debug.WriteLine("Loadlines with tab, detect tabsspaces (4 spaces)");
+
+        coreTextbox.LoadLines(["Line1", "    Line2", "        Line3"]);
+
+        //4 is the default value
+        return coreTextbox.UseSpacesInsteadTabs == true && coreTextbox.NumberOfSpacesForTab == 4;
+    }
+    public bool Test_32()
+    {
+        TestHelper.ResetContent(textbox, 0);
+        Debug.WriteLine("Loadlines with tab, detect tabsspaces (8 spaces)");
+
+        coreTextbox.LoadLines(["Line1", "        Line2", "                Line3"]);
+
+        //4 is the default value
+        return coreTextbox.UseSpacesInsteadTabs == true && coreTextbox.NumberOfSpacesForTab == 8;
+    }
+    public bool Test_33()
+    {
+        TestHelper.ResetContent(textbox, 0);
+        Debug.WriteLine("Loadtext with tab, detect tabsspaces (4 spaces)");
+
+        coreTextbox.LoadText("Line1\n        Line2\n                Line3\n");
+
+        //4 is the default value
+        return coreTextbox.UseSpacesInsteadTabs == true && coreTextbox.NumberOfSpacesForTab == 8;
+    }
+    public bool Test_34()
+    {
+        TestHelper.ResetContent(textbox, 0);
+        Debug.WriteLine("Loadtext with tab, detect tabsspaces (tabs)");
+
+        coreTextbox.LoadText("Line1\n\tLine2\n\t\tLine3\n");
+
+        //4 is the default value
+        return coreTextbox.UseSpacesInsteadTabs == false && coreTextbox.NumberOfSpacesForTab == 4;
+    }
+    public bool Test_35()
+    {
+        TestHelper.ResetContent(textbox, 0);
+        Debug.WriteLine("Loadtext with tab, detect tabsspaces (2 spaces)");
+
+        coreTextbox.LoadText("Line1\n  Line2\n    Line3\n");
+
+        //4 is the default value
+        return coreTextbox.UseSpacesInsteadTabs == true && coreTextbox.NumberOfSpacesForTab == 2;
     }
 }
