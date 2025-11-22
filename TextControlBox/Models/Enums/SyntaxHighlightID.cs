@@ -6,6 +6,11 @@
 public enum SyntaxHighlightID
 {
     /// <summary>
+    /// Identifier for x86 assembly.
+    /// </summary>
+    x86Assembly,
+
+    /// <summary>
     /// Identifier for Batch code language.
     /// </summary>
     Batch,
