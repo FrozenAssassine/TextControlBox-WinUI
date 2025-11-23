@@ -106,6 +106,7 @@ internal class TabSpaceManager
 
             documentUsesSpaces = UseSpacesInsteadTabs = false;
             NumberOfSpaces = 4;
+            eventsManager.CallTextChanged();
         }
         else if (targetSpacesTabs > 0 && documentUsesSpaces && targetSpacesTabs != documentNumberOfSpaces)
         {
@@ -116,6 +117,7 @@ internal class TabSpaceManager
 
             NumberOfSpaces = documentNumberOfSpaces = targetSpacesTabs;
             UseSpacesInsteadTabs = true;
+            eventsManager.CallTextChanged();
         }
         else if (targetSpacesTabs > 0 && !documentUsesSpaces)
         {
@@ -126,6 +128,7 @@ internal class TabSpaceManager
 
             documentUsesSpaces = UseSpacesInsteadTabs = true;
             documentNumberOfSpaces = NumberOfSpaces = targetSpacesTabs;
+            eventsManager.CallTextChanged();
         }
 
         longestLineManager.MeasureActualLineLength();
