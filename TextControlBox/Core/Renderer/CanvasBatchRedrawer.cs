@@ -8,8 +8,14 @@ namespace TextControlBoxNS.Core.Renderer
 {
     internal class CanvasBatchRedrawer
     {
-        private readonly Dictionary<CanvasControl, bool> _redrawRequests = new();
+        private readonly Dictionary<CanvasControl, CanvasRedrawState> _redrawRequests = new();
         private readonly int _batchIntervalMs;
+
+        private class CanvasRedrawState
+        {
+            public bool NeedsRedraw;
+            public DispatcherQueueTimer? Timer;
+        }
 
         public CanvasBatchRedrawer(int batchIntervalMs = 16)
         {
@@ -20,46 +26,36 @@ namespace TextControlBoxNS.Core.Renderer
         {
             if (!_redrawRequests.ContainsKey(canvas))
             {
-                _redrawRequests[canvas] = false;
+                _redrawRequests[canvas] = new CanvasRedrawState();
             }
         }
 
         public void RequestRedraw(CanvasControl canvas)
         {
-            if (_redrawRequests.ContainsKey(canvas))
+            if (!_redrawRequests.ContainsKey(canvas)) return;
+
+            var state = _redrawRequests[canvas];
+            state.NeedsRedraw = true;
+
+            if (state.Timer == null)
             {
-                _redrawRequests[canvas] = true;
-                StartBatching();
-            }
-        }
-
-        private DispatcherQueueTimer? _batchTimer;
-
-        private void StartBatching()
-        {
-            if (_batchTimer != null) return;
-
-            _batchTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
-            _batchTimer.Interval = TimeSpan.FromMilliseconds(_batchIntervalMs);
-            _batchTimer.Tick += (s, e) =>
-            {
-                foreach (var canvas in _redrawRequests.Keys.ToList())
+                state.Timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
+                state.Timer.Interval = TimeSpan.FromMilliseconds(_batchIntervalMs);
+                state.Timer.Tick += (s, e) =>
                 {
-                    if (_redrawRequests[canvas])
+                    if (state.NeedsRedraw)
                     {
-                        _redrawRequests[canvas] = false;
+                        state.NeedsRedraw = false;
                         canvas.Invalidate();
                     }
-                }
-
-                if (!_redrawRequests.Values.Contains(true))
-                {
-                    _batchTimer?.Stop();
-                    _batchTimer = null;
-                }
-            };
-
-            _batchTimer.Start();
+                    else
+                    {
+                        state.Timer?.Stop();
+                        state.Timer = null;
+                    }
+                };
+                state.Timer.Start();
+            }
         }
     }
 }
