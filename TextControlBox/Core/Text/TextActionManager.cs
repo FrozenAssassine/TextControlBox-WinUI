@@ -252,8 +252,9 @@ namespace TextControlBoxNS.Core.Text
                 if (autodetectTabsSpaces)
                 {
                     (bool useSpaces, int spaces) = TabsSpacesHelper.DetectTabsSpaces(textManager.totalLines);
-                    coreTextbox.tabSpaceHelper.UseSpacesInsteadTabs = useSpaces;
-                    coreTextbox.tabSpaceHelper.NumberOfSpaces = spaces;
+                    coreTextbox.tabSpaceManager.UseSpacesInsteadTabs = useSpaces;
+                    coreTextbox.tabSpaceManager.NumberOfSpaces = spaces;
+                    coreTextbox.tabSpaceManager.SetDocumentVariables(spaces, useSpaces);
                 }
 
                 cursorManager.SetToTextEnd();
@@ -289,9 +290,10 @@ namespace TextControlBoxNS.Core.Text
 
                 if (autodetectTabsSpaces)
                 {
-                    (bool useSpaces, int spaces) = TabsSpacesHelper.DetectTabsSpaces(text, textManager.LineEnding);
-                    coreTextbox.tabSpaceHelper.UseSpacesInsteadTabs = useSpaces;
-                    coreTextbox.tabSpaceHelper.NumberOfSpaces = spaces;
+                    (bool useSpaces, int spaces) = TabsSpacesHelper.DetectTabsSpaces(text);
+                    coreTextbox.tabSpaceManager.UseSpacesInsteadTabs = useSpaces;
+                    coreTextbox.tabSpaceManager.NumberOfSpaces = spaces;
+                    coreTextbox.tabSpaceManager.SetDocumentVariables(spaces, useSpaces);
                 }
 
                 selectionManager.ClearSelection();

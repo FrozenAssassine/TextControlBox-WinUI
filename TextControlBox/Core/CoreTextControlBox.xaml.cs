@@ -24,7 +24,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 {
     public readonly SelectionRenderer selectionRenderer;
     public readonly FlyoutHelper flyoutHelper;
-    public readonly TabSpaceManager tabSpaceHelper;
+    public readonly TabSpaceManager tabSpaceManager;
     public readonly StringManager stringManager;
     public readonly SearchManager searchManager;
     public readonly CanvasUpdateManager canvasUpdateManager;
@@ -95,7 +95,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         currentLineManager = new CurrentLineManager();
         longestLineManager = new LongestLineManager();
         designHelper = new DesignHelper();
-        tabSpaceHelper = new TabSpaceManager();
+        tabSpaceManager = new TabSpaceManager();
         lineHighlighterManager = new LineHighlighterManager();
         lineNumberManager = new LineNumberManager();
         searchManager = new SearchManager();
@@ -116,11 +116,11 @@ internal sealed partial class CoreTextControlBox : UserControl
         linkRenderer = new LinkRenderer();
 
         textManager.Init(eventsManager);
-        stringManager.Init(textManager, tabSpaceHelper);
+        stringManager.Init(textManager, tabSpaceManager);
         lineHighlighterRenderer.Init(lineHighlighterManager, selectionManager, textRenderer);
-        cursorManager.Init(textManager, currentLineManager, tabSpaceHelper);
+        cursorManager.Init(textManager, currentLineManager, tabSpaceManager);
         selectionManager.Init(textManager, cursorManager, eventsManager);
-        undoRedo.Init(textManager, selectionManager, cursorManager);
+        undoRedo.Init(textManager, selectionManager, cursorManager, eventsManager, tabSpaceManager);
         selectionRenderer.Init(selectionManager, textRenderer, eventsManager, scrollManager, zoomManager, designHelper, textManager);
         flyoutHelper.Init(this);
         canvasUpdateManager.Init(this);
@@ -131,7 +131,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         currentLineManager.Init(cursorManager, textManager);
         longestLineManager.Init(selectionManager, textManager, textRenderer);
         designHelper.Init(this, textRenderer, canvasUpdateManager);
-        tabSpaceHelper.Init(textManager, selectionManager, cursorManager, textActionManager, undoRedo, longestLineManager, eventsManager);
+        tabSpaceManager.Init(textManager, selectionManager, cursorManager, textActionManager, undoRedo, longestLineManager, eventsManager);
         searchManager.Init(textManager);
         eventsManager.Init(searchManager, cursorManager);
         lineNumberRenderer.Init(textManager, textLayoutManager, textRenderer, designHelper, lineNumberManager);
@@ -139,7 +139,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         focusManager.Init(this, canvasUpdateManager, inputHandler, eventsManager);
         pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, currentLineManager, selectionManager, linkHighlightManager);
         textLayoutManager.Init(textManager, zoomManager);
-        autoIndentionManager.Init(textManager, tabSpaceHelper);
+        autoIndentionManager.Init(textManager, tabSpaceManager);
         replaceManager.Init(canvasUpdateManager, undoRedo, textManager, searchManager, cursorManager, textActionManager, selectionRenderer, selectionManager, eventsManager);
         initializationManager.Init(eventsManager);
         moveLineManager.Init(selectionManager, cursorManager, textManager, undoRedo);
@@ -184,9 +184,9 @@ internal sealed partial class CoreTextControlBox : UserControl
         if (e.Key == VirtualKey.Tab)
         {
             if (Utils.IsKeyPressed(VirtualKey.Shift))
-                tabSpaceHelper.MoveTabBack();
+                tabSpaceManager.MoveTabBack();
             else
-                tabSpaceHelper.MoveTab();
+                tabSpaceManager.MoveTab();
 
             canvasUpdateManager.UpdateAll();
 
@@ -1037,6 +1037,21 @@ internal sealed partial class CoreTextControlBox : UserControl
         }
         set => textActionManager.AddCharacter(stringManager.CleanUpString(value));
     }
+    public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs)
+    {
+        if(spaces <= 0)
+            throw new ArgumentOutOfRangeException("Spaces must be greater than zero.");
+        
+        tabSpaceManager.RewriteTabsSpaces(useSpacesInsteadTabs ? spaces : -1);
+        
+        canvasUpdateManager.UpdateAll();
+    }
+
+    public (bool useSpacesInsteadTabs, int spaces) DetectTabsSpaces()
+    {
+        return TabsSpacesHelper.DetectTabsSpaces(textManager.totalLines);
+    }
+
     public int NumberOfLines { get => textManager.LinesCount; }
 
     public int CurrentLineIndex { get => CursorPosition.LineNumber; }
@@ -1050,8 +1065,8 @@ internal sealed partial class CoreTextControlBox : UserControl
     public double VerticalScroll { get => VerticalScrollbar.Value; set { VerticalScrollbar.Value = value < 0 ? 0 : value; canvasUpdateManager.UpdateAll(); } }
     public double HorizontalScroll { get => HorizontalScrollbar.Value; set { HorizontalScrollbar.Value = value < 0 ? 0 : value; canvasUpdateManager.UpdateAll(); } }
     public new CornerRadius CornerRadius { get => MainGrid.CornerRadius; set => MainGrid.CornerRadius = value; }
-    public bool UseSpacesInsteadTabs { get => tabSpaceHelper.UseSpacesInsteadTabs; set { tabSpaceHelper.UseSpacesInsteadTabs = value; tabSpaceHelper.UpdateTabs(); canvasUpdateManager.UpdateAll(); } }
-    public int NumberOfSpacesForTab { get => tabSpaceHelper.NumberOfSpaces; set { tabSpaceHelper.NumberOfSpaces = value; tabSpaceHelper.UpdateNumberOfSpaces(); canvasUpdateManager.UpdateAll(); } }
+    public bool UseSpacesInsteadTabs { get => tabSpaceManager.UseSpacesInsteadTabs; set { tabSpaceManager.UseSpacesInsteadTabs = value; } }
+    public int NumberOfSpacesForTab { get => tabSpaceManager.NumberOfSpaces; set { tabSpaceManager.NumberOfSpaces = value; } }
     public bool SearchIsOpen => searchManager.IsSearchOpen;
     public IEnumerable<string> Lines => textManager.totalLines;
     public bool DoAutoPairing { get; set; } = true;

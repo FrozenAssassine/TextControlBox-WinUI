@@ -42,59 +42,80 @@ internal class TabsSpacesHelper
 
         if (spaceCounts.Count == 0)
             return DefaultSpaces;
-        
-        return spaceCounts.Aggregate(GCD);
+
+        int spaces = spaceCounts.Aggregate(GCD);
+        return spaces < 2 ? DefaultSpaces : spaces;
     }
 
-    private static int CountSpaces(string text)
+    public static (bool spacesInsteadTabs, int spaces) DetectTabsSpaces(string text)
     {
-        if(text.Length == 0)
-            return DefaultSpaces;
+        List<int> spaceIndents = new();
+        List<int> tabIndents = new();
 
-        var spaceCounts = new List<int>();
-        int count = 0;
+        int currentSpaces = 0;
+        int currentTabs = 0;
+        bool atLineStart = true;
+
         foreach (char c in text)
         {
-            if (c == ' ') count++;
-            else if (c == '\r' || c == '\n')
+            if (c == '\r' || c == '\n')
             {
-                if (count > 0) spaceCounts.Add(count);
-                count = 0;
+                if (atLineStart)
+                {
+                    currentSpaces = currentTabs = 0;
+                }
+                else
+                {
+                    if (currentSpaces > 0) spaceIndents.Add(currentSpaces);
+                    if (currentTabs > 0) tabIndents.Add(currentTabs);
+                }
+
+                currentSpaces = currentTabs = 0;
+                atLineStart = true;
                 continue;
+            }
+
+            if (atLineStart)
+            {
+                if (c == ' ') { currentSpaces++; continue; }
+                if (c == '\t') { currentTabs++; continue; }
+
+                atLineStart = false;
             }
         }
 
-        if (spaceCounts.Count == 0)
-            return DefaultSpaces;
-        return spaceCounts.Aggregate(GCD);
-    }
-
-    public static (bool spacesInsteadTabs, int spaces) DetectTabsSpaces(string text, LineEnding lineEnding)
-    {
-        string lineEndingStr = LineEndings.LineEndingToString(lineEnding);
-
-        int leadingTabs = 0;
-        int leadingSpaces = 0;
-        int tabs = 0;
-        int spaces = 0;
-        foreach (var c in text)
+        // Handle last line without newline
+        if (!atLineStart)
         {
-            if(c == '\t') tabs++;
-            else if (c == ' ') spaces++;
-            else if (c == '\r' || c == '\n')
-            {
-                leadingTabs += tabs;
-                leadingSpaces += spaces;
-                tabs = spaces = 0;
-                continue;
-            }
+            if (currentSpaces > 0) spaceIndents.Add(currentSpaces);
+            if (currentTabs > 0) tabIndents.Add(currentTabs);
         }
 
-        bool useTabs = leadingTabs > leadingSpaces;
-        if (useTabs)
-            return (false, 4);
+        // Decide whether tabs or spaces dominate
+        bool useSpaces = spaceIndents.Count >= tabIndents.Count;
 
-        return (true, CountSpaces(text));
+        if (!useSpaces)
+            return (false, 4); // your original behavior for tab-indent
+
+        // Compute indent step using GCD of differences
+        if (spaceIndents.Count == 0)
+            return (true, 4); // fallback
+
+        // Sort indents and calculate differences
+        var sorted = spaceIndents.Distinct().OrderBy(x => x).ToList();
+        if (sorted.Count == 1)
+            return (true, sorted[0]); // only one indent depth → assume it's the indent size
+
+        int gcd = 0;
+        for (int i = 1; i < sorted.Count; i++)
+        {
+            int diff = sorted[i] - sorted[i - 1];
+            if (diff > 0)
+                gcd = GCD(gcd, diff);
+        }
+
+        // Final indent size
+        return (true, gcd > 0 ? gcd : sorted[0]); // fallback to smallest leading indent
     }
 
     public static (bool spacesInsteadTabs, int spaces) DetectTabsSpaces(PooledList<string> lines)
@@ -119,7 +140,7 @@ internal class TabsSpacesHelper
 
         bool useTabs = leadingTabs > leadingSpaces;
         if (useTabs)
-            return (false, 4);
+            return (false, DefaultSpaces);
 
         return (true, CountSpaces(lines));
     }

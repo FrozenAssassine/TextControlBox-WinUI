@@ -1,9 +1,5 @@
-﻿using Collections.Pooled;
-using Microsoft.UI.Xaml.Shapes;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Text.RegularExpressions;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Extensions;
@@ -48,6 +44,8 @@ internal class TabSpaceManager
     public string TabCharacter { get => UseSpacesInsteadTabs ? Spaces : Tab; }
     private string Spaces = "    ";
     public readonly string Tab = "\t";
+    private bool documentUsesSpaces;
+    private int documentNumberOfSpaces;
 
     private UndoRedo undoRedo;
     private TextManager textManager;
@@ -68,54 +66,215 @@ internal class TabSpaceManager
         this.eventsManager = eventsManager;
     }
 
-    public void UpdateNumberOfSpaces()
+    public void SetDocumentVariables(int spaces, bool spacesInsteadTabs)
     {
-        ReplaceSpacesToSpaces();
+        documentNumberOfSpaces = spaces;
+        documentUsesSpaces = spacesInsteadTabs;
+    }
 
-        //longest line index must be the same, just recalculate its length
+    private void RecordUndoStep(Action action, int spacesAfter, int documentSpacesAfter)
+    {
+        var data = new TabSpaceUndoData(
+                this.UseSpacesInsteadTabs ? this.NumberOfSpaces : -1,
+                this.documentUsesSpaces ? this.documentNumberOfSpaces : -1,
+                spacesAfter,
+                documentSpacesAfter
+            );
+
+        undoRedo.RecordUndoAction(() =>
+        {
+            action.Invoke();
+        }, 0, textManager.LinesCount, textManager.LinesCount, data);
+    }
+
+
+    public void RewriteTabsSpaces(int targetSpacesTabs)
+    {
+        //when rewriting the tabs/spaces, we change the acutal text indentation,
+        //but also we update the NumberOfSpaces and UseSpacesInsteadTabs properties,
+        //which are only related to the with of the tab key. The event gets fired as well,
+        //but always with the NumberOfSpaces and UseSpacesInsteadTabs values.
+        //The document values stay the same and also stay private in this document.
+        if (textManager == null) return;
+
+        if (targetSpacesTabs == -1 && documentUsesSpaces)
+        {
+            RecordUndoStep(() =>
+            {
+                ConvertIndentationToTabs();
+            }, -1, -1);
+
+            documentUsesSpaces = UseSpacesInsteadTabs = false;
+            NumberOfSpaces = 4;
+        }
+        else if (targetSpacesTabs > 0 && documentUsesSpaces && targetSpacesTabs != documentNumberOfSpaces)
+        {
+            RecordUndoStep(() =>
+            {
+                ConvertIndentationSpacesToSpaces(targetSpacesTabs);
+            }, targetSpacesTabs, targetSpacesTabs);
+
+            NumberOfSpaces = documentNumberOfSpaces = targetSpacesTabs;
+            UseSpacesInsteadTabs = true;
+        }
+        else if (targetSpacesTabs > 0 && !documentUsesSpaces)
+        {
+            RecordUndoStep(() =>
+            {
+                ConvertIndentationToSpaces(targetSpacesTabs);
+            }, targetSpacesTabs, targetSpacesTabs);
+
+            documentUsesSpaces = UseSpacesInsteadTabs = true;
+            documentNumberOfSpaces = NumberOfSpaces = targetSpacesTabs;
+        }
+
         longestLineManager.MeasureActualLineLength();
     }
-    public void UpdateTabs()
-    {
-        if (UseSpacesInsteadTabs)
-            ReplaceTabsToSpaces();
-        else
-            ReplaceSpacesToTabs();
 
-        //longest line index must be the same, just recalculate its length
-        longestLineManager.MeasureActualLineLength();
+    private void ConvertIndentationToTabs()
+    {
+        for (int i = 0; i < textManager.LinesCount; i++)
+        {
+            string line = textManager.totalLines[i];
+            if (string.IsNullOrEmpty(line)) continue;
+
+            int indentEnd = GetIndentationEnd(line);
+            if (indentEnd == 0) continue;
+
+            // Process only the indentation part
+            string indent = line.Substring(0, indentEnd);
+            string rest = line.Substring(indentEnd);
+
+            // Convert indentation to tabs
+            string newIndent = ConvertIndentStringToTabs(indent, documentNumberOfSpaces);
+            textManager.totalLines[i] = newIndent + rest;
+        }
+    }
+
+    private void ConvertIndentationToSpaces(int spacesCount)
+    {
+        for (int i = 0; i < textManager.LinesCount; i++)
+        {
+            string line = textManager.totalLines[i];
+            if (string.IsNullOrEmpty(line)) continue;
+
+            int indentEnd = GetIndentationEnd(line);
+            if (indentEnd == 0) continue;
+
+            // Process only the indentation part
+            string indent = line.Substring(0, indentEnd);
+            string rest = line.Substring(indentEnd);
+
+            // Convert indentation to spaces
+            string newIndent = ConvertIndentStringToSpaces(indent, documentNumberOfSpaces, spacesCount);
+            textManager.totalLines[i] = newIndent + rest;
+        }
+    }
+
+    private void ConvertIndentationSpacesToSpaces(int newSpacesCount)
+    {
+        for (int i = 0; i < textManager.LinesCount; i++)
+        {
+            string line = textManager.totalLines[i];
+            if (string.IsNullOrEmpty(line)) continue;
+
+            int indentEnd = GetIndentationEnd(line);
+            if (indentEnd == 0) continue;
+
+            // Process only the indentation part
+            string indent = line.Substring(0, indentEnd);
+            string rest = line.Substring(indentEnd);
+
+            // Convert spaces to different width spaces
+            string newIndent = ConvertIndentStringToSpaces(indent, documentNumberOfSpaces, newSpacesCount);
+            textManager.totalLines[i] = newIndent + rest;
+        }
+    }
+
+    // Gets the index where indentation ends (first non-whitespace character)
+    private int GetIndentationEnd(string line)
+    {
+        for (int i = 0; i < line.Length; i++)
+        {
+            if (line[i] != ' ' && line[i] != '\t')
+                return i;
+        }
+        return line.Length; // Entire line is whitespace
+    }
+
+    // Converts mixed tabs/spaces indentation to tabs
+    private string ConvertIndentStringToTabs(string indent, int spacesPerTab)
+    {
+        if (string.IsNullOrEmpty(indent)) return indent;
+
+        // Calculate total indent level (in virtual columns)
+        int totalColumns = 0;
+        for (int i = 0; i < indent.Length; i++)
+        {
+            if (indent[i] == '\t')
+                totalColumns += spacesPerTab;
+            else
+                totalColumns++;
+        }
+
+        // Convert to tabs + remaining spaces
+        int tabs = totalColumns / spacesPerTab;
+        int remainingSpaces = totalColumns % spacesPerTab;
+
+        // Memory efficient: use stack allocation for small strings
+        if (tabs + remainingSpaces < 256)
+        {
+            Span<char> result = stackalloc char[tabs + remainingSpaces];
+            result.Slice(0, tabs).Fill('\t');
+            result.Slice(tabs, remainingSpaces).Fill(' ');
+            return new string(result);
+        }
+        else
+        {
+            return new string('\t', tabs) + new string(' ', remainingSpaces);
+        }
+    }
+
+    // Converts mixed tabs/spaces indentation to spaces
+    private string ConvertIndentStringToSpaces(string indent, int oldSpacesPerTab, int newSpacesPerTab)
+    {
+        if (string.IsNullOrEmpty(indent)) return indent;
+
+        // Calculate total indent level in old space units
+        int totalOldSpaces = 0;
+        for (int i = 0; i < indent.Length; i++)
+        {
+            if (indent[i] == '\t')
+                totalOldSpaces += oldSpacesPerTab;
+            else
+                totalOldSpaces++;
+        }
+
+        // Convert to new space units (preserving relative indentation)
+        int newSpaceCount = (totalOldSpaces * newSpacesPerTab) / oldSpacesPerTab;
+
+        // Memory efficient: use stack allocation for small strings
+        if (newSpaceCount < 256)
+        {
+            Span<char> result = stackalloc char[newSpaceCount];
+            result.Fill(' ');
+            return new string(result);
+        }
+        else
+        {
+            return new string(' ', newSpaceCount);
+        }
+    }
+
+    public string Replace(string input, string find, string replace)
+    {
+        return input.Replace(find, replace, StringComparison.OrdinalIgnoreCase);
     }
     public string UpdateTabs(string input)
     {
         if (UseSpacesInsteadTabs)
             return Replace(input, Tab, Spaces);
         return Replace(input, Spaces, Tab);
-    }
-
-    private void ReplaceSpacesToSpaces()
-    {
-        for (int i = 0; i < textManager.LinesCount; i++)
-        {
-            textManager.totalLines[i] = textManager.totalLines[i].Replace(OldSpaces, Spaces);
-        }
-    }
-    private void ReplaceSpacesToTabs()
-    {
-        for (int i = 0; i < textManager.LinesCount; i++)
-        {
-            textManager.totalLines[i] = Replace(textManager.totalLines[i], Spaces, Tab);
-        }
-    }
-    private void ReplaceTabsToSpaces()
-    {
-        for (int i = 0; i < textManager.LinesCount; i++)
-        {
-            textManager.totalLines[i] = Replace(textManager.totalLines[i], Tab.ToString(), Spaces);
-        }
-    }
-    public string Replace(string input, string find, string replace)
-    {
-        return input.Replace(find, replace, StringComparison.OrdinalIgnoreCase);
     }
 
     private void MoveTabBackSingleLine(string tabCharacter, CursorPosition cursorPosition, TextSelection textSelection)

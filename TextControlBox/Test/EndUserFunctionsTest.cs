@@ -61,6 +61,10 @@ internal class EndUserFunctionsTest : TestCase
             this.Test_33,
             this.Test_34,
             this.Test_35,
+            this.Test_RewriteTabsSpaces_SpacesToTabs,
+            this.Test_RewriteTabsSpaces_TabsToSpaces,
+            this.Test_RewriteTabsSpaces_ChangeSpacesWidth,
+            this.Test_RewriteTabsSpaces_MixedLines,
             ];
     }
 
@@ -493,7 +497,7 @@ internal class EndUserFunctionsTest : TestCase
         {
             textbox.NumberOfSpacesForTab = 0;
         }
-        catch (ArgumentOutOfRangeException _)
+        catch (ArgumentOutOfRangeException)
         {
             exceptionThrownCount++;
         }
@@ -501,7 +505,7 @@ internal class EndUserFunctionsTest : TestCase
         {
             textbox.NumberOfSpacesForTab = -1;
         }
-        catch (ArgumentOutOfRangeException _)
+        catch (ArgumentOutOfRangeException)
         {
             exceptionThrownCount++;
         }
@@ -595,9 +599,75 @@ internal class EndUserFunctionsTest : TestCase
         TestHelper.ResetContent(textbox, 0);
         Debug.WriteLine("Loadtext with tab, detect tabsspaces (2 spaces)");
 
-        coreTextbox.LoadText("Line1\n  Line2\n    Line3\n");
+        coreTextbox.LoadText("Line1\n    Line2\n        Line3\n");
 
         //4 is the default value
-        return coreTextbox.UseSpacesInsteadTabs == true && coreTextbox.NumberOfSpacesForTab == 2;
+        return coreTextbox.UseSpacesInsteadTabs == true && coreTextbox.NumberOfSpacesForTab == 4;
+    }
+    public bool Test_RewriteTabsSpaces_SpacesToTabs()
+    {
+        Debug.WriteLine("Test: Spaces -> Tabs");
+
+        coreTextbox.LoadText("    Line1\n    Line2\n    Line3"); // 4 spaces
+        string textBefore = coreTextbox.GetText();
+
+        // Rewrite using tabs
+        coreTextbox.RewriteTabsSpaces(4, false);
+
+        string expected = "\tLine1\n\tLine2\n\tLine3";
+        string textAfter = coreTextbox.GetText();
+
+        return expected.Equals(textAfter);
+    }
+
+    public bool Test_RewriteTabsSpaces_TabsToSpaces()
+    {
+        Debug.WriteLine("Test: Tabs -> Spaces");
+
+        coreTextbox.LoadText("\tLine1\n\tLine2\n\tLine3"); // tabs
+        string textBefore = coreTextbox.GetText();
+
+        // Rewrite using 2 spaces
+        coreTextbox.RewriteTabsSpaces(2, true);
+
+        string expected = "  Line1\n  Line2\n  Line3";
+        string textAfter = coreTextbox.GetText();
+
+        return expected.Equals(textAfter);
+    }
+
+    public bool Test_RewriteTabsSpaces_ChangeSpacesWidth()
+    {
+        Debug.WriteLine("Test: Change spaces width");
+
+        coreTextbox.LoadText("  Line1\n  Line2\n  Line3"); // 2 spaces
+        string textBefore = coreTextbox.GetText();
+
+        // Rewrite to 4 spaces
+        coreTextbox.RewriteTabsSpaces(4, true);
+
+        string expected = "    Line1\n    Line2\n    Line3";
+        string textAfter = coreTextbox.GetText();
+
+        return expected.Equals(textAfter);
+    }
+
+    public bool Test_RewriteTabsSpaces_MixedLines()
+    {
+        Debug.WriteLine("Test: Mixed spaces/tabs");
+
+        coreTextbox.LoadText("\tLine1\n    Line2\n\tLine3\n  Line4"); // mixed
+        string textBefore = coreTextbox.GetText();
+
+        // Rewrite all to 4 spaces
+        coreTextbox.RewriteTabsSpaces(4, true);
+
+        bool res = coreTextbox.UseSpacesInsteadTabs;
+        int count = coreTextbox.NumberOfSpacesForTab;
+
+        string expected = "    Line1\n        Line2\n    Line3\n    Line4";
+        string textAfter = coreTextbox.GetText();
+
+        return expected.Equals(textAfter);
     }
 }

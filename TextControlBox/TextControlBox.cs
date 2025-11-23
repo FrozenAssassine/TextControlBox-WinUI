@@ -593,6 +593,26 @@ public partial class TextControlBox : UserControl
         return coreTextBox.AddLines(start, text);
     }
 
+    /// <summary>
+    /// returns the current tabs and spaces detected from the loaded document.
+    /// with useSpacesInsteadTabs indicates whether spaces are used instead of tabs and with spaces the number of spaces used for a tab
+    /// </summary>
+    /// <returns></returns>
+    public (bool useSpacesInsteadTabs, int spaces) DetectTabsSpaces()
+    {
+        return coreTextBox.DetectTabsSpaces();
+    }
+
+    /// <summary>
+    /// Replaces tab characters with spaces or spaces with tabs in the text, according to the specified settings.
+    /// </summary>
+    /// <param name="spaces">The number of spaces to use when converting tabs to spaces. Must be greater than zero.</param>
+    /// <param name="useSpacesInsteadTabs">Indicates whether tabs should be replaced with spaces.</param>
+    public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs)
+    {
+        coreTextBox.RewriteTabsSpaces(spaces, useSpacesInsteadTabs);
+    }
+
 
     /// <summary>
     /// Gets or sets a value indicating whether syntax highlighting is enabled in the textbox.

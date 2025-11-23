@@ -503,7 +503,7 @@ namespace TextControlBoxNS.Test
             coreTextbox.SetSelection(0, 40); //whole text
 
             for (int i = 0; i < 3; i++)
-                coreTextbox.tabSpaceHelper.MoveTab();
+                coreTextbox.tabSpaceManager.MoveTab();
 
             coreTextbox.Undo();
             coreTextbox.Undo();

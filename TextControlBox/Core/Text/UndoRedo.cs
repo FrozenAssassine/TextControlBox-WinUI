@@ -16,8 +16,10 @@ namespace TextControlBoxNS.Core.Text
         private TextManager textManager;
         private SelectionManager selectionManager;
         private CursorManager cursorManager;
-        public bool EnableCombineNextUndoItems = false;
+        private EventsManager eventsManager;
+        private TabSpaceManager tabSpaceManager;
 
+        public bool EnableCombineNextUndoItems = false;
         private bool _isGroupingActions = false;
 
         private bool _UndoRedoEnabled = true;
@@ -35,11 +37,13 @@ namespace TextControlBoxNS.Core.Text
             }
         }
 
-        public void Init(TextManager textManager, SelectionManager selectionManager, CursorManager cursorManager)
+        public void Init(TextManager textManager, SelectionManager selectionManager, CursorManager cursorManager, EventsManager eventsManager, TabSpaceManager tabSpaceManager)
         {
             this.textManager = textManager;
             this.selectionManager = selectionManager;
             this.cursorManager = cursorManager;
+            this.eventsManager = eventsManager;
+            this.tabSpaceManager = tabSpaceManager;
         }
 
         public void BeginActionGroup()
@@ -93,7 +97,7 @@ namespace TextControlBoxNS.Core.Text
             UndoStack.Push(item);
         }
 
-        private void AddUndoItem(int startLine, string undoText, string redoText, int undoCount, int redoCount, CursorPosition cursorBefore, CursorPosition cursorAfter, TextSelection selectionBefore = null, TextSelection selectionAfter = null)
+        private void AddUndoItem(int startLine, string undoText, string redoText, int undoCount, int redoCount, CursorPosition cursorBefore, CursorPosition cursorAfter, TextSelection selectionBefore = null, TextSelection selectionAfter = null, object additionalData = null)
         {
             UndoStack.Push(new UndoRedoItem
             {
@@ -106,7 +110,8 @@ namespace TextControlBoxNS.Core.Text
                 StartLine = startLine,
                 UndoCount = undoCount,
                 RedoCount = redoCount,
-                HandleNextItemToo = _isGroupingActions || EnableCombineNextUndoItems
+                HandleNextItemToo = _isGroupingActions || EnableCombineNextUndoItems,
+                AdditionalData = additionalData,
             });
         }
 
@@ -140,7 +145,7 @@ namespace TextControlBoxNS.Core.Text
             AddUndoItem(startline, lineBefore, lineAfter, 1, 1, cursorBefore, cursorAfter);
         }
 
-        public void RecordUndoAction(Action action, int startline, int undocount, int redoCount)
+        public void RecordUndoAction(Action action, int startline, int undocount, int redoCount, object tag = null)
         {
             if (!UndoRedoEnabled)
             {
@@ -173,7 +178,10 @@ namespace TextControlBoxNS.Core.Text
                 undocount,
                 redoCount,
                 cursorBefore,
-                cursorAfter
+                cursorAfter,
+                null,
+                null,
+                tag
                 );
         }
 
@@ -313,6 +321,17 @@ namespace TextControlBoxNS.Core.Text
                 }
             }
 
+            if(item.AdditionalData != null)
+            {
+                if (item.AdditionalData is TabSpaceUndoData tsud)
+                {
+                    tabSpaceManager.UseSpacesInsteadTabs = tsud.SpacesTabsBefore > 0;
+                    tabSpaceManager.NumberOfSpaces = tabSpaceManager.UseSpacesInsteadTabs ? tsud.SpacesTabsBefore : 4;
+
+                    tabSpaceManager.SetDocumentVariables(tsud.DocumentSpacesTabsBefore > 0 ? tsud.DocumentSpacesTabsBefore : 4, tsud.DocumentSpacesTabsBefore > 0);
+                }
+            }
+
             return (item.CursorBefore, item.SelectionBefore);
         }
         public (CursorPosition cursor, TextSelection selection) Redo(StringManager stringManager)
@@ -366,6 +385,17 @@ namespace TextControlBoxNS.Core.Text
             if (item.HandleNextItemToo)
             {
                 Redo(stringManager);
+            }
+           
+            if (item.AdditionalData != null)
+            {
+                if (item.AdditionalData is TabSpaceUndoData tsud)
+                {
+                    tabSpaceManager.UseSpacesInsteadTabs = tsud.SpacesTabsAfter > 0;
+                    tabSpaceManager.NumberOfSpaces = tabSpaceManager.UseSpacesInsteadTabs ? tsud.SpacesTabsAfter : 4;
+
+                    tabSpaceManager.SetDocumentVariables(tsud.DocumentSpacesTabsAfter > 0 ? tsud.DocumentSpacesTabsAfter : 4, tsud.DocumentSpacesTabsAfter > 0);
+                }
             }
 
             return (item.CursorAfter, item.SelectionAfter);
