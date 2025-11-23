@@ -1082,6 +1082,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {
             { SyntaxHighlightID.None, null },
+            { SyntaxHighlightID.x86Assembly, new x86Assembly() },
             { SyntaxHighlightID.Batch, new Batch() },
             { SyntaxHighlightID.Cpp, new Cpp() },
             { SyntaxHighlightID.CSharp, new CSharp() },
