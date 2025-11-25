@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "TextControlBox.Tests (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "TextControlBox.Tests (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

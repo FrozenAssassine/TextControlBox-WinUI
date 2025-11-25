@@ -69,7 +69,7 @@ public partial class TextControlBox : UserControl
         Loaded?.Invoke(this);
 
         //start testings:
-        //new TestHelper(coreTextBox, this).Evaluate();
+        new TestHelper(coreTextBox, this).Evaluate();
     }
 
     private void EventsManager_LostFocus()
