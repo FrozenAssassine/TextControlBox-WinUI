@@ -1,34 +1,14 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using TextControlBoxNS;
 using TextControlBoxNS.Core;
-using TextControlBoxNS.Test;
 
 namespace TextControlBox.Tests;
 
 [TestClass]
 public class TextTests
 {
-    private CoreTextControlBox CreateCore()
-    {
-        var core = new CoreTextControlBox();
-        core.InitialiseOnStart();
-
-        core.LoadLines(Enumerable.Range(0, 100).Select(x => "Line " + x + " is cool right?"));
-        
-        return core;
-    }
-
-    private (CoreTextControlBox coreTextBox, string text) CreateCoreWithText()
-    {
-        var core = CreateCore();
-        return (core, core.GetText());
-    }
-
     private (bool undo, bool redo) CheckUndoRedo(CoreTextControlBox coreTextbox, int count = 1)
     {
         string textBefore = coreTextbox.GetText();
@@ -45,17 +25,15 @@ public class TextTests
 
         bool redoRes = coreTextbox.GetText().Equals(textBefore);
 
-        Debug.Write($" (Undo: {undoRes} Redo:{redoRes})");
         //Debug.Assert(undoRes && redoRes);
 
         return (undoRes, redoRes);
     }
 
     [UITestMethod]
-    public void Test_1()
+    public void ClearSelection()
     {
-        var coreTextbox = CreateCore();
-        Debug.Write("Clear selection");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         Random r = new Random();
         coreTextbox.SetSelection(r.Next(0, 10), r.Next(10, 50));
@@ -68,10 +46,9 @@ public class TextTests
     }
 
     [UITestMethod]
-    public void Test_2()
+    public void DeleteLine5()
     {
-        var coreTextbox = CreateCore();
-        Debug.Write("Delete Line 5");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         int linesBefore = coreTextbox.NumberOfLines;
         coreTextbox.textActionManager.DeleteLine(4);
@@ -82,10 +59,9 @@ public class TextTests
     }
 
     [UITestMethod]
-    public void Test_3()
+    public void AddLine5()
     {
-        var coreTextbox = CreateCore();
-        Debug.Write("Add Line 5");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         int linesBefore = coreTextbox.NumberOfLines;
         var sel = coreTextbox.textActionManager.AddLine(3, "Hello World this is the text of line 3");
@@ -97,10 +73,9 @@ public class TextTests
     }
 
     [UITestMethod]
-    public void Test_4()
+    public void AddChar_SingleLineText_NoSelection()
     {
-        var coreTextbox = CreateCore();
-        Debug.Write("Add Character (single line text, no selection)");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         string textBefore = coreTextbox.GetLineText(3);
         string textToAdd = "Add single line character";
@@ -121,10 +96,9 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_5()
+    public void AddChar_MultilineText_NoSelection()
     {
-        var coreTextbox = CreateCore();
-        Debug.Write("Add Character (multi line text, no selection)");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         string textToAdd = "Add Line 1\nAdd Line 2\nAdd Line 3";
         coreTextbox.SetCursorPosition(2, 10);
@@ -143,10 +117,9 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_6()
+    public void AddChar_NoTextNoSelection()
     {
-        var coreTextbox = CreateCore();
-        Debug.Write("Add Character (no text, no selection)");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         coreTextbox.SelectAll();
         coreTextbox.textActionManager.AddCharacter("");
@@ -162,10 +135,9 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_7()
+    public void AddCharSingleLine_SingleLineSelected()
     {
-        var coreTextbox = CreateCore();
-        Debug.Write("Add Character (add single line, single line selected)");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         coreTextbox.SetSelection(5, 10);
         coreTextbox.textActionManager.AddCharacter("Hello World");
@@ -181,10 +153,9 @@ public class TextTests
     }
 
     [UITestMethod]
-    public void Test_8()
+    public void AddCharMultiline_SingleLineSelected()
     {
-        var coreTextbox = CreateCore();
-        Debug.Write("Add Character (add multiline line, single line selected)");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         coreTextbox.SetSelection(5, 10);
         coreTextbox.textActionManager.AddCharacter(coreTextbox.stringManager.CleanUpString("Line1\nLine2\nLine3"));
@@ -199,10 +170,9 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_10()
+    public void AddCharMultiline_MultilineSelection_EverythinkSelected()
     {
-        var coreTextbox = CreateCore();
-        Debug.Write("Add Character (add multi line, multi line selection, everything selected)");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         coreTextbox.SelectAll();
         string text = coreTextbox.stringManager.CleanUpString("Line1\nLine2\nLine3");
@@ -219,10 +189,9 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_11()
+    public void DeleteSelectionMultiLineSelectionWholeLines()
     {
-        var (coreTextbox, originalText) = CreateCoreWithText();
-        Debug.Write("Delete Selection (multi line selection, whole lines)");
+        var (coreTextbox, originalText) = TestHelper.MakeCoreTextboxWithText();
 
         coreTextbox.SelectLines(1, 3);
         coreTextbox.textActionManager.DeleteSelection();
@@ -243,7 +212,7 @@ public class TextTests
     [UITestMethod]
     public void Test_12()
     {
-        var (coreTextbox, originalText) = CreateCoreWithText();
+        var (coreTextbox, originalText) = TestHelper.MakeCoreTextboxWithText();
 
         coreTextbox.SetSelection(4, 10);
         coreTextbox.textActionManager.DeleteSelection();
@@ -262,10 +231,9 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_13()
+    public void DeleteSelectionSingleLineSelectionWholeLine()
     {
-        var (coreTextbox, originalText) = CreateCoreWithText();
-        Debug.Write("Delete Selection (single line selection, whole line)");
+        var (coreTextbox, originalText) = TestHelper.MakeCoreTextboxWithText();
 
         coreTextbox.SelectLine(0);
         coreTextbox.textActionManager.DeleteSelection();
@@ -280,10 +248,9 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_14()
+    public void DeleteSelectionLinesSelectedCompletelyNotWholeText()
     {
-        var coreTextbox = CreateCore();
-        Debug.Write("Delete Selection (lines selected completely (not whole text selected!))");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
         int linesBefore = coreTextbox.textManager.LinesCount;
 
         coreTextbox.SetSelection(0, 0, 2, coreTextbox.GetLineText(2).Length);
@@ -298,10 +265,9 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_15()
+    public void DeleteSelectionStartLineCompletelySelected()
     {
-        var (coreTextbox, originalText) = CreateCoreWithText();
-        Debug.Write("Delete Selection (only start line fully selected)");
+        var (coreTextbox, originalText) = TestHelper.MakeCoreTextboxWithText();
         int linesBefore = coreTextbox.textManager.LinesCount;
 
         coreTextbox.SetSelection(0, 0, 1, 5);
@@ -316,10 +282,9 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_16()
+    public void DeleteSelectionEndLineCompletelySelected()
     {
-        var (coreTextbox, originalText) = CreateCoreWithText();
-        Debug.Write("Delete Selection (only end line fully selected)");
+        var (coreTextbox, originalText) = TestHelper.MakeCoreTextboxWithText();
         int linesBefore = coreTextbox.textManager.LinesCount;
 
         coreTextbox.SetSelection(1, 3, 2, coreTextbox.GetLineText(2).Length);
@@ -335,11 +300,9 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_17()
+    public void DeleteSelectionStartEndNotCompletelySelected()
     {
-        var (coreTextbox, originalText) = CreateCoreWithText();
-        Debug.Write("Delete Selection (neither start nor end line fully selected)");
-
+        var (coreTextbox, originalText) = TestHelper.MakeCoreTextboxWithText();
         int linesBefore = coreTextbox.textManager.LinesCount;
 
         coreTextbox.SetSelection(1, 2, 2, 4);
@@ -354,10 +317,9 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_18()
+    public void DuplicateLine()
     {
-        var coreTextbox = CreateCore();
-        Debug.Write("Duplicate Line");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
         int linesBefore = coreTextbox.textManager.LinesCount;
 
         coreTextbox.SetCursorPosition(4, 10);
@@ -371,10 +333,9 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_21()
+    public void LoadLinesEmptyArray()
     {
-        var coreTextbox = CreateCore();
-        Debug.WriteLine("Load Lines empty array");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         coreTextbox.LoadLines(Array.Empty<string>());
         coreTextbox.LoadLines(null);
@@ -382,10 +343,9 @@ public class TextTests
         Debug.Assert(coreTextbox.textManager.totalLines.Count == 1);
     }
     [UITestMethod]
-    public void Test_22()
+    public void LoadTextNullEmptyString()
     {
-        var coreTextbox = CreateCore();
-        Debug.WriteLine("Load Text null + empty string");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         coreTextbox.LoadText(null);
         coreTextbox.LoadText("");
@@ -393,10 +353,9 @@ public class TextTests
         Debug.Assert(coreTextbox.textManager.totalLines.Count == 1);
     }
     [UITestMethod]
-    public void Test_23()
+    public void SetTextNullEmptyString()
     {
-        var coreTextbox = CreateCore();
-        Debug.WriteLine("Load Text null + empty string");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         coreTextbox.SetText(null);
         coreTextbox.SetText("");
@@ -404,10 +363,9 @@ public class TextTests
         Debug.Assert(coreTextbox.textManager.totalLines.Count == 1);
     }
     [UITestMethod]
-    public void Test_24()
+    public void MoveSelectionWithTab()
     {
-        var (coreTextbox, originalText) = CreateCoreWithText();
-        Debug.WriteLine("Move selection with Tab");
+        var (coreTextbox, originalText) = TestHelper.MakeCoreTextboxWithText();
 
         coreTextbox.SetCursorPosition(0, 0);
         coreTextbox.SetSelection(0, 40); //whole text
@@ -422,11 +380,9 @@ public class TextTests
         Debug.Assert(coreTextbox.Text == originalText);
     }
     [UITestMethod]
-    public void Test_30()
+    public void SurroundSelection()
     {
-        var coreTextbox = CreateCore();
-        Debug.WriteLine("Surround Selection");
-
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         coreTextbox.SetCursorPosition(0, 0);
         coreTextbox.SetSelection(0, 87); //whole text
@@ -434,10 +390,9 @@ public class TextTests
         coreTextbox.SurroundSelectionWith("<div>", "</div>");
     }
     [UITestMethod]
-    public void Test_31()
+    public void AddLinesAtIndex3()
     {
-        Debug.WriteLine("Add Lines at index 3");
-        var coreTextbox = CreateCore();
+        var coreTextbox = TestHelper.MakeCoreTextbox();
         coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
         string textBefore = coreTextbox.GetText();
 
@@ -449,10 +404,9 @@ public class TextTests
         Debug.Assert(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
     }
     [UITestMethod]
-    public void Test_32()
+    public void AddLinesAtBeginning()
     {
-        Debug.WriteLine("Add Lines at beginning");
-        var coreTextbox = CreateCore();
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
         string textBefore = coreTextbox.GetText();
@@ -465,10 +419,9 @@ public class TextTests
         Debug.Assert(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
     }
     [UITestMethod]
-    public void Test_33()
+    public void AddLinesAtEnd()
     {
-        Debug.WriteLine("Add Lines at end");
-        var coreTextbox = CreateCore();
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
         string textBefore = coreTextbox.GetText();
@@ -482,10 +435,9 @@ public class TextTests
     }
 
     [UITestMethod]
-    public void Test_34()
+    public void UndoGrouping()
     {
-        var coreTextbox = CreateCore();
-        Debug.WriteLine("Undo Grouping");
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
         string textBefore = coreTextbox.GetText();
@@ -505,11 +457,9 @@ public class TextTests
         Debug.Assert(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
     }
     [UITestMethod]
-    public void Test_35()
+    public void UndoGroupingExtended()
     {
-        Debug.WriteLine("Undo Grouping Extended");
-
-        var coreTextbox = CreateCore();
+        var coreTextbox = TestHelper.MakeCoreTextbox();
         coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
         string textBefore = coreTextbox.GetText();
 

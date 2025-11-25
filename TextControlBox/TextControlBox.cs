@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using TextControlBoxNS.Core;
 using TextControlBoxNS.Models;
-using TextControlBoxNS.Test;
 using Windows.Foundation;
 
 namespace TextControlBoxNS;
@@ -67,9 +66,6 @@ public partial class TextControlBox : UserControl
     private void EventsManager_Loaded()
     {
         Loaded?.Invoke(this);
-
-        //start testings:
-        new TestHelper(coreTextBox, this).Evaluate();
     }
 
     private void EventsManager_LostFocus()

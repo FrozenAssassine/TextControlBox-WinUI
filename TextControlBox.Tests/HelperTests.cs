@@ -13,13 +13,6 @@ namespace TextControlBox.Tests;
 [TestClass]
 public class HelperTests
 {
-    private CoreTextControlBox CreateCore()
-    {
-        var core = new CoreTextControlBox();
-        core.InitialiseOnStart();
-        return core;
-    }
-
     [UITestMethod]
     public void LineEndings_CleanLineEndings_Works()
     {
@@ -38,31 +31,31 @@ public class HelperTests
     [UITestMethod]
     public void StringManager_CleanUpString_LineEndings()
     {
-        var core = CreateCore();
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         string original_LF = "Line1\nLine2";
         string original_CR = "Line1\rLine2";
         string original_CRLF = "Line1\r\nLine2";
 
-        core.LineEnding = LineEnding.CRLF;
-        Assert.AreEqual(original_CRLF, core.stringManager.CleanUpString(original_LF));
-        Assert.AreEqual(original_CRLF, core.stringManager.CleanUpString(original_CR));
+        coreTextbox.LineEnding = LineEnding.CRLF;
+        Assert.AreEqual(original_CRLF, coreTextbox.stringManager.CleanUpString(original_LF));
+        Assert.AreEqual(original_CRLF, coreTextbox.stringManager.CleanUpString(original_CR));
 
-        core.LineEnding = LineEnding.LF;
-        Assert.AreEqual(original_LF, core.stringManager.CleanUpString(original_CRLF));
-        Assert.AreEqual(original_LF, core.stringManager.CleanUpString(original_CR));
+        coreTextbox.LineEnding = LineEnding.LF;
+        Assert.AreEqual(original_LF, coreTextbox.stringManager.CleanUpString(original_CRLF));
+        Assert.AreEqual(original_LF, coreTextbox.stringManager.CleanUpString(original_CR));
 
-        core.LineEnding = LineEnding.CR;
-        Assert.AreEqual(original_CR, core.stringManager.CleanUpString(original_CRLF));
-        Assert.AreEqual(original_CR, core.stringManager.CleanUpString(original_LF));
+        coreTextbox.LineEnding = LineEnding.CR;
+        Assert.AreEqual(original_CR, coreTextbox.stringManager.CleanUpString(original_CRLF));
+        Assert.AreEqual(original_CR, coreTextbox.stringManager.CleanUpString(original_LF));
 
-        core.LineEnding = LineEnding.CRLF;
+        coreTextbox.LineEnding = LineEnding.CRLF;
     }
 
     [UITestMethod]
     public void LongestLineManager_GetLongestLineLength_Works()
     {
-        var core = CreateCore();
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         (string text, int longest) MakeText(LineEnding lineEnding)
         {
@@ -80,19 +73,19 @@ public class HelperTests
         }
 
         var c1 = MakeText(LineEnding.LF);
-        Assert.AreEqual(c1.text.Split('\n')[c1.longest].Length, core.longestLineManager.GetLongestLineLength(c1.text));
+        Assert.AreEqual(c1.text.Split('\n')[c1.longest].Length, coreTextbox.longestLineManager.GetLongestLineLength(c1.text));
 
         var c2 = MakeText(LineEnding.CR);
-        Assert.AreEqual(c2.text.Split('\r')[c2.longest].Length, core.longestLineManager.GetLongestLineLength(c2.text));
+        Assert.AreEqual(c2.text.Split('\r')[c2.longest].Length, coreTextbox.longestLineManager.GetLongestLineLength(c2.text));
 
         var c3 = MakeText(LineEnding.CRLF);
-        Assert.AreEqual(c3.text.Split(new string[] { "\r\n" }, StringSplitOptions.None)[c3.longest].Length, core.longestLineManager.GetLongestLineLength(c3.text));
+        Assert.AreEqual(c3.text.Split(new string[] { "\r\n" }, StringSplitOptions.None)[c3.longest].Length, coreTextbox.longestLineManager.GetLongestLineLength(c3.text));
     }
 
     [UITestMethod]
     public void LongestLineManager_GetLongestLineIndex_Works()
     {
-        var core = CreateCore();
+        var coreTextbox = TestHelper.MakeCoreTextbox();
 
         PooledList<string> list = new();
         list.AddRange(Enumerable.Range(0, 100).Select(i => $"Line {i} is an awesome line!"));
@@ -100,7 +93,7 @@ public class HelperTests
         int longest = new Random().Next(0, 99);
         list.Insert(longest, "This is the longest line of the text. At least it should be!");
 
-        int longestIndex = core.longestLineManager.GetLongestLineIndex(list);
+        int longestIndex = coreTextbox.longestLineManager.GetLongestLineIndex(list);
         Assert.AreEqual(longest, longestIndex);
     }
 }

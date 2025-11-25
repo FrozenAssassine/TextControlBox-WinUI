@@ -24,11 +24,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_1()
+    public void AddLineWithOutOfRangeLine()
     {
         var textbox = MakeTextbox(20);
-
-        Debug.WriteLine("End User Function AddLine with out of range line");
 
         //addline should return false, line 100 does not exist
         bool res = !textbox.AddLine(100, "Test Text");
@@ -37,10 +35,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_2()
+    public void GetLinesTextWithOutOfRangeLine()
     {
         var textbox = MakeTextbox(10);
-        Debug.WriteLine("Function GetLinesText with out of range line");
 
         try
         {
@@ -54,11 +51,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_3()
+    public void GetLineTextWithOutOfRangeLine()
     {
         var textbox = MakeTextbox();
-        Debug.WriteLine("Function GetLineText with out of range line");
-
         try
         {
             textbox.GetLineText(100);
@@ -71,7 +66,7 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_4()
+    public void GetTextNoTextInTB()
     {
         var textbox = MakeTextbox();
         Debug.WriteLine("Function GetText without text");
@@ -84,11 +79,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_5()
+    public void SetCursorpositionTooHigh()
     {
         var textbox = MakeTextbox();
-
-        Debug.WriteLine("Function SetCursorPosition too high");
 
         textbox.SetCursorPosition(500, 1000, true);
 
@@ -96,11 +89,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_6()
+    public void SetCursorpositionNegative()
     {
         var textbox = MakeTextbox(10);
-
-        Debug.WriteLine("Function SetCursorPosition negative");
 
         textbox.SetCursorPosition(-100, -500, true);
 
@@ -108,10 +99,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_7()
+    public void SetSelectionTooHigh()
     {
         var textbox = MakeTextbox(10);
-        Debug.WriteLine("Function SetSelection too high");
 
         try
         {
@@ -126,10 +116,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_8()
+    public void GetSelectedTextEqualsTextboxText()
     {
         var textbox = MakeTextbox(10);
-        Debug.WriteLine("Function get Selected Text equals text in textbox");
 
         const string text = "Line1\nLine2\nLine3\n";
         textbox.SetText(text);
@@ -140,10 +129,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_9()
+    public void SetSelectedText_NoTextInTB()
     {
         var textbox = MakeTextbox(0);
-        Debug.WriteLine("Function set Selected Text no text in textbox equals text in textbox");
         textbox.SetText("");
 
         var text = "Line1\nLine2\nLine3\n";
@@ -155,11 +143,10 @@ public class EndUserFunctionTests
     }
     [UITestMethod]
 
-    public void Test_10()
+    public void SetText_EmptyString()
     {
         var textbox = MakeTextbox(10);
 
-        Debug.WriteLine("Function SetText empty");
         textbox.SetText("");
 
         Debug.Assert(textbox.GetText().Length == 0 &&
@@ -167,11 +154,10 @@ public class EndUserFunctionTests
             textbox.CursorPosition.CharacterPosition == 0);
     }
 
-    public void Test_11()
+    public void LoadLines_EmptyArray()
     {
         var textbox = MakeTextbox(10);
-        Debug.WriteLine("Function LoadLines empty");
-        textbox.LoadLines([""]);
+        textbox.LoadLines([]);
 
         Debug.Assert(textbox.GetText().Length == 0 &&
             textbox.CursorPosition.LineNumber == 0 &&
@@ -179,10 +165,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_12()
+    public void LoadText_EmptyString()
     {
         var textbox = MakeTextbox(0);
-        Debug.WriteLine("Function LoadText empty");
         textbox.LoadText("");
 
         bool res = textbox.GetText().Length == 0 &&
@@ -192,11 +177,10 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_13()
+    public void SelectAllSetSelectedText()
     {
         var textbox = MakeTextbox(0);
 
-        Debug.WriteLine("Function select all, set SelectedText equals text in textbox");
         var text = "Line1\nLine2\nLine3\n";
 
         textbox.SetText("Line100\nLine200\nLine300\n");
@@ -209,11 +193,10 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_14()
+    public void SetText()
     {
         var textbox = MakeTextbox(10);
 
-        Debug.WriteLine("Function SetText");
         var text = "Line1\nLine2\nLine3\n";
 
         textbox.SetText(text);
@@ -222,11 +205,10 @@ public class EndUserFunctionTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_15()
+    public void SetText3Lines()
     {
         var textbox = MakeTextbox(10);
 
-        Debug.WriteLine("Function SetText 3 lines");
         var text = "Line1\nLine2\nLine3";
 
         textbox.SetText(text);
@@ -236,11 +218,10 @@ public class EndUserFunctionTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_16()
+    public void LoadText_3Lines()
     {
         var textbox = MakeTextbox(10);
 
-        Debug.WriteLine("Function LoadText 3 lines");
         var text = "Line1\nLine2\nLine3";
 
         textbox.LoadText(text);
@@ -250,11 +231,10 @@ public class EndUserFunctionTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_17()
+    public void LoadLines3Lines()
     {
         var textbox = MakeTextbox(10);
 
-        Debug.WriteLine("Function LoadLines 3 lines");
         var text = "Line1\nLine2\nLine3";
 
         textbox.LoadLines(["Line1", "Line2", "Line3"]);
@@ -264,11 +244,9 @@ public class EndUserFunctionTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_18()
+    public void SelectSyntaxHighlightingById()
     {
         var textbox = MakeTextbox(10);
-
-        Debug.WriteLine("Function SelectSyntaxHighlightingById");
 
         textbox.LoadLines(["Line1", "Line2", "Line3"]);
 
@@ -286,11 +264,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_19()
+    public void GetSyntaxHighlightingFromID()
     {
         var textbox = MakeTextbox(10);
-
-        Debug.WriteLine("Static Function GetSyntaxHighlightingFromID");
 
         try
         {
@@ -313,7 +289,6 @@ public class EndUserFunctionTests
     public void Test_SearchReplaceAll()
     {
         var textbox = MakeTextbox(100);
-        Debug.WriteLine("");
 
         textbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
 
@@ -323,10 +298,9 @@ public class EndUserFunctionTests
         Debug.Assert(textbox.GetText().Equals(textBefore.Replace("Line", "Test")));
     }
     [UITestMethod]
-    public void Test_21()
+    public void SearchReplaceAll_MatchCase()
     {
         var textbox = MakeTextbox(100);
-        Debug.WriteLine("Search Replace All (Match Case)");
 
         textbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
 
@@ -343,11 +317,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_22()
+    public void SearchReplaceAllWholeWord()
     {
         var textbox = MakeTextbox(100);
-
-        Debug.WriteLine("Search Replace All (Whole word)");
 
         //nothign should change
         textbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
@@ -367,11 +339,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_23()
+    public void SearchReplaceNext()
     {
         var textbox = MakeTextbox(100);
-
-        Debug.WriteLine("Search Replace next");
 
         textbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
         textbox.SetCursorPosition(0, 0);
@@ -387,11 +357,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_24()
+    public void SearchFindNext()
     {
         var textbox = MakeTextbox(100);
-
-        Debug.WriteLine("Search Find next");
 
         textbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
         textbox.SetCursorPosition(0, 0);
@@ -409,11 +377,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_25()
+    public void SearchFindPrevious()
     {
         var textbox = MakeTextbox(100);
-
-        Debug.WriteLine("Search Find previous");
 
         textbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
         textbox.SetCursorPosition(5, 5);
@@ -431,11 +397,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_26()
+    public void SearchReplaceAllWithNothing()
     {
         var textbox = MakeTextbox(100);
-
-        Debug.WriteLine("Search Replace All with nothing");
 
         textbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
 
@@ -447,11 +411,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_27()
+    public void TextLoadedEvent()
     {
         var textbox = MakeTextbox(100);
-
-        Debug.WriteLine("TextLoadedEvent");
 
         const string textToLoad = "Hello World";
         bool eventTriggered = false;
@@ -470,11 +432,10 @@ public class EndUserFunctionTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void Test_28()
+    public void TabsSpacesChangedEvent()
     {
         var textbox = MakeTextbox(100);
 
-        Debug.WriteLine("Test TabsSpacesChangedEvent");
         bool[] success = new bool[4];
         int testCase = 0;
         void Textbox_TabsSpacesChanged(TextControlBoxNS.TextControlBox sender, bool spacesInsteadTabs, int spaces)
@@ -527,11 +488,10 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_29()
+    public void LineEndingChangedEvent()
     {
         var textbox = MakeTextbox(100);
 
-        Debug.WriteLine("Test LineEndingChangedEvent");
         bool[] success = new bool[3];
         int testCase = 0;
         void Textbox_LineEndingChanged(TextControlBoxNS.TextControlBox sender, LineEnding lineEnding)
@@ -560,10 +520,9 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void Test_30()
+    public void LoadLinesWithTab_DetectTabsSpaces_Tabs()
     {
         var textbox = MakeTextbox(0);
-        Debug.WriteLine("Loadlines with tab, detect tabsspaces (tabs)");
 
         textbox.LoadLines(["Line1", "\tLine2", "\t\tLine3"]);
 
@@ -571,7 +530,7 @@ public class EndUserFunctionTests
         Debug.Assert(textbox.UseSpacesInsteadTabs == false && textbox.NumberOfSpacesForTab == 4);
     }
     [UITestMethod]
-    public void Test_31()
+    public void LoadLinesWithTab_DetectTabsSpaces_4Spaces()
     {
         var textbox = MakeTextbox(0);
         Debug.WriteLine("Loadlines with tab, detect tabsspaces (4 spaces)");
@@ -582,7 +541,7 @@ public class EndUserFunctionTests
         Debug.Assert(textbox.UseSpacesInsteadTabs == true && textbox.NumberOfSpacesForTab == 4);
     }
     [UITestMethod]
-    public void Test_32()
+    public void LoadLinesWithTab_DetectTabsSpaces_8Spaces()
     {
         var textbox = MakeTextbox(0);
         Debug.WriteLine("Loadlines with tab, detect tabsspaces (8 spaces)");
@@ -593,7 +552,7 @@ public class EndUserFunctionTests
         Debug.Assert(textbox.UseSpacesInsteadTabs == true && textbox.NumberOfSpacesForTab == 8);
     }
     [UITestMethod]
-    public void Test_33()
+    public void LoadTextWithTab_DetectTabsSpaces_4Spaces()
     {
         var textbox = MakeTextbox(0);
         Debug.WriteLine("Loadtext with tab, detect tabsspaces (4 spaces)");
@@ -604,7 +563,7 @@ public class EndUserFunctionTests
         Debug.Assert(textbox.UseSpacesInsteadTabs == true && textbox.NumberOfSpacesForTab == 8);
     }
     [UITestMethod]
-    public void Test_34()
+    public void LoadTextWithTab_DetectTabsSpaces_Tabs()
     {
         var textbox = MakeTextbox(0);
         Debug.WriteLine("Loadtext with tab, detect tabsspaces (tabs)");
@@ -615,7 +574,7 @@ public class EndUserFunctionTests
         Debug.Assert(textbox.UseSpacesInsteadTabs == false && textbox.NumberOfSpacesForTab == 4);
     }
     [UITestMethod]
-    public void Test_35()
+    public void LoadTextWithTab_DetectTabsSpaces_2Spaces()
     {
         var textbox = MakeTextbox(0);
         Debug.WriteLine("Loadtext with tab, detect tabsspaces (2 spaces)");
