@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Linq;
 using TextControlBoxNS;
 using TextControlBoxNS.Core.Text;
-using TextControlBoxNS.Test;
 
 namespace TextControlBox.Tests;
 
@@ -58,7 +57,6 @@ public class EndUserFunctionTests
     public void Test_3()
     {
         var textbox = MakeTextbox();
-        TestHelper.ResetContent(textbox, 30);
         Debug.WriteLine("Function GetLineText with out of range line");
 
         try
@@ -76,7 +74,6 @@ public class EndUserFunctionTests
     public void Test_4()
     {
         var textbox = MakeTextbox();
-        TestHelper.ResetContent(textbox, 0);
         Debug.WriteLine("Function GetText without text");
 
         textbox.SetText("");
@@ -91,7 +88,6 @@ public class EndUserFunctionTests
     {
         var textbox = MakeTextbox();
 
-        TestHelper.ResetContent(textbox, 10);
         Debug.WriteLine("Function SetCursorPosition too high");
 
         textbox.SetCursorPosition(500, 1000, true);
