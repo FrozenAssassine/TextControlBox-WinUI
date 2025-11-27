@@ -80,6 +80,10 @@ internal class SelectionManager
         IsSelecting = true;
         selectionStart.SetChangeValues(startPosition);
 
+        // Clear any existing end position so setting only the start doesn't create
+        // an unintended selection that spans to a previously set end.
+        selectionEnd.IsNull = true;
+
         IsSelecting = false;
         HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
     }
@@ -96,6 +100,9 @@ internal class SelectionManager
         selectionStart.CharacterPosition = characterPos;
         selectionStart.LineNumber = startPos;
         selectionStart.IsNull = false;
+
+        // Ensure the end is cleared when only the start is explicitly set
+        selectionEnd.IsNull = true;
 
         HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
     }
