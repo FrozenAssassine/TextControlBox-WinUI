@@ -21,9 +21,14 @@
 		<PackageTags>TextControlBox; Textbox; WinUI; C#; SyntaxHighlighting; LineNumbers</PackageTags>
 		<PackageReleaseNotes>
 			Added clickable links inside the text
-			Added tabs/spaces changed event
+			Added x86Assembly language support
+			Added auto detection for tabs and spaces on LoadLines and LoadText
+			Added RewriteTabsSpaces function for changing the indentation of the text
+			Added LineEndingChanged and TabsSpacesChanged event
+			Changed NumberOfSpacesForTab and UseSpacesInsteadTabs to only change the behavior of the tab key and not the rendering of existing tabs in the text
 			Separated config file highlighting into ini, toml and klipper kind of styles
 			Rewrote markdown syntaxhighlighter completely
+			Fix a problem where dragging at the end of a line releasing the mouse and clicking somewhere else drawed a selection.
 			Small fixes in C# and C++ syntaxhighlighting
 		</PackageReleaseNotes>
 		<PackageIcon>Icon1.png</PackageIcon>
