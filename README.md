@@ -110,6 +110,7 @@ textBox.EnableSyntaxHighlighting = true;
 - `EndActionGroup`: Ends the grouping of undo redo items
 - `SelectionScrollStartBorderDistance`: Gets or sets the mouse distance from the text box edge that triggers auto-scroll during selection
 - `ShowWhitespaceCharacters`: Gets or sets whether spaces and tabs are visually shown in the text box (e.g. as dots or arrows)
+- `HighlightLinks`: Gets or sets, whether links inside the text are highlighted and clickable
 - `Focus(FocusState state)`: Sets focus to the control.
 - `SelectLine(int line)`: Selects a specific line.
 - `SelectLines(int start, int count)`: Selects a range of lines.
@@ -162,6 +163,8 @@ textBox.EnableSyntaxHighlighting = true;
 - `SyntaxHighlightings`: Static dictionary of syntax languages.
 - `GetSyntaxHighlightingFromID(SyntaxHighlightID languageId)`: Gets highlighting language.
 - `GetSyntaxHighlightingFromJson(string json)`: Loads highlighting from JSON.
+- `RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs)`: Changes the current indentation of the text to a new indentation.
+- `DetectTabsSpaces()`: Detects and returns the current indentation of the text as tuple
 </details>
 
 ## 🚀 Events
@@ -174,12 +177,15 @@ TextControlBox provides several events to handle user interactions:
 - `GotFocus` / `LostFocus`: Handle focus changes.
 - `TextLoadedEvent`: Occurs when the TextControlBox finished loading the text.
 - `Loaded`: Occurs when the TextControlBox finished loading and all components initialized
+- `TabsSpacesChanged`: Occurs when the tabs or spaces change, from LoadLines/LoadText or from properties
+- `LineEndingChanged`: Occurs when the line ending changes, from LoadLines/LoadText or from property
+- `LinkClicked`: Occures when a link inside the textbox was clicked (contains the url as parameter)
 
 ## 🎨 Syntax Highlighting
 
 TextControlBox includes built-in support for multiple languages:
 
-- C#, C++, Java, Python, JavaScript, JSON, HTML, CSS, SQL, Markdown, Batch, Config, CSV, LaTex, PHP, QSharp, TOML, XML, G-Code, Lua, Hex
+- C#, C++, Java, Python, JavaScript, JSON, x86Assembly, HTML, CSS, SQL, Markdown, Batch, Config (Ini, Klipper -Styles), CSV, LaTex, PHP, QSharp, TOML, XML, G-Code, Lua, Hex
 
 Enable syntax highlighting:
 
