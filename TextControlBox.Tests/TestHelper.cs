@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -12,6 +13,41 @@ namespace TextControlBox.Tests
         {
             var core = MakeCoreTextbox();
             return (core, core.GetText());
+        }
+
+
+        public static void AssertHighlightExists(CoreTextControlBox coreTextbox, string expectedColor)
+        {
+            // Get all highlights from the textbox
+            var highlights = coreTextbox.SyntaxHighlighting.Highlights;
+
+            // Check if any highlight has the expected color
+            bool colorExists = highlights.Any(h =>
+                h.ColorDark.Equals(expectedColor, System.StringComparison.OrdinalIgnoreCase));
+
+            Assert.IsTrue(colorExists,
+                $"Expected color '{expectedColor}' was not found in the highlights. " +
+                $"Available colors: {string.Join(", ", highlights.Select(h => h.Color).Distinct())}");
+        }
+
+        /// <summary>
+        /// Asserts that a specific highlight color exists at a specific position
+        /// </summary>
+        /// <param name="coreTextbox">The textbox to check</param>
+        /// <param name="expectedColor">The expected color</param>
+        /// <param name="startIndex">The start index of the expected highlight</param>
+        /// <param name="length">The length of the expected highlight</param>
+        public static void AssertHighlightExistsAt(CoreTextControlBox coreTextbox, string expectedColor, int startIndex, int length)
+        {
+            var highlights = coreTextbox.SyntaxHighlighting.Highlights;
+
+            bool highlightExists = highlights.Any(h =>
+                h.Color.Equals(expectedColor, System.StringComparison.OrdinalIgnoreCase) &&
+                h.StartIndex == startIndex &&
+                h.Length == length);
+
+            Assert.IsTrue(highlightExists,
+                $"Expected color '{expectedColor}' at position {startIndex} with length {length} was not found.");
         }
 
         public static IEnumerable<string> MakeLines(int count)
