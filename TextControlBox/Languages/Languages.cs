@@ -579,7 +579,7 @@
                 new SyntaxHighlights("\"[^\\n]*?\"", "#ff5500", "#00FF00"),
                 new SyntaxHighlights("'[^\\n]*?'", "#00CA00", "#00FF00"),
                 new SyntaxHighlights("\\#.*", "#888888", "#646464"),
-                new SyntaxHighlights("\\\"\"\"(.|[\\r\\n])*\\\"\"\"", "#888888", "#646464"),
+                new SyntaxHighlights(@"\""\""\""[\s\S]*?\""\""\""", "#888888", "#646464"),
             };
         }
     }
