@@ -14,12 +14,18 @@ internal class CursorManager
 
     private TextManager textManager;
     private CurrentLineManager currentLineManager;
-    private TabSpaceManager tabSpaceHelper;
-    public void Init(TextManager textManager, CurrentLineManager currentLineManager, TabSpaceManager tabSpaceHelper)
+
+    enum CharClass
+    {
+        Whitespace,
+        Word,
+        Symbol
+    }
+
+    public void Init(TextManager textManager, CurrentLineManager currentLineManager)
     {
         this.textManager = textManager;
         this.currentLineManager = currentLineManager;
-        this.tabSpaceHelper = tabSpaceHelper;
     }
 
     public void SetCursorPosition(int line, int character)
@@ -91,48 +97,40 @@ internal class CursorManager
         return stepsToMove;
     }
 
-    //Calculates how many characters the cursor needs to move if control is pressed -> skip contiguous tabs and spaces as one move
-    //Returns 1 if control is not pressed
-
-    private int IsFilledWithTabsAndSpacesToCursor(string currentLine, int cursor)
+    CharClass GetCharClass(char c)
     {
-        string tabCharacter = tabSpaceHelper.TabCharacter;
-        int tabLength = tabCharacter.Length;
-        int count = 0;
+        if (char.IsWhiteSpace(c))
+            return CharClass.Whitespace;
 
-        for (int i = cursor - 1; i >= 0;)
-        {
-            if (currentLine[i] == ' ') // Check for spaces
-            {
-                count++;
-                i--; // Move one character back
-            }
-            else if (i >= tabLength - 1 && currentLine.Substring(i - tabLength + 1, tabLength) == tabCharacter)
-            {
-                count += tabLength;
-                i -= tabLength;
-            }
-            else
-            {
-                break;
-            }
-        }
+        if (char.IsLetterOrDigit(c) || c == '_')
+            return CharClass.Word;
 
-        return count;
+        return CharClass.Symbol;
     }
     private int CountCharactersToMoveLeft(int startPosition)
     {
-        int count = 0;
-        for (int i = startPosition; i >= 0; i--)
-        {
-            char currentChar = currentLineManager.CurrentLine[CheckIndex(currentLineManager.CurrentLine, i)];
+        var line = currentLineManager.CurrentLine;
+        int i = startPosition;
+        int moved = 0;
 
-            if (char.IsLetterOrDigit(currentChar) || currentChar == '_')
-                count++;
-            else
-                break;
+        while (i >= 0 && char.IsWhiteSpace(line[i]))
+        {
+            i--;
+            moved++;
         }
-        return count;
+
+        if (i < 0)
+            return moved;
+
+        CharClass targetClass = GetCharClass(line[i]);
+
+        while (i >= 0 && GetCharClass(line[i]) == targetClass)
+        {
+            i--;
+            moved++;
+        }
+
+        return moved;
     }
     public int CalculateStepsToMoveLeft(int cursorCharPosition, bool? controlIsPressed = null)
     {
@@ -142,70 +140,43 @@ internal class CursorManager
         if (controlIsPressed.HasValue && !controlIsPressed.Value)
             return 1;
 
-        int filledRes = IsFilledWithTabsAndSpacesToCursor(currentLineManager.CurrentLine, cursorCharPosition);
-        int startPosition = (filledRes != 0) ? cursorCharPosition - filledRes - 1 : cursorCharPosition - 1;
-        int stepsToMove = filledRes + CountCharactersToMoveLeft(startPosition);
+        int startPos = cursorCharPosition - 1;
+        int stepsToMove = CountCharactersToMoveLeft(startPos);
 
         return stepsToMove == 0 ? 1 : stepsToMove;
     }
-
-    private int IsFilledWithTabsAndSpacesFromCursor(string currentLine, int cursor)
-    {
-        string tabCharacter = tabSpaceHelper.TabCharacter;
-        int tabLength = tabCharacter.Length;
-        int count = 0;
-
-        for (int i = cursor; i < currentLine.Length;)
-        {
-            if (currentLine[i] == ' ')
-            {
-                count++;
-                i++;
-            }
-            else if (i + tabLength <= currentLine.Length && currentLine.Substring(i, tabLength) == tabCharacter)
-            {
-                count += tabLength;
-                i += tabLength;
-            }
-            else
-            {
-                break;
-            }
-        }
-
-        return count;
-    }
+    
     public int CalculateStepsToMoveRight(int cursorCharPosition)
     {
         if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
             return 1;
 
-        int filledRes = IsFilledWithTabsAndSpacesFromCursor(currentLineManager.CurrentLine, cursorCharPosition);
-        if (filledRes != 0)
-            return filledRes;
+        var line = currentLineManager.CurrentLine;
+        int length = currentLineManager.Length;
 
-        int stepsToMove = 0;
-        for (int i = cursorCharPosition; i < currentLineManager.Length; i++)
+        if (cursorCharPosition >= length)
+            return 0;
+
+        int i = cursorCharPosition;
+        int moved = 0;
+
+        while (i < length && char.IsWhiteSpace(line[i]))
         {
-            char CurrentCharacter = currentLineManager.CurrentLine[CheckIndex(currentLineManager.CurrentLine, i)];
-            if (char.IsLetterOrDigit(CurrentCharacter) || CurrentCharacter == '_')
-                stepsToMove++;
-            else if (i == cursorCharPosition && char.IsWhiteSpace(CurrentCharacter))
-                stepsToMove++;
-            else
-                break;
+            i++;
+            moved++;
         }
 
-        //skip trailing spaces or tabs: "Hello |World Test" => "Hello World |Test"
-        int index = cursorCharPosition + stepsToMove;
-        if (index + 1 < currentLineManager.Length && char.IsWhiteSpace(currentLineManager.CurrentLine[index]))
+        if (i >= length)
+            return moved == 0 ? 1 : moved;
+
+        CharClass targetClass = GetCharClass(line[i]);
+        while (i < length && GetCharClass(line[i]) == targetClass)
         {
-            int filled = IsFilledWithTabsAndSpacesFromCursor(currentLineManager.CurrentLine, index);
-            stepsToMove += filled;
+            i++;
+            moved++;
         }
 
-        //return 1 if stepsToMove is 0
-        return stepsToMove == 0 ? 1 : stepsToMove;
+        return moved == 0 ? 1 : moved;
     }
 
     //Move cursor:
