@@ -135,6 +135,9 @@ namespace TextControlBoxNS.Core.Text
         //Trys running the code and clears the memory if OutOfMemoryException gets thrown
         public async void Safe_Paste(bool handleException = true)
         {
+            if (textManager._IsReadonly)
+                return;
+
             try
             {
                 DataPackageView dataPackageView = Clipboard.GetContent();
@@ -183,6 +186,9 @@ namespace TextControlBoxNS.Core.Text
         }
         public void Safe_Cut(bool handleException = true)
         {
+            if (textManager._IsReadonly)
+                return;
+
             try
             {
                 DataPackage dataPackage = new DataPackage();

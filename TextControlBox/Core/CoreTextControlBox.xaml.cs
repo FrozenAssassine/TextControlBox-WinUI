@@ -183,6 +183,12 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         if (e.Key == VirtualKey.Tab)
         {
+            if (IsReadonly)
+            {
+                e.Handled = true;
+                return;
+            }
+
             if (Utils.IsKeyPressed(VirtualKey.Shift))
                 tabSpaceManager.MoveTabBack();
             else
@@ -240,7 +246,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         if (menu)
         {
-            if (e.Key == VirtualKey.Down || e.Key == VirtualKey.Up)
+            if (!IsReadonly && (e.Key == VirtualKey.Down || e.Key == VirtualKey.Up ))
             {
                 moveLineManager.Move(e.Key == VirtualKey.Down ? LineMoveDirection.Down : LineMoveDirection.Up);
 
@@ -1007,7 +1013,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public int ZoomFactor { get => zoomManager._ZoomFactor; set { zoomManager._ZoomFactor = value; zoomManager.UpdateZoom(); } } //%
 
-    public bool IsReadonly { get; set; } //TODO
+    public bool IsReadonly { get => textManager._IsReadonly; set => textManager._IsReadonly = value; }
 
     public CursorSize CursorSize { get => cursorRenderer._CursorSize; set { cursorRenderer._CursorSize = value; canvasUpdateManager.UpdateCursor(); } }
 
@@ -1037,10 +1043,13 @@ internal sealed partial class CoreTextControlBox : UserControl
         }
         set => textActionManager.AddCharacter(stringManager.CleanUpString(value));
     }
-    public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs)
+    public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs, bool ignoreIsReadonly = false)
     {
         if(spaces <= 0)
             throw new ArgumentOutOfRangeException("Spaces must be greater than zero.");
+
+        if (!ignoreIsReadonly && IsReadonly)
+            return;
         
         tabSpaceManager.RewriteTabsSpaces(useSpacesInsteadTabs ? spaces : -1);
         
