@@ -15,8 +15,17 @@
 ## 🤔 What is TextControlBox?
 TextControlBox is a powerful and highly customizable textbox control for WinUI 3 applications. It provides an advanced text editing experience with features like syntax highlighting for multiple programming languages, intuitive search and replace functionality, zooming, line numbering, and smooth scrolling. With support for undo/redo, customizable themes, and efficient performance.
 
-## 🛠️ Features
+## 📦 Download
+NuGet Package:
+[TextControlBox.WinUI.JuliusKirsch](https://www.nuget.org/packages/TextControlBox.WinUI.JuliusKirsch/1.1.0-alpha)
 
+## ❤️ Support my work
+If you find TextControlBox useful and want to support its development:
+
+[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=PPME7KF7KF7QS)
+
+
+## 🛠️ Features
 - **Basic Text Editing**: Cut, copy, paste, undo, redo, and full text selection capabilities.
 - **Navigation & Selection**:
   - Go to a specific line.
@@ -44,14 +53,8 @@ TextControlBox is a powerful and highly customizable textbox control for WinUI 3
 - 200 million lines of text (20 characters per line) and it started to consume around 20GB of ram, scrolling worked, but random freezes appeared (too much overhead).
 - Syntaxhighlighting for multi line comments or similar only works, if both start and end characters are in the visible view. (Due to performance I only do such actions on the visible rendered text)
 
-## ❤️ Support my work  
-[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=PPME7KF7KF7QS)
 
 ## 🏗️ Getting Started
-
-### Installation
-### 📥 [Download Nuget.org](https://www.nuget.org/packages/TextControlBox.WinUI.JuliusKirsch/1.1.0-alpha)
-
 Add TextControlBox to your WinUI 3 project and include the necessary namespace in your XAML or C# file.
 
 ```csharp
