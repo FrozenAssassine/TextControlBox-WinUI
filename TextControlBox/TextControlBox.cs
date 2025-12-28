@@ -903,6 +903,15 @@ public partial class TextControlBox : UserControl
     public bool HasSelection => coreTextBox.HasSelection;
 
     /// <summary>
+    /// Gets or sets a value indicating whether the line highlighter shows up even with no focus on the textbox
+    /// </summary>
+    public bool HighlightLineWhenNotFocused
+    {
+        get => coreTextBox.HighlightLineWhenNotFocused;
+        set => coreTextBox.HighlightLineWhenNotFocused = value;
+    }
+
+    /// <summary>
     /// Get the current selection of the textbox in any order. Start may be greater than the end position. 
     /// Returns null if no text is selected
     /// </summary>

@@ -24,8 +24,12 @@ internal class LineHighlighterRenderer
         args.DrawingSession.FillRectangle(0, y, canvasWidth, fontSize, backgroundBrush);
     }
 
-    public bool CanRender()
+    public bool CanRender(FocusManager focusManager)
     {
-        return lineHighlighterManager._ShowLineHighlighter && !selectionManager.HasSelection;
+        if(lineHighlighterManager._ShowLineHighlighter && !selectionManager.HasSelection)
+        {
+            return lineHighlighterManager._HighlightLineWhenNotFocused ? true : focusManager.HasFocus;
+        }
+        return false;
     }
 }

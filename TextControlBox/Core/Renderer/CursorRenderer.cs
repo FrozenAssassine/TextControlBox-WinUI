@@ -66,7 +66,7 @@ internal class CursorRenderer
     public void Draw(CanvasControl canvasText, CanvasControl canvasCursor, CanvasDrawEventArgs args)
     {
         currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
-        if (textRenderer.DrawnTextLayout == null || !focusManager.HasFocus)
+        if (textRenderer.DrawnTextLayout == null)
             return;
 
         int currentLineLength = currentLineManager.Length;
@@ -90,27 +90,31 @@ internal class CursorRenderer
 
         scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, true);
 
-        int characterPos = cursorManager.CharacterPosition;
-        if (characterPos > currentLineLength)
-            characterPos = currentLineLength;
 
-        RenderCursor(
-            textRenderer.CurrentLineTextLayout,
-            characterPos,
-            (float)-scrollManager.HorizontalScroll,
-            renderPosY,
-            zoomManager.ZoomedFontSize,
-            _CursorSize,
-            args,
-            designHelper.CursorColorBrush);
-
-        if (lineHighlighterRenderer.CanRender())
-            lineHighlighterRenderer.Render((float)canvasCursor.ActualWidth, renderPosY, zoomManager.ZoomedFontSize, args, designHelper.LineHighlighterBrush);
-
-        if (!cursorManager.Equals(cursorManager.currentCursorPosition, cursorManager.oldCursorPosition))
+        if (focusManager.HasFocus)
         {
-            cursorManager.oldCursorPosition.SetChangeValues(cursorManager.currentCursorPosition);
-            eventsManager.CallSelectionChanged();
+            int characterPos = cursorManager.CharacterPosition;
+            if (characterPos > currentLineLength)
+                characterPos = currentLineLength;
+
+            RenderCursor(
+                textRenderer.CurrentLineTextLayout,
+                characterPos,
+                (float)-scrollManager.HorizontalScroll,
+                renderPosY,
+                zoomManager.ZoomedFontSize,
+                _CursorSize,
+                args,
+                designHelper.CursorColorBrush);
+
+            if (!cursorManager.Equals(cursorManager.currentCursorPosition, cursorManager.oldCursorPosition))
+            {
+                cursorManager.oldCursorPosition.SetChangeValues(cursorManager.currentCursorPosition);
+                eventsManager.CallSelectionChanged();
+            }
         }
+
+        if (lineHighlighterRenderer.CanRender(focusManager))
+            lineHighlighterRenderer.Render((float)canvasCursor.ActualWidth, renderPosY, zoomManager.ZoomedFontSize, args, designHelper.LineHighlighterBrush);
     }
 }

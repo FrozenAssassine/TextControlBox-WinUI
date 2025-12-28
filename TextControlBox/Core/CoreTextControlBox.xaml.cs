@@ -1087,7 +1087,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public bool ShowWhitespaceCharacters { get => whitespaceCharactersManager.ShowWhitespaceCharacters; set { whitespaceCharactersManager.ShowWhitespaceCharacters = value; canvasUpdateManager.UpdateText(); } }
     public Thickness SelectionScrollStartBorderDistance { get; set; } = new Thickness(0, 0, 0, 0);
     public bool HighlightLinks { get => linkHighlightManager.HighlightLinks; set { linkHighlightManager.HighlightLinks = value; canvasUpdateManager.UpdateAll(); } }
-    
+    public bool HighlightLineWhenNotFocused { get => lineHighlighterManager._HighlightLineWhenNotFocused; set { lineHighlighterManager._HighlightLineWhenNotFocused = value; canvasUpdateManager.UpdateText(); } }
     public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {
             { SyntaxHighlightID.None, null },
