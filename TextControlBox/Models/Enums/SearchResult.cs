@@ -33,5 +33,10 @@ public enum SearchResult
     /// <summary>
     /// The search operation was attempted, but the search was not started.
     /// </summary>
-    SearchNotOpened
+    SearchNotOpened,
+
+    /// <summary>
+    /// The textbox is in readonly mode, replace can not be executed
+    /// </summary>
+    ReplaceNotAllowedInReadonly
 }

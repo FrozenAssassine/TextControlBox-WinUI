@@ -414,20 +414,22 @@ public partial class TextControlBox : UserControl
     /// <param name="replaceWord">The word to replace with</param>
     /// <param name="matchCase">Search with case sensitivity</param>
     /// <param name="wholeWord">Search for whole words</param>
+    /// <param name="ignoreIsReadonly">Ignores the isReadonly property of the textbox.</param>
     /// <returns>Found if everything was replaced and not found if nothing was replaced</returns>
-    public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord)
+    public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord, bool ignoreIsReadonly = false)
     {
-        return coreTextBox.ReplaceAll(word, replaceWord, matchCase, wholeWord);
+        return coreTextBox.ReplaceAll(word, replaceWord, matchCase, wholeWord, ignoreIsReadonly);
     }
 
     /// <summary>
     /// Replaces the next occurnce in the text with the replaceWord
     /// </summary>
     /// <param name="replaceWord">The string to replace the searched string with</param>
+    /// <param name="ignoreIsReadonly">Ignores the isReadonly property of the textbox.</param>
     /// <returns>Found if the next occurence got replaced and not found if nothing got replaced</returns>
-    public SearchResult ReplaceNext(string replaceWord)
+    public SearchResult ReplaceNext(string replaceWord, bool ignoreIsReadonly = false)
     {
-        return coreTextBox.ReplaceNext(replaceWord);
+        return coreTextBox.ReplaceNext(replaceWord, ignoreIsReadonly);
     }
 
     /// <summary>

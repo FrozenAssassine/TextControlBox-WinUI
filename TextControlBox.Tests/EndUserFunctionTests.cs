@@ -339,6 +339,81 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
+    public void SearchReplaceAllReadonlyMode()
+    {
+        var textbox = MakeTextbox(10);
+        textbox.IsReadonly = true;
+        string textBefore = textbox.GetText();
+
+        //nothing should change
+        var replaceRes = textbox.ReplaceAll("Line", "Test", false, false);
+
+        bool res1 = replaceRes  == SearchResult.ReplaceNotAllowedInReadonly && textbox.GetText().Equals(textBefore);
+
+        Debug.Assert(res1);
+    }
+
+    [UITestMethod]
+    public void SearchReplaceAllForcedInReadonlyMode()
+    {
+        var textbox = MakeTextbox(10);
+        textbox.IsReadonly = true;
+        var textBefore = textbox.GetText();
+
+        //force replace, even with readonly
+        var replaceRes = textbox.ReplaceAll("Line", "Test", false, false, ignoreIsReadonly: true);
+
+        bool res2 = replaceRes == SearchResult.Found && textbox.GetText().Equals(textBefore.Replace("Line", "Test"));
+
+        Debug.Assert(res2);
+    }
+
+
+    [UITestMethod]
+    public void SearchReplaceNextReadonlyMode()
+    {
+        var textbox = MakeTextbox(10);
+        textbox.IsReadonly = true;
+        //nothing should change
+        textbox.SetCursorPosition(0, 0);
+
+        textbox.BeginSearch("Line", false, false);
+        string textBefore = textbox.GetText();
+        bool success = true;
+        for (int i = 0; i < 10; i++)
+        {
+            if (textbox.ReplaceNext("Test") != SearchResult.ReplaceNotAllowedInReadonly)
+                success = false;
+        }
+
+        bool res1 = success && textbox.GetText().Equals(textBefore) && !textbox.HasSelection;
+        Debug.Assert(res1);
+    }
+
+    [UITestMethod]
+    public void SearchReplaceNextForcedInReadonlyMode()
+    {
+        var textbox = MakeTextbox(10);
+        textbox.IsReadonly = true;
+        string textBefore = textbox.GetText();
+
+        //force replace, even with readonly
+        textbox.SetCursorPosition(0, 0);
+
+        var reslol = textbox.BeginSearch("Line", false, false);
+        bool success = true;
+        for (int i = 0; i < 10; i++)
+        {
+            if (textbox.ReplaceNext("Test", ignoreIsReadonly: true) != SearchResult.Found)
+                success = false;
+        }
+
+        bool textMatch = textbox.GetText().Equals(textBefore.Replace("Line", "Test"));
+        bool res1 = success && textMatch && !textbox.HasSelection;
+        Debug.Assert(res1);
+    }
+
+    [UITestMethod]
     public void SearchReplaceNext()
     {
         var textbox = MakeTextbox(100);

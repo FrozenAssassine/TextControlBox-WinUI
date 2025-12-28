@@ -798,13 +798,19 @@ internal sealed partial class CoreTextControlBox : UserControl
         textActionManager.DuplicateLine(CursorPosition.LineNumber);
     }
 
-    public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord)
+    public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord, bool ignoreIsReadonly = false)
     {
+        if (!ignoreIsReadonly && IsReadonly)
+            return SearchResult.ReplaceNotAllowedInReadonly;
+
         return replaceManager.ReplaceAll(word, replaceWord, matchCase, wholeWord);
     }
 
-    public SearchResult ReplaceNext(string replaceWord)
+    public SearchResult ReplaceNext(string replaceWord, bool ignoreIsReadonly = false)
     {
+        if (!ignoreIsReadonly && IsReadonly)
+            return SearchResult.ReplaceNotAllowedInReadonly;
+
         var res = replaceManager.ReplaceNext(replaceWord);
         if (res.Selection != null)
         {
