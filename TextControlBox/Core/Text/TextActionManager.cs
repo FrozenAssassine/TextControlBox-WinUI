@@ -467,9 +467,9 @@ namespace TextControlBoxNS.Core.Text
             scrollManager.UpdateScrollToShowCursor();
         }
 
-        public void AddCharacter(string text, bool ignoreSelection = false)
+        public void AddCharacter(string text, bool ignoreSelection = false, bool ignoreIsReadOnly = false)
         {
-            if (textManager._IsReadOnly)
+            if (!ignoreIsReadOnly && textManager._IsReadOnly)
                 return;
 
             if (ignoreSelection)

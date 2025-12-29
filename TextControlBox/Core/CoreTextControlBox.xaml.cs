@@ -788,30 +788,36 @@ internal sealed partial class CoreTextControlBox : UserControl
         }
     }
 
-    public bool DuplicateLine(int line)
+    public bool DuplicateLine(int line, bool ignoreIsReadOnly = false)
     {
-        if (line >= textManager.LinesCount || line < 0)
+        if (!ignoreIsReadOnly && IsReadOnly)
             return false;
         
+        if (line >= textManager.LinesCount || line < 0)
+            return false;
+
         textActionManager.DuplicateLine(line);
         return true;
     }
-    public void DuplicateCurrentLine()
+    public void DuplicateCurrentLine(bool ignoreIsReadOnly = false)
     {
+        if (!ignoreIsReadOnly && IsReadOnly)
+            return;
+
         textActionManager.DuplicateLine(CursorPosition.LineNumber);
     }
 
-    public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord, bool ignoreIsReadonly = false)
+    public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord, bool ignoreIsReadOnly = false)
     {
-        if (!ignoreIsReadonly && IsReadOnly)
+        if (!ignoreIsReadOnly && IsReadOnly)
             return SearchResult.ReplaceNotAllowedInReadonly;
 
         return replaceManager.ReplaceAll(word, replaceWord, matchCase, wholeWord);
     }
 
-    public SearchResult ReplaceNext(string replaceWord, bool ignoreIsReadonly = false)
+    public SearchResult ReplaceNext(string replaceWord, bool ignoreIsReadOnly = false)
     {
-        if (!ignoreIsReadonly && IsReadOnly)
+        if (!ignoreIsReadOnly && IsReadOnly)
             return SearchResult.ReplaceNotAllowedInReadonly;
 
         var res = replaceManager.ReplaceNext(replaceWord);
@@ -1050,7 +1056,8 @@ internal sealed partial class CoreTextControlBox : UserControl
                 return GetText();
             return selectionManager.GetSelectedText(CursorPosition.LineNumber);
         }
-        set => textActionManager.AddCharacter(stringManager.CleanUpString(value));
+        //we ignore isReadOnly here, to allow setting text in readonly mode via code.
+        set => textActionManager.AddCharacter(stringManager.CleanUpString(value), ignoreIsReadOnly: true);
     }
     public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs, bool ignoreIsReadonly = false)
     {

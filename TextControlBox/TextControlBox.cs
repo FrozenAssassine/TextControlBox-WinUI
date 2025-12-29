@@ -135,6 +135,10 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Loads the specified text into the textbox, resetting all text and undo history.
     /// </summary>
+    /// <remarks>
+    /// This method modifies the text programmatically and is unaffected by
+    /// <see cref="IsReadOnly"/>. Read-only only restricts user edits.
+    /// </remarks>
     /// <param name="text">The text to load into the textbox.</param>
     /// <param name="autodetectTabsSpaces" >Whether to autodetect tabs and spaces settings from the text</param>
     public void LoadText(string text, bool autodetectTabsSpaces = true)
@@ -145,6 +149,10 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Sets the text content of the textbox, recording an undo action.
     /// </summary>
+    /// <remarks>
+    /// This method modifies the text programmatically and is unaffected by
+    /// <see cref="IsReadOnly"/>. Read-only only restricts user edits.
+    /// </remarks>
     /// <param name="text">The new text content to set in the textbox.</param>
     public void SetText(string text)
     {
@@ -165,6 +173,10 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Pastes the contents of the clipboard at the current cursor position.
     /// </summary>
+    /// <remarks>
+    /// If <see cref="IsReadOnly"/> is true, this method does nothing.
+    /// Readonly mode disallows text modifications and undo/redo operations.
+    /// </remarks>
     public void Paste()
     {
         coreTextBox.Paste();
@@ -181,6 +193,10 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Cuts the currently selected text and copies it to the clipboard.
     /// </summary>
+    /// <remarks>
+    /// If <see cref="IsReadOnly"/> is true, this method does nothing.
+    /// Readonly mode disallows text modifications and undo/redo operations.
+    /// </remarks>
     public void Cut()
     {
         coreTextBox.Cut();
@@ -226,6 +242,10 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Undoes the last action in the textbox.
     /// </summary>
+    /// <remarks>
+    /// If <see cref="IsReadOnly"/> is true, this method does nothing.
+    /// Readonly mode disallows text modifications and undo/redo operations.
+    /// </remarks>
     public void Undo()
     {
         coreTextBox.Undo();
@@ -233,7 +253,11 @@ public partial class TextControlBox : UserControl
 
     /// <summary>
     /// Redoes the last undone action in the textbox.
-    /// </summary>
+    /// </summary>    
+    /// <remarks>
+    /// If <see cref="IsReadOnly"/> is true, this method does nothing.
+    /// Readonly mode disallows text modifications and undo/redo operations.
+    /// </remarks>
     public void Redo()
     {
         coreTextBox.Redo();
@@ -339,6 +363,10 @@ public partial class TextControlBox : UserControl
     /// Sets the content of the line specified by the index. The first line has the index 0.
     /// Setting the text also records an undo step
     /// </summary>
+    /// <remarks>
+    /// This method modifies the text programmatically and is not affected by
+    /// the <see cref="IsReadOnly"/> property.
+    /// </remarks>
     /// <param name="line">The zero based index of the line to change the content.</param>
     /// <param name="text">The text to set for the specified line.</param>
     /// <returns>Returns true if the text was changed successfully, and false if the index was out of range.</returns>
@@ -351,6 +379,10 @@ public partial class TextControlBox : UserControl
     /// Deletes the line specified by the zero based index from the textbox
     /// This action will record an undo step
     /// </summary>
+    /// <remarks>
+    /// This method modifies the text programmatically and is not affected by
+    /// the <see cref="IsReadOnly"/> property.
+    /// </remarks>
     /// <param name="line">The line to delete</param>
     /// <returns>Returns true if the line was deleted successfully and false if not</returns>
     public bool DeleteLine(int line)
@@ -362,6 +394,10 @@ public partial class TextControlBox : UserControl
     /// Adds a new line with the text specified
     /// This action will record an undo step
     /// </summary>
+    /// <remarks>
+    /// This method modifies the text programmatically and is not affected by
+    /// the <see cref="IsReadOnly"/> property.
+    /// </remarks>
     /// <param name="line">The zero based position to insert the line to</param>
     /// <param name="text">The text to put into the new line</param>
     /// <returns>Returns true if the line was added successfully and false if not</returns>
@@ -373,6 +409,10 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Surrounds the selection with the text specified by the text
     /// </summary>
+    /// <remarks>
+    /// This method modifies the text programmatically and is not affected by
+    /// the <see cref="IsReadOnly"/> property.
+    /// </remarks>
     /// <param name="text">The text to surround the selection with</param>
     public void SurroundSelectionWith(string text)
     {
@@ -382,6 +422,10 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Surround the selection with individual text for the left and right side.
     /// </summary>
+    /// <remarks>
+    /// This method modifies the text programmatically and is not affected by
+    /// the <see cref="IsReadOnly"/> property.
+    /// </remarks>
     /// <param name="text1">The text for the left side</param>
     /// <param name="text2">The text for the right side</param>
     public void SurroundSelectionWith(string text1, string text2)
@@ -395,16 +439,18 @@ public partial class TextControlBox : UserControl
     /// This action records an undo step
     /// </summary>
     /// <param name="line">The zero based index of the line to duplicate</param>
-    public void DuplicateLine(int line)
+    /// <param name="ignoreIsReadOnly">Ignores the isReadOnly property of the textbox.</param>
+    public void DuplicateLine(int line, bool ignoreIsReadOnly = false)
     {
-        coreTextBox.DuplicateLine(line);
+        coreTextBox.DuplicateLine(line, ignoreIsReadOnly);
     }
     /// <summary>
     /// Duplicates the line at the current cursor position
     /// </summary>
-    public void DuplicateCurrentLine()
+    /// <param name="ignoreIsReadOnly">Ignores the isReadOnly property of the textbox.</param>
+    public void DuplicateCurrentLine(bool ignoreIsReadOnly = false)
     {
-        coreTextBox.DuplicateCurrentLine();
+        coreTextBox.DuplicateCurrentLine(ignoreIsReadOnly);
     }
 
     /// <summary>
@@ -583,6 +629,9 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Add lines starting at start
     /// </summary>
+    /// <remarks>
+    /// This method modifies the text programmatically and is unaffected by
+    /// <see cref="IsReadOnly"/>.
     /// <param name="start">The zero based index to start from</param>
     /// <param name="text">The array of lines to add</param>
     /// <returns>True if successfull</returns>
@@ -683,6 +732,9 @@ public partial class TextControlBox : UserControl
     /// Gets or sets the text displayed in the textbox.
     /// Setting the text records an undo step. Use LoadLines/LoadText function to load an initial text.
     /// </summary>
+    /// <remarks>
+    /// This method modifies the text programmatically and is unaffected by
+    /// <see cref="IsReadOnly"/>.
     public string Text
     {
         get => coreTextBox.Text;
@@ -738,7 +790,8 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Gets or sets a value indicating whether the textbox is in read-only mode.
     /// ReadOnly only prevents the user from entering and modifying text. 
-    /// The developer can still call many functions to modify the text
+    /// The developer can still call many functions to modify the text. 
+    /// Check each function's remarks for details.
     /// </summary>
     public bool IsReadOnly
     {
@@ -777,6 +830,9 @@ public partial class TextControlBox : UserControl
     /// <summary>
     /// Gets or sets the text that is currently selected in the textbox.
     /// </summary>
+    /// <remarks>
+    /// This method modifies the text programmatically and is unaffected by
+    /// <see cref="IsReadOnly"/>.
     public string SelectedText
     {
         get => coreTextBox.SelectedText;
@@ -873,6 +929,7 @@ public partial class TextControlBox : UserControl
     /// <remarks>
     /// Use this property to access all the lines of text in the textbox. You can use this collection to save the lines to a file using functions like FileIO.WriteLinesAsync.
     /// Utilizing this property for saving will significantly improve RAM usage during the saving process.
+    /// This method modifies the text programmatically and is unaffected by <see cref="IsReadOnly"/>.
     /// </remarks>
     public IEnumerable<string> Lines => coreTextBox.Lines;
 
