@@ -736,8 +736,8 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the textbox is in readonly mode.
-    /// Readonly only prevents the user from entering and modifying text. 
+    /// Gets or sets a value indicating whether the textbox is in read-only mode.
+    /// ReadOnly only prevents the user from entering and modifying text. 
     /// The developer can still call many functions to modify the text
     /// </summary>
     public bool IsReadOnly
