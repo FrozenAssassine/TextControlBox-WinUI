@@ -168,7 +168,10 @@ internal sealed partial class CoreTextControlBox : UserControl
     private void InputHandler_TextEntered(object sender, TextChangedEventArgs e)
     {
         if (IsReadOnly || inputHandler.Text.Equals("\t", StringComparison.OrdinalIgnoreCase))
+        {
+            inputHandler.Text = ""; //clear text, otherwise in readonly mode, the text is still added in the textbox.
             return;
+        }
 
         //Prevent key-entering if control key is pressed 
         var ctrl = Utils.IsKeyPressed(VirtualKey.Control);
@@ -1019,7 +1022,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public int ZoomFactor { get => zoomManager._ZoomFactor; set { zoomManager._ZoomFactor = value; zoomManager.UpdateZoom(); } } //%
 
-    public bool IsReadOnly { get => textManager._IsReadOnly; set => textManager._IsReadOnly = value; }
+    public bool IsReadOnly { get => textManager._IsReadOnly; set { textManager._IsReadOnly = inputHandler.IsReadOnly = value; } }
 
     public CursorSize CursorSize { get => cursorRenderer._CursorSize; set { cursorRenderer._CursorSize = value; canvasUpdateManager.UpdateCursor(); } }
 

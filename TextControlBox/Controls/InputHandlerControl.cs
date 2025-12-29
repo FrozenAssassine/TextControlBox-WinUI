@@ -17,7 +17,7 @@ internal class InputHandlerControl : TextBox
 
     private void InputHandlerControl_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (base.Text.Length == 0)
+        if (isReadOnly || base.Text.Length == 0)
             return;
 
         if (!_isProgrammaticChange)
@@ -36,6 +36,8 @@ internal class InputHandlerControl : TextBox
             _isProgrammaticChange = false;
         }
     }
+
+    public bool isReadOnly { get; set; } = false;
 
     protected override void OnKeyDown(KeyRoutedEventArgs e)
     {
