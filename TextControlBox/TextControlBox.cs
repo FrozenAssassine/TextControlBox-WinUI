@@ -414,22 +414,22 @@ public partial class TextControlBox : UserControl
     /// <param name="replaceWord">The word to replace with</param>
     /// <param name="matchCase">Search with case sensitivity</param>
     /// <param name="wholeWord">Search for whole words</param>
-    /// <param name="ignoreIsReadonly">Ignores the isReadonly property of the textbox.</param>
+    /// <param name="ignoreIsReadOnly">Ignores the isReadOnly property of the textbox.</param>
     /// <returns>Found if everything was replaced and not found if nothing was replaced</returns>
-    public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord, bool ignoreIsReadonly = false)
+    public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord, bool ignoreIsReadOnly = false)
     {
-        return coreTextBox.ReplaceAll(word, replaceWord, matchCase, wholeWord, ignoreIsReadonly);
+        return coreTextBox.ReplaceAll(word, replaceWord, matchCase, wholeWord, ignoreIsReadOnly);
     }
 
     /// <summary>
     /// Replaces the next occurnce in the text with the replaceWord
     /// </summary>
     /// <param name="replaceWord">The string to replace the searched string with</param>
-    /// <param name="ignoreIsReadonly">Ignores the isReadonly property of the textbox.</param>
+    /// <param name="ignoreIsReadOnly">Ignores the isReadOnly property of the textbox.</param>
     /// <returns>Found if the next occurence got replaced and not found if nothing got replaced</returns>
-    public SearchResult ReplaceNext(string replaceWord, bool ignoreIsReadonly = false)
+    public SearchResult ReplaceNext(string replaceWord, bool ignoreIsReadOnly = false)
     {
-        return coreTextBox.ReplaceNext(replaceWord, ignoreIsReadonly);
+        return coreTextBox.ReplaceNext(replaceWord, ignoreIsReadOnly);
     }
 
     /// <summary>
@@ -606,8 +606,8 @@ public partial class TextControlBox : UserControl
     /// </summary>
     /// <param name="spaces">The number of spaces to use when converting tabs to spaces. Must be greater than zero.</param>
     /// <param name="useSpacesInsteadTabs">Indicates whether tabs should be replaced with spaces.</param>
-    /// <param name="ignoreIsReadonly">Ignores the isReadonly property of the textbox.</param>
-    public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs, bool ignoreIsReadonly = false)
+    /// <param name="ignoreIsReadOnly">Ignores the isReadOnly property of the textbox.</param>
+    public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs, bool ignoreIsReadOnly = false)
     {
         coreTextBox.RewriteTabsSpaces(spaces, useSpacesInsteadTabs);
     }
@@ -740,10 +740,10 @@ public partial class TextControlBox : UserControl
     /// Readonly only prevents the user from entering and modifying text. 
     /// The developer can still call many functions to modify the text
     /// </summary>
-    public bool IsReadonly
+    public bool IsReadOnly
     {
-        get => coreTextBox.IsReadonly;
-        set => coreTextBox.IsReadonly = value;
+        get => coreTextBox.IsReadOnly;
+        set => coreTextBox.IsReadOnly = value;
     }
     /// <summary>
     /// Gets or sets the size of the cursor in the textbox.

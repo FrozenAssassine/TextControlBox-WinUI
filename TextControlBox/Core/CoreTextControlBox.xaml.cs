@@ -167,7 +167,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     //Handle keyinputs
     private void InputHandler_TextEntered(object sender, TextChangedEventArgs e)
     {
-        if (IsReadonly || inputHandler.Text.Equals("\t", StringComparison.OrdinalIgnoreCase))
+        if (IsReadOnly || inputHandler.Text.Equals("\t", StringComparison.OrdinalIgnoreCase))
             return;
 
         //Prevent key-entering if control key is pressed 
@@ -183,7 +183,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         if (e.Key == VirtualKey.Tab)
         {
-            if (IsReadonly)
+            if (IsReadOnly)
             {
                 e.Handled = true;
                 return;
@@ -246,7 +246,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         if (menu)
         {
-            if (!IsReadonly && (e.Key == VirtualKey.Down || e.Key == VirtualKey.Up ))
+            if (!IsReadOnly && (e.Key == VirtualKey.Down || e.Key == VirtualKey.Up ))
             {
                 moveLineManager.Move(e.Key == VirtualKey.Down ? LineMoveDirection.Down : LineMoveDirection.Up);
 
@@ -544,7 +544,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     //Drag Drop text
     private async void UserControl_Drop(object sender, DragEventArgs e)
     {
-        if (textManager._IsReadonly)
+        if (textManager._IsReadOnly)
             return;
 
         if (e.DataView.Contains(StandardDataFormats.Text))
@@ -554,7 +554,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     }
     private void UserControl_DragOver(object sender, DragEventArgs e)
     {
-        if (selectionManager.IsSelecting || textManager._IsReadonly || !e.DataView.Contains(StandardDataFormats.Text))
+        if (selectionManager.IsSelecting || textManager._IsReadOnly || !e.DataView.Contains(StandardDataFormats.Text))
             return;
 
         var deferral = e.GetDeferral();
@@ -800,7 +800,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord, bool ignoreIsReadonly = false)
     {
-        if (!ignoreIsReadonly && IsReadonly)
+        if (!ignoreIsReadonly && IsReadOnly)
             return SearchResult.ReplaceNotAllowedInReadonly;
 
         return replaceManager.ReplaceAll(word, replaceWord, matchCase, wholeWord);
@@ -808,7 +808,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public SearchResult ReplaceNext(string replaceWord, bool ignoreIsReadonly = false)
     {
-        if (!ignoreIsReadonly && IsReadonly)
+        if (!ignoreIsReadonly && IsReadOnly)
             return SearchResult.ReplaceNotAllowedInReadonly;
 
         var res = replaceManager.ReplaceNext(replaceWord);
@@ -1019,7 +1019,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public int ZoomFactor { get => zoomManager._ZoomFactor; set { zoomManager._ZoomFactor = value; zoomManager.UpdateZoom(); } } //%
 
-    public bool IsReadonly { get => textManager._IsReadonly; set => textManager._IsReadonly = value; }
+    public bool IsReadOnly { get => textManager._IsReadOnly; set => textManager._IsReadOnly = value; }
 
     public CursorSize CursorSize { get => cursorRenderer._CursorSize; set { cursorRenderer._CursorSize = value; canvasUpdateManager.UpdateCursor(); } }
 
@@ -1054,7 +1054,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         if(spaces <= 0)
             throw new ArgumentOutOfRangeException("Spaces must be greater than zero.");
 
-        if (!ignoreIsReadonly && IsReadonly)
+        if (!ignoreIsReadonly && IsReadOnly)
             return;
         
         tabSpaceManager.RewriteTabsSpaces(useSpacesInsteadTabs ? spaces : -1);

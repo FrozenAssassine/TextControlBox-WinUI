@@ -38,7 +38,7 @@ internal class TextManager
     public SyntaxHighlightLanguage _SyntaxHighlighting = null;
     public int MaxFontsize = 125;
     public int MinFontSize = 3;
-    public bool _IsReadonly = false;
+    public bool _IsReadOnly = false;
 
     public int GetLineLength(int line)
     {

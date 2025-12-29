@@ -97,7 +97,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void Undo()
         {
-            if (coreTextbox.IsReadonly || !undoRedo.CanUndo)
+            if (coreTextbox.IsReadOnly || !undoRedo.CanUndo)
                 return;
 
             //Do the Undo
@@ -115,7 +115,7 @@ namespace TextControlBoxNS.Core.Text
         }
         public void Redo()
         {
-            if (coreTextbox.IsReadonly || !undoRedo.CanRedo)
+            if (coreTextbox.IsReadOnly || !undoRedo.CanRedo)
                 return;
 
             //Do the Redo
@@ -135,7 +135,7 @@ namespace TextControlBoxNS.Core.Text
         //Trys running the code and clears the memory if OutOfMemoryException gets thrown
         public async void Safe_Paste(bool handleException = true)
         {
-            if (textManager._IsReadonly)
+            if (textManager._IsReadOnly)
                 return;
 
             try
@@ -186,7 +186,7 @@ namespace TextControlBoxNS.Core.Text
         }
         public void Safe_Cut(bool handleException = true)
         {
-            if (textManager._IsReadonly)
+            if (textManager._IsReadOnly)
                 return;
 
             try
@@ -391,7 +391,7 @@ namespace TextControlBoxNS.Core.Text
         {
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
-            if (textManager._IsReadonly)
+            if (textManager._IsReadOnly)
                 return;
 
             if (selectionManager.HasSelection)
@@ -411,7 +411,7 @@ namespace TextControlBoxNS.Core.Text
         }
         public void AddNewLine()
         {
-            if (textManager._IsReadonly)
+            if (textManager._IsReadOnly)
                 return;
 
             if (addNewLineTextAction.HandleEmptyDocument())
@@ -447,7 +447,7 @@ namespace TextControlBoxNS.Core.Text
         {
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
-            if (textManager._IsReadonly)
+            if (textManager._IsReadOnly)
                 return;
 
             if (shiftIsPressed && !selectionManager.HasSelection)
@@ -469,7 +469,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void AddCharacter(string text, bool ignoreSelection = false)
         {
-            if (textManager._IsReadonly)
+            if (textManager._IsReadOnly)
                 return;
 
             if (ignoreSelection)
