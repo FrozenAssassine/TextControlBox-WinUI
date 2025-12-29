@@ -964,6 +964,17 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Gets a value indicating whether the current text content can be undone.
+    /// </summary>
+    public bool CanUndo => coreTextBox.CanUndo;
+
+    /// <summary>
+    /// Gets a value indicating whether the current text content can be redone.
+    /// </summary>
+    public bool CanRedo => coreTextBox.CanRedo;
+
+
+    /// <summary>
     /// Represents a delegate used for handling the text changed event in the TextControlBox.
     /// </summary>
     /// <param name="sender">The instance of the TextControlBox that raised the event.</param>
