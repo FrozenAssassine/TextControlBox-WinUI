@@ -54,6 +54,24 @@ If you find TextControlBox useful and want to support its development:
 - Syntaxhighlighting for multi line comments or similar only works, if both start and end characters are in the visible view. (Due to performance I only do such actions on the visible rendered text)
 
 
+## ‼️Common Pitfalls & Performance Improvements
+
+| Scenario | ❌Common Pitfall | ✅Recommended Approach | Notes |
+|----------|----------------|--------------------|-------|
+| **Getting/Setting Text** | `textbox.Text = someText` | Use `LoadText(string)` or `LoadLines(IEnumerable<string>)` if you do not want to record an undo step | `Text` and `SetText` always record an undo step. Load methods bypass undo history by design. |
+| **Character Count** | `textbox.Text.Length` | `textbox.CharacterCount()` | Uses spans internally; avoids temporary string allocations. |
+| **Accessing Lines** | `textbox.Text.Split("\n")` | `textbox.Lines` or `textbox.NumberOfLines` | Avoids creating temporary string arrays. `Lines` exposes the internal list efficiently. |
+| **Word Count** | Manual splitting or regex on `Text` | `textbox.WordCount()` | Uses spans and char iteration for allocation-free counting. |
+| **Saving Text to File** | `File.WriteAllText("file.txt", textbox.GetText())` | `File.WriteAllLines("file.txt", textbox.Lines)` | Writes lines directly; avoids allocating a single large string on the heap. |
+| **Text Search** | Manually iterating or substring search | Use `BeginSearch(word, wholeWord, matchCase)` + `FindNext()` / `FindPrevious()` + `EndSearch()` | Provides fast, internal search with highlights and efficient indexing. |
+| **Iterating Lines** | `foreach(var line in textbox.Text.Split('\n'))` | `foreach(var line in textbox.Lines)` | Iterates without extra string allocations. |
+| **Replacing Text** | Using `GetText()` and manually replacing strings | Use `ReplaceNext(replaceWord)` or `ReplaceAll(word, replaceWord)` | Efficient, allocation-free replacements with undo handling options. |
+
+**Tips:**  
+- `Text` and `SetText` are convenient but always record an undo step; use `LoadText` / `LoadLines` to avoid this.  
+- Prefer `CharacterCount()`, `WordCount()`, `Lines`, and `NumberOfLines` for performance-sensitive operations.  
+- Use `BeginSearch` / `FindNext` / `FindPrevious` for searching instead of manual string operations.  
+- Save large text efficiently with `File.WriteAllLines(textbox.Lines)` rather than `GetText()`.
 ## 🏗️ Getting Started
 Add TextControlBox to your WinUI 3 project and include the necessary namespace in your XAML or C# file.
 
