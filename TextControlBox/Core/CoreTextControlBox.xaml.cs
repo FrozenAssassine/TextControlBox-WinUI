@@ -1118,7 +1118,8 @@ internal sealed partial class CoreTextControlBox : UserControl
     public bool CanUndo => undoRedo.CanUndo;
     public bool CanRedo => undoRedo.CanRedo;
 
-    public static Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings => new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
+    public static readonly Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings =
+        new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {
             { SyntaxHighlightID.None, null },
             { SyntaxHighlightID.x86Assembly, new x86Assembly() },
