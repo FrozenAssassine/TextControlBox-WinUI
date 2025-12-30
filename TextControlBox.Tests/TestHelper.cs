@@ -14,6 +14,19 @@ namespace TextControlBox.Tests
             return (core, core.GetText());
         }
 
+        public static TextControlBoxNS.TextControlBox MakeTextbox(int addNewLines = 100)
+        {
+            TextControlBoxNS.TextControlBox textbox = new TextControlBoxNS.TextControlBox();
+
+            if (addNewLines == 0)
+            {
+                textbox.LoadLines([]);
+            }
+            textbox.LoadLines(Enumerable.Range(0, addNewLines).Select(x => "Line " + x + " is cool right?"));
+            return textbox;
+        }
+
+
         public static IEnumerable<string> MakeLines(int count)
         {
             return Enumerable.Range(0, count).Select(x => "Line " + x + " is cool right?");
