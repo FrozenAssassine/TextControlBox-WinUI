@@ -171,11 +171,18 @@ internal class TextManager
     public int CountCharacters()
     {
         int count = 0;
-        foreach (var line in totalLines.Span)
+        int lineEndingLength = LineEndings.LineEndingToString(this.LineEnding).Length;
+
+        for (int i = 0; i < totalLines.Count; i++)
         {
-            count += line.Length + 1;
+            count += totalLines.Span[i].Length;
+
+            //add line ending for all lines except the last
+            if (i < totalLines.Count - 1)
+                count += lineEndingLength;
         }
-        return count > 0 ? count - 1 : 0;
+
+        return count;
     }
 
     public int CountWords()

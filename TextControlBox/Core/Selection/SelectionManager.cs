@@ -484,13 +484,15 @@ internal class SelectionManager
         int length = 0;
         int startIndex = 0;
 
+        int lineEndingLength = LineEndings.LineEndingToString(textManager.LineEnding).Length;
+
         for (int i = 0; i < textManager.LinesCount; i++)
         {
             var currentLine = textManager.totalLines.Span[i];
 
             //calculate startIndex
             if (i < startLine)
-                startIndex += currentLine.Length + 1;
+                startIndex += currentLine.Length + lineEndingLength;
             else if (i == startLine)
                 startIndex += startChar;
 
@@ -503,11 +505,11 @@ internal class SelectionManager
                 if (i == startLine && i == endLine)
                     length += endChar - startChar;
                 else if (i == startLine)
-                    length += currentLine.Length - startChar;
+                    length += currentLine.Length - startChar + lineEndingLength;
                 else if (i == endLine)
                     length += endChar;
                 else
-                    length += currentLine.Length + 1;
+                    length += currentLine.Length + lineEndingLength;
             }
         }
         return (startIndex, length);
