@@ -82,9 +82,9 @@ internal class AddNewLineTextAction
             var splitLines = currentLineText.SplitAt(charPosition);
             textManager.SetLineText(lineNumber, indentation + splitLines[1]);
             textManager.InsertOrAdd(lineNumber, splitLines[0]);
+            cursorManager.SetCursorPosition(lineNumber + 1, indentation.Length);
         }, lineNumber, 1, 2);
 
-        cursorManager.SetCursorPosition(lineNumber + 1, indentation.Length);
     }
 
     public void ReplaceSelectionWithNewLine()
