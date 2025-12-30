@@ -578,7 +578,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public bool SelectLine(int line)
     {
-        if (line >= textManager.LinesCount)
+        if (line >= textManager.LinesCount || line < 0)
             return false;
 
         int lineLength = textManager.GetLineLength(line);
@@ -592,7 +592,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public bool SelectLines(int start, int count)
     {
-        if (start + count >= textManager.LinesCount)
+        if (start + count >= textManager.LinesCount || start + count < 0 || start < 0)
             return false;
 
         int endLineLength = textManager.GetLineLength(start + count);

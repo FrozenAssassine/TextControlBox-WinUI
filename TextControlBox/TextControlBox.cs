@@ -555,7 +555,7 @@ public partial class TextControlBox : UserControl
     /// <param name="autoClamp">Automatically clamp invalid values to the correct bounds</param>
     public void SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true, bool autoClamp = true)
     {
-        coreTextBox.SetCursorPosition(lineNumber, characterPos, scrollIntoView);
+        coreTextBox.SetCursorPosition(lineNumber, characterPos, scrollIntoView, autoClamp);
     }
 
     /// <summary>
@@ -658,7 +658,7 @@ public partial class TextControlBox : UserControl
     /// <param name="ignoreIsReadOnly">Ignores the isReadOnly property of the textbox.</param>
     public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs, bool ignoreIsReadOnly = false)
     {
-        coreTextBox.RewriteTabsSpaces(spaces, useSpacesInsteadTabs);
+        coreTextBox.RewriteTabsSpaces(spaces, useSpacesInsteadTabs, ignoreIsReadOnly);
     }
 
 
@@ -1008,7 +1008,7 @@ public partial class TextControlBox : UserControl
     public Thickness SelectionScrollStartBorderDistance 
     { 
         get => coreTextBox.SelectionScrollStartBorderDistance; 
-        set => SelectionScrollStartBorderDistance = value;
+        set => coreTextBox.SelectionScrollStartBorderDistance = value;
     }
 
     /// <summary>
