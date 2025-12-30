@@ -1,5 +1,4 @@
-﻿
-using Microsoft.Graphics.Canvas.UI.Xaml;
+﻿using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -46,16 +45,16 @@ internal class ScrollManager
         horizontalScrollBar.Scroll += HorizontalScrollBar_Scroll;
     }
 
-    private void VerticalScrollbar_Loaded(object sender, RoutedEventArgs e)
+    internal void VerticalScrollbar_Loaded(object sender, RoutedEventArgs e)
     {
         verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * textRenderer.SingleLineHeight - scrollGrid.ActualHeight) / DefaultVerticalScrollSensitivity;
         verticalScrollBar.ViewportSize = coreTextbox.ActualHeight;
     }
-    private void HorizontalScrollBar_Scroll(object sender, ScrollEventArgs e)
+    internal void HorizontalScrollBar_Scroll(object sender, ScrollEventArgs e)
     {
         canvasHelper.UpdateAll();
     }
-    private void VerticalScrollBar_Scroll(object sender, ScrollEventArgs e)
+    internal void VerticalScrollBar_Scroll(object sender, ScrollEventArgs e)
     {
         //only update when a line was scrolled
         if ((int)(verticalScrollBar.Value / textRenderer.SingleLineHeight * DefaultVerticalScrollSensitivity) != textRenderer.NumberOfStartLine)

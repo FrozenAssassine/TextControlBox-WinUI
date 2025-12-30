@@ -522,6 +522,17 @@ public partial class TextControlBox : UserControl
     /// </summary>
     public void Unload()
     {
+        coreTextBox.eventsManager.Loaded -= EventsManager_Loaded;
+        coreTextBox.eventsManager.ZoomChanged -= ZoomManager_ZoomChanged;
+        coreTextBox.eventsManager.TextChanged -= EventsManager_TextChanged;
+        coreTextBox.eventsManager.SelectionChanged -= EventsManager_SelectionChanged;
+        coreTextBox.eventsManager.GotFocus -= EventsManager_GotFocus;
+        coreTextBox.eventsManager.LostFocus -= EventsManager_LostFocus;
+        coreTextBox.eventsManager.TextLoaded -= EventsManager_TextLoaded;
+        coreTextBox.eventsManager.LinkClicked -= EventsManager_LinkClicked;
+        coreTextBox.eventsManager.TabsSpacesChanged -= EventsManager_TabsSpacesChanged;
+        coreTextBox.eventsManager.LineEndingChanged -= EventsManager_LineEndingChanged;
+
         coreTextBox.Unload();
     }
 

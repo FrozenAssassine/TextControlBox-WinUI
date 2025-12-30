@@ -875,6 +875,17 @@ internal sealed partial class CoreTextControlBox : UserControl
         inputHandler.PreviewKeyDown -= InputHandler_KeyDown;
         inputHandler.TextEntered -= InputHandler_TextEntered;
 
+        if (verticalScrollBar != null)
+        {
+            verticalScrollBar.Loaded -= scrollManager.VerticalScrollbar_Loaded;
+            verticalScrollBar.Scroll -= scrollManager.VerticalScrollBar_Scroll;
+        }
+
+        if (horizontalScrollBar != null)
+        {
+            horizontalScrollBar.Scroll -= scrollManager.HorizontalScrollBar_Scroll;
+        }
+
         //Dispose and null larger objects
         textManager.totalLines.Dispose();
         lineNumberRenderer.LineNumberTextToRender = lineNumberRenderer.OldLineNumberTextToRender = null;
