@@ -84,7 +84,14 @@ internal class ReplaceSelectionManager
                     textManager.InsertOrAddRange(ListHelper.GetLines(lines, 1, lines.Length - 2), startLine + 1);
             }
         }
+        int cursorLine = startLine + lines.Length - 1;
+        int cursorColumn;
 
-        cursorManager.SetCursorPosition(startLine + lines.Length - 1, startPos + lines[0].Length);
+        if (lines.Length == 1)
+            cursorColumn = startPos + lines[0].Length;
+        else
+            cursorColumn = lines[^1].Length;
+
+        cursorManager.SetCursorPosition(cursorLine, cursorColumn);
     }
 }
