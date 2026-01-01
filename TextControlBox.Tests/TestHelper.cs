@@ -2,15 +2,25 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using TextControlBoxNS;
 using TextControlBoxNS.Core;
 
 namespace TextControlBox.Tests
 {
     internal class TestHelper
     {
-        public static (CoreTextControlBox coreTextBox, string text) MakeCoreTextboxWithText()
+        public static readonly string[] TestLines = [
+            "Line1",
+            "Line22",
+            "Line333",
+            "Line4444",
+            "Line55555"
+            ];
+
+        public static (CoreTextControlBox coreTextBox, string text) MakeCoreTextboxWithText(LineEnding le = LineEnding.CRLF)
         {
             var core = MakeCoreTextbox();
+            core.LineEnding = le;
             return (core, core.GetText());
         }
 

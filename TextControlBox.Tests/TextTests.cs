@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
 using System;
 using System.Diagnostics;
+using TextControlBoxNS;
 using TextControlBoxNS.Core;
 
 namespace TextControlBox.Tests;
@@ -145,11 +146,9 @@ public class TextTests
         CheckUndoRedo(coreTextbox);
 
         var cur = coreTextbox.cursorManager.currentCursorPosition;
-        bool res =
-            cur.LineNumber == 0 &&
-            cur.CharacterPosition == 16;
 
-        Debug.Assert(res);
+        Assert.AreEqual(0, cur.LineNumber);
+        Assert.AreEqual(16, cur.CharacterPosition);
     }
 
     [UITestMethod]
@@ -163,11 +162,9 @@ public class TextTests
         CheckUndoRedo(coreTextbox);
 
         var cur = coreTextbox.cursorManager.currentCursorPosition;
-        bool res =
-            cur.LineNumber == 2 &&
-            cur.CharacterPosition == 11;
 
-        Debug.Assert(res);
+        Assert.AreEqual(2, cur.LineNumber);
+        Assert.AreEqual(11, cur.CharacterPosition);
     }
     [UITestMethod]
     public void AddCharMultiline_MultilineSelection_EverythinkSelected()
@@ -181,12 +178,10 @@ public class TextTests
         CheckUndoRedo(coreTextbox);
 
         var cur = coreTextbox.cursorManager.currentCursorPosition;
-        bool res =
-            cur.LineNumber == 2 &&
-            cur.CharacterPosition == 5 &&
-            coreTextbox.GetText().Equals(text);
 
-        Debug.Assert(res);
+        Assert.AreEqual(2, cur.LineNumber);
+        Assert.AreEqual(5, cur.CharacterPosition);
+        Assert.AreEqual(coreTextbox.GetText(), text);
     }
     [UITestMethod]
     public void DeleteSelectionMultiLineSelectionWholeLines()
@@ -202,12 +197,10 @@ public class TextTests
 
         var cur = coreTextbox.cursorManager.currentCursorPosition;
 
-        bool res =
-            cur.LineNumber == 1 &&
-            cur.CharacterPosition == 0 &&
-            coreTextbox.GetLineText(1).Length == 0 && coreTextbox.GetLineText(0) == originalText.Split(coreTextbox.textManager.NewLineCharacter)[0];
-
-        Debug.Assert(res);
+        Assert.AreEqual(1, cur.LineNumber);        
+        Assert.AreEqual(0, cur.CharacterPosition);
+        Assert.AreEqual(0, coreTextbox.GetLineText(1).Length);
+        Assert.AreEqual(coreTextbox.GetLineText(0), originalText.Split(coreTextbox.textManager.NewLineCharacter)[0]);
     }
     [UITestMethod]
     public void Test_12()
@@ -231,7 +224,7 @@ public class TextTests
         Debug.Assert(res);
     }
     [UITestMethod]
-    public void DeleteSelectionSingleLineSelectionWholeLine()
+    public void DeleteSelection_SingleLineSelection_WholeLine()
     {
         var (coreTextbox, originalText) = TestHelper.MakeCoreTextboxWithText();
 
@@ -240,12 +233,13 @@ public class TextTests
         CheckUndoRedo(coreTextbox);
 
         var cur = coreTextbox.cursorManager.currentCursorPosition;
-        bool res =
-            cur.LineNumber == 0 &&
-            cur.CharacterPosition == 0 &&
-            coreTextbox.GetLineText(0) == originalText.Split(coreTextbox.textManager.NewLineCharacter)[1];
 
-        Debug.Assert(res);
+        var str1 = coreTextbox.GetLineText(0);
+        var split = originalText.Split(coreTextbox.textManager.NewLineCharacter)[1];
+
+        Assert.AreEqual(0, cur.LineNumber);
+        Assert.AreEqual(0, cur.CharacterPosition);
+        Assert.AreEqual(str1, split);
     }
     [UITestMethod]
     public void DeleteSelectionLinesSelectedCompletelyNotWholeText()
@@ -379,16 +373,7 @@ public class TextTests
 
         Debug.Assert(coreTextbox.Text == originalText);
     }
-    [UITestMethod]
-    public void SurroundSelection()
-    {
-        var coreTextbox = TestHelper.MakeCoreTextbox();
 
-        coreTextbox.SetCursorPosition(0, 0);
-        coreTextbox.SetSelection(0, 87); //whole text
-
-        coreTextbox.SurroundSelectionWith("<div>", "</div>");
-    }
     [UITestMethod]
     public void AddLinesAtIndex3()
     {

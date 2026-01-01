@@ -17,10 +17,11 @@ public class EndUserFunctionTests
     {
         var textbox = TestHelper.MakeTextbox(20);
 
-        //addline should return false, line 100 does not exist
-        bool res = !textbox.AddLine(100, "Test Text");
-
-        Debug.Assert(res);
+        Assert.IsFalse(textbox.AddLine(100, "Test Text"));
+        Assert.IsFalse(textbox.AddLine(-100, "Test Text"));
+        
+        Assert.IsTrue(textbox.AddLine(0, "Test Text"));
+        Assert.IsTrue(textbox.AddLine(0, "Test Text"));
     }
 
     [UITestMethod]
@@ -43,15 +44,11 @@ public class EndUserFunctionTests
     public void GetLineTextWithOutOfRangeLine()
     {
         var textbox = TestHelper.MakeTextbox();
-        try
+
+        Assert.ThrowsExactly<IndexOutOfRangeException>(() =>
         {
             textbox.GetLineText(100);
-        }
-        catch (IndexOutOfRangeException)
-        {
-            return;
-        }
-        Debug.Assert(false);
+        });
     }
 
     [UITestMethod]
@@ -64,7 +61,7 @@ public class EndUserFunctionTests
 
         var text = textbox.GetText();
 
-        Debug.Assert(text.Length == 0);
+        Assert.AreEqual(0, text.Length);
     }
 
     [UITestMethod]
@@ -74,7 +71,8 @@ public class EndUserFunctionTests
 
         textbox.SetCursorPosition(500, 1000, true);
 
-        Debug.Assert(textbox.CursorPosition.LineNumber != 500 && textbox.CursorPosition.CharacterPosition != 1000);
+        Assert.AreNotEqual(500, textbox.CursorPosition.LineNumber);
+        Assert.AreNotEqual(10000, textbox.CursorPosition.CharacterPosition);
     }
 
     [UITestMethod]
@@ -84,24 +82,18 @@ public class EndUserFunctionTests
 
         textbox.SetCursorPosition(-100, -500, true);
 
-        Debug.Assert(textbox.CursorPosition.LineNumber != -100 && textbox.CursorPosition.CharacterPosition != -500);
+        Assert.AreNotEqual(-100, textbox.CursorPosition.LineNumber);
+        Assert.AreNotEqual(-500, textbox.CursorPosition.CharacterPosition);
     }
 
     [UITestMethod]
     public void SetSelectionTooHigh()
     {
         var textbox = TestHelper.MakeTextbox(10);
+        textbox.SetSelection(10000, 5000);
 
-        try
-        {
-            textbox.SetSelection(10000, 5000);
-        }
-        catch
-        {
-            Debug.Assert(false);
-        }
-        //should be no selection
-        Debug.Assert(!textbox.CurrentSelectionOrdered.HasValue && !textbox.CurrentSelection.HasValue);
+        Assert.IsFalse(textbox.CurrentSelectionOrdered.HasValue);
+        Assert.IsFalse(textbox.CurrentSelection.HasValue);
     }
 
     [UITestMethod]
@@ -111,10 +103,9 @@ public class EndUserFunctionTests
 
         const string text = "Line1\nLine2\nLine3\n";
         textbox.SetText(text);
-
         textbox.SelectAll();
 
-        Debug.Assert(textbox.SelectedText.Equals(LineEndings.CleanLineEndings(text, textbox.LineEnding)));
+        Assert.AreEqual(LineEndings.CleanLineEndings(text, textbox.LineEnding), textbox.SelectedText);
     }
 
     [UITestMethod]
@@ -128,10 +119,10 @@ public class EndUserFunctionTests
         textbox.SelectedText = text;
 
         //should be no selection
-        Debug.Assert(textbox.GetText().Equals(LineEndings.CleanLineEndings(text, textbox.LineEnding)));
+        Assert.AreEqual(LineEndings.CleanLineEndings(text, textbox.LineEnding), textbox.GetText());
     }
-    [UITestMethod]
 
+    [UITestMethod]
     public void SetText_EmptyString()
     {
         var textbox = TestHelper.MakeTextbox(10);
@@ -470,8 +461,7 @@ public class EndUserFunctionTests
         string textBefore = textbox.GetText();
         textbox.ReplaceAll("line", "", false, false);
 
-        bool res = textbox.GetText().Equals(textBefore.Replace("Line", ""));
-        Debug.Assert(res);
+        Assert.AreEqual(textBefore.Replace("Line", ""), textbox.GetText());
     }
 
     [UITestMethod]
@@ -726,4 +716,247 @@ public class EndUserFunctionTests
 
         Debug.Assert(expected.Equals(textAfter));
     }
+
+    [UITestMethod]
+    public void Test_SelectLines()
+    {
+        string[] lines = TestHelper.TestLines;
+
+        var textbox = TestHelper.MakeTextbox(0);
+        textbox.LoadLines(lines, true, LineEnding.LF);
+
+        Assert.IsTrue(textbox.SelectLines(0, 3));
+        Assert.AreEqual(string.Join("\n", lines.Take(3)), textbox.SelectedText);
+        Assert.AreEqual(2, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(lines[2].Length, textbox.CursorPosition.CharacterPosition);
+
+        Assert.IsTrue(textbox.SelectLines(2, 3));
+        Assert.AreEqual(string.Join("\n", lines.Skip(2).Take(3)), textbox.SelectedText);
+        Assert.AreEqual(4, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(lines[4].Length, textbox.CursorPosition.CharacterPosition);
+
+        Assert.IsTrue(textbox.SelectLines(0, 5));
+        Assert.AreEqual(string.Join("\n", lines), textbox.SelectedText);
+        Assert.AreEqual(4, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(lines[4].Length, textbox.CursorPosition.CharacterPosition);
+
+        Assert.IsFalse(textbox.SelectLines(5, 10));
+        Assert.IsFalse(textbox.SelectLines(-5, -10));
+        Assert.IsFalse(textbox.SelectLines(0, 20));
+        Assert.IsFalse(textbox.SelectLines(0, -20));
+    }
+
+
+    [UITestMethod]
+    public void Test_SelectLine()
+    {
+        string[] lines = TestHelper.TestLines;
+        var textbox = TestHelper.MakeTextbox(0);
+        textbox.LoadLines(lines, true, LineEnding.LF);
+
+        Assert.IsTrue(textbox.SelectLine(0));
+        Assert.AreEqual(lines[0] + "\n", textbox.SelectedText);
+        Assert.AreEqual(0, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(0, textbox.CursorPosition.CharacterPosition);
+        Assert.IsTrue(textbox.HasSelection);
+
+        Assert.IsTrue(textbox.SelectLine(2));
+        Assert.AreEqual(lines[2] + "\n", textbox.SelectedText);
+        Assert.AreEqual(2, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(0, textbox.CursorPosition.CharacterPosition);
+        Assert.IsTrue(textbox.HasSelection);
+
+        Assert.IsTrue(textbox.SelectLine(4));
+        Assert.AreEqual(lines[4] + "\n", textbox.SelectedText);
+        Assert.AreEqual(4, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(0, textbox.CursorPosition.CharacterPosition);
+        Assert.IsTrue(textbox.HasSelection);
+
+        Assert.IsFalse(textbox.SelectLine(10));
+        Assert.IsFalse(textbox.SelectLine(-10));
+    }
+
+    [UITestMethod]
+    public void Test_GoToLine()
+    {
+        var (textbox, text) = TestHelper.MakeCoreTextboxWithText();
+        textbox.LineEnding = LineEnding.LF;
+        var lines = text.Split("\n");
+
+        Assert.IsTrue(textbox.GoToLine(0));
+        Assert.AreEqual(0, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(0, textbox.CursorPosition.CharacterPosition);
+
+        Assert.IsTrue(textbox.GoToLine(99));
+        Assert.AreEqual(99, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(0, textbox.CursorPosition.CharacterPosition);
+
+        Assert.IsFalse(textbox.GoToLine(100));
+        Assert.IsFalse(textbox.GoToLine(-50));
+    }
+
+    [UITestMethod]
+    public void Test_LoadText()
+    {
+        var textbox = TestHelper.MakeTextbox(0);
+        textbox.LoadText("");
+        Assert.AreEqual("", textbox.GetText());
+
+        textbox.LoadText(null);
+        Assert.AreEqual("", textbox.GetText());
+
+        textbox.LoadText("    Hello World\nTree1", autodetectTabsSpaces: true);
+        Assert.AreEqual("    Hello World\nTree1", textbox.GetText());
+        Assert.AreEqual(4, textbox.NumberOfSpacesForTab);
+        Assert.IsTrue(textbox.UseSpacesInsteadTabs);
+
+        textbox.UseSpacesInsteadTabs = true;
+        textbox.NumberOfSpacesForTab = 2;
+        textbox.LoadText("\tHello World\nTree1", autodetectTabsSpaces: false);
+        Assert.AreEqual("\tHello World\nTree1", textbox.GetText());
+        Assert.AreEqual(2, textbox.NumberOfSpacesForTab);
+        Assert.IsTrue(textbox.UseSpacesInsteadTabs);
+
+        textbox.SetText("Hello Test 123");
+        textbox.LoadText("Hello Test");
+
+        Assert.IsFalse(textbox.CanUndo);
+        Assert.IsFalse(textbox.CanRedo);
+
+        textbox.Undo();
+
+        Assert.AreEqual("Hello Test", textbox.GetText());
+
+        textbox.LoadText("Test Text\nTestText2\nEND");
+        Assert.AreEqual(2, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(3, textbox.CursorPosition.CharacterPosition);
+    }
+
+    [UITestMethod]
+    public void Test_ClearSelection()
+    {
+        var textbox = TestHelper.MakeTextbox(100);
+        textbox.SelectAll();
+
+        //validate selection exists
+        Assert.IsTrue(textbox.CurrentSelectionOrdered.HasValue);
+        Assert.AreEqual(0, textbox.CurrentSelectionOrdered.Value.StartLinePos);
+        Assert.AreEqual(0, textbox.CurrentSelectionOrdered.Value.StartCharacterPos);
+        Assert.AreEqual(99, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(99, textbox.CurrentSelectionOrdered.Value.EndLinePos);
+
+        textbox.ClearSelection();
+
+        //validate no selection exists anymore
+        Assert.IsFalse(textbox.CurrentSelectionOrdered.HasValue);
+        Assert.AreEqual(99, textbox.CursorPosition.LineNumber);
+    }
+
+    [UITestMethod]
+    public void Test_GetLinesText()
+    {
+        var (textbox, text) = TestHelper.MakeCoreTextboxWithText(LineEnding.LF);
+        var lines = text.Split("\n");
+        int totalCount = lines.Length; 
+
+        // 1. Standard Case: Get a middle chunk of text
+        string middleLines = textbox.GetLinesText(5, 3);
+        string expectedMiddle = string.Join(textbox.textManager.NewLineCharacter, lines.Skip(5).Take(3));
+        Assert.AreEqual(expectedMiddle, middleLines);
+
+        // 2. Edge Case: Get the very first line
+        string firstLine = textbox.GetLinesText(0, 1);
+        Assert.AreEqual(lines[0], firstLine);
+
+        // 3. Edge Case: Get all lines (Start 0, Count = Total)
+        string allLines = textbox.GetLinesText(0, totalCount);
+        Assert.AreEqual(textbox.textManager.GetLinesAsString(), allLines);
+
+        // 4. Edge Case: Count is 0 (Start + Count == 0)
+        // The code has a specific check: if (start + count == 0) return "";
+        Assert.AreEqual("", textbox.GetLinesText(0, 0));
+
+        // 5. Boundary Case: Get the last line only
+        string lastLine = textbox.GetLinesText(totalCount - 1, 1);
+        Assert.AreEqual(lines[totalCount - 1], lastLine);
+
+        //out of range
+        Assert.ThrowsExactly<IndexOutOfRangeException>(() => {
+            textbox.GetLinesText(-5, -10);
+        });
+        
+        Assert.ThrowsExactly<IndexOutOfRangeException>(() => {
+            textbox.GetLinesText(5, -10);
+        });
+
+        Assert.ThrowsExactly<IndexOutOfRangeException>(() => {
+            textbox.GetLinesText(-5, 10);
+        });
+
+        // 7. Error Case: Out of Range (Starting too high)
+        Assert.ThrowsExactly<IndexOutOfRangeException>(() => {
+            textbox.GetLinesText(totalCount, 1);
+        });
+    }
+    [UITestMethod]
+    public void Test_SetLineText()
+    {
+        var textbox = TestHelper.MakeTextbox(5);
+
+        var text = "Hello World";
+        Assert.IsTrue(textbox.SetLineText(3, text));
+        Assert.AreEqual(text, textbox.GetLineText(3));
+
+        Assert.IsFalse(textbox.SetLineText(100, text));
+        Assert.IsFalse(textbox.SetLineText(-100, text));
+
+        //do not allow strings with newline characters
+        Assert.ThrowsExactly<ArgumentException>(() => {
+            textbox.SetLineText(3, "Hello\nBye");
+        });
+        Assert.ThrowsExactly<ArgumentException>(() => {
+            textbox.SetLineText(3, "Hello\r\nBye");
+        });
+        Assert.ThrowsExactly<ArgumentException>(() => {
+            textbox.SetLineText(3, "Hello\rBye");
+        });
+    }
+
+    [UITestMethod]
+    public void Test_SurroundSelection()
+    {
+        string[] lines = TestHelper.TestLines;
+        var textbox = TestHelper.MakeTextbox(0);
+        textbox.LoadLines(lines, true, LineEnding.LF);
+
+        textbox.SelectLines(1,3);
+
+        string surStr1 = "<div>";
+        string surStr2 = "</div>";
+
+        textbox.SurroundSelectionWith(surStr1, surStr2);
+
+        Assert.AreEqual(string.Join("\n", [lines[0], surStr1 + lines[1], lines[2], lines[3] + surStr2, lines[4]]), textbox.GetText());
+        Assert.AreEqual(3, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(lines[3].Length + surStr2.Length, textbox.CursorPosition.CharacterPosition);
+    }
+
+    [UITestMethod]
+    public void Test_SurroundSelectionSingleParam()
+    {
+        string[] lines = TestHelper.TestLines;
+        var textbox = TestHelper.MakeTextbox(0);
+        textbox.LoadLines(lines, true, LineEnding.LF);
+
+        textbox.SelectLines(1, 3);
+
+        string surStr = "<div>";
+
+        textbox.SurroundSelectionWith(surStr);
+
+        Assert.AreEqual(string.Join("\n", [lines[0], surStr + lines[1], lines[2], lines[3] + surStr, lines[4]]), textbox.GetText());
+        Assert.AreEqual(3, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(lines[3].Length + surStr.Length, textbox.CursorPosition.CharacterPosition);
+    }
+
 }
