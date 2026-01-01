@@ -127,9 +127,10 @@ public partial class TextControlBox : UserControl
     /// Moves the cursor to the beginning of the specified line by its index.
     /// </summary>
     /// <param name="line">The index of the line to navigate to.</param>
-    public void GoToLine(int line)
+    /// <returns>Whether the line was found and the cursor moved successfully</returns>
+    public bool GoToLine(int line)
     {
-        coreTextBox.GoToLine(line);
+        return coreTextBox.GoToLine(line);
     }
 
     /// <summary>
@@ -370,6 +371,7 @@ public partial class TextControlBox : UserControl
     /// <param name="line">The zero based index of the line to change the content.</param>
     /// <param name="text">The text to set for the specified line.</param>
     /// <returns>Returns true if the text was changed successfully, and false if the index was out of range.</returns>
+    /// <exception cref="ArgumentException"> Throws when <paramref name="text"/> contains new line characters.</exception>
     public bool SetLineText(int line, string text)
     {
         return coreTextBox.SetLineText(line, text);
@@ -401,6 +403,9 @@ public partial class TextControlBox : UserControl
     /// <param name="line">The zero based position to insert the line to</param>
     /// <param name="text">The text to put into the new line</param>
     /// <returns>Returns true if the line was added successfully and false if not</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="text"/> contains multiline characters, which are not allowed.
+    /// </exception>
     public bool AddLine(int line, string text)
     {
         return coreTextBox.AddLine(line, text);
@@ -414,9 +419,13 @@ public partial class TextControlBox : UserControl
     /// the <see cref="IsReadOnly"/> property.
     /// </remarks>
     /// <param name="text">The text to surround the selection with</param>
-    public void SurroundSelectionWith(string text)
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="text"/> contains multiline characters, which are not allowed.
+    /// </exception>
+    /// <returns>Returns whether the operation succeeded or failed, due to no text selected.</returns>
+    public bool SurroundSelectionWith(string text)
     {
-        coreTextBox.SurroundSelectionWith(text);
+        return coreTextBox.SurroundSelectionWith(text);
     }
 
     /// <summary>
@@ -428,9 +437,13 @@ public partial class TextControlBox : UserControl
     /// </remarks>
     /// <param name="text1">The text for the left side</param>
     /// <param name="text2">The text for the right side</param>
-    public void SurroundSelectionWith(string text1, string text2)
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="text1"/> or <paramref name="text2"/> contains multiline characters, which are not allowed.
+    /// </exception>
+    /// <returns>Returns whether the operation succeeded or failed, due to no text selected.</returns>
+    public bool SurroundSelectionWith(string text1, string text2)
     {
-        coreTextBox.SurroundSelectionWith(text1, text2);
+        return coreTextBox.SurroundSelectionWith(text1, text2);
 
     }
 

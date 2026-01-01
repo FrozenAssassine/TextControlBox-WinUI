@@ -26,4 +26,15 @@ internal class LineEndings
     {
         return Regex.Replace(text, "(\r\n|\r|\n)", LineEndingToString(lineEnding));
     }
+
+    public static string RemoveLineEndings(string text)
+    {
+        return Regex.Replace(text, "(\r\n|\r|\n)", "");
+    }
+
+
+    public static bool ContainsLineEndings(string text)
+    {
+        return Regex.Match(text, "(\r\n|\r|\n)").Success;
+    }
 }

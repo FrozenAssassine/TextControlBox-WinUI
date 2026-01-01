@@ -592,23 +592,27 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public bool SelectLines(int start, int count)
     {
-        if (start + count >= textManager.LinesCount || start + count < 0 || start < 0)
+        if (count <= 0)
             return false;
 
-        int endLineLength = textManager.GetLineLength(start + count);
-        
-        selectionManager.SetSelection(start, 0, start + count, endLineLength);
-        cursorManager.SetCursorPosition(start + count, endLineLength);
+        var endLine = start + count - 1;
+        if (start < 0 || endLine < 0 || endLine >= textManager.LinesCount)
+            return false;
+
+        int endLineLength = textManager.GetLineLength(endLine);
+
+        selectionManager.SetSelection(start, 0, endLine, endLineLength);
+        cursorManager.SetCursorPosition(endLine, endLineLength);
 
         canvasUpdateManager.UpdateSelection();
         canvasUpdateManager.UpdateCursor();
         return true;
     }
 
-    public void GoToLine(int line)
+    public bool GoToLine(int line)
     {
         if (line >= textManager.LinesCount || line < 0)
-            return;
+            return false;
 
         selectionManager.selectionEnd.IsNull = true;
         cursorManager.SetCursorPosition(line, 0);
@@ -618,6 +622,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         this.Focus(FocusState.Programmatic);
 
         canvasUpdateManager.UpdateAll();
+        return true;
     }
 
     public void LoadText(string text, bool autodetectTabsSpaces = true)
@@ -649,7 +654,6 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         textActionManager.Safe_Cut();
     }
-
 
     public string GetText()
     {
@@ -775,24 +779,30 @@ internal sealed partial class CoreTextControlBox : UserControl
         return textActionManager.AddLines(start, text);
     }
 
-    public void SurroundSelectionWith(string text)
+    public bool SurroundSelectionWith(string text)
     {
-        SurroundSelectionWith(text, text);
+        return SurroundSelectionWith(text, text);
     }
 
-    public void SurroundSelectionWith(string text1, string text2)
+    public bool SurroundSelectionWith(string text1, string text2)
     {
         if (selectionManager.HasSelection)
         {
+            if(stringManager.HasMultilineCharacters(text1) || stringManager.HasMultilineCharacters(text2))
+                throw new ArgumentException(
+                    "The text contains multiline characters, which are not allowed.");
+
             textActionManager.AddCharacter(stringManager.CleanUpString(text1) + SelectedText + stringManager.CleanUpString(text2));
+            return true;
         }
+        return false;
     }
 
     public bool DuplicateLine(int line, bool ignoreIsReadOnly = false)
     {
         if (!ignoreIsReadOnly && IsReadOnly)
             return false;
-        
+
         if (line >= textManager.LinesCount || line < 0)
             return false;
 
@@ -914,9 +924,16 @@ internal sealed partial class CoreTextControlBox : UserControl
             int length = textManager.GetLineLength(lineNumber);
             characterPos = Math.Clamp(characterPos, 0, length);
         }
-        else if (lineNumber < 0 || lineNumber >= textManager.totalLines.Count || characterPos < 0 || characterPos >= textManager.GetLineLength(lineNumber))
-                throw new IndexOutOfRangeException("Invalid line number or character position provided for SetCursorPosition");
-        
+        else
+        {
+            if (lineNumber < 0 || lineNumber >= textManager.totalLines.Count)
+                throw new IndexOutOfRangeException("Invalid line number provided for SetCursorPosition");
+
+            var length = textManager.GetLineLength(lineNumber);
+            if (characterPos < 0 || characterPos > length)
+                throw new IndexOutOfRangeException("Invalid character position provided for SetCursorPosition");
+        }
+
         cursorManager.currentCursorPosition.LineNumber = lineNumber;
         cursorManager.currentCursorPosition.CharacterPosition = characterPos;
 
@@ -1072,14 +1089,14 @@ internal sealed partial class CoreTextControlBox : UserControl
     }
     public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs, bool ignoreIsReadonly = false)
     {
-        if(spaces <= 0)
+        if (spaces <= 0)
             throw new ArgumentOutOfRangeException("Spaces must be greater than zero.");
 
         if (!ignoreIsReadonly && IsReadOnly)
             return;
-        
+
         tabSpaceManager.RewriteTabsSpaces(useSpacesInsteadTabs ? spaces : -1);
-        
+
         canvasUpdateManager.UpdateAll();
     }
 
@@ -1142,7 +1159,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             { SyntaxHighlightID.Markdown, new Markdown() },
             { SyntaxHighlightID.PHP, new PHP() },
             { SyntaxHighlightID.Python, new Python() },
-            { SyntaxHighlightID.QSharp, new QSharp() },            
+            { SyntaxHighlightID.QSharp, new QSharp() },
             { SyntaxHighlightID.XML, new XML() },
             { SyntaxHighlightID.SQL, new SQL() },
         };

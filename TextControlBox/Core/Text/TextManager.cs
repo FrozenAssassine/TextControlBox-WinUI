@@ -67,6 +67,9 @@ internal class TextManager
     }
     public string GetLinesAsString(int start, int count)
     {
+        if (start < 0 || count < 0)
+            throw new IndexOutOfRangeException("GetLinesAsString start or count less then zero");
+
         if (start + count == 0)
             return "";
 

@@ -241,7 +241,7 @@ namespace TextControlBoxNS.Core.Text
             {
                 if (lines == null)
                 {
-                    Safe_LoadLines([], false);
+                    Safe_LoadLines([], false, lineEnding);
                     return;
                 }
 
@@ -532,6 +532,12 @@ namespace TextControlBoxNS.Core.Text
             if (text.Length > longestLineManager.longestLineLength)
                 longestLineManager.longestIndex = line;
 
+            if (stringManager.HasMultilineCharacters(text))
+            {
+                throw new ArgumentException(
+                    "The text contains multiline characters, which are not allowed.");
+            }
+
             undoRedo.RecordUndoAction(() =>
             {
                 textManager.InsertOrAdd(line, stringManager.CleanUpString(text));
@@ -569,6 +575,12 @@ namespace TextControlBoxNS.Core.Text
 
             if (text.Length > longestLineManager.longestLineLength)
                 longestLineManager.longestIndex = line;
+
+            if (stringManager.HasMultilineCharacters(text))
+            {
+                throw new ArgumentException(
+                    "text cannot contain newline characters (\r, \n, \r\n). Use AddLines or similar functions");
+            }
 
             undoRedo.RecordUndoAction(() =>
             {
