@@ -30,8 +30,8 @@ internal class TextRenderer
     public string OldRenderedText = null;
     public float VerticalDrawOffset { get; private set; } = 0;
 
-    private double TopScrollOffset = 0;
-    private double BottomScrollOffset = 0;
+    public double TopScrollOffset { get; private set; } = 0;
+    public double BottomScrollOffset { get; private set; } = 0;
 
     private CursorManager cursorManager;
     private TextManager textManager;
@@ -112,14 +112,14 @@ internal class TextRenderer
         var singleLineHeight = SingleLineHeight;
 
         //Measure text position and apply the value to the scrollbar
-        scrollManager.verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * singleLineHeight - scrollGrid.ActualHeight + BottomScrollOffset) / scrollManager.DefaultVerticalScrollSensitivity;
+        scrollManager.verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * singleLineHeight - scrollGrid.ActualHeight + BottomScrollOffset + TopScrollOffset) / scrollManager.DefaultVerticalScrollSensitivity;
         scrollManager.verticalScrollBar.ViewportSize = coreTextbox.canvasText.ActualHeight;
 
         //Calculate number of lines that need to be rendered
         int linesToRenderCount = (int)(coreTextbox.canvasText.ActualHeight / singleLineHeight);
-        linesToRenderCount = Math.Min(linesToRenderCount, textManager.LinesCount);
+        linesToRenderCount = Math.Min(Math.Max(linesToRenderCount, 1), textManager.LinesCount);
 
-        int startLine = (int)(((scrollManager.VerticalScroll - VerticalDrawOffset) * scrollManager.DefaultVerticalScrollSensitivity) / singleLineHeight);
+        int startLine = (int)(((scrollManager.VerticalScroll - VerticalDrawOffset) * scrollManager.DefaultVerticalScrollSensitivity - TopScrollOffset) / singleLineHeight);
         startLine = Math.Min(startLine, textManager.LinesCount);
 
         if (startLine < 0) startLine = 0;
@@ -129,14 +129,9 @@ internal class TextRenderer
         return (startLine, linesToRender);
     }
 
-
-    public void Draw(CanvasControl canvasText, CanvasDrawEventArgs args)
+    public float CalculateDrawOffset()
     {
         double verticalScroll = scrollManager.VerticalScroll;
-        if (scrollManager.VerticalScroll < 6 && scrollManager.VerticalScroll != 0)
-        {
-            verticalScroll = 0;
-        }
 
         double scrollCoeff = scrollManager.verticalScrollBar.Maximum / scrollManager.VerticalScroll;
 
@@ -152,8 +147,13 @@ internal class TextRenderer
                 drawOffset = SingleLineHeight;
             }
         }
+        return drawOffset - SingleLineHeight;
+    }
 
-        VerticalDrawOffset = drawOffset - SingleLineHeight;
+
+    public void Draw(CanvasControl canvasText, CanvasDrawEventArgs args)
+    {
+        VerticalDrawOffset = CalculateDrawOffset();
 
         //Create resources and layouts:
         if (NeedsTextFormatUpdate || TextFormat == null || lineNumberRenderer.LineNumberTextFormat == null)
@@ -227,5 +227,7 @@ internal class TextRenderer
         {
             canvasUpdateManager.UpdateLineNumbers();
         }
+        canvasUpdateManager.UpdateSelection(); // Possible bad for performanse
+        canvasUpdateManager.UpdateCursor(); // Possible bad for performanse
     }
 }
