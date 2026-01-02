@@ -57,7 +57,7 @@ internal class ScrollManager
     internal void VerticalScrollBar_Scroll(object sender, ScrollEventArgs e)
     {
         //only update when a line was scrolled
-        if ((int)(verticalScrollBar.Value / textRenderer.SingleLineHeight * DefaultVerticalScrollSensitivity) != textRenderer.NumberOfStartLine)
+        if ((int)(verticalScrollBar.Value / textRenderer.SingleLineHeight * DefaultVerticalScrollSensitivity + textRenderer.VerticalDrawOffset ) != textRenderer.NumberOfStartLine)
         {
             canvasHelper.UpdateAll();
         }
@@ -66,7 +66,7 @@ internal class ScrollManager
     public void UpdateWhenScrolled()
     {
         //only update when a line was scrolled
-        if ((int)(verticalScrollBar.Value / textRenderer.SingleLineHeight) != textRenderer.NumberOfStartLine)
+        if ((int)(verticalScrollBar.Value / textRenderer.SingleLineHeight + textRenderer.VerticalDrawOffset) != textRenderer.NumberOfStartLine)
         {
             canvasHelper.UpdateAll();
         }
