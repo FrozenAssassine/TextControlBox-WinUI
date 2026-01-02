@@ -133,10 +133,29 @@ internal class ScrollManager
     }
     public void UpdateScrollToShowCursor(bool update = true)
     {
-        if (textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines <= cursorManager.LineNumber)
-            verticalScrollBar.Value = (cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+        double globalOffset = textRenderer.VerticalDrawOffset == 0 ? textRenderer.TopScrollOffset : 0;
+
+        if (cursorManager.LineNumber == 0)
+        {
+            verticalScrollBar.Value = 0;
+        }
+        else if (textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines <= cursorManager.LineNumber)
+        {
+            verticalScrollBar.Value = ((cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight + globalOffset) / DefaultVerticalScrollSensitivity;
+        }
         else if (textRenderer.NumberOfStartLine > cursorManager.LineNumber)
-            verticalScrollBar.Value = (cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+        {
+            verticalScrollBar.Value = ((cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight + globalOffset) / DefaultVerticalScrollSensitivity;
+        }
+        else if (textRenderer.VerticalDrawOffset != 0)
+        {
+            int realLineDisplayedCount = (int)((verticalScrollBar.ViewportSize - textRenderer.VerticalDrawOffset) / textRenderer.SingleLineHeight);
+            if (realLineDisplayedCount <= cursorManager.LineNumber)
+            {
+                double offsetToMove = ((cursorManager.LineNumber - realLineDisplayedCount + 1) * textRenderer.SingleLineHeight);
+                verticalScrollBar.Value = ((cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight) / DefaultVerticalScrollSensitivity + offsetToMove;
+            }
+        }
 
         if (update)
             canvasHelper.UpdateAll();
