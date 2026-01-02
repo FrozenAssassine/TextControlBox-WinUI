@@ -22,6 +22,8 @@ namespace TextControlBox_TestApp
             textbox.NumberOfSpacesForTab = 4;
             textbox.ShowWhitespaceCharacters = true;
 
+            textbox.ContentVerticalScrollOffset = new TextControlBoxNS.Models.Structs.VerticalScrollOffset(100, 100);
+
             SetWindowTheme(this, ElementTheme.Dark);
 
             textbox.LinkClicked += Textbox_LinkClicked;
