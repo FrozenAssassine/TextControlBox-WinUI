@@ -134,6 +134,7 @@ internal class ScrollManager
     public void UpdateScrollToShowCursor(bool update = true)
     {
         double globalOffset = textRenderer.VerticalDrawOffset == 0 ? textRenderer.TopScrollOffset : 0;
+        double localOffset = textRenderer.VerticalDrawOffset;
 
         if (cursorManager.LineNumber == 0)
         {
@@ -141,11 +142,11 @@ internal class ScrollManager
         }
         else if (textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines <= cursorManager.LineNumber)
         {
-            verticalScrollBar.Value = ((cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight + globalOffset) / DefaultVerticalScrollSensitivity;
+            verticalScrollBar.Value = ((cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight + globalOffset) / DefaultVerticalScrollSensitivity + localOffset;
         }
         else if (textRenderer.NumberOfStartLine > cursorManager.LineNumber)
         {
-            verticalScrollBar.Value = ((cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight + globalOffset) / DefaultVerticalScrollSensitivity;
+            verticalScrollBar.Value = ((cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight + globalOffset) / DefaultVerticalScrollSensitivity + localOffset;
         }
         else if (textRenderer.VerticalDrawOffset != 0)
         {
