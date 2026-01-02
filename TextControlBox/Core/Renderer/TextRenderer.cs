@@ -8,6 +8,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
+using TextControlBoxNS.Models.Structs;
 using Windows.Foundation;
 
 namespace TextControlBoxNS.Core.Renderer;
@@ -27,6 +28,10 @@ internal class TextRenderer
     public int NumberOfRenderedLines = 0;
     public string RenderedText = "";
     public string OldRenderedText = null;
+    public float VerticalDrawOffset { get; private set; } = 0;
+
+    private double TopScrollOffset = 0;
+    private double BottomScrollOffset = 0;
 
     private CursorManager cursorManager;
     private TextManager textManager;
@@ -75,6 +80,14 @@ internal class TextRenderer
         this.invisibleCharactersRenderer = invisibleCharactersRenderer;
         this.linkRenderer = linkRenderer;
         this.linkHighlightManager = linkHighlightManager;
+
+        UpdateScrollOffset(coreTextbox.ContentVerticalScrollOffset);
+    }
+
+    public void UpdateScrollOffset(VerticalScrollOffset verticalScrollOffset)
+    {
+        this.TopScrollOffset = verticalScrollOffset.Top;
+        this.BottomScrollOffset = verticalScrollOffset.Bottom;
     }
 
     //Check whether the current line is outside the bounds of the visible area
@@ -99,15 +112,17 @@ internal class TextRenderer
         var singleLineHeight = SingleLineHeight;
 
         //Measure text position and apply the value to the scrollbar
-        scrollManager.verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * singleLineHeight - scrollGrid.ActualHeight) / scrollManager.DefaultVerticalScrollSensitivity;
+        scrollManager.verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * singleLineHeight - scrollGrid.ActualHeight + BottomScrollOffset) / scrollManager.DefaultVerticalScrollSensitivity;
         scrollManager.verticalScrollBar.ViewportSize = coreTextbox.canvasText.ActualHeight;
 
         //Calculate number of lines that need to be rendered
         int linesToRenderCount = (int)(coreTextbox.canvasText.ActualHeight / singleLineHeight);
         linesToRenderCount = Math.Min(linesToRenderCount, textManager.LinesCount);
 
-        int startLine = (int)((scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity) / singleLineHeight);
+        int startLine = (int)(((scrollManager.VerticalScroll - VerticalDrawOffset) * scrollManager.DefaultVerticalScrollSensitivity) / singleLineHeight);
         startLine = Math.Min(startLine, textManager.LinesCount);
+
+        if (startLine < 0) startLine = 0;
 
         int linesToRender = Math.Min(linesToRenderCount, textManager.LinesCount - startLine);
 
@@ -117,6 +132,29 @@ internal class TextRenderer
 
     public void Draw(CanvasControl canvasText, CanvasDrawEventArgs args)
     {
+        double verticalScroll = scrollManager.VerticalScroll;
+        if (scrollManager.VerticalScroll < 6 && scrollManager.VerticalScroll != 0)
+        {
+            verticalScroll = 0;
+        }
+
+        double scrollCoeff = scrollManager.verticalScrollBar.Maximum / scrollManager.VerticalScroll;
+
+        double realScrollPosition = verticalScroll * scrollManager.DefaultVerticalScrollSensitivity - TopScrollOffset;
+        double preCalcOffset = realScrollPosition < 0 ? -realScrollPosition : SingleLineHeight;
+
+        float drawOffset = (float)(preCalcOffset < SingleLineHeight ? SingleLineHeight : Math.Floor(preCalcOffset / SingleLineHeight) * SingleLineHeight);
+
+        if (drawOffset > SingleLineHeight)
+        {
+            if (scrollCoeff == 1)
+            {
+                drawOffset = SingleLineHeight;
+            }
+        }
+
+        VerticalDrawOffset = drawOffset - SingleLineHeight;
+
         //Create resources and layouts:
         if (NeedsTextFormatUpdate || TextFormat == null || lineNumberRenderer.LineNumberTextFormat == null)
         {
@@ -171,13 +209,13 @@ internal class TextRenderer
                     searchManager.MatchingSearchLines,
                     searchManager.searchParameter.SearchExpression,
                     (float)-scrollManager.HorizontalScroll,
-                    SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
+                    SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity + VerticalDrawOffset,
                     designHelper._Design.SearchHighlightColor
                     );
 
-            ccls.DrawTextLayout(DrawnTextLayout, (float)-scrollManager.HorizontalScroll, SingleLineHeight, designHelper.TextColorBrush);
+            ccls.DrawTextLayout(DrawnTextLayout, (float)-scrollManager.HorizontalScroll, VerticalDrawOffset + SingleLineHeight, designHelper.TextColorBrush);
 
-            invisibleCharactersRenderer.DrawTabsAndSpaces(args, ccls, RenderedText, DrawnTextLayout, SingleLineHeight);
+            invisibleCharactersRenderer.DrawTabsAndSpaces(args, ccls, RenderedText, DrawnTextLayout, VerticalDrawOffset + SingleLineHeight);
         }
         args.DrawingSession.DrawImage(canvasCommandList);
 
