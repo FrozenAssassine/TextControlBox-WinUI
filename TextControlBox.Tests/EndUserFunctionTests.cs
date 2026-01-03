@@ -29,15 +29,10 @@ public class EndUserFunctionTests
     {
         var textbox = TestHelper.MakeTextbox(10);
 
-        try
+        Assert.ThrowsExactly<IndexOutOfRangeException>(() =>
         {
             textbox.GetLinesText(100, 10);
-        }
-        catch (IndexOutOfRangeException)
-        {
-            return;
-        }   
-        Debug.Assert(false);
+        });
     }
 
     [UITestMethod]
@@ -52,7 +47,7 @@ public class EndUserFunctionTests
     }
 
     [UITestMethod]
-    public void GetTextNoTextInTB()
+    public void GetText_NoTextInTB()
     {
         var textbox = TestHelper.MakeTextbox();
         Debug.WriteLine("Function GetText without text");
@@ -129,9 +124,9 @@ public class EndUserFunctionTests
 
         textbox.SetText("");
 
-        Debug.Assert(textbox.GetText().Length == 0 &&
-            textbox.CursorPosition.LineNumber == 0 &&
-            textbox.CursorPosition.CharacterPosition == 0);
+        Assert.AreEqual(0, textbox.GetText().Length);
+        Assert.AreEqual(0, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(0, textbox.CursorPosition.CharacterPosition);
     }
 
     public void LoadLines_EmptyArray()
@@ -139,9 +134,9 @@ public class EndUserFunctionTests
         var textbox = TestHelper.MakeTextbox(10);
         textbox.LoadLines([]);
 
-        Debug.Assert(textbox.GetText().Length == 0 &&
-            textbox.CursorPosition.LineNumber == 0 &&
-            textbox.CursorPosition.CharacterPosition == 0);
+        Assert.AreEqual(0, textbox.GetText().Length);
+        Assert.AreEqual(0, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(0, textbox.CursorPosition.CharacterPosition);
     }
 
     [UITestMethod]
@@ -150,10 +145,9 @@ public class EndUserFunctionTests
         var textbox = TestHelper.MakeTextbox(0);
         textbox.LoadText("");
 
-        bool res = textbox.GetText().Length == 0 &&
-            textbox.CursorPosition.LineNumber == 0 &&
-            textbox.CursorPosition.CharacterPosition == 0;
-        Debug.Assert(res);
+        Assert.AreEqual(0, textbox.GetText().Length);
+        Assert.AreEqual(0, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(0, textbox.CursorPosition.CharacterPosition);
     }
 
     [UITestMethod]
@@ -169,7 +163,7 @@ public class EndUserFunctionTests
 
         textbox.SelectedText = text;
 
-        Debug.Assert(textbox.GetText().Equals(LineEndings.CleanLineEndings(text, textbox.LineEnding)));
+        Assert.AreEqual(LineEndings.CleanLineEndings(text, textbox.LineEnding), textbox.GetText());
     }
 
     [UITestMethod]
@@ -181,8 +175,7 @@ public class EndUserFunctionTests
 
         textbox.SetText(text);
 
-        bool res = textbox.GetText().Equals(LineEndings.CleanLineEndings(text, textbox.LineEnding));
-        Debug.Assert(res);
+        Assert.AreEqual(LineEndings.CleanLineEndings(text, textbox.LineEnding), textbox.GetText());
     }
     [UITestMethod]
     public void SetText3Lines()
@@ -193,9 +186,9 @@ public class EndUserFunctionTests
 
         textbox.SetText(text);
 
-        bool res = textbox.GetText().Equals(LineEndings.CleanLineEndings(text, textbox.LineEnding)) &&
-            textbox.CursorPosition.LineNumber == 2 && textbox.CursorPosition.CharacterPosition == 5;
-        Debug.Assert(res);
+        Assert.AreEqual(LineEndings.CleanLineEndings(text, textbox.LineEnding), textbox.GetText());
+        Assert.AreEqual(2, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(5, textbox.CursorPosition.CharacterPosition);
     }
     [UITestMethod]
     public void LoadText_3Lines()
@@ -206,9 +199,9 @@ public class EndUserFunctionTests
 
         textbox.LoadText(text);
 
-        bool res = textbox.GetText().Equals(LineEndings.CleanLineEndings(text, textbox.LineEnding)) &&
-            textbox.CursorPosition.LineNumber == 2 && textbox.CursorPosition.CharacterPosition == 5;
-        Debug.Assert(res);
+        Assert.AreEqual(LineEndings.CleanLineEndings(text, textbox.LineEnding), textbox.GetText());
+        Assert.AreEqual(2, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(5, textbox.CursorPosition.CharacterPosition);
     }
     [UITestMethod]
     public void LoadLines3Lines()
@@ -219,9 +212,9 @@ public class EndUserFunctionTests
 
         textbox.LoadLines(["Line1", "Line2", "Line3"]);
 
-        bool res = textbox.GetText().Equals(LineEndings.CleanLineEndings(text, textbox.LineEnding)) &&
-            textbox.CursorPosition.LineNumber == 2 && textbox.CursorPosition.CharacterPosition == 5;
-        Debug.Assert(res);
+        Assert.AreEqual(LineEndings.CleanLineEndings(text, textbox.LineEnding), textbox.GetText());
+        Assert.AreEqual(2, textbox.CursorPosition.LineNumber);
+        Assert.AreEqual(5, textbox.CursorPosition.CharacterPosition);
     }
     [UITestMethod]
     public void SelectSyntaxHighlightingById()
@@ -239,7 +232,7 @@ public class EndUserFunctionTests
         }
         catch
         {
-            Debug.Assert(false);
+            Assert.Fail();
         }
     }
 
@@ -259,10 +252,9 @@ public class EndUserFunctionTests
         }
         catch
         {
-            Debug.Assert(false);
+            Assert.Fail();
             return;
         }
-        Debug.Assert(true);
     }
 
     [UITestMethod]
@@ -275,7 +267,7 @@ public class EndUserFunctionTests
         string textBefore = textbox.GetText();
         textbox.ReplaceAll("line", "Test", false, false);
 
-        Debug.Assert(textbox.GetText().Equals(textBefore.Replace("Line", "Test")));
+        Assert.AreEqual(textBefore.Replace("Line", "Test"), textbox.GetText());
     }
     [UITestMethod]
     public void SearchReplaceAll_MatchCase()
@@ -288,12 +280,11 @@ public class EndUserFunctionTests
 
         //should replace nothing
         textbox.ReplaceAll("line", "Test", true, false);
-        bool res1 = textbox.GetText().Equals(textBefore);
+        Assert.AreEqual(textBefore, textbox.GetText());
 
         textbox.ReplaceAll("Line", "Test", true, false);
 
-        bool res2 = textbox.GetText().Equals(textBefore.Replace("Line", "Test"));
-        Debug.Assert(res1 && res2);
+        Assert.AreEqual(textBefore.Replace("Line", "Test"), textbox.GetText());
     }
 
     [UITestMethod]
@@ -306,16 +297,14 @@ public class EndUserFunctionTests
         string textBefore = textbox.GetText();
         textbox.ReplaceAll("Line", "Test", false, true);
 
-        bool res1 = textbox.GetText().Equals(textBefore);
-
+        Assert.AreEqual(textBefore, textbox.GetText());
         //replace them
         textbox.SetText("Line 1\nLine 2\nLine 3\nLine 4\nLine 5");
 
         textBefore = textbox.GetText();
         textbox.ReplaceAll("Line", "Test", false, true);
 
-        bool res2 = textbox.GetText().Equals(textBefore.Replace("Line", "Test"));
-        Debug.Assert(res1 && res2);
+        Assert.AreEqual(textBefore.Replace("Line", "Test"), textbox.GetText());
     }
 
     [UITestMethod]
@@ -328,9 +317,8 @@ public class EndUserFunctionTests
         //nothing should change
         var replaceRes = textbox.ReplaceAll("Line", "Test", false, false);
 
-        bool res1 = replaceRes  == SearchResult.ReplaceNotAllowedInReadonly && textbox.GetText().Equals(textBefore);
-
-        Debug.Assert(res1);
+        Assert.AreEqual(SearchResult.ReplaceNotAllowedInReadonly, replaceRes);
+        Assert.AreEqual(textBefore, textbox.GetText());
     }
 
     [UITestMethod]
@@ -343,9 +331,8 @@ public class EndUserFunctionTests
         //force replace, even with readonly
         var replaceRes = textbox.ReplaceAll("Line", "Test", false, false, ignoreIsReadOnly: true);
 
-        bool res2 = replaceRes == SearchResult.Found && textbox.GetText().Equals(textBefore.Replace("Line", "Test"));
-
-        Debug.Assert(res2);
+        Assert.AreEqual(SearchResult.Found, replaceRes);
+        Assert.AreEqual(textBefore.Replace("Line", "Test"), textbox.GetText());
     }
 
 
@@ -366,8 +353,9 @@ public class EndUserFunctionTests
                 success = false;
         }
 
-        bool res1 = success && textbox.GetText().Equals(textBefore) && !textbox.HasSelection;
-        Debug.Assert(res1);
+        Assert.IsTrue(success);
+        Assert.AreEqual(textBefore, textbox.GetText());
+        Assert.IsFalse(textbox.HasSelection);
     }
 
     [UITestMethod]
@@ -388,9 +376,9 @@ public class EndUserFunctionTests
                 success = false;
         }
 
-        bool textMatch = textbox.GetText().Equals(textBefore.Replace("Line", "Test"));
-        bool res1 = success && textMatch && !textbox.HasSelection;
-        Debug.Assert(res1);
+        Assert.IsTrue(success);
+        Assert.AreEqual(textBefore.Replace("Line", "Test"), textbox.GetText());
+        Assert.IsFalse(textbox.HasSelection);
     }
 
     [UITestMethod]
@@ -408,7 +396,8 @@ public class EndUserFunctionTests
             textbox.ReplaceNext("Test");
         }
 
-        Debug.Assert(textbox.GetText().Equals(textBefore.Replace("Line", "Test")) && !textbox.HasSelection);
+        Assert.AreEqual(textBefore.Replace("Line", "Test"), textbox.GetText());
+        Assert.IsFalse(textbox.HasSelection);
     }
 
     [UITestMethod]
@@ -428,7 +417,7 @@ public class EndUserFunctionTests
             if (textbox.FindNext() != SearchResult.Found)
                 invalidRes = true;
         }
-        Debug.Assert(!invalidRes);
+        Assert.IsFalse(invalidRes);
     }
 
     [UITestMethod]
@@ -448,7 +437,7 @@ public class EndUserFunctionTests
             if (textbox.FindPrevious() != SearchResult.Found)
                 invalidRes = true;
         }
-        Debug.Assert(!invalidRes);
+        Assert.IsFalse(invalidRes);
     }
 
     [UITestMethod]
@@ -480,10 +469,9 @@ public class EndUserFunctionTests
         textbox.TextLoaded += Textbox_TextLoaded;
         textbox.LoadText(textToLoad);
 
-        bool res = eventTriggered && textbox.GetText() == textToLoad;
+        Assert.IsTrue(eventTriggered);
+        Assert.AreEqual(textToLoad, textbox.GetText());
         textbox.TextLoaded -= Textbox_TextLoaded;
-
-        Debug.Assert(res);
     }
     [UITestMethod]
     public void TabsSpacesChangedEvent()
@@ -538,7 +526,9 @@ public class EndUserFunctionTests
         }
 
         textbox.TabsSpacesChanged -= Textbox_TabsSpacesChanged;
-        Debug.Assert(success.Any(item => item == true) && testCase == 4 && exceptionThrownCount == 2);
+        Assert.IsTrue(success.Any(item => item == true));
+        Assert.AreEqual(4, testCase);
+        Assert.AreEqual(2, exceptionThrownCount);
     }
 
     [UITestMethod]
@@ -570,7 +560,7 @@ public class EndUserFunctionTests
         textbox.LineEnding = LineEnding.CRLF;
         textbox.LineEndingChanged -= Textbox_LineEndingChanged;
 
-        Debug.Assert(success.Any(item => item == true));
+        Assert.IsTrue(success.Any(item => item == true));
     }
 
     [UITestMethod]
@@ -581,7 +571,8 @@ public class EndUserFunctionTests
         textbox.LoadLines(["Line1", "\tLine2", "\t\tLine3"]);
 
         //4 is the default value
-        Debug.Assert(textbox.UseSpacesInsteadTabs == false && textbox.NumberOfSpacesForTab == 4);
+        Assert.IsFalse(textbox.UseSpacesInsteadTabs);
+        Assert.AreEqual(4, textbox.NumberOfSpacesForTab);
     }
     [UITestMethod]
     public void LoadLinesWithTab_DetectTabsSpaces_4Spaces()
@@ -592,7 +583,8 @@ public class EndUserFunctionTests
         textbox.LoadLines(["Line1", "    Line2", "        Line3"]);
 
         //4 is the default value
-        Debug.Assert(textbox.UseSpacesInsteadTabs == true && textbox.NumberOfSpacesForTab == 4);
+        Assert.IsTrue(textbox.UseSpacesInsteadTabs);
+        Assert.AreEqual(4, textbox.NumberOfSpacesForTab);
     }
     [UITestMethod]
     public void LoadLinesWithTab_DetectTabsSpaces_8Spaces()
@@ -603,7 +595,8 @@ public class EndUserFunctionTests
         textbox.LoadLines(["Line1", "        Line2", "                Line3"]);
 
         //4 is the default value
-        Debug.Assert(textbox.UseSpacesInsteadTabs == true && textbox.NumberOfSpacesForTab == 8);
+        Assert.IsTrue(textbox.UseSpacesInsteadTabs);
+        Assert.AreEqual(8, textbox.NumberOfSpacesForTab);
     }
     [UITestMethod]
     public void LoadTextWithTab_DetectTabsSpaces_4Spaces()
@@ -614,7 +607,8 @@ public class EndUserFunctionTests
         textbox.LoadText("Line1\n        Line2\n                Line3\n");
 
         //4 is the default value
-        Debug.Assert(textbox.UseSpacesInsteadTabs == true && textbox.NumberOfSpacesForTab == 8);
+        Assert.IsTrue(textbox.UseSpacesInsteadTabs);
+        Assert.AreEqual(8, textbox.NumberOfSpacesForTab);
     }
     [UITestMethod]
     public void LoadTextWithTab_DetectTabsSpaces_Tabs()
@@ -625,7 +619,8 @@ public class EndUserFunctionTests
         textbox.LoadText("Line1\n\tLine2\n\t\tLine3\n");
 
         //4 is the default value
-        Debug.Assert(textbox.UseSpacesInsteadTabs == false && textbox.NumberOfSpacesForTab == 4);
+        Assert.IsFalse(textbox.UseSpacesInsteadTabs);
+        Assert.AreEqual(4, textbox.NumberOfSpacesForTab);
     }
     [UITestMethod]
     public void LoadTextWithTab_DetectTabsSpaces_2Spaces()
@@ -636,7 +631,8 @@ public class EndUserFunctionTests
         textbox.LoadText("Line1\n    Line2\n        Line3\n");
 
         //4 is the default value
-        Debug.Assert(textbox.UseSpacesInsteadTabs == true && textbox.NumberOfSpacesForTab == 4);
+        Assert.IsTrue(textbox.UseSpacesInsteadTabs);
+        Assert.AreEqual(4, textbox.NumberOfSpacesForTab);
     }
     [UITestMethod]
     public void Test_RewriteTabsSpaces_SpacesToTabs()
@@ -654,7 +650,7 @@ public class EndUserFunctionTests
         string expected = "\tLine1\n\tLine2\n\tLine3";
         string textAfter = textbox.GetText();
 
-        Debug.Assert(expected.Equals(textAfter));
+        Assert.AreEqual(expected, textAfter);
     }
 
     [UITestMethod]
@@ -673,7 +669,7 @@ public class EndUserFunctionTests
         string expected = "  Line1\n  Line2\n  Line3";
         string textAfter = textbox.GetText();
 
-        Debug.Assert(expected.Equals(textAfter));
+        Assert.AreEqual(expected, textAfter);
     }
 
     [UITestMethod]
@@ -692,7 +688,7 @@ public class EndUserFunctionTests
         string expected = "    Line1\n    Line2\n    Line3";
         string textAfter = textbox.GetText();
 
-        Debug.Assert(expected.Equals(textAfter));
+        Assert.AreEqual(expected, textAfter);
     }
 
     [UITestMethod]
@@ -714,7 +710,7 @@ public class EndUserFunctionTests
         string expected = "    Line1\n        Line2\n    Line3\n    Line4";
         string textAfter = textbox.GetText();
 
-        Debug.Assert(expected.Equals(textAfter));
+        Assert.AreEqual(expected, textAfter);
     }
 
     [UITestMethod]
