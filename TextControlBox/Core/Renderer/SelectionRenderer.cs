@@ -191,7 +191,7 @@ namespace TextControlBoxNS.Core.Renderer
                     textRenderer.DrawnTextLayout,
                     args,
                     (float)-scrollManager.HorizontalScroll,
-                    textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
+                    textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity + textRenderer.VerticalDrawOffset,
                     textRenderer.NumberOfStartLine,
                     textRenderer.NumberOfRenderedLines,
                     zoomManager.ZoomedFontSize,

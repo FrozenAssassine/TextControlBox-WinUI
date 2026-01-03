@@ -14,7 +14,7 @@ internal class CursorHelper
     public static int GetCursorLineFromPoint(TextRenderer textRenderer, Point point)
     {
         //Calculate the relative linenumber, where the pointer was pressed at
-        int linenumber = (int)(point.Y / textRenderer.SingleLineHeight);
+        int linenumber = (int)((point.Y - textRenderer.VerticalDrawOffset) / textRenderer.SingleLineHeight);
         linenumber += textRenderer.NumberOfStartLine;
         return Math.Clamp(linenumber, 0, textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines - 1);
     }

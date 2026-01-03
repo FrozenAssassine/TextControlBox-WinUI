@@ -76,7 +76,7 @@ namespace TextControlBoxNS.Core.Renderer
 
             OldLineNumberTextToRender = LineNumberTextToRender;
             LineNumberTextLayout = textLayoutManager.CreateTextLayout(canvas, LineNumberTextFormat, LineNumberTextToRender, posX, (float)canvas.Size.Height);
-            args.DrawingSession.DrawTextLayout(LineNumberTextLayout, 10, textRenderer.SingleLineHeight, designHelper.LineNumberColorBrush);
+            args.DrawingSession.DrawTextLayout(LineNumberTextLayout, 10, textRenderer.VerticalDrawOffset + textRenderer.SingleLineHeight, designHelper.LineNumberColorBrush);
         }
 
         public void CreateLineNumberTextFormat()

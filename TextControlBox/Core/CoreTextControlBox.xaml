@@ -23,6 +23,10 @@
             <ColumnDefinition Width="auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
         <xaml:CanvasControl
                     Grid.Column="0"
                     x:Name="Canvas_LineNumber"
@@ -61,8 +65,8 @@
                         VerticalAlignment="Stretch"/>
 
             <ScrollBar Grid.Column="2" PointerEntered="Scrollbar_PointerEntered" PointerExited="Scrollbar_PointerExited" SmallChange="10" Maximum="0" LargeChange="100" Minimum="0" x:Name="VerticalScrollbar" Value="0" IndicatorMode="MouseIndicator" Background="Transparent" HorizontalAlignment="Right" Orientation="Vertical" VerticalAlignment="Stretch"/>
-            <ScrollBar PointerEntered="Scrollbar_PointerEntered" PointerExited="Scrollbar_PointerExited" SmallChange="10" LargeChange="100" Minimum="0" Maximum="0" x:Name="HorizontalScrollbar" Value="0" IndicatorMode="MouseIndicator" Background="Transparent" HorizontalAlignment="Stretch" Orientation="Horizontal" VerticalAlignment="Bottom"/>
         </Grid>
+        <ScrollBar Grid.Row="2" Grid.ColumnSpan="2" PointerEntered="Scrollbar_PointerEntered" PointerExited="Scrollbar_PointerExited" SmallChange="10" LargeChange="100" Minimum="0" Maximum="0" x:Name="HorizontalScrollbar" Value="0" IndicatorMode="MouseIndicator" Background="Transparent" HorizontalAlignment="Stretch" Orientation="Horizontal" VerticalAlignment="Bottom"/>
         <controls:InputHandlerControl x:Name="inputHandler" GotFocus="InputManager_GotFocus" LostFocus="InputManager_LostFocus" PreviewKeyDown="InputHandler_KeyDown" TextEntered="InputHandler_TextEntered" Grid.Column="1" Opacity="0" Width="0" Height="0"/>
     </Grid>
 </UserControl>

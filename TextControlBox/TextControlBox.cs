@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using TextControlBoxNS.Core;
 using TextControlBoxNS.Models;
+using TextControlBoxNS.Models.Structs;
 using Windows.Foundation;
 
 namespace TextControlBoxNS;
@@ -662,6 +663,15 @@ public partial class TextControlBox : UserControl
     public bool AddLines(int start, string[] text)
     {
         return coreTextBox.AddLines(start, text);
+    }
+
+    /// <summary>
+    /// Gets or sets content scroll offset
+    /// </summary>
+    public VerticalScrollOffset ContentVerticalScrollOffset
+    {
+        get => coreTextBox.ContentVerticalScrollOffset;
+        set => coreTextBox.ContentVerticalScrollOffset = value;
     }
 
     /// <summary>
