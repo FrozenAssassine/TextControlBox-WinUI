@@ -994,12 +994,8 @@ internal sealed partial class CoreTextControlBox : UserControl
         set
         {
             _ContentVerticalScrollOffset = value;
-
             textRenderer.UpdateScrollOffset(value);
-            Canvas_Text.UpdateLayout();
-            Canvas_Selection.UpdateLayout();
-            Canvas_Cursor.UpdateLayout();
-            Canvas_LineNumber.UpdateLayout();
+            canvasUpdateManager.UpdateAll();
         }
     }
 
