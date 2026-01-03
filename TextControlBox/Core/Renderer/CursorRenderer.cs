@@ -83,7 +83,7 @@ internal class CursorRenderer
         float renderPosY = (float)((cursorManager.LineNumber - startLine) * singleLineHeight) + singleLineHeight / scrollManager.DefaultVerticalScrollSensitivity + textRenderer.VerticalDrawOffset;
 
         //Out of display-region:
-        if (renderPosY > linesToRender * singleLineHeight || renderPosY < 0)
+        if (renderPosY > linesToRender * singleLineHeight + textRenderer.VerticalDrawOffset || renderPosY < 0)
             return;
 
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
