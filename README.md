@@ -131,6 +131,10 @@ textBox.EnableSyntaxHighlighting = true;
 - `EndActionGroup`: Ends the grouping of undo redo items
 - `SelectionScrollStartBorderDistance`: Gets or sets the mouse distance from the text box edge that triggers auto-scroll during selection
 - `ShowWhitespaceCharacters`: Gets or sets whether spaces and tabs are visually shown in the text box (e.g. as dots or arrows)
+- `ActualLineHeight`: Returns the rendered height of a single line in pixel
+- `HighlightLineWhenNotFocused`: Controls, whether the line is still highlighted when control is not focused
+- `CanUndo`: Gets whether undo could be executed.
+- `CanRedo`: Gets whether redo could be executed.
 - `HighlightLinks`: Gets or sets, whether links inside the text are highlighted and clickable
 - `Focus(FocusState state)`: Sets focus to the control.
 - `SelectLine(int line)`: Selects a specific line.
