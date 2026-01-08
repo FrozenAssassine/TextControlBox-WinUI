@@ -1135,6 +1135,8 @@ internal sealed partial class CoreTextControlBox : UserControl
     public bool CanUndo => undoRedo.CanUndo;
     public bool CanRedo => undoRedo.CanRedo;
 
+    public float ActualLineHeight => textRenderer.SingleLineHeight;
+
     public static readonly Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage> SyntaxHighlightings =
         new Dictionary<SyntaxHighlightID, SyntaxHighlightLanguage>()
         {

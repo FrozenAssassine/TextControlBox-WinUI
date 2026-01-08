@@ -1054,6 +1054,10 @@ public partial class TextControlBox : UserControl
     /// </summary>
     public bool CanRedo => coreTextBox.CanRedo;
 
+    /// <summary>
+    /// Gets the actual rendered height, in device-independent units (DIPs), of a line of text in the control.
+    /// </summary>
+    public float ActualLineHeight => coreTextBox.ActualLineHeight;
 
     /// <summary>
     /// Represents a delegate used for handling the text changed event in the TextControlBox.
