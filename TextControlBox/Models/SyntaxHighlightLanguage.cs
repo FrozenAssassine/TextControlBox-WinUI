@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Text.RegularExpressions;
+using TextControlBoxNS.Models;
 using Windows.Devices.Power;
 
 namespace TextControlBoxNS;
@@ -39,6 +40,13 @@ public class SyntaxHighlightLanguage
     /// </summary>
     public AutoPairingPair[] AutoPairingPair { get; set; }
 
+    /// <summary>
+    /// Gets or sets an array of highlight rules for the code language.
+    /// This is the new extensible system that supports dynamic highlighting.
+    /// </summary>
+    [JsonIgnore]
+    public IHighlightRule[] HighlightRules { get; set; }
+
     internal void CompileAllRegex()
     {
         if (Highlights == null) return;
@@ -47,5 +55,25 @@ public class SyntaxHighlightLanguage
         {
             highlight.CompileRegex();
         }
+    }
+
+    /// <summary>
+    /// Converts the legacy SyntaxHighlights array to the new IHighlightRule system.
+    /// This allows gradual migration from the old to the new system.
+    /// </summary>
+    internal void ConvertToHighlightRules()
+    {
+        if (Highlights == null || Highlights.Length == 0)
+        {
+            HighlightRules = null;
+            return;
+        }
+
+        var rules = new IHighlightRule[Highlights.Length];
+        for (int i = 0; i < Highlights.Length; i++)
+        {
+            rules[i] = new RegexHighlightRule(Highlights[i]);
+        }
+        HighlightRules = rules;
     }
 }

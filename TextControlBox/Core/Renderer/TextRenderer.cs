@@ -3,9 +3,6 @@ using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Diagnostics;
-using System.Numerics;
-using System.Runtime.InteropServices;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using Windows.Foundation;
@@ -129,23 +126,24 @@ internal class TextRenderer
         }
 
         (NumberOfStartLine, NumberOfRenderedLines) = CalculateLinesToRender();
-        RenderedText = textManager.GetLinesAsString(NumberOfStartLine, NumberOfRenderedLines);
+        var renderTextData = textManager.GetLinesForRendering(NumberOfStartLine, NumberOfRenderedLines);
+        var linesToRenderRef = renderTextData.Lines;
+        RenderedText = renderTextData.Text;
 
         //check rendering and calculation updates
         lineNumberRenderer.CheckGenerateLineNumberText();
 
         CanvasCommandList canvasCommandList = new CanvasCommandList(args.DrawingSession);
-        if (OldRenderedText != null &&
-            OldRenderedText.Length != RenderedText.Length ||
-            !RenderedText.Equals(OldRenderedText, System.StringComparison.Ordinal) ||
-            NeedsUpdateTextLayout
+        if ((OldRenderedText != null && OldRenderedText.Length != RenderedText.Length)
+            || !RenderedText.Equals(OldRenderedText, StringComparison.Ordinal)
+            || NeedsUpdateTextLayout
         )
         {
             NeedsUpdateTextLayout = false;
             OldRenderedText = RenderedText;
 
             DrawnTextLayout = textLayoutManager.CreateTextResource(canvasText, DrawnTextLayout, TextFormat, RenderedText, new Size { Height = canvasText.Size.Height, Width = coreTextbox.ActualWidth });
-            SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting, RenderedText);
+            SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(renderTextData, textManager.NewLineCharacter, DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting);
         }
 
         scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false, zoomManager.ZoomNeedsRecalculateLongestLine);
@@ -180,9 +178,6 @@ internal class TextRenderer
             invisibleCharactersRenderer.DrawTabsAndSpaces(args, ccls, RenderedText, DrawnTextLayout, SingleLineHeight);
         }
         args.DrawingSession.DrawImage(canvasCommandList);
-
-
-
 
         //Only update if needed, to reduce updates when scrolling
         if (lineNumberRenderer.CanUpdateCanvas())

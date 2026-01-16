@@ -1,4 +1,6 @@
-﻿namespace TextControlBoxNS.Languages
+﻿using TextControlBoxNS.Models;
+
+namespace TextControlBoxNS.Languages
 {
     internal class Batch : SyntaxHighlightLanguage
     {
@@ -594,6 +596,25 @@
             this.Highlights = new SyntaxHighlights[]
             {
                 new SyntaxHighlights("[\\:\\,\\;\\|]", "#1b9902", "#1b9902")
+            };
+        }
+    }
+    internal class CSVEnhanced : SyntaxHighlightLanguage
+    {
+        public CSVEnhanced()
+        {
+            this.Name = "CSV Enhanced";
+            this.Author = "Julius Kirsch";
+            this.Filter = new string[1] { ".csv" };
+            this.Description = "Enhanced syntax highlighting for CSV with alternating row colors";
+            
+            this.HighlightRules = new IHighlightRule[]
+            {
+                new CsvColumnHighlightRule(),
+                
+                new RegexHighlightRule(
+                    new SyntaxHighlights("[\\:\\,\\;\\|]", "#bd0020", "#f14260")
+                )
             };
         }
     }

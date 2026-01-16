@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using TextControlBoxNS.Helper;
+using TextControlBoxNS.Models;
 
 namespace TextControlBoxNS.Core.Text;
 
@@ -79,7 +80,18 @@ internal class TextManager
         if (start + count > totalLines.Count)
             throw new IndexOutOfRangeException("GetLinesAsString start + count is out of range of the size of the collection");
 
-        return string.Join(NewLineCharacter, totalLines.Skip(start).Take(count));
+        return string.Join(NewLineCharacter, totalLines.Span.Slice(start, count).ToArray());
+    }
+
+    public LineSliceResult GetLinesForRendering(int start, int count)
+    {
+        if (start < 0 || count < 0 || start + count > totalLines.Count)
+            return new LineSliceResult(string.Empty, ReadOnlySpan<string>.Empty);
+
+        ReadOnlySpan<string> linesSlice = totalLines.Span.Slice(start, count);
+        string joinedText = string.Join(NewLineCharacter, linesSlice);
+
+        return new LineSliceResult(joinedText, linesSlice);
     }
 
     public void SetLineText(int line, string text)

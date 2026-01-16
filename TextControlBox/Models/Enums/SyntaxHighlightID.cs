@@ -45,7 +45,10 @@ public enum SyntaxHighlightID
     /// Identifier for CSV code language.
     /// </summary>
     CSV,
-
+    /// <summary>
+    /// Identifier for improved CSV code language.
+    /// </summary>
+    CSVImproved,
     /// <summary>
     /// Identifier for GCode code language.
     /// </summary>
