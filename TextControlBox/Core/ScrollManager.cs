@@ -57,7 +57,7 @@ internal class ScrollManager
     internal void VerticalScrollBar_Scroll(object sender, ScrollEventArgs e)
     {
         //only update when a line was scrolled
-        if ((int)(verticalScrollBar.Value / textRenderer.SingleLineHeight * DefaultVerticalScrollSensitivity) != textRenderer.NumberOfStartLine)
+        if ((int)(verticalScrollBar.Value / textRenderer.SingleLineHeight * DefaultVerticalScrollSensitivity + textRenderer.VerticalDrawOffset ) != textRenderer.NumberOfStartLine)
         {
             canvasHelper.UpdateAll();
         }
@@ -66,7 +66,7 @@ internal class ScrollManager
     public void UpdateWhenScrolled()
     {
         //only update when a line was scrolled
-        if ((int)(verticalScrollBar.Value / textRenderer.SingleLineHeight) != textRenderer.NumberOfStartLine)
+        if ((int)(verticalScrollBar.Value / textRenderer.SingleLineHeight + textRenderer.VerticalDrawOffset) != textRenderer.NumberOfStartLine)
         {
             canvasHelper.UpdateAll();
         }
@@ -133,10 +133,30 @@ internal class ScrollManager
     }
     public void UpdateScrollToShowCursor(bool update = true)
     {
-        if (textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines <= cursorManager.LineNumber)
-            verticalScrollBar.Value = (cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+        double globalOffset = textRenderer.VerticalDrawOffset == 0 ? textRenderer.TopScrollOffset : 0;
+        double localOffset = textRenderer.VerticalDrawOffset;
+
+        if (cursorManager.LineNumber == 0)
+        {
+            verticalScrollBar.Value = 0;
+        }
+        else if (textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines <= cursorManager.LineNumber)
+        {
+            verticalScrollBar.Value = ((cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight + globalOffset) / DefaultVerticalScrollSensitivity + localOffset;
+        }
         else if (textRenderer.NumberOfStartLine > cursorManager.LineNumber)
-            verticalScrollBar.Value = (cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+        {
+            verticalScrollBar.Value = ((cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight + globalOffset) / DefaultVerticalScrollSensitivity + localOffset;
+        }
+        else if (textRenderer.VerticalDrawOffset != 0)
+        {
+            int realLineDisplayedCount = (int)((verticalScrollBar.ViewportSize - textRenderer.VerticalDrawOffset) / textRenderer.SingleLineHeight);
+            if (realLineDisplayedCount <= cursorManager.LineNumber)
+            {
+                double offsetToMove = ((cursorManager.LineNumber - realLineDisplayedCount + 1) * textRenderer.SingleLineHeight);
+                verticalScrollBar.Value = ((cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight) / DefaultVerticalScrollSensitivity + offsetToMove;
+            }
+        }
 
         if (update)
             canvasHelper.UpdateAll();

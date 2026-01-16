@@ -393,7 +393,7 @@ internal class PointerActionsManager
         {
             scrollManager.verticalScrollBar.Value -= (delta * scrollManager._VerticalScrollSensitivity) / scrollManager.DefaultVerticalScrollSensitivity;
             //Only update when a line was scrolled
-            if ((int)(scrollManager.verticalScrollBar.Value / textRenderer.SingleLineHeight * scrollManager.DefaultVerticalScrollSensitivity) != textRenderer.NumberOfStartLine)
+            if ((int)(scrollManager.verticalScrollBar.Value / textRenderer.SingleLineHeight * scrollManager.DefaultVerticalScrollSensitivity + textRenderer.VerticalDrawOffset) != textRenderer.NumberOfStartLine)
             {
                 needsUpdate = true;
             }

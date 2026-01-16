@@ -14,6 +14,7 @@ using TextControlBoxNS.Helper;
 using TextControlBoxNS.Languages;
 using TextControlBoxNS.Models;
 using TextControlBoxNS.Models.Enums;
+using TextControlBoxNS.Models.Structs;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
 using Windows.System;
@@ -984,6 +985,19 @@ internal sealed partial class CoreTextControlBox : UserControl
         undoRedo.EndActionGroup();
     }
     public bool IsGroupingActions => undoRedo.IsGroupingActions;
+
+    private VerticalScrollOffset _ContentVerticalScrollOffset = new(0);
+
+    public VerticalScrollOffset ContentVerticalScrollOffset
+    {
+        get => _ContentVerticalScrollOffset;
+        set
+        {
+            _ContentVerticalScrollOffset = value;
+            textRenderer.UpdateScrollOffset(value);
+            canvasUpdateManager.UpdateAll();
+        }
+    }
 
     public bool EnableSyntaxHighlighting { get; set; } = true;
 
