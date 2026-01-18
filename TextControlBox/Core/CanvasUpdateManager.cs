@@ -16,12 +16,6 @@ internal class CanvasUpdateManager
     public void Init(CoreTextControlBox coreTextbox)
     {
         this.coreTextbox = coreTextbox;
-
-        // Register the canvases
-        _batchRedrawer.RegisterCanvas(coreTextbox.canvasCursor);
-        _batchRedrawer.RegisterCanvas(coreTextbox.canvasText);
-        _batchRedrawer.RegisterCanvas(coreTextbox.canvasSelection);
-        _batchRedrawer.RegisterCanvas(coreTextbox.canvasLineNumber);
     }
 
     public void UpdateCursor()
