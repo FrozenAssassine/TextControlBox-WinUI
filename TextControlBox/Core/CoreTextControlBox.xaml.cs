@@ -456,10 +456,10 @@ internal sealed partial class CoreTextControlBox : UserControl
             return;
 
         //Select the line where the cursor is over
-        SelectLine(CursorHelper.GetCursorLineFromPoint(textRenderer, point.Position));
+        int line = CursorHelper.GetCursorLineFromPoint(textRenderer, point.Position);
+        SelectLine(line);
 
-        selectionManager.IsSelecting = true;
-        selectionManager.IsSelectingOverLinenumbers = true;
+        pointerActionsManager.StartLineSelection(line);
     }
     //Change the cursor when entering/leaving the control
     private void UserControl_PointerEntered(object sender, PointerRoutedEventArgs e)

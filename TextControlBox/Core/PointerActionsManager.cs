@@ -32,6 +32,15 @@ internal class PointerActionsManager
     private SelectionManager selectionManager;
     private LinkHighlightManager linkHighlightManager;
 
+    private int _storedSelectionStartLine = -1;
+
+    public void StartLineSelection(int line)
+    {
+        _storedSelectionStartLine = line;
+        selectionManager.IsSelecting = true;
+        selectionManager.IsSelectingOverLinenumbers = true;
+    }
+
     public void Init(
         CoreTextControlBox coreTextbox,
         TextRenderer textRenderer,
@@ -222,6 +231,7 @@ internal class PointerActionsManager
 
         OldTouchPosition = null;
         selectionManager.IsSelectingOverLinenumbers = false;
+        _storedSelectionStartLine = -1;
 
         if (selectionManager.IsSelecting)
             coreTextbox.Focus(FocusState.Programmatic);
@@ -294,23 +304,70 @@ internal class PointerActionsManager
     }
     private void PointerMovedOverLinenumbers(Point point)
     {
-        Point pointerPos = point;
-        pointerPos.Y += textRenderer.SingleLineHeight; //add one more line
-
-        //if the selection reaches the end of the textbox select the last line completely
-        if (cursorManager.LineNumber == textManager.LinesCount - 1)
-        {
-            pointerPos.Y -= textRenderer.SingleLineHeight; //add one more line
-            pointerPos.X = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.GetLineText(-1), textRenderer.TextFormat).Width + 10;
-        }
-
         CursorHelper.UpdateCursorPosFromPoint(
             coreTextbox.canvasText,
             currentLineManager,
             textRenderer,
             scrollManager,
-            pointerPos,
+            point,
             cursorManager.currentCursorPosition);
+
+        int currentLine = cursorManager.LineNumber;
+
+        // If selection started on line numbers, adjust anchor to behave like line selection
+        // Default to current behavior if _storedSelectionStartLine is invalid (e.g. not set)
+        if (_storedSelectionStartLine != -1)
+        {
+            if (currentLine <= _storedSelectionStartLine)
+            {
+                // Dragging UP or Same Line: Anchor should be at End of Start Line
+                int anchorLine = _storedSelectionStartLine;
+
+                if (anchorLine < textManager.LinesCount - 1)
+                {
+                    selectionManager.selectionStart.LineNumber = anchorLine + 1;
+                    selectionManager.selectionStart.CharacterPosition = 0;
+                }
+                else
+                {
+                    selectionManager.selectionStart.LineNumber = anchorLine;
+                    selectionManager.selectionStart.CharacterPosition = textManager.GetLineLength(anchorLine);
+                }
+
+                // Cursor is at start of current line
+                cursorManager.currentCursorPosition.CharacterPosition = 0;
+            }
+            else
+            {
+                // Dragging DOWN: Anchor should be at Start of Start Line
+                selectionManager.selectionStart.LineNumber = _storedSelectionStartLine;
+                selectionManager.selectionStart.CharacterPosition = 0;
+
+                // Cursor should include the full current line
+                if (currentLine < textManager.LinesCount - 1)
+                {
+                    cursorManager.currentCursorPosition.LineNumber = currentLine + 1;
+                    cursorManager.currentCursorPosition.CharacterPosition = 0;
+                }
+                else
+                {
+                    cursorManager.currentCursorPosition.LineNumber = currentLine;
+                    cursorManager.currentCursorPosition.CharacterPosition = textManager.GetLineLength(currentLine);
+                }
+            }
+        }
+        else
+        {
+            if (cursorManager.LineNumber < textManager.LinesCount - 1)
+            {
+                cursorManager.currentCursorPosition.LineNumber += 1;
+                cursorManager.currentCursorPosition.CharacterPosition = 0;
+            }
+            else
+            {
+                cursorManager.currentCursorPosition.CharacterPosition = textManager.GetLineLength(cursorManager.LineNumber);
+            }
+        }
     }
 
     public void PointerMovedAction(Point point)
