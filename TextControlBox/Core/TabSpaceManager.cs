@@ -290,7 +290,7 @@ internal class TabSpaceManager
             lineIndex = cursorManager.LineNumber;
 
         bool textChanged = false;
-        undoRedo.RecordUndoAction(() =>
+        Action action = () =>
         {
             string currentLine = textManager.GetLineText(lineIndex);
 
@@ -315,8 +315,12 @@ internal class TabSpaceManager
                 }
                 cursorManager.CharacterPosition = Math.Max(cursorManager.CharacterPosition - tabCharacter.Length, 0);
             }
+        };
 
-        }, textSelection, 1);
+        if (textSelection.HasSelection)
+            undoRedo.RecordUndoAction(action, textSelection, 1);
+        else
+            undoRedo.RecordUndoAction(action, lineIndex, 1, 1);
 
         if (textChanged)
             eventsManager.CallTextChanged();

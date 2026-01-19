@@ -147,7 +147,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void RecordUndoAction(Action action, int startline, int undocount, int redoCount, object tag = null)
         {
-            if (!UndoRedoEnabled)
+            if (!UndoRedoEnabled || startline < 0)
             {
                 action.Invoke();
                 return;
@@ -193,6 +193,12 @@ namespace TextControlBoxNS.Core.Text
                 return;
             }
             var orderedSel = SelectionHelper.OrderTextSelectionSeparated(selection);
+            if (orderedSel.startLine < 0)
+            {
+                action.Invoke();
+                return;
+            }
+
             var cursorBefore = new CursorPosition(cursorManager.currentCursorPosition);
             var selectionBefore = new TextSelection(selection);
             var linesBefore = textManager.GetLinesAsString(orderedSel.startLine, numberOfAddedRemovedLines);
@@ -228,6 +234,12 @@ namespace TextControlBoxNS.Core.Text
             }
 
             var orderedSel = SelectionHelper.OrderTextSelectionSeparated(selection);
+            if(orderedSel.startLine < 0)
+            {
+                action.Invoke();
+                return;
+            }
+
             if (numberOfRemovedLines == -1)
                 numberOfRemovedLines = orderedSel.endLine - orderedSel.startLine + 1;
 
