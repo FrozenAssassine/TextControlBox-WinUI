@@ -38,6 +38,8 @@ namespace TextControlBoxNS.Core.Text
                 Rect bounds = rects
                     .Select(r => r.LayoutBounds)
                     .Aggregate(Rect.Empty, (acc, r) => RectHelper.Union(acc, r));
+
+                bounds.Y -= textRenderer.VerticalScrollOffset;
                 
                 this.links.Add(new LinkInfo
                 {

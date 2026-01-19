@@ -67,19 +67,23 @@ namespace TextControlBoxNS.Core.Renderer
             if (LineNumberTextToRender == null || LineNumberTextToRender.Length == 0)
                 return;
 
-            //Calculate the linenumbers             
             float lineNumberWidth = (float)Utils.MeasureTextSize(args.DrawingSession.Device, (textManager.LinesCount).ToString(), LineNumberTextFormat).Width;
             canvas.Width = lineNumberWidth + 10 + spaceBetweenCanvasAndText;
 
             float posX = (float)canvas.Size.Width - spaceBetweenCanvasAndText;
-            if (posX < 0)
+            if (posX < 0) 
                 posX = 0;
 
             OldLineNumberTextToRender = LineNumberTextToRender;
-            
+
             LineNumberTextLayout?.Dispose();
             LineNumberTextLayout = textLayoutManager.CreateTextLayout(canvas, LineNumberTextFormat, LineNumberTextToRender, posX, (float)canvas.Size.Height);
-            args.DrawingSession.DrawTextLayout(LineNumberTextLayout, 10, textRenderer.SingleLineHeight, designHelper.LineNumberColorBrush);
+
+            args.DrawingSession.DrawTextLayout(
+                LineNumberTextLayout,
+                10,
+                textRenderer.SingleLineHeight - textRenderer.VerticalScrollOffset,
+                designHelper.LineNumberColorBrush);
         }
 
         public void CreateLineNumberTextFormat()

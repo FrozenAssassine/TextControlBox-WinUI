@@ -161,7 +161,7 @@ namespace TextControlBoxNS.Core.Renderer
                         var bounds = regions[i].LayoutBounds;
                         regions[i].LayoutBounds = new Rect
                         {
-                            Width = fontSize / 4,
+                            Width = fontSize / scrollManager.DefaultVerticalScrollSensitivity,
                             Height = bounds.Height,
                             X = bounds.X,
                             Y = bounds.Y
@@ -190,13 +190,13 @@ namespace TextControlBoxNS.Core.Renderer
                 DrawSelection(
                     textRenderer.DrawnTextLayout,
                     args,
-                    (float)-scrollManager.HorizontalScroll,
-                    textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
+                    textRenderer.HorizontalOffset,
+                    textRenderer.VerticalRenderingOffset,
                     textRenderer.NumberOfStartLine,
                     textRenderer.NumberOfRenderedLines,
                     zoomManager.ZoomedFontSize,
                     designHelper._Design.SelectionColor
-                    );
+                );
             }
 
             if (selectionManager.HasSelection && !selectionManager.Equals(selectionManager.OldTextSelection, selectionManager.currentTextSelection))

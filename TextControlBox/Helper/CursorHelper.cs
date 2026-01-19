@@ -1,4 +1,4 @@
-﻿using Microsoft.Graphics.Canvas.Text;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
 using TextControlBoxNS.Core;
@@ -14,9 +14,10 @@ internal class CursorHelper
     public static int GetCursorLineFromPoint(TextRenderer textRenderer, Point point)
     {
         //Calculate the relative linenumber, where the pointer was pressed at
-        int linenumber = (int)(point.Y / textRenderer.SingleLineHeight);
-        linenumber += textRenderer.NumberOfStartLine;
-        return Math.Clamp(linenumber, 0, textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines - 1);
+        double adjustedY = point.Y - textRenderer.VerticalRenderingOffset;
+        int relativeLine = (int)Math.Floor(adjustedY / textRenderer.SingleLineHeight);
+
+        return Math.Max(0, relativeLine + textRenderer.NumberOfStartLine);
     }
     public static int GetCharacterPositionFromPoint(CurrentLineManager currentLineManager, CanvasTextLayout textLayout, Point cursorPosition, float marginLeft)
     {
@@ -40,13 +41,16 @@ internal class CursorHelper
 
     public static void UpdateCursorPosFromPoint(CanvasControl canvasText, CurrentLineManager currentLineManager, TextRenderer textRenderer, ScrollManager scrollManager, Point point, CursorPosition cursorPos)
     {
-        //Apply an offset to the cursorposition
-        point.X += textRenderer.SingleLineHeight / 4;
-        point.Y -= textRenderer.SingleLineHeight / 4;
+        //Apply an offset to the cursorposition to make selection easier
+        point.X += textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
+        
 
         cursorPos.LineNumber = GetCursorLineFromPoint(textRenderer, point);
+        cursorPos.LineNumber = Math.Clamp(cursorPos.LineNumber, 0, textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines - 1); //Clamp to visible? or total? GetCursorLineFromPoint handles relative logic, but we need to clamp to document bounds.
 
+        //GetCursorLineFromPoint returns absolute line index.    
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
         cursorPos.CharacterPosition = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, (float)-scrollManager.HorizontalScroll);
     }
 }
+

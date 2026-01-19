@@ -76,14 +76,10 @@ internal class CursorRenderer
             cursorManager.CharacterPosition = currentLineLength;
         }
 
-        var (startLine, linesToRender) = textRenderer.CalculateLinesToRender();
-        float singleLineHeight = textRenderer.SingleLineHeight;
+        float renderPosY = (cursorManager.LineNumber - textRenderer.NumberOfStartLine) * textRenderer.SingleLineHeight;
+        renderPosY += textRenderer.VerticalRenderingOffset;
 
-        //Calculate the distance to the top for the cursorposition and render the cursor
-        float renderPosY = (float)((cursorManager.LineNumber - startLine) * singleLineHeight) + singleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
-
-        //Out of display-region:
-        if (renderPosY > linesToRender * singleLineHeight || renderPosY < 0)
+        if (renderPosY > (textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight || renderPosY < 0)
             return;
 
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
