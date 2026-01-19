@@ -24,6 +24,7 @@ namespace TextControlBoxNS.Core.Renderer
         private DesignHelper designHelper;
         private LineNumberManager lineNumberManager;
         private TextLayoutManager textLayoutManager;
+        private CanvasDevice sharedDevice;
         public void Init(TextManager textManager, TextLayoutManager textLayoutManager, TextRenderer textRenderer, DesignHelper designHelper, LineNumberManager lineNumberManager)
         {
             this.textManager = textManager;
@@ -31,6 +32,7 @@ namespace TextControlBoxNS.Core.Renderer
             this.designHelper = designHelper;
             this.lineNumberManager = lineNumberManager;
             this.textLayoutManager = textLayoutManager;
+            sharedDevice = CanvasDevice.GetSharedDevice();
         }
 
         public void GenerateLineNumberText(int renderedLines, int startLine)
@@ -67,7 +69,7 @@ namespace TextControlBoxNS.Core.Renderer
                 return;
 
             //Calculate the linenumbers             
-            float lineNumberWidth = (float)Utils.MeasureTextSize(CanvasDevice.GetSharedDevice(), (textManager.LinesCount).ToString(), LineNumberTextFormat).Width;
+            float lineNumberWidth = (float)Utils.MeasureTextSize(sharedDevice, (textManager.LinesCount).ToString(), LineNumberTextFormat).Width;
             canvas.Width = lineNumberWidth + 10 + spaceBetweenCanvasAndText;
 
             float posX = (float)canvas.Size.Width - spaceBetweenCanvasAndText;
