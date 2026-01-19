@@ -896,6 +896,9 @@ internal sealed partial class CoreTextControlBox : UserControl
             horizontalScrollBar.Scroll -= scrollManager.HorizontalScrollBar_Scroll;
         }
 
+        textRenderer.CheckDispose();
+        lineNumberRenderer.CheckDispose();
+
         //Dispose and null larger objects
         textManager.totalLines.Dispose();
         lineNumberRenderer.LineNumberTextToRender = lineNumberRenderer.OldLineNumberTextToRender = null;

@@ -18,6 +18,7 @@ namespace TextControlBoxNS.Core.Text
         private EventsManager eventsManager;
         private TextRenderer textRenderer;
         private CoreTextControlBox coreTextControlBox;
+        private readonly Regex linkRegex = new Regex(@"(https?:\/\/[^\s]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public void Init(TextRenderer textRenderer, CoreTextControlBox coreTextControlBox, EventsManager eventsManager)
         {
@@ -28,8 +29,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void FindAndComputeLinkPositions()
         {
-            var regex = new Regex(@"(https?:\/\/[^\s]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            var matches = regex.Matches(textRenderer.RenderedText);
+            var matches = linkRegex.Matches(textRenderer.RenderedText);
 
             this.links.Clear();
             foreach (Match match in matches)

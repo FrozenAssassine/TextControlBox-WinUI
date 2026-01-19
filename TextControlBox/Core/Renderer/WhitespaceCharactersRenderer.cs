@@ -1,5 +1,4 @@
-﻿
-using Microsoft.Graphics.Canvas;
+﻿using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using TextControlBoxNS.Helper;
@@ -33,7 +32,15 @@ internal class WhitespaceCharactersRenderer
 
     public void UpdateTextFormat(CanvasControl canvasText, CanvasTextFormat canvasTextFormat)
     {
+        SpaceGlyph?.Dispose();
+        TabGlyph?.Dispose();
         (SpaceGlyph, TabGlyph) = textLayoutManager.CreateGlyphs(canvasText, canvasTextFormat);
+    }
+    
+    public void CheckDispose()
+    {
+        SpaceGlyph?.Dispose();
+        TabGlyph?.Dispose();
     }
 
     public void DrawTabsAndSpaces(

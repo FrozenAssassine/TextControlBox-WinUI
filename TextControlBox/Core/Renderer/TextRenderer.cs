@@ -74,6 +74,14 @@ internal class TextRenderer
         this.linkHighlightManager = linkHighlightManager;
     }
 
+    public void CheckDispose()
+    {
+        TextFormat?.Dispose();
+        DrawnTextLayout?.Dispose();
+        CurrentLineTextLayout?.Dispose();
+        invisibleCharactersRenderer.CheckDispose();
+    }
+
     //Check whether the current line is outside the bounds of the visible area
     public bool OutOfRenderedArea(int line)
     {
@@ -82,6 +90,7 @@ internal class TextRenderer
 
     public void UpdateCurrentLineTextLayout(CanvasControl canvasText)
     {
+        CurrentLineTextLayout?.Dispose();
         CurrentLineTextLayout =
             cursorManager.LineNumber < textManager.LinesCount ?
             textLayoutManager.CreateTextLayout(
@@ -118,6 +127,8 @@ internal class TextRenderer
         if (NeedsTextFormatUpdate || TextFormat == null || lineNumberRenderer.LineNumberTextFormat == null)
         {
             lineNumberRenderer.CreateLineNumberTextFormat();
+
+            TextFormat?.Dispose();
             TextFormat = textLayoutManager.CreateCanvasTextFormat();
 
             invisibleCharactersRenderer.UpdateTextFormat(canvasText, TextFormat);
@@ -133,7 +144,7 @@ internal class TextRenderer
         //check rendering and calculation updates
         lineNumberRenderer.CheckGenerateLineNumberText();
 
-        CanvasCommandList canvasCommandList = new CanvasCommandList(args.DrawingSession);
+        using CanvasCommandList canvasCommandList = new CanvasCommandList(args.DrawingSession);
         if ((OldRenderedText != null && OldRenderedText.Length != RenderedText.Length)
             || !RenderedText.Equals(OldRenderedText, StringComparison.Ordinal)
             || NeedsUpdateTextLayout

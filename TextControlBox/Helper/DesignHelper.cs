@@ -62,6 +62,12 @@ internal class DesignHelper
 
         coreTextbox.canvasLineNumber.ClearColor = _Design.LineNumberBackground;
         coreTextbox.mainGrid.Background = _Design.Background;
+
+        TextColorBrush?.Dispose();
+        CursorColorBrush?.Dispose();
+        LineNumberColorBrush?.Dispose();
+        LineHighlighterBrush?.Dispose();
+
         TextColorBrush = new CanvasSolidColorBrush(resourceCreator, _Design.TextColor);
         CursorColorBrush = new CanvasSolidColorBrush(resourceCreator, _Design.CursorColor);
         LineNumberColorBrush = new CanvasSolidColorBrush(resourceCreator, _Design.LineNumberColor);

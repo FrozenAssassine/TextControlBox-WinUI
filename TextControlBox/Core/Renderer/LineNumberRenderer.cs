@@ -24,7 +24,7 @@ namespace TextControlBoxNS.Core.Renderer
         private DesignHelper designHelper;
         private LineNumberManager lineNumberManager;
         private TextLayoutManager textLayoutManager;
-        private CanvasDevice sharedDevice;
+
         public void Init(TextManager textManager, TextLayoutManager textLayoutManager, TextRenderer textRenderer, DesignHelper designHelper, LineNumberManager lineNumberManager)
         {
             this.textManager = textManager;
@@ -32,7 +32,6 @@ namespace TextControlBoxNS.Core.Renderer
             this.designHelper = designHelper;
             this.lineNumberManager = lineNumberManager;
             this.textLayoutManager = textLayoutManager;
-            sharedDevice = CanvasDevice.GetSharedDevice();
         }
 
         public void GenerateLineNumberText(int renderedLines, int startLine)
@@ -69,7 +68,7 @@ namespace TextControlBoxNS.Core.Renderer
                 return;
 
             //Calculate the linenumbers             
-            float lineNumberWidth = (float)Utils.MeasureTextSize(sharedDevice, (textManager.LinesCount).ToString(), LineNumberTextFormat).Width;
+            float lineNumberWidth = (float)Utils.MeasureTextSize(args.DrawingSession.Device, (textManager.LinesCount).ToString(), LineNumberTextFormat).Width;
             canvas.Width = lineNumberWidth + 10 + spaceBetweenCanvasAndText;
 
             float posX = (float)canvas.Size.Width - spaceBetweenCanvasAndText;
@@ -77,6 +76,8 @@ namespace TextControlBoxNS.Core.Renderer
                 posX = 0;
 
             OldLineNumberTextToRender = LineNumberTextToRender;
+            
+            LineNumberTextLayout?.Dispose();
             LineNumberTextLayout = textLayoutManager.CreateTextLayout(canvas, LineNumberTextFormat, LineNumberTextToRender, posX, (float)canvas.Size.Height);
             args.DrawingSession.DrawTextLayout(LineNumberTextLayout, 10, textRenderer.SingleLineHeight, designHelper.LineNumberColorBrush);
         }
@@ -84,7 +85,16 @@ namespace TextControlBoxNS.Core.Renderer
         public void CreateLineNumberTextFormat()
         {
             if (lineNumberManager._ShowLineNumbers)
+            {
+                LineNumberTextFormat?.Dispose();
                 LineNumberTextFormat = textLayoutManager.CreateLinenumberTextFormat();
+            }
+        }
+
+        public void CheckDispose()
+        {
+            LineNumberTextLayout?.Dispose();
+            LineNumberTextFormat?.Dispose();
         }
 
         public void CheckGenerateLineNumberText()

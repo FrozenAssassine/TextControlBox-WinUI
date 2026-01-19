@@ -14,7 +14,7 @@ internal class Utils
 {
     public static Size MeasureTextSize(CanvasDevice device, string text, CanvasTextFormat textFormat, float limitedToWidth = 0.0f, float limitedToHeight = 0.0f)
     {
-        CanvasTextLayout layout = new CanvasTextLayout(device, text, textFormat, limitedToWidth, limitedToHeight);
+        using CanvasTextLayout layout = new CanvasTextLayout(device, text, textFormat, limitedToWidth, limitedToHeight);
         return new Size(layout.DrawBounds.Width, layout.DrawBounds.Height);
     }
 
@@ -56,7 +56,7 @@ internal class Utils
             text = new string(newText);
         }
 
-        CanvasTextLayout layout = new CanvasTextLayout(device, text, textFormat, 0, 0);
+        using CanvasTextLayout layout = new CanvasTextLayout(device, text, textFormat, 0, 0);
         return new Size(layout.DrawBounds.Width - placeholderWidth, layout.DrawBounds.Height);
     }
 

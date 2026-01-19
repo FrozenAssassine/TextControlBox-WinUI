@@ -149,7 +149,7 @@ namespace TextControlBoxNS.Core.Renderer
                 return;
             }
 
-            CanvasCommandList canvasCommandList = new CanvasCommandList(args.DrawingSession);
+            using CanvasCommandList canvasCommandList = new CanvasCommandList(args.DrawingSession);
             using (var ccls = canvasCommandList.CreateDrawingSession())
             {
                 CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
