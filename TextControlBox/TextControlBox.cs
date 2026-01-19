@@ -680,6 +680,8 @@ public partial class TextControlBox : UserControl
     /// <param name="spaces">The number of spaces to use when converting tabs to spaces. Must be greater than zero.</param>
     /// <param name="useSpacesInsteadTabs">Indicates whether tabs should be replaced with spaces.</param>
     /// <param name="ignoreIsReadOnly">Ignores the isReadOnly property of the textbox.</param>
+    /// </remarks>
+
     public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs, bool ignoreIsReadOnly = false)
     {
         coreTextBox.RewriteTabsSpaces(spaces, useSpacesInsteadTabs, ignoreIsReadOnly);
@@ -759,6 +761,7 @@ public partial class TextControlBox : UserControl
     /// <remarks>
     /// This method modifies the text programmatically and is unaffected by
     /// <see cref="IsReadOnly"/>.
+    /// </remarks>
     public string Text
     {
         get => coreTextBox.Text;
@@ -857,6 +860,7 @@ public partial class TextControlBox : UserControl
     /// <remarks>
     /// This method modifies the text programmatically and is unaffected by
     /// <see cref="IsReadOnly"/>.
+    /// </remarks>
     public string SelectedText
     {
         get => coreTextBox.SelectedText;
