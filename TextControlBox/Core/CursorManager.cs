@@ -1,5 +1,4 @@
 ﻿using System;
-using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 
@@ -36,16 +35,14 @@ internal class CursorManager
     public void SetCursorPositionCopyValues(CursorPosition cursorPosition)
     {
         this.currentCursorPosition.LineNumber = cursorPosition.LineNumber;
-        this.currentCursorPosition.CharacterPosition = cursorPosition.CharacterPosition;        
+        this.currentCursorPosition.CharacterPosition = cursorPosition.CharacterPosition;
     }
 
     public int GetCurPosInLine()
     {
         int curLineLength = currentLineManager.Length;
 
-        if (CharacterPosition > curLineLength)
-            return curLineLength;
-        return CharacterPosition;
+        return Math.Clamp(CharacterPosition, 0, curLineLength);
     }
 
     private int CheckIndex(string str, int index) => Math.Clamp(index, 0, str.Length - 1);
@@ -145,7 +142,7 @@ internal class CursorManager
 
         return stepsToMove == 0 ? 1 : stepsToMove;
     }
-    
+
     public int CalculateStepsToMoveRight(int cursorCharPosition)
     {
         if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
@@ -192,7 +189,7 @@ internal class CursorManager
             LineNumber -= 1;
         }
         else if (CharacterPosition > currentLineLength)
-            CharacterPosition = currentLineLength - 1;
+            CharacterPosition = currentLineLength;
         else if (CharacterPosition > 0)
             CharacterPosition -= CalculateStepsToMoveLeft(CharacterPosition);
     }
@@ -218,11 +215,15 @@ internal class CursorManager
     {
         if (LineNumber < textManager.LinesCount - 1)
             LineNumber += 1;
+
+        CharacterPosition = Math.Clamp(CharacterPosition, 0, textManager.GetLineLength(LineNumber));
     }
     public void MoveUp()
     {
         if (LineNumber > 0)
             LineNumber -= 1;
+
+        CharacterPosition = Math.Clamp(CharacterPosition, 0, textManager.GetLineLength(LineNumber));
     }
     public void MoveToLineEnd(CursorPosition cursorPosition)
     {
@@ -236,8 +237,9 @@ internal class CursorManager
     public void SetToTextEnd()
     {
         if (textManager.LinesCount == 1 && textManager.GetLineLength(0) == 0)
-            SetCursorPosition(0,0);
+            SetCursorPosition(0, 0);
 
-        SetCursorPosition(textManager.LinesCount - 1, textManager.GetLineLength(-1));
+        int lastLine = Math.Max(0, textManager.LinesCount - 1);
+        SetCursorPosition(lastLine, textManager.GetLineLength(lastLine));
     }
 }
