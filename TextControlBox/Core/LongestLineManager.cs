@@ -31,15 +31,12 @@ internal class LongestLineManager
     private SelectionManager selManager;
     private TextManager textManager;
     private TextRenderer textRenderer;
-    private CanvasDevice sharedDevice;
 
     public void Init(SelectionManager selManager, TextManager textManager, TextRenderer textRenderer)
     {
         this.selManager = selManager;
         this.textManager = textManager;
         this.textRenderer = textRenderer;
-
-        sharedDevice = CanvasDevice.GetSharedDevice();
     }
 
     //Get the longest line in the textbox
@@ -91,7 +88,7 @@ internal class LongestLineManager
         longestLineLength = textManager.totalLines[_longestIndex].Length;
         if (textRenderer.TextFormat != null)
         {
-            longestLineWidth = Utils.MeasureLineLenght(sharedDevice, textManager.totalLines[longestIndex], textRenderer.TextFormat);
+            longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[longestIndex], textRenderer.TextFormat);
         }
     }
 

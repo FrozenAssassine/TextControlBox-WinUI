@@ -411,6 +411,8 @@ namespace TextControlBoxNS.Core.Text
         }
         public void AddNewLine()
         {
+            currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
+
             if (textManager._IsReadOnly)
                 return;
 
@@ -472,6 +474,8 @@ namespace TextControlBoxNS.Core.Text
             if (!ignoreIsReadOnly && textManager._IsReadOnly)
                 return;
 
+            currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
+
             if (ignoreSelection)
                 selectionManager.ClearSelection();
 
@@ -506,8 +510,7 @@ namespace TextControlBoxNS.Core.Text
             if (line >= textManager.LinesCount || line < 0)
                 return false;
 
-            if (line == longestLineManager.longestIndex)
-                longestLineManager.needsRecalculation = true;
+            longestLineManager.needsRecalculation = true;
 
             undoRedo.RecordUndoAction(() =>
             {
@@ -529,8 +532,7 @@ namespace TextControlBoxNS.Core.Text
             if (line > textManager.LinesCount || line < 0)
                 return false;
 
-            if (text.Length > longestLineManager.longestLineLength)
-                longestLineManager.longestIndex = line;
+            longestLineManager.needsRecalculation = true;
 
             if (stringManager.HasMultilineCharacters(text))
             {
@@ -554,7 +556,7 @@ namespace TextControlBoxNS.Core.Text
             if (atLine > textManager.LinesCount || atLine < 0)
                 return false;
 
-            longestLineManager.longestIndex = atLine;
+            longestLineManager.needsRecalculation = true;
 
             undoRedo.RecordUndoAction(() =>
             {
@@ -573,8 +575,7 @@ namespace TextControlBoxNS.Core.Text
             if (line >= textManager.LinesCount || line < 0)
                 return false;
 
-            if (text.Length > longestLineManager.longestLineLength)
-                longestLineManager.longestIndex = line;
+            longestLineManager.needsRecalculation = true;
 
             if (stringManager.HasMultilineCharacters(text))
             {
@@ -594,6 +595,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void DuplicateLine(int line)
         {
+            longestLineManager.needsRecalculation = true;
             undoRedo.RecordUndoAction(() =>
             {
                 textManager.InsertOrAdd(line, textManager.GetLineText(line));
