@@ -153,6 +153,7 @@ namespace TextControlBoxNS.Core.Renderer
             using (var ccls = canvasCommandList.CreateDrawingSession())
             {
                 CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
+                float width = fontSize / scrollManager.DefaultVerticalScrollSensitivity;
                 for (int i = 0; i < regions.Length; i++)
                 {
                     //Change the width if selection in an empty line or starts at a line end
@@ -161,7 +162,7 @@ namespace TextControlBoxNS.Core.Renderer
                         var bounds = regions[i].LayoutBounds;
                         regions[i].LayoutBounds = new Rect
                         {
-                            Width = fontSize / scrollManager.DefaultVerticalScrollSensitivity,
+                            Width = width,
                             Height = bounds.Height,
                             X = bounds.X,
                             Y = bounds.Y
@@ -191,7 +192,7 @@ namespace TextControlBoxNS.Core.Renderer
                     textRenderer.DrawnTextLayout,
                     args,
                     textRenderer.HorizontalOffset,
-                    textRenderer.VerticalRenderingOffset,
+                    textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
                     textRenderer.NumberOfStartLine,
                     textRenderer.NumberOfRenderedLines,
                     zoomManager.ZoomedFontSize,

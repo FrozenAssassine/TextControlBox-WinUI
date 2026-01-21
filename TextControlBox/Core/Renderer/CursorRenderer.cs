@@ -76,10 +76,8 @@ internal class CursorRenderer
             cursorManager.CharacterPosition = currentLineLength;
         }
 
-        float renderPosY = (cursorManager.LineNumber - textRenderer.NumberOfStartLine) * textRenderer.SingleLineHeight;
-        renderPosY += textRenderer.VerticalRenderingOffset;
-
-        if (renderPosY > (textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight || renderPosY < 0)
+        float renderPosY = (float)((cursorManager.LineNumber - textRenderer.NumberOfStartLine) * textRenderer.SingleLineHeight) + textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;  
+        if (renderPosY > textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight || renderPosY < 0)
             return;
 
         textRenderer.UpdateCurrentLineTextLayout(canvasText);

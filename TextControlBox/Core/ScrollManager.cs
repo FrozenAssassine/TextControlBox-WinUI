@@ -50,11 +50,16 @@ internal class ScrollManager
         verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * textRenderer.SingleLineHeight - scrollGrid.ActualHeight) / DefaultVerticalScrollSensitivity;
         verticalScrollBar.ViewportSize = coreTextbox.ActualHeight;
     }
-    internal void HorizontalScrollBar_Scroll(object sender, ScrollEventArgs e)
-    {
-        canvasHelper.UpdateAll();
-    }
     internal void VerticalScrollBar_Scroll(object sender, ScrollEventArgs e)
+    {
+        //only update when a line was scrolled
+        if ((int)(verticalScrollBar.Value / textRenderer.SingleLineHeight * DefaultVerticalScrollSensitivity) != textRenderer.NumberOfStartLine)
+        {
+            canvasHelper.UpdateAll();
+        }
+    }
+
+    internal void HorizontalScrollBar_Scroll(object sender, ScrollEventArgs e)
     {
         canvasHelper.UpdateAll();
     }

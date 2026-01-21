@@ -1,5 +1,4 @@
-﻿using Microsoft.Graphics.Canvas;
-using Microsoft.Graphics.Canvas.Text;
+﻿using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
 using System.Text;
@@ -82,7 +81,7 @@ namespace TextControlBoxNS.Core.Renderer
             args.DrawingSession.DrawTextLayout(
                 LineNumberTextLayout,
                 10,
-                textRenderer.SingleLineHeight - textRenderer.VerticalScrollOffset,
+                textRenderer.SingleLineHeight,
                 designHelper.LineNumberColorBrush);
         }
 
