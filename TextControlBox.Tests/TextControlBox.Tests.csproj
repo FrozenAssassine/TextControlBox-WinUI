@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
 	  <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
@@ -44,8 +44,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.TestPlatform.TestHost" Version="18.0.1" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7175" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251106002" />
+	  <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260101001" />
+	  <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7463" />
     <PackageReference Include="MSTest.TestAdapter" Version="4.0.2" />
     <PackageReference Include="MSTest.TestFramework" Version="4.0.2" />
   </ItemGroup>
@@ -65,7 +65,7 @@
   <!-- Publish Properties -->
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
-    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+    <!--<PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>-->
     <PublishTrimmed>False</PublishTrimmed>
   </PropertyGroup>
 </Project>
