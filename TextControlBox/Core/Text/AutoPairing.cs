@@ -6,7 +6,7 @@ internal class AutoPairing
 {
     public static (string text, int length) AutoPair(CoreTextControlBox textbox, string inputtext)
     {
-        if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.SyntaxHighlighting == null || textbox.SyntaxHighlighting.AutoPairingPair == null)
+        if (!textbox.DoAutoPairing || textbox.AutoPairOnlyOnSelection || inputtext.Length != 1 || textbox.SyntaxHighlighting == null || textbox.SyntaxHighlighting.AutoPairingPair == null)
             return (inputtext, inputtext.Length);
 
         var res = textbox.SyntaxHighlighting.AutoPairingPair.Where(x => x.Matches(inputtext));

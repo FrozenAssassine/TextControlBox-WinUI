@@ -974,6 +974,18 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Gets or sets a value indicating whether auto-pairing for selected text is enabled.
+    /// </summary>
+    /// <remarks>
+    /// Auto-pairing automatically pairs opening and closing symbols for selected text.
+    /// </remarks>
+    public bool AutoPairOnlyOnSelection
+    {
+        get => coreTextBox.AutoPairOnlyOnSelection;
+        set => coreTextBox.AutoPairOnlyOnSelection = value;
+    }
+
+    /// <summary>
     /// Gets or sets a value indicating whether pressing ctrl + w selects a word or does nothing.
     /// </summary>
     /// <remarks>

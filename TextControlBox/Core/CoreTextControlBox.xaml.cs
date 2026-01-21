@@ -1126,6 +1126,8 @@ internal sealed partial class CoreTextControlBox : UserControl
     public bool SearchIsOpen => searchManager.IsSearchOpen;
     public IEnumerable<string> Lines => textManager.totalLines;
     public bool DoAutoPairing { get; set; } = true;
+    public bool AutoPairOnlyOnSelection { get; set; } = true;
+
     public bool ControlW_SelectWord = true;
     public bool HasSelection => selectionManager.HasSelection;
     public TextControlBoxSelection? CurrentSelection => selectionManager.HasSelection ? new TextControlBoxSelection(this.selectionManager.currentTextSelection) : null;
