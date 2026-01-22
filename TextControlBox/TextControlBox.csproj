@@ -24,6 +24,7 @@
 			Added enhanced CSV syntaxhighlighting
 			Added new dev options for progressive syntaxhighlighting like advanced csv does
 			Added better memory management of rendering
+			Added proper Home and End key implementation and fixed selection not clearing issue
 			Fixed cursor left movement sometimes getting stuck
 			Fixed shift tab causing crash
 			Fixed selection over line numbers
