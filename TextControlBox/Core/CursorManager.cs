@@ -242,4 +242,9 @@ internal class CursorManager
         int lastLine = Math.Max(0, textManager.LinesCount - 1);
         SetCursorPosition(lastLine, textManager.GetLineLength(lastLine));
     }
+
+    public void SetToTextStart()
+    {
+        SetCursorPosition(0, 0);
+    }
 }

@@ -50,5 +50,10 @@ public class CursorPosition
         this.CharacterPosition = cursor;
     }
 
+    public string ToString()
+    {
+        return $"Line: {LineNumber}, Char: {CharacterPosition}";
+    }
+
     internal bool IsNull { get; set; } = false;
 }

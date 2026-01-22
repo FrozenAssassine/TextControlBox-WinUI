@@ -128,12 +128,21 @@ internal class ScrollManager
         verticalScrollBar.Value += textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
         canvasHelper.UpdateAll();
     }
+
     public void UpdateScrollToShowCursor(bool update = true)
     {
-        if (textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines <= cursorManager.LineNumber)
-            verticalScrollBar.Value = (cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+        if (textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines - 1 <= cursorManager.LineNumber)
+        {
+            verticalScrollBar.Value =
+                (cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 2) *
+                textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+        }
         else if (textRenderer.NumberOfStartLine > cursorManager.LineNumber)
-            verticalScrollBar.Value = (cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+        {
+            verticalScrollBar.Value =
+                cursorManager.LineNumber *
+                textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+        }
 
         if (update)
             canvasHelper.UpdateAll();

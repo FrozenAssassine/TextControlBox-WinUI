@@ -243,7 +243,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     break;
             }
 
-            if (e.Key != VirtualKey.Left && e.Key != VirtualKey.Right && e.Key != VirtualKey.Back && e.Key != VirtualKey.Delete)
+            if (e.Key != VirtualKey.Home && e.Key != VirtualKey.End && e.Key != VirtualKey.Left && e.Key != VirtualKey.Right && e.Key != VirtualKey.Back && e.Key != VirtualKey.Delete)
                 return;
         }
 
@@ -367,47 +367,53 @@ internal sealed partial class CoreTextControlBox : UserControl
             case VirtualKey.PageDown:
                 ScrollPageDown();
                 break;
+            case VirtualKey.Home:
             case VirtualKey.End:
                 {
+                    bool isHome = e.Key == VirtualKey.Home;
+
+                    //start or clear selection
                     if (shift)
                     {
-                        selectionManager.HasSelection = true;
+                        selectionManager.StartSelectionIfNeeded();
+                    }
+                    else
+                    {
+                        selectionManager.ClearSelection();
+                        canvasUpdateManager.UpdateSelection();
+                    }
 
-                        if (selectionManager.selectionStart.IsNull)
-                            selectionManager.SetSelectionStart(CursorPosition);
+                    //just move the cursor around
+                    if (ctrl)
+                    {
+                        if (isHome)
+                            cursorManager.SetToTextStart();
+                        else
+                            cursorManager.SetToTextEnd();
 
-                        cursorManager.MoveToLineEnd(CursorPosition);
+                        scrollManager.UpdateScrollToShowCursor(true);
+                    }
+                    else
+                    {
+                        if (isHome)
+                            cursorManager.MoveToLineStart(CursorPosition);
+                        else
+                            cursorManager.MoveToLineEnd(CursorPosition);
+
+                        scrollManager.ScrollLineIntoViewIfOutside(CursorPosition.LineNumber);
+                    }
+
+                    // finish selection
+                    if (shift)
+                    {
                         selectionManager.SetSelectionEnd(CursorPosition);
                         canvasUpdateManager.UpdateSelection();
                     }
                     else
                     {
-                        cursorManager.MoveToLineEnd(CursorPosition);
                         canvasUpdateManager.UpdateText();
                     }
-                    canvasUpdateManager.UpdateCursor();
 
-                    break;
-                }
-            case VirtualKey.Home:
-                {
-                    if (shift)
-                    {
-                        selectionManager.HasSelection = true;
-
-                        if (selectionManager.selectionStart.IsNull)
-                            selectionManager.SetSelectionStart(CursorPosition);
-
-                        cursorManager.MoveToLineStart(CursorPosition);
-                        selectionManager.SetSelectionEnd(CursorPosition);
-
-                        canvasUpdateManager.UpdateSelection();
-                    }
-                    else
-                    {
-                        cursorManager.MoveToLineStart(CursorPosition);
-                        canvasUpdateManager.UpdateText();
-                    }
                     canvasUpdateManager.UpdateCursor();
                     break;
                 }
