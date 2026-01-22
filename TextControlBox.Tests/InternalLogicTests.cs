@@ -54,6 +54,7 @@ public class InternalLogicTests
         var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
         core.SyntaxHighlighting = TextControlBoxNS.TextControlBox.GetSyntaxHighlightingFromID(SyntaxHighlightID.CSharp);
         core.DoAutoPairing = true;
+        core.AutoPairOnlyOnSelection = false;
 
         var (text, length) = AutoPairing.AutoPair(core, "(");
 
