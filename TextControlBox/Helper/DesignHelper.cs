@@ -24,7 +24,7 @@ internal class DesignHelper
         Color.FromArgb(255, 180, 180, 180),
         Color.FromArgb(0, 0, 0, 0),
         Color.FromArgb(100, 200, 120, 0),
-        Color.FromArgb(255, 160, 160, 160)
+        Color.FromArgb(180, 160, 160, 160)
         );
     public TextControlBoxDesign DarkDesign = new TextControlBoxDesign(
         new SolidColorBrush(Color.FromArgb(0, 30, 30, 30)),
@@ -35,7 +35,7 @@ internal class DesignHelper
         Color.FromArgb(255, 100, 100, 100),
         Color.FromArgb(0, 0, 0, 0),
         Color.FromArgb(100, 160, 80, 0),
-        Color.FromArgb(255, 100, 100, 100)
+        Color.FromArgb(180, 100, 100, 100)
         );
 
     //Colors:
