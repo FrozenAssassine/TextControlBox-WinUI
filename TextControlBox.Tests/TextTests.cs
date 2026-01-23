@@ -375,6 +375,22 @@ public class TextTests
     }
 
     [UITestMethod]
+    public void MoveTabForwardBackwardsSingleLine()
+    {
+        var (coreTextbox, originalText) = TestHelper.MakeCoreTextboxWithText();
+
+        coreTextbox.SetCursorPosition(1, 0);
+
+        for (int i = 0; i < 3; i++)
+            coreTextbox.tabSpaceManager.MoveTab();
+
+        for (int i = 0; i < 3; i++)
+            coreTextbox.tabSpaceManager.MoveTabBack();
+
+        Debug.Assert(coreTextbox.Text == originalText);
+    }
+
+    [UITestMethod]
     public void AddLinesAtIndex3()
     {
         var coreTextbox = TestHelper.MakeCoreTextbox();
