@@ -215,31 +215,42 @@ internal sealed partial class CoreTextControlBox : UserControl
             {
                 case VirtualKey.Up:
                     ScrollOneLineUp();
+                    e.Handled = true;
                     break;
                 case VirtualKey.Down:
                     ScrollOneLineDown();
+                    e.Handled = true;
                     break;
                 case VirtualKey.V:
                     Paste();
+                    e.Handled = true;
                     break;
                 case VirtualKey.Z:
                     Undo();
+                    e.Handled = true;
                     break;
                 case VirtualKey.Y:
                     Redo();
+                    e.Handled = true;
                     break;
                 case VirtualKey.C:
                     Copy();
+                    e.Handled = true;
                     break;
                 case VirtualKey.X:
                     Cut();
+                    e.Handled = true;
                     break;
                 case VirtualKey.A:
                     SelectAll();
+                    e.Handled = true;
                     break;
                 case VirtualKey.W:
                     if (ControlW_SelectWord)
+                    {
                         selectionManager.SelectSingleWord(canvasUpdateManager);
+                        e.Handled = true;
+                    }
                     break;
             }
 
@@ -263,6 +274,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
                 selectionManager.ClearSelection();
                 canvasUpdateManager.UpdateAll();
+                e.Handled = true;
                 return;
             }
         }
@@ -271,12 +283,15 @@ internal sealed partial class CoreTextControlBox : UserControl
         {
             case VirtualKey.Enter:
                 textActionManager.AddNewLine();
+                e.Handled = true;
                 break;
             case VirtualKey.Back:
                 textActionManager.RemoveText(ctrl);
+                e.Handled = true;
                 break;
             case VirtualKey.Delete:
                 textActionManager.DeleteText(ctrl, shift);
+                e.Handled = true;
                 break;
             case VirtualKey.Left:
                 {
@@ -298,6 +313,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     }
 
                     scrollManager.UpdateScrollToShowCursor(true);
+                    e.Handled = true;
                     break;
                 }
             case VirtualKey.Right:
@@ -320,6 +336,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     }
 
                     scrollManager.UpdateScrollToShowCursor(true);
+                    e.Handled = true;
                     break;
                 }
             case VirtualKey.Down:
@@ -337,6 +354,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     }
 
                     scrollManager.UpdateScrollToShowCursor(true);
+                    e.Handled = true;
                     break;
                 }
             case VirtualKey.Up:
@@ -354,18 +372,22 @@ internal sealed partial class CoreTextControlBox : UserControl
                     }
 
                     scrollManager.UpdateScrollToShowCursor(true);
+                    e.Handled = true;
                     break;
                 }
             case VirtualKey.Escape:
                 {
                     ClearSelection();
+                    e.Handled = true;
                     break;
                 }
             case VirtualKey.PageUp:
                 ScrollPageUp();
+                e.Handled = true;
                 break;
             case VirtualKey.PageDown:
                 ScrollPageDown();
+                e.Handled = true;
                 break;
             case VirtualKey.Home:
             case VirtualKey.End:
@@ -415,6 +437,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     }
 
                     canvasUpdateManager.UpdateCursor();
+                    e.Handled = true;
                     break;
                 }
         }
