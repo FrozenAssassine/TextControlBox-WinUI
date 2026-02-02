@@ -197,6 +197,8 @@ internal class PointerActionsManager
 
     public void PointerPressedAction(object sender, Point pointerPosition, PointerPointProperties properties)
     {
+        coreTextbox.Focus(FocusState.Programmatic);
+
         bool leftButtonPressed = properties.IsLeftButtonPressed;
         bool rightButtonPressed = properties.IsRightButtonPressed;
 
