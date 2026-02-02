@@ -463,6 +463,14 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         //Select the line where the cursor is over
         int line = CursorHelper.GetCursorLineFromPoint(textRenderer, point.Position);
+        
+        if(textManager.LinesCount > 0)
+        {
+            line = Math.Clamp(line, 0, textManager.LinesCount - 1);
+        }
+        else
+            return;
+
         SelectLine(line);
 
         pointerActionsManager.StartLineSelection(line);
