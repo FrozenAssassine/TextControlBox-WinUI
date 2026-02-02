@@ -14,12 +14,12 @@ namespace TextControlBox_TestApp
         {
             this.InitializeComponent();
 
-            textbox.LoadLines(Enumerable.Range(0, 2_000_000).Select(x => "Line " + x + " is cool right?"));
+            //textbox.LoadLines(Enumerable.Range(0, 5_000_000).Select(x => "Line " + x + " is cool right?"));
 
-            textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.Markdown);
+            textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.CSharp);
 
+            textbox.NumberOfSpacesForTab = 8;
             textbox.UseSpacesInsteadTabs = false;
-            textbox.NumberOfSpacesForTab = 4;
             textbox.ShowWhitespaceCharacters = true;
 
             SetWindowTheme(this, ElementTheme.Dark);
@@ -44,6 +44,33 @@ namespace TextControlBox_TestApp
         {
             if (window.Content is FrameworkElement frame)
                 frame.RequestedTheme = theme;
+        }
+
+
+        public void RewriteTabsSpaces(int spaces)
+        {
+            bool useSpaces = spaces != -1;
+            this.textbox.RewriteTabsSpaces(spaces == -1 ? 4 : spaces, useSpaces);
+        }
+
+        private void Format1_Click(object sender, RoutedEventArgs e)
+        {
+            RewriteTabsSpaces(-1);
+        }
+        private void Format2_Click(object sender, RoutedEventArgs e)
+        {
+            RewriteTabsSpaces(2);
+
+        }
+        private void Format3_Click(object sender, RoutedEventArgs e)
+        {
+            RewriteTabsSpaces(4);
+
+        }
+        private void Format4_Click(object sender, RoutedEventArgs e)
+        {
+            RewriteTabsSpaces(8);
+
         }
     }
 }

@@ -11,7 +11,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageId>TextControlBox.WinUI.JuliusKirsch</PackageId>
 		<Title>TextControlBox WinUI</Title>
-		<Version>1.6.1</Version>
+		<Version>1.6.2</Version>
 		<Authors>Julius Kirsch</Authors>
 		<Product>TextControlBox WinUI</Product>
 		<Description>A powerful and highly customizable textbox control for WinUI 3 applications. It provides an advanced text editing experience with features like syntax highlighting for multiple programming languages, intuitive search and replace functionality, zooming, line numbering, and smooth scrolling. With support for undo/redo, customizable themes, and efficient performance.</Description>
@@ -20,18 +20,10 @@
 		<RepositoryUrl>https://github.com/FrozenAssassine/TextControlBox-WinUI</RepositoryUrl>
 		<PackageTags>TextControlBox; Textbox; WinUI; C#; SyntaxHighlighting; LineNumbers</PackageTags>
 		<PackageReleaseNotes>
-			Added auto pair only selection property.
-			Added enhanced CSV syntaxhighlighting
-			Added new dev options for progressive syntaxhighlighting like advanced csv does
-			Added better memory management of rendering
-			Added proper Home and End key implementation and fixed selection not clearing issue
-			Fixed cursor left movement sometimes getting stuck
-			Fixed shift tab causing crash
-			Fixed selection over line numbers
-			Fixed glitching of last line inside horizontal scroll bar
-			Decreased invisible character highlighter visibility by default
-			Updated nuget packages to latest version
-			Updated to .NET 9
+			Fixed index out of range exception when clicking outside the linenumbers
+			Fixed sometimes occuring divided by zero exception when reformatting tabs and spaces
+			Fixed focus issues when clicking outside the textbox
+			Fixed key pressed like up and down arrow are send to parent controls as well
 		</PackageReleaseNotes>
 		<PackageIcon>Icon1.png</PackageIcon>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>

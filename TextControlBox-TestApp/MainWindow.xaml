@@ -13,6 +13,18 @@
     <Window.SystemBackdrop>
         <MicaBackdrop Kind="Base"/>
     </Window.SystemBackdrop>
-    
-    <textcontrolbox:TextControlBox x:Name="textbox"/>
+
+    <Grid>
+            <StackPanel>
+                <Button Content="Format" Click="Format1_Click">
+                </Button>
+                <Button Content="Format" Click="Format2_Click">
+                </Button>
+                <Button Content="Format" Click="Format3_Click">
+                </Button>
+                <Button Content="Format" Click="Format4_Click">
+                </Button>
+            </StackPanel>
+            <textcontrolbox:TextControlBox Margin="50,0,0,0" x:Name="textbox"/>
+    </Grid>
 </Window>
