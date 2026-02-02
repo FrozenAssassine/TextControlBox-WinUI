@@ -26,6 +26,9 @@ internal class TabSpaceManager
                 _NumberOfSpaces = value;
                 Spaces = new string(' ', _NumberOfSpaces);
 
+                if(IsDocumentEmpty())
+                    documentNumberOfSpaces = value;
+
                 eventsManager.CallTabsSpacesChanged(UseSpacesInsteadTabs, value);
             }
         }
@@ -38,6 +41,9 @@ internal class TabSpaceManager
         set
         {
             _UseSpacesInsteadTabs = value;
+            if (IsDocumentEmpty())
+                documentUsesSpaces = value;
+
             eventsManager.CallTabsSpacesChanged(value, _NumberOfSpaces);
         }
     }
@@ -45,7 +51,7 @@ internal class TabSpaceManager
     private string Spaces = "    ";
     public readonly string Tab = "\t";
     private bool documentUsesSpaces;
-    private int documentNumberOfSpaces;
+    private int documentNumberOfSpaces = 4;
 
     private UndoRedo undoRedo;
     private TextManager textManager;
@@ -54,6 +60,14 @@ internal class TabSpaceManager
     private TextActionManager textActionsManager;
     private LongestLineManager longestLineManager;
     private EventsManager eventsManager;
+
+    private bool IsDocumentEmpty()
+    {
+        if (textManager == null) return true;
+        if (textManager.LinesCount == 0) return true;
+        if (textManager.LinesCount == 1 && textManager.GetLineLength(0) == 0) return true;
+        return false;
+    }
 
     public void Init(TextManager textManager, SelectionManager selectionManager, CursorManager cursorManager, TextActionManager textActionsManager, UndoRedo undoRedo, LongestLineManager longestLineManager, EventsManager eventsManager)
     {
@@ -210,6 +224,8 @@ internal class TabSpaceManager
     {
         if (string.IsNullOrEmpty(indent)) return indent;
 
+        if (spacesPerTab <= 0) spacesPerTab = 4;
+
         // Calculate total indent level (in virtual columns)
         int totalColumns = 0;
         for (int i = 0; i < indent.Length; i++)
@@ -242,6 +258,7 @@ internal class TabSpaceManager
     private string ConvertIndentStringToSpaces(string indent, int oldSpacesPerTab, int newSpacesPerTab)
     {
         if (string.IsNullOrEmpty(indent)) return indent;
+        if (oldSpacesPerTab <= 0) oldSpacesPerTab = 4;
 
         // Calculate total indent level in old space units
         int totalOldSpaces = 0;
