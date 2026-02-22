@@ -55,6 +55,11 @@ public enum SyntaxHighlightID
     GCode,
 
     /// <summary>
+    /// Identifier for Gitignore files.
+    /// </summary>
+    Gitignore,
+
+    /// <summary>
     /// Identifier for HexFile code language.
     /// </summary>
     HexFile,

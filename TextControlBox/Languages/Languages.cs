@@ -292,7 +292,7 @@ namespace TextControlBoxNS.Languages
             this.Filter = new string[5] { ".ngc", ".tap", ".gcode", ".nc", ".cnc" };
             this.Description = "Syntax highlighting for GCode language";
             this.Highlights = new SyntaxHighlights[]
-            { 
+            {
                 new SyntaxHighlights("\\bY(?=([0-9]|(\\.|\\+|\\-)[0-9]))", "#00ff00", "#00ff00"),
                 new SyntaxHighlights("\\bX(?=([0-9]|(\\.|\\+|\\-)[0-9]))", "#ff0000", "#ff0000"),
                 new SyntaxHighlights("\\bZ(?=([0-9]|(\\.|\\+|\\-)[0-9]))", "#0077ff", "#0077ff"),
@@ -607,11 +607,11 @@ namespace TextControlBoxNS.Languages
             this.Author = "Julius Kirsch";
             this.Filter = new string[1] { ".csv" };
             this.Description = "Enhanced syntax highlighting for CSV with alternating row colors";
-            
+
             this.HighlightRules = new IHighlightRule[]
             {
                 new CsvColumnHighlightRule(),
-                
+
                 new RegexHighlightRule(
                     new SyntaxHighlights("[\\:\\,\\;\\|]", "#bd0020", "#f14260")
                 )
@@ -774,6 +774,45 @@ namespace TextControlBoxNS.Languages
 
             // Multi-line comments (between --[[ and ]])
             new SyntaxHighlights("--\\[\\[(.|\\r|\\n)*?\\]\\]", "#888888", "#646464")
+            };
+        }
+    }
+    internal class GitIgnore : SyntaxHighlightLanguage
+    {
+        public GitIgnore()
+        {
+            this.Name = "GitIgnore";
+            this.Filter = new[] { ".gitignore" };
+            this.Description = "Syntax highlighting for Git ignore files";
+
+            this.AutoPairingPair = new AutoPairingPair[]
+            {
+                    new AutoPairingPair("[", "]")
+            };
+
+            this.Highlights = new SyntaxHighlights[]
+            {
+                    // Negation (lines starting with !) - High priority/Warning color
+                    new SyntaxHighlights(@"^!.*", "#D32F2F", "#EF5350"),
+
+                    // Comments (lines starting with #)
+                    new SyntaxHighlights(@"#.*", "#9E9E9E", "#BDBDBD"),
+
+                    // Directories (entries ending with / or containing /)
+                    new SyntaxHighlights(@"[\w\-\.]+(?=/)|(?<=/ )[\w\-\.]+", "#1976D2", "#64B5F6"),
+                    new SyntaxHighlights(@"/", "#5C6BC0", "#9FA8DA"),
+
+                    // Wildcards (*, **, ?)
+                    new SyntaxHighlights(@"\*+|(?<!\\)\?", "#7B1FA2", "#BA68C8"),
+
+                    // Character sets/ranges [a-z]
+                    new SyntaxHighlights(@"\[[^\]]+\]", "#388E3C", "#81C784"),
+
+                    // Escaped characters (\#, \!, \ )
+                    new SyntaxHighlights(@"\\.", "#F57C00", "#FFB74D"),
+            
+                    // Trailing spaces (often a mistake in .gitignore)
+                    new SyntaxHighlights(@"\s+$", "#C62828", "#FF5252"),
             };
         }
     }

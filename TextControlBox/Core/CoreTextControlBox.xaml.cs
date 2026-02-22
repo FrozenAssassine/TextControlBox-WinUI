@@ -1194,6 +1194,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             { SyntaxHighlightID.CSVImproved, new CSVEnhanced() },
             { SyntaxHighlightID.CSV, new CSV() },
             { SyntaxHighlightID.GCode, new GCode() },
+            { SyntaxHighlightID.Gitignore, new GitIgnore() },
             { SyntaxHighlightID.HexFile, new HexFile() },
             { SyntaxHighlightID.Html, new Html() },
             { SyntaxHighlightID.Java, new Java() },
