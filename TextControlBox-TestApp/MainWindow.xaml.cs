@@ -14,9 +14,9 @@ namespace TextControlBox_TestApp
         {
             this.InitializeComponent();
 
-            //textbox.LoadLines(Enumerable.Range(0, 5_000_000).Select(x => "Line " + x + " is cool right?"));
+            //textbox.LoadLines(Enumerable.Range(0, 1_000_000).Select(x => "Line " + x + " is cool right?"));
 
-            textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.CSharp);
+            textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.Gitignore);
 
             textbox.NumberOfSpacesForTab = 8;
             textbox.UseSpacesInsteadTabs = false;
@@ -55,7 +55,9 @@ namespace TextControlBox_TestApp
 
         private void Format1_Click(object sender, RoutedEventArgs e)
         {
-            RewriteTabsSpaces(-1);
+            textbox.WordWrap = !textbox.WordWrap;
+
+            //RewriteTabsSpaces(-1);
         }
         private void Format2_Click(object sender, RoutedEventArgs e)
         {

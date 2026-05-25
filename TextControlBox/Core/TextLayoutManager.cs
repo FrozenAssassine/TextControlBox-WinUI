@@ -29,17 +29,17 @@ internal class TextLayoutManager
     }
     public CanvasTextFormat CreateCanvasTextFormat()
     {
-        return CreateCanvasTextFormat(zoomManager.ZoomedFontSize, zoomManager.ZoomedFontSize + 2, textManager._FontFamily);
+        return CreateCanvasTextFormat(zoomManager.ZoomedFontSize, zoomManager.ZoomedFontSize + 2, textManager._FontFamily, CanvasWordWrapping.NoWrap);
     }
 
-    public CanvasTextFormat CreateCanvasTextFormat(float zoomedFontSize, float lineSpacing, FontFamily fontFamily)
+    public CanvasTextFormat CreateCanvasTextFormat(float zoomedFontSize, float lineSpacing, FontFamily fontFamily, CanvasWordWrapping wordWrapping = CanvasWordWrapping.NoWrap)
     {
         CanvasTextFormat textFormat = new CanvasTextFormat()
         {
             FontSize = zoomedFontSize,
             HorizontalAlignment = CanvasHorizontalAlignment.Left,
             VerticalAlignment = CanvasVerticalAlignment.Top,
-            WordWrapping = CanvasWordWrapping.NoWrap,
+            WordWrapping = wordWrapping,
             LineSpacing = lineSpacing,
         };
         textFormat.IncrementalTabStop = (float)Math.Round(zoomedFontSize * 3f); //default 137px

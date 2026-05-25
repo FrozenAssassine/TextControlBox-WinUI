@@ -76,14 +76,48 @@ internal class CursorRenderer
             cursorManager.CharacterPosition = currentLineLength;
         }
 
-        float renderPosY = (float)((cursorManager.LineNumber - textRenderer.NumberOfStartLine) * textRenderer.SingleLineHeight) + textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;  
-        if (renderPosY > textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight || renderPosY < 0)
+        if (textRenderer.WordWrapEnabled)
+        {
+            if (!textManager.TryGetVisualPosition(cursorManager.LineNumber, cursorManager.CharacterPosition, textRenderer.VisualLineMap, out int visualLineIndex, out _))
+                return;
+
+            if (visualLineIndex < textRenderer.NumberOfStartLine || visualLineIndex >= textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines)
+                return;
+
+            int globalIndex = textManager.GetGlobalIndex(cursorManager.LineNumber, cursorManager.CharacterPosition);
+            var caret = textRenderer.DrawnTextLayout.GetCaretPosition(globalIndex, false);
+
+            float renderPosX = caret.X + textRenderer.HorizontalOffset;
+            // caret.Y ist Layout-Koordinate (0 basiert). Die Textausgabe wird mit TextRenderOffsetY versetzt.
+            float renderPosY = caret.Y + textRenderer.TextRenderOffsetY - textRenderer.VerticalScrollPixels;
+
+            if (focusManager.HasFocus)
+            {
+                if (_CursorSize == null)
+                    args.DrawingSession.FillRectangle(renderPosX, renderPosY, 2, zoomManager.ZoomedFontSize, designHelper.CursorColorBrush);
+                else
+                    args.DrawingSession.FillRectangle(renderPosX + _CursorSize.OffsetX, renderPosY + _CursorSize.OffsetY, (float)_CursorSize.Width, (float)_CursorSize.Height, designHelper.CursorColorBrush);
+
+                if (!cursorManager.Equals(cursorManager.currentCursorPosition, cursorManager.oldCursorPosition))
+                {
+                    cursorManager.oldCursorPosition.SetChangeValues(cursorManager.currentCursorPosition);
+                    eventsManager.CallSelectionChanged();
+                }
+            }
+
+            if (lineHighlighterRenderer.CanRender(focusManager))
+                lineHighlighterRenderer.Render((float)canvasCursor.ActualWidth, renderPosY, zoomManager.ZoomedFontSize, args, designHelper.LineHighlighterBrush);
+
+            return;
+        }
+
+        float renderPosYLogical = (float)((cursorManager.LineNumber - textRenderer.NumberOfStartLine) * textRenderer.SingleLineHeight) + textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
+        if (renderPosYLogical > textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight || renderPosYLogical < 0)
             return;
 
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
 
         scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, true);
-
 
         if (focusManager.HasFocus)
         {
@@ -95,7 +129,7 @@ internal class CursorRenderer
                 textRenderer.CurrentLineTextLayout,
                 characterPos,
                 (float)-scrollManager.HorizontalScroll,
-                renderPosY,
+                renderPosYLogical,
                 zoomManager.ZoomedFontSize,
                 _CursorSize,
                 args,
@@ -109,6 +143,6 @@ internal class CursorRenderer
         }
 
         if (lineHighlighterRenderer.CanRender(focusManager))
-            lineHighlighterRenderer.Render((float)canvasCursor.ActualWidth, renderPosY, zoomManager.ZoomedFontSize, args, designHelper.LineHighlighterBrush);
+            lineHighlighterRenderer.Render((float)canvasCursor.ActualWidth, renderPosYLogical, zoomManager.ZoomedFontSize, args, designHelper.LineHighlighterBrush);
     }
 }

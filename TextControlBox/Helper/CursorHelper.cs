@@ -19,6 +19,7 @@ internal class CursorHelper
 
         return Math.Max(0, relativeLine + textRenderer.NumberOfStartLine);
     }
+
     public static int GetCharacterPositionFromPoint(CurrentLineManager currentLineManager, CanvasTextLayout textLayout, Point cursorPosition, float marginLeft)
     {
         if (currentLineManager.GetCurrentLineText() == null || textLayout == null)
@@ -43,12 +44,21 @@ internal class CursorHelper
     {
         //Apply an offset to the cursorposition to make selection easier
         point.X += textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
-        
+
+        if (textRenderer.WordWrapEnabled)
+            point.Y += textRenderer.TextRenderOffsetY;
+
+        if (textRenderer.TryGetCursorPositionFromPoint(point, out int line, out int character))
+        {
+            cursorPos.LineNumber = line;
+            cursorPos.CharacterPosition = character;
+            return;
+        }
 
         cursorPos.LineNumber = GetCursorLineFromPoint(textRenderer, point);
         cursorPos.LineNumber = Math.Clamp(cursorPos.LineNumber, 0, textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines - 1); //Clamp to visible? or total? GetCursorLineFromPoint handles relative logic, but we need to clamp to document bounds.
 
-        //GetCursorLineFromPoint returns absolute line index.    
+        //GetCursorLineFromPoint returns absolute line index.
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
         cursorPos.CharacterPosition = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, (float)-scrollManager.HorizontalScroll);
     }

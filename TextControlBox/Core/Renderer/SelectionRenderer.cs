@@ -53,6 +53,12 @@ namespace TextControlBoxNS.Core.Renderer
             Color selectionColor
             )
         {
+            if (textRenderer.WordWrapEnabled)
+            {
+                DrawWordWrapSelection(textLayout, args, marginLeft, marginTop, fontSize, selectionColor);
+                return;
+            }
+
             int selStartIndex = 0;
             int selEndIndex = 0;
             int characterPosStart = selectionManager.selectionStart.CharacterPosition;
@@ -178,6 +184,98 @@ namespace TextControlBoxNS.Core.Renderer
             selectionManager.currentTextSelection.renderedLength = renderedSelectionLength;
         }
 
+        private void DrawWordWrapSelection(
+            CanvasTextLayout textLayout,
+            CanvasDrawEventArgs args,
+            float marginLeft,
+            float marginTop,
+            float fontSize,
+            Color selectionColor)
+        {
+            if (textLayout == null)
+                return;
+
+            int startLine = selectionManager.selectionStart.LineNumber;
+            int endLine = selectionManager.selectionEnd.LineNumber;
+            int startChar = selectionManager.selectionStart.CharacterPosition;
+            int endChar = selectionManager.selectionEnd.CharacterPosition;
+
+            if (startLine < 0 || endLine < 0)
+                return;
+
+            startLine = Math.Clamp(startLine, 0, textManager.LinesCount - 1);
+            endLine = Math.Clamp(endLine, 0, textManager.LinesCount - 1);
+
+            int startLineLength = textManager.GetLineLength(startLine);
+            int endLineLength = textManager.GetLineLength(endLine);
+
+            startChar = Math.Clamp(startChar, 0, startLineLength);
+            endChar = Math.Clamp(endChar, 0, endLineLength);
+
+            int selStartIndex = textManager.GetGlobalIndex(startLine, startChar);
+            int selEndIndex = textManager.GetGlobalIndex(endLine, endChar, includeLineBreak: endChar >= endLineLength);
+
+            renderedSelectionStart = Math.Min(selStartIndex, selEndIndex);
+            renderedSelectionLength = Math.Abs(selEndIndex - selStartIndex);
+
+            if (renderedSelectionLength == 0)
+            {
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
+            }
+
+            int selectionStart = renderedSelectionStart;
+            int selectionEnd = renderedSelectionStart + renderedSelectionLength;
+            var visualLineMap = textRenderer.VisualLineMap;
+            if (visualLineMap.TotalVisualLines == 0)
+                return;
+
+            int visualStart = Math.Clamp(textRenderer.NumberOfStartLine, 0, visualLineMap.TotalVisualLines - 1);
+            int visualEnd = Math.Clamp(textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines - 1, 0, visualLineMap.TotalVisualLines - 1);
+
+            using CanvasCommandList canvasCommandList = new CanvasCommandList(args.DrawingSession);
+            using (var ccls = canvasCommandList.CreateDrawingSession())
+            {
+                float width = fontSize / scrollManager.DefaultVerticalScrollSensitivity;
+                for (int visualIndex = visualStart; visualIndex <= visualEnd; visualIndex++)
+                {
+                    var lineInfo = visualLineMap.VisualLines[visualIndex];
+                    int logicalLineStart = textManager.GetGlobalIndex(lineInfo.LogicalLineIndex, 0);
+                    int segmentLength = lineInfo.Length == 0 ? Math.Max(1, lineInfo.LayoutLength) : lineInfo.Length;
+                    int lineStart = logicalLineStart + lineInfo.StartChar;
+                    int lineEnd = lineStart + segmentLength;
+
+                    int rangeStart = Math.Max(selectionStart, lineStart);
+                    int rangeEnd = Math.Min(selectionEnd, lineEnd);
+                    if (rangeEnd <= rangeStart)
+                        continue;
+
+                    CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(rangeStart, rangeEnd - rangeStart);
+                    for (int i = 0; i < regions.Length; i++)
+                    {
+                        if (regions[i].LayoutBounds.Width == 0)
+                        {
+                            var bounds = regions[i].LayoutBounds;
+                            regions[i].LayoutBounds = new Rect
+                            {
+                                Width = width,
+                                Height = bounds.Height,
+                                X = bounds.X,
+                                Y = bounds.Y
+                            };
+                        }
+
+                        ccls.FillRectangle(Utils.CreateRect(regions[i].LayoutBounds, marginLeft, marginTop), selectionColor);
+                    }
+                }
+            }
+            args.DrawingSession.DrawImage(canvasCommandList);
+
+            selectionManager.currentTextSelection.renderedIndex = renderedSelectionStart;
+            selectionManager.currentTextSelection.renderedLength = renderedSelectionLength;
+        }
+
 
         public void Draw(CanvasControl canvasSelection, CanvasDrawEventArgs args)
         {
@@ -192,7 +290,7 @@ namespace TextControlBoxNS.Core.Renderer
                     textRenderer.DrawnTextLayout,
                     args,
                     textRenderer.HorizontalOffset,
-                    textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
+                    (textRenderer.WordWrapEnabled ? -textRenderer.VerticalScrollPixels : 0 )+ textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
                     textRenderer.NumberOfStartLine,
                     textRenderer.NumberOfRenderedLines,
                     zoomManager.ZoomedFontSize,

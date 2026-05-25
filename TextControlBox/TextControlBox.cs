@@ -1061,6 +1061,15 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Gets or sets a value indicating whether word wrapping is enabled in the textbox.
+    /// </summary>
+    public bool WordWrap
+    {
+        get => coreTextBox.WordWrap;
+        set => coreTextBox.WordWrap = value;
+    }
+
+    /// <summary>
     /// Gets a value indicating whether the current text content can be undone.
     /// </summary>
     public bool CanUndo => coreTextBox.CanUndo;

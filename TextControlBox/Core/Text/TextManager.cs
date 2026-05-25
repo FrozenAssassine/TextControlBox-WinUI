@@ -230,4 +230,83 @@ internal class TextManager
 
         return wordCount;
     }
+
+    public int GetGlobalIndex(int line, int characterPosition, bool includeLineBreak = false)
+    {
+        if (LinesCount == 0)
+            return 0;
+
+        line = Math.Clamp(line, 0, LinesCount - 1);
+        int lineLength = GetLineLength(line);
+        characterPosition = Math.Clamp(characterPosition, 0, lineLength);
+
+        int index = 0;
+        int lineEndingLength = NewLineCharacter.Length;
+        for (int i = 0; i < line; i++)
+        {
+            index += totalLines[i].Length + lineEndingLength;
+        }
+
+        index += characterPosition;
+
+        if (includeLineBreak && characterPosition >= lineLength && line < LinesCount - 1)
+            index += lineEndingLength;
+
+        return index;
+    }
+
+    public bool TryGetVisualPosition(int line, int characterPosition, VisualLineMap visualLineMap, out int visualLine, out int column)
+    {
+        visualLine = -1;
+        column = 0;
+
+        if (visualLineMap == null || visualLineMap.TotalVisualLines == 0)
+            return false;
+
+        int globalIndex = GetGlobalIndex(line, characterPosition);
+        return visualLineMap.TryGetVisualPosition(globalIndex, out visualLine, out column);
+    }
+
+    public bool TryGetGlobalIndexFromVisualPosition(int visualLineIndex, int column, VisualLineMap visualLineMap, out int globalIndex)
+    {
+        globalIndex = 0;
+
+        if (visualLineMap == null || visualLineMap.TotalVisualLines == 0)
+            return false;
+
+        if (!visualLineMap.TryGetLogicalPosition(visualLineIndex, column, out int logicalLine, out int character))
+            return false;
+
+        globalIndex = GetGlobalIndex(logicalLine, character);
+        return true;
+    }
+
+    public (int line, int character) GetLinePositionFromGlobalIndex(int index)
+    {
+        if (LinesCount == 0)
+            return (0, 0);
+
+        if (index <= 0)
+            return (0, 0);
+
+        int lineEndingLength = NewLineCharacter.Length;
+        int currentIndex = 0;
+
+        for (int i = 0; i < LinesCount; i++)
+        {
+            int lineLength = totalLines[i].Length;
+            int lineTotal = lineLength + (i < LinesCount - 1 ? lineEndingLength : 0);
+
+            if (index <= currentIndex + lineLength)
+                return (i, Math.Clamp(index - currentIndex, 0, lineLength));
+
+            if (index < currentIndex + lineTotal)
+                return (i, lineLength);
+
+            currentIndex += lineTotal;
+        }
+
+        int lastLine = LinesCount - 1;
+        return (lastLine, totalLines[lastLine].Length);
+    }
 }

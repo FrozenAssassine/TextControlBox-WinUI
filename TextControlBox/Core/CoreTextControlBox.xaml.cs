@@ -344,13 +344,15 @@ internal sealed partial class CoreTextControlBox : UserControl
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
-                        cursorManager.MoveDown();
+                        if (!textRenderer.MoveCursorByVisualLines(1))
+                            cursorManager.MoveDown();
                         selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
                     }
                     else
                     {
                         selectionManager.ClearSelectionIfNeeded(this);
-                        cursorManager.MoveDown();
+                        if (!textRenderer.MoveCursorByVisualLines(1))
+                            cursorManager.MoveDown();
                     }
 
                     scrollManager.UpdateScrollToShowCursor(true);
@@ -362,13 +364,15 @@ internal sealed partial class CoreTextControlBox : UserControl
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
-                        cursorManager.MoveUp();
+                        if (!textRenderer.MoveCursorByVisualLines(-1))
+                            cursorManager.MoveUp();
                         selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
                     }
                     else
                     {
                         selectionManager.ClearSelectionIfNeeded(this);
-                        cursorManager.MoveUp();
+                        if (!textRenderer.MoveCursorByVisualLines(-1))
+                            cursorManager.MoveUp();
                     }
 
                     scrollManager.UpdateScrollToShowCursor(true);
@@ -949,11 +953,8 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public Point GetCursorPosition()
     {
-        return new Point
-        {
-            Y = (float)((CursorPosition.LineNumber - textRenderer.NumberOfStartLine) * textRenderer.SingleLineHeight) + textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
-            X = CursorHelper.GetCursorPositionInLine(textRenderer.CurrentLineTextLayout, CursorPosition, 0)
-        };
+        textRenderer.UpdateCurrentLineTextLayout(canvasText);
+        return textRenderer.GetCursorCanvasPosition(CursorPosition);
     }
 
     public void SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true, bool autoClamp = true)
@@ -1048,6 +1049,19 @@ internal sealed partial class CoreTextControlBox : UserControl
         set => textManager.LineEnding = value;
     }
 
+    public static readonly DependencyProperty WordWrapProperty =
+        DependencyProperty.Register(
+            nameof(WordWrap),
+            typeof(bool),
+            typeof(CoreTextControlBox),
+            new PropertyMetadata(false, OnWordWrapChanged));
+
+    public bool WordWrap
+    {
+        get => (bool)GetValue(WordWrapProperty);
+        set => SetValue(WordWrapProperty, value);
+    }
+
     public float SpaceBetweenLineNumberAndText { get => lineNumberManager._SpaceBetweenLineNumberAndText; set { lineNumberManager._SpaceBetweenLineNumberAndText = value; lineNumberRenderer.NeedsUpdateLineNumbers(); canvasUpdateManager.UpdateAll(); } }
 
     public CursorPosition CursorPosition
@@ -1126,6 +1140,27 @@ internal sealed partial class CoreTextControlBox : UserControl
         }
         //we ignore isReadOnly here, to allow setting text in readonly mode via code.
         set => textActionManager.AddCharacter(stringManager.CleanUpString(value), ignoreIsReadOnly: true);
+    }
+
+    private static void OnWordWrapChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not CoreTextControlBox control)
+            return;
+
+        bool wordWrap = (bool)e.NewValue;
+
+        control.textRenderer.NeedsTextFormatUpdate = true;
+        control.textRenderer.NeedsUpdateTextLayout = true;
+
+        control.horizontalScrollBar.Visibility = wordWrap ? Visibility.Collapsed : Visibility.Visible;
+        if (wordWrap)
+        {
+            control.HorizontalScroll = 0;
+        }
+
+        control.longestLineManager.needsRecalculation = true;
+
+        control.canvasUpdateManager.UpdateAll();
     }
     public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs, bool ignoreIsReadonly = false)
     {

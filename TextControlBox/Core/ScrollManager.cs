@@ -47,7 +47,8 @@ internal class ScrollManager
 
     internal void VerticalScrollbar_Loaded(object sender, RoutedEventArgs e)
     {
-        verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * textRenderer.SingleLineHeight - scrollGrid.ActualHeight) / DefaultVerticalScrollSensitivity;
+        int totalLines = textRenderer.WordWrapEnabled ? textRenderer.VisualLineMap.TotalVisualLines : textManager.LinesCount;
+        verticalScrollBar.Maximum = ((totalLines + 1) * textRenderer.SingleLineHeight - scrollGrid.ActualHeight) / DefaultVerticalScrollSensitivity;
         verticalScrollBar.ViewportSize = coreTextbox.ActualHeight;
     }
     internal void VerticalScrollBar_Scroll(object sender, ScrollEventArgs e)
@@ -90,7 +91,8 @@ internal class ScrollManager
 
     public void ScrollLineIntoView(int line, bool update = true)
     {
-        verticalScrollBar.Value = (line - textRenderer.NumberOfRenderedLines / 2) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+        int visualLine = GetVisualLineIndex(line, 0);
+        verticalScrollBar.Value = (visualLine - textRenderer.NumberOfRenderedLines / 2) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
         
         if(update)
             canvasHelper.UpdateAll();
@@ -98,19 +100,29 @@ internal class ScrollManager
 
     public void ScrollTopIntoView(bool update = true)
     {
-        verticalScrollBar.Value = (cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+        int visualLine = GetVisualLineIndex(cursorManager.LineNumber, cursorManager.CharacterPosition);
+        verticalScrollBar.Value = (visualLine - 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
         if(update)
             canvasHelper.UpdateAll();
     }
     public void ScrollBottomIntoView(bool update = true)
     {
-        verticalScrollBar.Value = (cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+        int visualLine = GetVisualLineIndex(cursorManager.LineNumber, cursorManager.CharacterPosition);
+        verticalScrollBar.Value = (visualLine - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
         if(update)
             canvasHelper.UpdateAll();
     }
 
     public void ScrollPageUp()
     {
+        if (textRenderer.WordWrapEnabled)
+        {
+            textRenderer.MoveCursorByVisualLines(-textRenderer.NumberOfRenderedLines);
+            verticalScrollBar.Value = Math.Max(0, verticalScrollBar.Value - textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity);
+            canvasHelper.UpdateAll();
+            return;
+        }
+
         cursorManager.LineNumber -= textRenderer.NumberOfRenderedLines;
         if (cursorManager.LineNumber < 0)
             cursorManager.LineNumber = 0;
@@ -122,6 +134,14 @@ internal class ScrollManager
 
     public void ScrollPageDown()
     {
+        if (textRenderer.WordWrapEnabled)
+        {
+            textRenderer.MoveCursorByVisualLines(textRenderer.NumberOfRenderedLines);
+            verticalScrollBar.Value += textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
+            canvasHelper.UpdateAll();
+            return;
+        }
+
         cursorManager.LineNumber += textRenderer.NumberOfRenderedLines;
         if (cursorManager.LineNumber > textManager.LinesCount - 1)
             cursorManager.LineNumber = textManager.LinesCount - 1;
@@ -131,21 +151,33 @@ internal class ScrollManager
 
     public void UpdateScrollToShowCursor(bool update = true)
     {
-        if (textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines - 1 <= cursorManager.LineNumber)
+        int visualLine = GetVisualLineIndex(cursorManager.LineNumber, cursorManager.CharacterPosition);
+        if (textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines - 1 <= visualLine)
         {
             verticalScrollBar.Value =
-                (cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 2) *
+                (visualLine - textRenderer.NumberOfRenderedLines + 2) *
                 textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
         }
-        else if (textRenderer.NumberOfStartLine > cursorManager.LineNumber)
+        else if (textRenderer.NumberOfStartLine > visualLine)
         {
             verticalScrollBar.Value =
-                cursorManager.LineNumber *
+                visualLine *
                 textRenderer.SingleLineHeight / DefaultVerticalScrollSensitivity;
         }
 
         if (update)
             canvasHelper.UpdateAll();
+    }
+
+    private int GetVisualLineIndex(int line, int character)
+    {
+        if (!textRenderer.WordWrapEnabled)
+            return line;
+
+        if (textManager.TryGetVisualPosition(line, character, textRenderer.VisualLineMap, out int visualLine, out _))
+            return visualLine;
+
+        return line;
     }
 
     public bool ScrollIntoViewHorizontal(CanvasControl canvasText, bool update = true)

@@ -44,6 +44,23 @@ namespace TextControlBoxNS.Core.Renderer
             LineNumberContent.Clear();
         }
 
+    public void GenerateWrappedLineNumberText(int renderedLines, int startVisualLine)
+    {
+        var visualLines = textRenderer.VisualLineMap.VisualLines;
+        int endLine = Math.Min(startVisualLine + renderedLines, visualLines.Count);
+        for (int i = startVisualLine; i < endLine; i++)
+        {
+            var lineInfo = visualLines[i];
+            if (lineInfo.StartChar == 0)
+                LineNumberContent.AppendLine((lineInfo.LogicalLineIndex + 1).ToString());
+            else
+                LineNumberContent.AppendLine(string.Empty);
+        }
+
+        LineNumberTextToRender = LineNumberContent.ToString();
+        LineNumberContent.Clear();
+    }
+
         public bool CanUpdateCanvas()
         {
             return needsUpdate || OldLineNumberTextToRender == null ||
@@ -73,7 +90,14 @@ namespace TextControlBoxNS.Core.Renderer
             if (posX < 0) 
                 posX = 0;
 
-            OldLineNumberTextToRender = LineNumberTextToRender;
+            float firstLineY = textRenderer.NumberOfStartLine * textRenderer.SingleLineHeight;
+
+            float verticalOffset = firstLineY - textRenderer.VerticalScrollPixels + textRenderer.TextRenderOffsetY;
+
+            if (!textRenderer.WordWrapEnabled)
+            {
+                verticalOffset = textRenderer.TextRenderOffsetY;
+            }
 
             LineNumberTextLayout?.Dispose();
             LineNumberTextLayout = textLayoutManager.CreateTextLayout(canvas, LineNumberTextFormat, LineNumberTextToRender, posX, (float)canvas.Size.Height);
@@ -81,10 +105,9 @@ namespace TextControlBoxNS.Core.Renderer
             args.DrawingSession.DrawTextLayout(
                 LineNumberTextLayout,
                 10,
-                textRenderer.SingleLineHeight,
+                verticalOffset,
                 designHelper.LineNumberColorBrush);
         }
-
         public void CreateLineNumberTextFormat()
         {
             if (lineNumberManager._ShowLineNumbers)
@@ -104,6 +127,9 @@ namespace TextControlBoxNS.Core.Renderer
         {
             if (lineNumberManager._ShowLineNumbers)
             {
+            if (textRenderer.WordWrapEnabled)
+                GenerateWrappedLineNumberText(textRenderer.NumberOfRenderedLines, textRenderer.NumberOfStartLine);
+            else
                 GenerateLineNumberText(textRenderer.NumberOfRenderedLines, textRenderer.NumberOfStartLine);
             }
         }
