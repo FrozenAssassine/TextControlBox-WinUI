@@ -156,11 +156,7 @@ internal class ScrollManager
 
     public bool ScrollIntoViewHorizontal(CanvasControl canvasText, bool update = true)
     {
-        float curPosInLine = CursorHelper.GetCursorPositionInLine(
-            textRenderer.CurrentLineTextLayout,
-            cursorManager.currentCursorPosition,
-            0
-        );
+        float curPosInLine = GetCurrentCursorPixelPositionInLine();
 
         if (curPosInLine == OldHorizontalScrollValue)
             return false;
@@ -186,6 +182,73 @@ internal class ScrollManager
             canvasHelper.UpdateAll();
 
         return changed;
+    }
+
+    /// <summary>
+    /// Horizontally CENTERS the current cursor column in the viewport (NoWrap only). Unlike
+    /// <see cref="ScrollIntoViewHorizontal"/> — which reveals the column at the nearest edge (so a match far
+    /// to the right lands pinned against the right edge) — this places the column in the middle of the
+    /// visible width, which is what "jump to a search match" wants. It records the resolved column in
+    /// <see cref="OldHorizontalScrollValue"/> so the per-draw <see cref="EnsureHorizontalScrollBounds"/> →
+    /// <see cref="ScrollIntoViewHorizontal"/> pass sees the column as already handled and keeps the centered
+    /// offset instead of re-revealing it at the edge.
+    /// </summary>
+    public bool ScrollCursorIntoViewHorizontallyCentered(CanvasControl canvasText, bool update = true)
+    {
+        if (coreTextbox.WordWrap)
+        {
+            if (OffsetSource.HorizontalOffset != 0)
+                OffsetSource.HorizontalOffset = 0;
+            OldHorizontalScrollValue = 0;
+            return false;
+        }
+
+        float curPosInLine = GetCurrentCursorPixelPositionInLine();
+
+        double maxOffset = Math.Max(horizontalScrollBar.Minimum, horizontalScrollBar.Maximum);
+        double target = Math.Clamp(curPosInLine - canvasText.ActualWidth / 2, horizontalScrollBar.Minimum, maxOffset);
+
+        bool changed = Math.Abs(target - OffsetSource.HorizontalOffset) > 0.5;
+        if (changed)
+            OffsetSource.HorizontalOffset = target;
+
+        OldHorizontalScrollValue = curPosInLine;
+
+        if (update)
+            canvasHelper.UpdateAll();
+
+        return changed;
+    }
+
+    /// <summary>
+    /// Pixel X position of the current cursor column within its line, accounting for horizontal
+    /// virtualization (long lines rendered as a moving slice). Shared by the edge-reveal
+    /// <see cref="ScrollIntoViewHorizontal"/> and the centering
+    /// <see cref="ScrollCursorIntoViewHorizontallyCentered"/> so both agree on where the column is.
+    /// </summary>
+    private float GetCurrentCursorPixelPositionInLine()
+    {
+        int charPosForLayout = cursorManager.currentCursorPosition.CharacterPosition;
+        if (textRenderer.IsHorizontallyVirtualized)
+            charPosForLayout -= textRenderer.HorizontalSliceStart;
+
+        if (textRenderer.IsHorizontallyVirtualized && (charPosForLayout < 0 || textRenderer.CurrentLineTextLayout == null))
+        {
+            // Cursor is before the slice or the layout is unavailable; estimate the absolute position.
+            return cursorManager.currentCursorPosition.CharacterPosition * textRenderer.CachedCharWidth;
+        }
+
+        if (textRenderer.IsHorizontallyVirtualized && charPosForLayout > textRenderer.RenderedText.Length)
+        {
+            // Cursor is beyond the slice; estimate the absolute position.
+            return cursorManager.currentCursorPosition.CharacterPosition * textRenderer.CachedCharWidth;
+        }
+
+        return CursorHelper.GetCursorPositionInLine(
+            textRenderer.CurrentLineTextLayout,
+            new CursorPosition(charPosForLayout, cursorManager.currentCursorPosition.LineNumber),
+            textRenderer.HorizontalSlicePixelOffset
+        );
     }
 
     public void EnsureHorizontalScrollBounds(CanvasControl canvasText, LongestLineManager longestLineManager, bool triggeredByCursor, bool forceRecalculateLongestLine = false)

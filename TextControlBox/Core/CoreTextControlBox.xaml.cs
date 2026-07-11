@@ -828,6 +828,13 @@ internal sealed partial class CoreTextControlBox : UserControl
         scrollManager.ScrollBottomIntoView();
     }
 
+    /// <summary>Horizontally centers the current cursor column in the viewport (no-op in word-wrap mode).
+    /// Useful for revealing a search match in the middle of the visible width instead of pinned to an edge.</summary>
+    public void ScrollIntoViewHorizontallyCentered()
+    {
+        scrollManager.ScrollCursorIntoViewHorizontallyCentered(canvasText);
+    }
+
     public void ScrollPageUp()
     {
         scrollManager.ScrollPageUp();
