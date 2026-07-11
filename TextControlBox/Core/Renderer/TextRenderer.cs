@@ -58,6 +58,26 @@ internal class TextRenderer
     /// document coordinates. 0 when not sliced, which keeps <see cref="HorizontalOffset"/> unchanged.</summary>
     public float HorizontalSlicePixelOffset => IsHorizontallyVirtualized ? HorizontalSliceStart * CachedCharWidth : 0;
 
+    // ── Word wrap (visual-row model) ────────────────────────────────────────────────────
+    // In wrap mode a single document line can occupy several visual rows, so the vertical scrollbar, caret
+    // and selection all work in "visual-row" space. WrapRowMetrics holds the document-line ↔ visual-row
+    // mapping (a prefix sum of per-line row counts) and this renderer feeds it the per-line row measurements.
+    /// <summary>First visual row currently scrolled into view (wrap mode).</summary>
+    public int StartVisualRow { get; private set; }
+    /// <summary>How many visual rows of the first visible document line are scrolled above the viewport top.</summary>
+    public int WrappedStartRowOffset { get; private set; }
+    /// <summary>True when word wrap is enabled (the layout wraps long lines into multiple visual rows).</summary>
+    public bool IsWordWrapEnabled => textLayoutManager?.WordWrap == true;
+    private readonly WrapRowMetrics wrapMetrics = new();
+    private readonly HashSet<int> dirtyWrapLines = new();
+    private float cachedWrapWidth;
+    private bool wrapMetricsDirty = true;
+    // Above this many dirty lines a full rebuild is cheaper than many incremental patches.
+    private const int IncrementalWrapRemeasureLimit = 64;
+    // Above this line length, estimate the wrapped row count instead of laying the whole line out (a
+    // multi-megabyte line would otherwise create a giant measurement layout).
+    private const int LongLineRowEstimateThreshold = 100_000;
+
     private CursorManager cursorManager;
     private TextManager textManager;
     private ScrollManager scrollManager;
@@ -130,24 +150,33 @@ internal class TextRenderer
             return;
         }
 
+        if (IsWordWrapEnabled)
+            EnsureWrapMetrics(canvasText);
+
         string lineText = textManager.GetLineText(cursorManager.LineNumber) + "|";
 
-        // Slice the current line to the SAME horizontal window as the main text (see Draw) so the caret and
-        // click hit-testing line up with the sliced layout: the caret's rendered index is
+        // Slice the current line to the SAME horizontal window as the main text (non-wrap only) so the caret
+        // and click hit-testing line up with the sliced layout: the caret's rendered index is
         // (documentChar - HorizontalSliceStart) and its x adds HorizontalSlicePixelOffset. A window computed
         // independently here would misplace the caret.
-        if (IsHorizontallyVirtualized && HorizontalSliceLength > 0)
+        if (IsHorizontallyVirtualized && !IsWordWrapEnabled && HorizontalSliceLength > 0)
         {
             int sliceStart = Math.Min(HorizontalSliceStart, lineText.Length);
             int len = Math.Min(HorizontalSliceLength, lineText.Length - sliceStart);
             lineText = len > 0 ? lineText.Substring(sliceStart, len) : string.Empty;
         }
 
+        // In wrap mode the current line is laid out at the wrap width across as many rows as it needs, so the
+        // caret and click hit-testing resolve a wrapped row via the layout's own multi-row geometry.
+        Size layoutSize = IsWordWrapEnabled
+            ? new Size(GetWrapWidth(canvasText), Math.Max(canvasText.Size.Height, (GetWrappedRowCount(cursorManager.LineNumber) + 1) * Math.Max(1, SingleLineHeight)))
+            : canvasText.Size;
+
         CurrentLineTextLayout = textLayoutManager.CreateTextLayout(
             canvasText,
             TextFormat,
             lineText,
-            canvasText.Size);
+            layoutSize);
     }
 
     // ── Horizontal virtualization helpers ──────────────────────────────────────────────
@@ -270,9 +299,195 @@ internal class TextRenderer
         }
         return builder.ToString();
     }
+
+    // ── Word-wrap visual-row metrics ─────────────────────────────────────────────────────
+
+    private float GetWrapWidth(CanvasControl canvasText) => Math.Max(1, (float)canvasText.ActualWidth);
+
+    /// <summary>Forces a full wrap-metrics rebuild on the next <see cref="EnsureWrapMetrics"/>.</summary>
+    public void InvalidateWrapMetrics()
+    {
+        wrapMetricsDirty = true;
+        dirtyWrapLines.Clear();
+    }
+
+    /// <summary>Ensures the document-line ↔ visual-row mapping is current for the wrap width. Rebuilds on a
+    /// width change or when the line count changed; otherwise re-measures the current line so live typing
+    /// reflows immediately (there is no per-line change event to subscribe to).</summary>
+    public void EnsureWrapMetrics(CanvasControl canvasText)
+    {
+        if (!IsWordWrapEnabled || canvasText == null || TextFormat == null)
+            return;
+
+        float wrapWidth = GetWrapWidth(canvasText);
+        if (Math.Abs(cachedWrapWidth - wrapWidth) >= 0.5f)
+        {
+            cachedWrapWidth = wrapWidth;
+            wrapMetricsDirty = true;
+            NeedsUpdateTextLayout = true;
+            lineNumberRenderer.NeedsUpdateLineNumbers();
+        }
+
+        if (wrapMetricsDirty || !wrapMetrics.IsValidFor(textManager.LinesCount))
+        {
+            wrapMetrics.Rebuild(textManager.LinesCount, i => MeasureWrappedRowCount(canvasText, i));
+            wrapMetricsDirty = false;
+            dirtyWrapLines.Clear();
+            return;
+        }
+
+        // Keep the current line fresh so typing reflows without a full rebuild. A line add/remove changes the
+        // line count, which forces a rebuild via IsValidFor above.
+        if (cursorManager.LineNumber >= 0 && cursorManager.LineNumber < textManager.LinesCount)
+            dirtyWrapLines.Add(cursorManager.LineNumber);
+
+        if (dirtyWrapLines.Count > 0)
+        {
+            bool patched = wrapMetrics.ApplyIncremental(
+                textManager.LinesCount, dirtyWrapLines, dirtyWrapLines.Count, IncrementalWrapRemeasureLimit,
+                i => MeasureWrappedRowCount(canvasText, i));
+            if (!patched)
+            {
+                wrapMetrics.Rebuild(textManager.LinesCount, i => MeasureWrappedRowCount(canvasText, i));
+                wrapMetricsDirty = false;
+            }
+            dirtyWrapLines.Clear();
+        }
+    }
+
+    private int MeasureWrappedRowCount(CanvasControl canvasText, int lineIndex)
+    {
+        if (lineIndex < 0 || lineIndex >= textManager.LinesCount)
+            return 1;
+
+        string lineText = textManager.GetLineText(lineIndex);
+        if (lineText.Length == 0)
+            return 1;
+
+        float singleLineHeight = Math.Max(1, SingleLineHeight);
+        if (lineText.Length >= LongLineRowEstimateThreshold)
+        {
+            float avgCharWidth = Math.Max(1, zoomManager.ZoomedFontSize * 0.58f);
+            int charsPerRow = Math.Max(1, (int)Math.Floor(cachedWrapWidth / avgCharWidth));
+            return Math.Max(1, (int)Math.Ceiling(lineText.Length / (double)charsPerRow));
+        }
+
+        float layoutHeight = Math.Max(singleLineHeight, (lineText.Length + 1) * singleLineHeight);
+        using CanvasTextLayout lineLayout = textLayoutManager.CreateTextLayout(canvasText, TextFormat, lineText, cachedWrapWidth, layoutHeight);
+        // Avoid CanvasTextLayout.LineMetrics (CanvasLineMetrics is non-blittable and throws
+        // NotSupportedException on newer .NET). Use layout height / line height instead.
+        int rowCount = (int)Math.Ceiling(lineLayout.LayoutBounds.Height / singleLineHeight);
+        return Math.Max(1, rowCount);
+    }
+
+    private CanvasTextLayout CreateWrappedLineTextLayout(CanvasControl canvasText, int lineIndex, bool includeCaretMarker = false)
+    {
+        string lineText = textManager.GetLineText(lineIndex);
+        if (includeCaretMarker)
+            lineText += "|";
+
+        float singleLineHeight = Math.Max(1, SingleLineHeight);
+        int rowCount = GetWrappedRowCount(lineIndex);
+        float layoutHeight = (float)Math.Max(canvasText.Size.Height, (rowCount + 1) * singleLineHeight);
+        float wrapWidth = cachedWrapWidth > 1 ? cachedWrapWidth : GetWrapWidth(canvasText);
+
+        return textLayoutManager.CreateTextLayout(canvasText, TextFormat, lineText, wrapWidth, layoutHeight);
+    }
+
+    /// <summary>Visual rows document line <paramref name="lineIndex"/> occupies (1 when wrap is off).</summary>
+    public int GetWrappedRowCount(int lineIndex)
+    {
+        if (!IsWordWrapEnabled || lineIndex < 0 || lineIndex >= textManager.LinesCount)
+            return 1;
+        return wrapMetrics.GetRowCount(lineIndex);
+    }
+
+    /// <summary>First visual row of document line <paramref name="lineIndex"/> (the line index itself when off).</summary>
+    public int GetLineVisualStartRow(int lineIndex)
+    {
+        if (!IsWordWrapEnabled)
+            return Math.Clamp(lineIndex, 0, Math.Max(0, textManager.LinesCount - 1));
+        return wrapMetrics.GetLineStartRow(lineIndex, textManager.LinesCount);
+    }
+
+    /// <summary>Document line that owns <paramref name="visualRow"/>.</summary>
+    public int GetDocumentLineFromVisualRow(int visualRow)
+    {
+        if (!IsWordWrapEnabled)
+            return Math.Clamp(visualRow, 0, Math.Max(0, textManager.LinesCount - 1));
+        return wrapMetrics.GetDocumentLineFromVisualRow(visualRow, textManager.LinesCount);
+    }
+
+    public int GetStartVisualRowFromScroll()
+    {
+        if (!IsWordWrapEnabled)
+            return NumberOfStartLine;
+        int visualRow = (int)Math.Floor((scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity) / Math.Max(1, SingleLineHeight));
+        return Math.Clamp(visualRow, 0, Math.Max(0, wrapMetrics.TotalVisualRows - 1));
+    }
+
+    public int GetVisibleVisualRowCount(CanvasControl canvasText, int extraRows = 0)
+        => Math.Max(1, (int)Math.Ceiling(canvasText.ActualHeight / Math.Max(1, SingleLineHeight)) + extraRows);
+
+    public int GetRenderedVisualRowCount(int startLine, int lineCount)
+    {
+        if (!IsWordWrapEnabled)
+            return lineCount;
+        return wrapMetrics.GetRenderedVisualRowCount(startLine, lineCount, textManager.LinesCount);
+    }
+
+    public int GetVisualRowFromPointY(double y)
+        => WrapGeometry.CalculateVisualRowFromPointY(y, StartVisualRow, SingleLineHeight, scrollManager.DefaultVerticalScrollSensitivity);
+
+    public float GetWrappedLineHitTestYFromPointY(int lineIndex, double y)
+        => WrapGeometry.CalculateWrappedLineHitTestYFromPointY(y, GetLineTopY(lineIndex), SingleLineHeight, scrollManager.DefaultVerticalScrollSensitivity, GetWrappedRowCount(lineIndex));
+
+    /// <summary>Y (relative to the viewport top) of document line <paramref name="lineIndex"/>'s first row.</summary>
+    public float GetLineTopY(int lineIndex)
+    {
+        if (!IsWordWrapEnabled)
+            return (lineIndex - NumberOfStartLine) * SingleLineHeight;
+        return (GetLineVisualStartRow(lineIndex) - StartVisualRow) * SingleLineHeight;
+    }
+
+    /// <summary>Moves <paramref name="cursorPosition"/> up/down by <paramref name="rowDelta"/> VISUAL rows,
+    /// preserving the target column via hit-testing the wrapped layout. Returns false when wrap is off (the
+    /// caller should fall back to plain line movement).</summary>
+    public bool MoveCursorByVisualRows(CanvasControl canvasText, CursorPosition cursorPosition, int rowDelta)
+    {
+        if (!IsWordWrapEnabled || cursorPosition == null || textManager.LinesCount == 0)
+            return false;
+
+        EnsureWrapMetrics(canvasText);
+        int lineIndex = Math.Clamp(cursorPosition.LineNumber, 0, textManager.LinesCount - 1);
+        int characterPosition = Math.Clamp(cursorPosition.CharacterPosition, 0, textManager.GetLineLength(lineIndex));
+
+        using CanvasTextLayout currentLayout = CreateWrappedLineTextLayout(canvasText, lineIndex, true);
+        var currentCaret = currentLayout.GetCaretPosition(characterPosition, false);
+        int currentVisualRow = GetLineVisualStartRow(lineIndex) + (int)Math.Floor(Math.Max(0, currentCaret.Y) / Math.Max(1, SingleLineHeight));
+        int targetVisualRow = Math.Clamp(currentVisualRow + rowDelta, 0, Math.Max(0, wrapMetrics.TotalVisualRows - 1));
+        int targetLine = GetDocumentLineFromVisualRow(targetVisualRow);
+        int targetRowOffset = targetVisualRow - GetLineVisualStartRow(targetLine);
+
+        using CanvasTextLayout targetLayout = CreateWrappedLineTextLayout(canvasText, targetLine, true);
+        targetLayout.HitTest(currentCaret.X, targetRowOffset * Math.Max(1, SingleLineHeight), out var targetRegion);
+
+        cursorPosition.LineNumber = targetLine;
+        cursorPosition.CharacterPosition = Math.Clamp(targetRegion.CharacterIndex, 0, textManager.GetLineLength(targetLine));
+        return true;
+    }
+
+    public void UpdateRenderedLineRange(CanvasControl canvasText)
+    {
+        (NumberOfStartLine, NumberOfRenderedLines) = CalculateLinesToRender();
+    }
+
     public (int startLine, int linesToRender) CalculateLinesToRender()
     {
         var singleLineHeight = SingleLineHeight;
+
+        if (IsWordWrapEnabled)
+            return CalculateWrappedLinesToRender(coreTextbox.canvasText, singleLineHeight);
 
         //Measure text position and apply the value to the scrollbar
         scrollManager.verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * singleLineHeight - scrollGrid.ActualHeight) / scrollManager.DefaultVerticalScrollSensitivity;
@@ -288,6 +503,32 @@ internal class TextRenderer
         int linesToRender = Math.Min(linesToRenderCount, textManager.LinesCount - startLine);
 
         return (startLine, linesToRender);
+    }
+
+    private (int startLine, int linesToRender) CalculateWrappedLinesToRender(CanvasControl canvasText, float singleLineHeight)
+    {
+        EnsureWrapMetrics(canvasText);
+        int totalVisualRows = wrapMetrics.TotalVisualRows;
+
+        scrollManager.verticalScrollBar.Maximum = Math.Max(0, (totalVisualRows * singleLineHeight - scrollGrid.ActualHeight) / scrollManager.DefaultVerticalScrollSensitivity);
+        scrollManager.verticalScrollBar.ViewportSize = coreTextbox.canvasText.ActualHeight;
+
+        StartVisualRow = GetStartVisualRowFromScroll();
+
+        int startLine = GetDocumentLineFromVisualRow(StartVisualRow);
+        int startLineVisualRow = GetLineVisualStartRow(startLine);
+        WrappedStartRowOffset = Math.Max(0, StartVisualRow - startLineVisualRow);
+
+        int visibleRows = GetVisibleVisualRowCount(canvasText, 2);
+        int rowsToCover = visibleRows + WrappedStartRowOffset;
+        int linesToRender = 0;
+        for (int i = startLine; i < textManager.LinesCount && rowsToCover > 0; i++)
+        {
+            rowsToCover -= GetWrappedRowCount(i);
+            linesToRender++;
+        }
+
+        return (startLine, Math.Max(0, linesToRender));
     }
 
     public void Draw(CanvasControl canvasText, CanvasDrawEventArgs args)
@@ -320,7 +561,7 @@ internal class TextRenderer
         // build ONLY the sliced text (a few KB) instead of the full join, and record a per-line prefix so the
         // caret/selection can still map document positions into the sliced multi-line layout.
         LineSliceResult renderTextData;
-        if (ShouldHorizontallySlice(canvasText, out int hSliceStart, out int hSliceLen))
+        if (!IsWordWrapEnabled && ShouldHorizontallySlice(canvasText, out int hSliceStart, out int hSliceLen))
         {
             RenderedText = BuildHorizontallySlicedText(hSliceStart, hSliceLen);
             HorizontalSliceStart = hSliceStart;
@@ -341,6 +582,25 @@ internal class TextRenderer
             _hSliceVisibleEnd = 0;
         }
 
+        // Draw offsets. In wrap mode there is no horizontal scroll and the layout is nudged up by the rows of
+        // the first visible line that are scrolled above the viewport top; otherwise the existing pixel
+        // offsets (incl. any horizontal-slice offset) apply. Both reduce to the non-wrap values when wrap is
+        // off, so the normal render path is unchanged.
+        float drawTextOffsetX = IsWordWrapEnabled ? 0 : HorizontalOffset;
+        float drawTextOffsetY = IsWordWrapEnabled ? SingleLineHeight - (WrappedStartRowOffset * SingleLineHeight) : SingleLineHeight;
+        float searchHighlightOffsetY = IsWordWrapEnabled
+            ? drawTextOffsetY - SingleLineHeight + (SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity)
+            : SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
+
+        int renderedVisualRows = GetRenderedVisualRowCount(NumberOfStartLine, NumberOfRenderedLines);
+        Size layoutSize = IsWordWrapEnabled
+            ? new Size
+            {
+                Height = Math.Max(canvasText.Size.Height + (WrappedStartRowOffset + 2) * SingleLineHeight, (renderedVisualRows + 2) * SingleLineHeight),
+                Width = GetWrapWidth(canvasText)
+            }
+            : new Size { Height = canvasText.Size.Height, Width = coreTextbox.ActualWidth };
+
         //check rendering and calculation updates
         lineNumberRenderer.CheckGenerateLineNumberText();
 
@@ -353,7 +613,7 @@ internal class TextRenderer
             NeedsUpdateTextLayout = false;
             OldRenderedText = RenderedText;
 
-            DrawnTextLayout = textLayoutManager.CreateTextResource(canvasText, DrawnTextLayout, TextFormat, RenderedText, new Size { Height = canvasText.Size.Height, Width = coreTextbox.ActualWidth });
+            DrawnTextLayout = textLayoutManager.CreateTextResource(canvasText, DrawnTextLayout, TextFormat, RenderedText, layoutSize);
             SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(renderTextData, textManager.NewLineCharacter, DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting);
         }
 
@@ -379,12 +639,12 @@ internal class TextRenderer
                     RenderedText,
                     searchManager.MatchingSearchLines,
                     searchManager.searchParameter.SearchExpression,
-                    HorizontalOffset,
-                    SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
+                    drawTextOffsetX,
+                    searchHighlightOffsetY,
                     designHelper._Design.SearchHighlightColor
                     );
 
-            ccls.DrawTextLayout(DrawnTextLayout, HorizontalOffset, SingleLineHeight, designHelper.TextColorBrush);
+            ccls.DrawTextLayout(DrawnTextLayout, drawTextOffsetX, drawTextOffsetY, designHelper.TextColorBrush);
 
             invisibleCharactersRenderer.DrawTabsAndSpaces(args, ccls, RenderedText, DrawnTextLayout, SingleLineHeight);
         }

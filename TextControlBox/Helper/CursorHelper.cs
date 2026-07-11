@@ -13,19 +13,23 @@ internal class CursorHelper
 {
     public static int GetCursorLineFromPoint(TextRenderer textRenderer, Point point)
     {
+        // In wrap mode a pointer Y maps to a visual row, which maps to its owning document line.
+        if (textRenderer.IsWordWrapEnabled)
+            return textRenderer.GetDocumentLineFromVisualRow(textRenderer.GetVisualRowFromPointY(point.Y));
+
         //Calculate the relative linenumber, where the pointer was pressed at
         double adjustedY = point.Y;
         int relativeLine = (int)Math.Floor(adjustedY / textRenderer.SingleLineHeight);
 
         return Math.Max(0, relativeLine + textRenderer.NumberOfStartLine);
     }
-    public static int GetCharacterPositionFromPoint(CurrentLineManager currentLineManager, CanvasTextLayout textLayout, Point cursorPosition, float marginLeft)
+    public static int GetCharacterPositionFromPoint(CurrentLineManager currentLineManager, CanvasTextLayout textLayout, Point cursorPosition, float marginLeft, float y = 0)
     {
         if (currentLineManager.GetCurrentLineText() == null || textLayout == null)
             return 0;
 
         textLayout.HitTest(
-            (float)cursorPosition.X - marginLeft, 0,
+            (float)cursorPosition.X - marginLeft, y,
             out var textLayoutRegion);
         return textLayoutRegion.CharacterIndex;
     }
@@ -51,10 +55,15 @@ internal class CursorHelper
         //GetCursorLineFromPoint returns absolute line index.    
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
 
-        // The current-line layout is sliced to the horizontal window when virtualized, so hit-test against
-        // the slice-shifted margin, then map the rendered index back to a document column. Both helpers are
-        // no-ops when horizontal virtualization is inactive.
-        int renderedCharacterPosition = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, textRenderer.HorizontalOffset);
+        // In wrap mode the current-line layout spans multiple rows, so hit-test at the within-line Y and use a
+        // zero left margin (no horizontal scroll). Otherwise the current-line layout is sliced to the
+        // horizontal window when virtualized, so hit-test against the slice-shifted margin, then map the
+        // rendered index back to a document column. All helpers are no-ops when wrap/virtualization are off.
+        float hitTestY = textRenderer.IsWordWrapEnabled
+            ? textRenderer.GetWrappedLineHitTestYFromPointY(cursorPos.LineNumber, point.Y)
+            : 0;
+        float marginLeft = textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset;
+        int renderedCharacterPosition = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, marginLeft, hitTestY);
         cursorPos.CharacterPosition = textRenderer.GetDocumentCharacterIndexFromRenderedIndex(cursorPos.LineNumber, renderedCharacterPosition);
     }
 }
