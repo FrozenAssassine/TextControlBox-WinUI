@@ -60,6 +60,16 @@ namespace TextControlBoxNS.Core.Renderer
             int startLine = selectionManager.selectionStart.LineNumber;
             int endLine = selectionManager.selectionEnd.LineNumber;
 
+            // Selecting inside a virtualized (multi-megabyte) single wrapped line is not supported yet: the
+            // layout is only a visible row slice, so document-space indices don't map onto it. Skip rather
+            // than draw a wrong region (or overrun GetCharacterRegions).
+            if (textRenderer.IsVirtualizedWrappedLine)
+            {
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
+            }
+
             int lineEndingLength = textManager.NewLineCharacter.Length;
 
             if (endLine > textManager.totalLines.Count)
@@ -98,7 +108,22 @@ namespace TextControlBoxNS.Core.Renderer
                 characterPosEnd = textManager.totalLines.Span[endLine].Length;
             }
 
-            if (startLine == endLine)
+            if (textRenderer.IsHorizontallyVirtualized)
+            {
+                // Every visible line is sliced to the same horizontal window; map both endpoints into the
+                // multi-line sliced layout via the per-line prefix offsets. This replaces the cumulative
+                // full-line-length math below, which would over-count because the rendered prior lines are
+                // sliced (shorter) than their document length.
+                selStartIndex = textRenderer.GetRenderedLayoutIndexForDocument(startLine, characterPosStart);
+                selEndIndex = textRenderer.GetRenderedLayoutIndexForDocument(endLine, characterPosEnd);
+                if (selStartIndex < 0 || selEndIndex < 0)
+                {
+                    selectionManager.currentTextSelection.renderedIndex = 0;
+                    selectionManager.currentTextSelection.renderedLength = 0;
+                    return;
+                }
+            }
+            else if (startLine == endLine)
             {
                 int lenghtToLine = 0;
                 for (int i = 0; i < startLine - unrenderedLinesToRenderStart; i++)
@@ -191,8 +216,8 @@ namespace TextControlBoxNS.Core.Renderer
                 DrawSelection(
                     textRenderer.DrawnTextLayout,
                     args,
-                    textRenderer.HorizontalOffset,
-                    textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
+                    textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset,
+                    GetSelectionTopMargin(),
                     textRenderer.NumberOfStartLine,
                     textRenderer.NumberOfRenderedLines,
                     zoomManager.ZoomedFontSize,
@@ -207,6 +232,16 @@ namespace TextControlBoxNS.Core.Renderer
                 selectionManager.OldTextSelection.StartPosition.SetChangeValues(selectionManager.currentTextSelection.StartPosition);
                 eventsManager.CallSelectionChanged();
             }
+        }
+
+        // Top margin for the selection regions. In wrap mode the whole layout is nudged up by the rows of the
+        // first visible line scrolled above the viewport, matching the wrapped text draw offset.
+        private float GetSelectionTopMargin()
+        {
+            float topInset = textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
+            if (!textRenderer.IsWordWrapEnabled)
+                return topInset;
+            return topInset - (textRenderer.WrappedStartRowOffset * textRenderer.SingleLineHeight);
         }
     }
 }

@@ -347,13 +347,19 @@ internal sealed partial class CoreTextControlBox : UserControl
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
-                        cursorManager.MoveDown();
+                        if (WordWrap)
+                            textRenderer.MoveCursorByVisualRows(canvasText, cursorManager.currentCursorPosition, 1);
+                        else
+                            cursorManager.MoveDown();
                         selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
                     }
                     else
                     {
                         selectionManager.ClearSelectionIfNeeded(this);
-                        cursorManager.MoveDown();
+                        if (WordWrap)
+                            textRenderer.MoveCursorByVisualRows(canvasText, cursorManager.currentCursorPosition, 1);
+                        else
+                            cursorManager.MoveDown();
                     }
 
                     scrollManager.UpdateScrollToShowCursor(true);
@@ -365,13 +371,19 @@ internal sealed partial class CoreTextControlBox : UserControl
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
-                        cursorManager.MoveUp();
+                        if (WordWrap)
+                            textRenderer.MoveCursorByVisualRows(canvasText, cursorManager.currentCursorPosition, -1);
+                        else
+                            cursorManager.MoveUp();
                         selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
                     }
                     else
                     {
                         selectionManager.ClearSelectionIfNeeded(this);
-                        cursorManager.MoveUp();
+                        if (WordWrap)
+                            textRenderer.MoveCursorByVisualRows(canvasText, cursorManager.currentCursorPosition, -1);
+                        else
+                            cursorManager.MoveUp();
                     }
 
                     scrollManager.UpdateScrollToShowCursor(true);
@@ -1098,6 +1110,25 @@ internal sealed partial class CoreTextControlBox : UserControl
     }
 
     public new FontFamily FontFamily { get => textManager._FontFamily; set { textManager._FontFamily = value; textRenderer.NeedsTextFormatUpdate = true; canvasUpdateManager.UpdateAll(); } }
+
+    /// <summary>When true, long lines wrap at the control width instead of scrolling horizontally. Toggling
+    /// rebuilds the text format (with the new wrapping mode) and the wrap metrics, and resets horizontal
+    /// scroll (there is no horizontal scrolling in wrap mode).</summary>
+    public bool WordWrap
+    {
+        get => textLayoutManager.WordWrap;
+        set
+        {
+            if (textLayoutManager.WordWrap == value)
+                return;
+            textLayoutManager.WordWrap = value;
+            textRenderer.NeedsTextFormatUpdate = true;
+            textRenderer.InvalidateWrapMetrics();
+            scrollManager.HorizontalScroll = 0;
+            lineNumberRenderer.NeedsUpdateLineNumbers();
+            canvasUpdateManager.UpdateAll();
+        }
+    }
 
     public new int FontSize { get => textManager._FontSize; set { textManager._FontSize = value; zoomManager.UpdateZoom(); } }
 

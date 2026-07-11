@@ -11,6 +11,11 @@ internal class TextLayoutManager
 {
     private TextManager textManager;
     private ZoomManager zoomManager;
+
+    /// <summary>When true, the main text format wraps long lines at the layout width instead of clipping.
+    /// The line-number format always stays <see cref="CanvasWordWrapping.NoWrap"/>.</summary>
+    public bool WordWrap;
+
     public void Init(TextManager textManager, ZoomManager zoomManager)
     {
         this.textManager = textManager;
@@ -39,7 +44,7 @@ internal class TextLayoutManager
             FontSize = zoomedFontSize,
             HorizontalAlignment = CanvasHorizontalAlignment.Left,
             VerticalAlignment = CanvasVerticalAlignment.Top,
-            WordWrapping = CanvasWordWrapping.NoWrap,
+            WordWrapping = WordWrap ? CanvasWordWrapping.Wrap : CanvasWordWrapping.NoWrap,
             LineSpacing = lineSpacing,
         };
         textFormat.IncrementalTabStop = (float)Math.Round(zoomedFontSize * 3f); //default 137px
