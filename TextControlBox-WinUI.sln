@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11205.157 d18.0
+VisualStudioVersion = 18.0.11205.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TextControlBox-TestApp", "TextControlBox-TestApp\TextControlBox-TestApp.csproj", "{AC81D971-BF36-46ED-87E8-63916096934D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TextControlBox", "TextControlBox\TextControlBox.csproj", "{9737DA03-1E5F-4820-84A1-54A359CD79A9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextControlBox.Tests", "TextControlBox.Tests\TextControlBox.Tests.csproj", "{05EEE26B-3FB8-460F-B25B-46062F133D61}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BenchmarkSuite1", "BenchmarkSuite1\BenchmarkSuite1.csproj", "{A20861A9-411E-6150-BF5C-69E8196E5D22}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -85,6 +87,22 @@ Global
 		{05EEE26B-3FB8-460F-B25B-46062F133D61}.Release|x86.ActiveCfg = Release|x86
 		{05EEE26B-3FB8-460F-B25B-46062F133D61}.Release|x86.Build.0 = Release|x86
 		{05EEE26B-3FB8-460F-B25B-46062F133D61}.Release|x86.Deploy.0 = Release|x86
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Debug|x64.Build.0 = Debug|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Debug|x86.Build.0 = Debug|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Release|ARM64.Build.0 = Release|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Release|x64.ActiveCfg = Release|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Release|x64.Build.0 = Release|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Release|x86.ActiveCfg = Release|Any CPU
+		{A20861A9-411E-6150-BF5C-69E8196E5D22}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

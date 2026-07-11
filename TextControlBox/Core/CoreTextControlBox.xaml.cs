@@ -125,7 +125,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         flyoutHelper.Init(this);
         canvasUpdateManager.Init(this);
         textActionManager.Init(this, textRenderer, undoRedo, currentLineManager, longestLineManager, canvasUpdateManager, textManager, selectionRenderer, cursorManager, scrollManager, eventsManager, stringManager, selectionManager, autoIndentionManager);
-        textRenderer.Init(cursorManager, designHelper, textLayoutManager, textManager, scrollManager, lineNumberRenderer, longestLineManager, this, searchManager, canvasUpdateManager, zoomManager, invisibleCharactersRenderer, linkRenderer, linkHighlightManager);
+        textRenderer.Init(cursorManager, designHelper, textLayoutManager, textManager, scrollManager, lineNumberRenderer, longestLineManager, this, searchManager, eventsManager, canvasUpdateManager, zoomManager, invisibleCharactersRenderer, linkRenderer, linkHighlightManager);
         cursorRenderer.Init(cursorManager, currentLineManager, textRenderer, focusManager, textManager, scrollManager, zoomManager, designHelper, lineHighlighterRenderer, eventsManager, longestLineManager);
         scrollManager.Init(this, canvasUpdateManager, textManager, textRenderer, cursorManager, zoomManager, VerticalScrollbar, HorizontalScrollbar);
         currentLineManager.Init(cursorManager, textManager);
@@ -1151,6 +1151,7 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         control.textRenderer.NeedsTextFormatUpdate = true;
         control.textRenderer.NeedsUpdateTextLayout = true;
+        control.textRenderer.InvalidateWordWrapText();
 
         control.horizontalScrollBar.Visibility = wordWrap ? Visibility.Collapsed : Visibility.Visible;
         if (wordWrap)

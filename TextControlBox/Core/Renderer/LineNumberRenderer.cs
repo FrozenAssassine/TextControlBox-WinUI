@@ -128,7 +128,7 @@ namespace TextControlBoxNS.Core.Renderer
             if (lineNumberManager._ShowLineNumbers)
             {
             if (textRenderer.WordWrapEnabled)
-                GenerateWrappedLineNumberText(textRenderer.NumberOfRenderedLines, textRenderer.NumberOfStartLine);
+                GenerateWrappedLineNumberText(textRenderer.VisualLineMap.TotalVisualLines, 0);
             else
                 GenerateLineNumberText(textRenderer.NumberOfRenderedLines, textRenderer.NumberOfStartLine);
             }

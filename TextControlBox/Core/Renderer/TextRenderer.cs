@@ -1,8 +1,10 @@
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using TextControlBoxNS.Core;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
@@ -15,6 +17,7 @@ internal class TextRenderer
     public CanvasTextFormat TextFormat = null;
     public CanvasTextLayout DrawnTextLayout = null;
     public CanvasTextLayout CurrentLineTextLayout = null;
+    private CanvasTextLayout VisibleTextLayout = null;
 
 
     public bool NeedsUpdateTextLayout = true;
@@ -26,6 +29,10 @@ internal class TextRenderer
     public string RenderedText = "";
     public string OldRenderedText = null;
     public float OldLayoutWidth = -1f;
+    private string OldVisibleText = null;
+    private float OldVisibleLayoutWidth = -1f;
+    private int OldVisibleStartLine = -1;
+    private int OldVisibleLineCount = -1;
     public VisualLineMap VisualLineMap { get; } = new VisualLineMap();
 
     private CursorManager cursorManager;
@@ -37,12 +44,19 @@ internal class TextRenderer
     private Grid scrollGrid;
     private LongestLineManager longestLineManager;
     private SearchManager searchManager;
+    private EventsManager eventsManager;
     private CoreTextControlBox coreTextbox;
     private CanvasUpdateManager canvasUpdateManager;
     private ZoomManager zoomManager;
     private WhitespaceCharactersRenderer invisibleCharactersRenderer;
     private LinkRenderer linkRenderer;
     private LinkHighlightManager linkHighlightManager;
+    private bool wordWrapTextDirty = true;
+    private DispatcherQueueTimer visualLineMapTimer;
+    private CanvasTextLayout pendingTotalVisualLineLayout;
+    private bool pendingTotalVisualLineUpdate;
+    private int cachedTotalVisualLines;
+    private bool visualLineMapIsFull;
 
     public bool WordWrapEnabled => coreTextbox.WordWrap;
     public float VerticalScrollPixels => (float)(scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity);
@@ -58,6 +72,7 @@ internal class TextRenderer
         LongestLineManager longestLineManager,
         CoreTextControlBox textbox,
         SearchManager searchManager,
+        EventsManager eventsManager,
         CanvasUpdateManager canvasUpdateManager,
         ZoomManager zoomManager,
         WhitespaceCharactersRenderer invisibleCharactersRenderer,
@@ -72,6 +87,7 @@ internal class TextRenderer
         this.lineNumberRenderer = lineNumberRenderer;
         this.longestLineManager = longestLineManager;
         this.searchManager = searchManager;
+        this.eventsManager = eventsManager;
         this.coreTextbox = textbox;
         this.scrollGrid = textbox.scrollGrid;
         this.canvasUpdateManager = canvasUpdateManager;
@@ -79,6 +95,31 @@ internal class TextRenderer
         this.invisibleCharactersRenderer = invisibleCharactersRenderer;
         this.linkRenderer = linkRenderer;
         this.linkHighlightManager = linkHighlightManager;
+
+        visualLineMapTimer = coreTextbox.DispatcherQueue.CreateTimer();
+        visualLineMapTimer.Interval = TimeSpan.FromMilliseconds(120);
+        visualLineMapTimer.Tick += (_, _) =>
+        {
+            if (!pendingTotalVisualLineUpdate || pendingTotalVisualLineLayout == null)
+                return;
+
+            pendingTotalVisualLineUpdate = false;
+            visualLineMapTimer.Stop();
+            cachedTotalVisualLines = pendingTotalVisualLineLayout.LineMetrics.Length;
+            canvasUpdateManager.UpdateText();
+            canvasUpdateManager.UpdateLineNumbers();
+        };
+
+        eventsManager.TextChanged += InvalidateWordWrapText;
+        eventsManager.TextLoaded += InvalidateWordWrapText;
+        eventsManager.LineEndingChanged += _ => InvalidateWordWrapText();
+    }
+
+    public void InvalidateWordWrapText()
+    {
+        wordWrapTextDirty = true;
+        if (WordWrapEnabled)
+            NeedsUpdateTextLayout = true;
     }
 
     public void CheckDispose()
@@ -86,7 +127,30 @@ internal class TextRenderer
         TextFormat?.Dispose();
         DrawnTextLayout?.Dispose();
         CurrentLineTextLayout?.Dispose();
+        VisibleTextLayout?.Dispose();
+        visualLineMapTimer?.Stop();
         invisibleCharactersRenderer.CheckDispose();
+    }
+
+    private void RequestTotalVisualLinesUpdate(CanvasTextLayout layout)
+    {
+        if (layout == null)
+            return;
+
+        pendingTotalVisualLineLayout = layout;
+        pendingTotalVisualLineUpdate = true;
+        visualLineMapTimer?.Stop();
+        visualLineMapTimer?.Start();
+    }
+
+    private void EnsureFullVisualLineMap()
+    {
+        if (visualLineMapIsFull || DrawnTextLayout == null)
+            return;
+
+        VisualLineMap.Update(DrawnTextLayout, textManager);
+        visualLineMapIsFull = true;
+        cachedTotalVisualLines = VisualLineMap.TotalVisualLines;
     }
 
     //Check whether the current line is outside the bounds of the visible area
@@ -153,6 +217,8 @@ internal class TextRenderer
     {
         if (!WordWrapEnabled || DrawnTextLayout == null)
             return false;
+
+        EnsureFullVisualLineMap();
 
         int globalIndex = textManager.GetGlobalIndex(cursorManager.LineNumber, cursorManager.CharacterPosition);
 
@@ -237,7 +303,7 @@ internal class TextRenderer
 
         if (WordWrapEnabled)
         {
-            int totalVisualLines = VisualLineMap.TotalVisualLines;
+            int totalVisualLines = cachedTotalVisualLines > 0 ? cachedTotalVisualLines : VisualLineMap.TotalVisualLines;
             if (totalVisualLines == 0)
                 return (0, 0);
 
@@ -287,15 +353,26 @@ internal class TextRenderer
         }
 
         LineSliceResult renderTextData;
+        LineSliceResult visibleRenderTextData;
+        CanvasTextLayout layoutToDraw = null;
+        float textOffsetY;
+        bool wordWrapTextChanged = false;
         if (WordWrapEnabled)
         {
-            RenderedText = textManager.GetLinesAsString();
+            if (wordWrapTextDirty || RenderedText == null)
+            {
+                RenderedText = textManager.GetLinesAsString();
+                wordWrapTextDirty = false;
+                wordWrapTextChanged = true;
+            }
             renderTextData = new LineSliceResult(RenderedText, textManager.totalLines.Span);
+            visibleRenderTextData = renderTextData;
         }
         else
         {
             (NumberOfStartLine, NumberOfRenderedLines) = CalculateLinesToRender();
             renderTextData = textManager.GetLinesForRendering(NumberOfStartLine, NumberOfRenderedLines);
+            visibleRenderTextData = renderTextData;
             RenderedText = renderTextData.Text;
         }
 
@@ -303,11 +380,22 @@ internal class TextRenderer
 
         float currentLayoutWidth = (float)Math.Max(0, canvasText.ActualWidth);
 
-        if ((OldRenderedText != null && OldRenderedText.Length != RenderedText.Length)
-            || !RenderedText.Equals(OldRenderedText, StringComparison.Ordinal)
-            || NeedsUpdateTextLayout
-            || (WordWrapEnabled && OldLayoutWidth != currentLayoutWidth)
-        )
+        bool needsLayoutUpdate;
+        if (WordWrapEnabled)
+        {
+            needsLayoutUpdate = NeedsUpdateTextLayout || wordWrapTextChanged || OldLayoutWidth != currentLayoutWidth || OldRenderedText == null;
+            if (!needsLayoutUpdate && !ReferenceEquals(OldRenderedText, RenderedText) && OldRenderedText.Length != RenderedText.Length)
+                needsLayoutUpdate = true;
+        }
+        else
+        {
+            needsLayoutUpdate = (OldRenderedText != null && OldRenderedText.Length != RenderedText.Length)
+                || !RenderedText.Equals(OldRenderedText, StringComparison.Ordinal)
+                || NeedsUpdateTextLayout;
+        }
+
+        bool layoutWasUpdated = false;
+        if (needsLayoutUpdate)
         {
             NeedsUpdateTextLayout = false;
             OldRenderedText = RenderedText;
@@ -317,13 +405,69 @@ internal class TextRenderer
             float layoutHeight = WordWrapEnabled ? float.MaxValue : (float)canvasText.Size.Height;
             DrawnTextLayout = textLayoutManager.CreateTextResource(canvasText, DrawnTextLayout, TextFormat, RenderedText, new Size { Height = layoutHeight, Width = layoutWidth });
             if (WordWrapEnabled)
-                VisualLineMap.Update(DrawnTextLayout, textManager);
+                RequestTotalVisualLinesUpdate(DrawnTextLayout);
+            layoutWasUpdated = true;
 
-            SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(renderTextData, textManager.NewLineCharacter, DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting);
+            if (!WordWrapEnabled)
+            {
+                SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(renderTextData, textManager.NewLineCharacter, DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting);
+            }
         }
 
         if (WordWrapEnabled)
             (NumberOfStartLine, NumberOfRenderedLines) = CalculateLinesToRender();
+
+        layoutToDraw = DrawnTextLayout;
+        textOffsetY = WordWrapEnabled ? TextRenderOffsetY - VerticalScrollPixels : SingleLineHeight;
+
+        if (WordWrapEnabled && DrawnTextLayout != null && VisualLineMap.TotalVisualLines > 0)
+        {
+            int startVisualLine = NumberOfStartLine;
+            int endVisualLine = Math.Min(VisualLineMap.TotalVisualLines, startVisualLine + NumberOfRenderedLines);
+            if (endVisualLine > startVisualLine)
+            {
+                int logicalStartLine = VisualLineMap.VisualLines[startVisualLine].LogicalLineIndex;
+                int logicalEndLine = VisualLineMap.VisualLines[endVisualLine - 1].LogicalLineIndex;
+                int logicalLineCount = Math.Max(1, logicalEndLine - logicalStartLine + 1);
+                visibleRenderTextData = textManager.GetLinesForRendering(logicalStartLine, logicalLineCount);
+
+                bool visibleLayoutNeedsUpdate = layoutWasUpdated || OldVisibleLayoutWidth != currentLayoutWidth
+                    || OldVisibleStartLine != logicalStartLine || OldVisibleLineCount != logicalLineCount || OldVisibleText == null;
+
+                if (!visibleLayoutNeedsUpdate && !visibleRenderTextData.Text.Equals(OldVisibleText, StringComparison.Ordinal))
+                    visibleLayoutNeedsUpdate = true;
+
+                if (visibleLayoutNeedsUpdate)
+                {
+                    OldVisibleLayoutWidth = currentLayoutWidth;
+                    OldVisibleStartLine = logicalStartLine;
+                    OldVisibleLineCount = logicalLineCount;
+                    OldVisibleText = visibleRenderTextData.Text;
+
+                    float visibleLayoutHeight = float.MaxValue;
+                    VisibleTextLayout = textLayoutManager.CreateTextResource(canvasText, VisibleTextLayout, TextFormat, visibleRenderTextData.Text, new Size { Height = visibleLayoutHeight, Width = currentLayoutWidth });
+                    SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(visibleRenderTextData, textManager.NewLineCharacter, VisibleTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting);
+                    int globalStartIndexOffset = textManager.GetGlobalIndex(logicalStartLine, 0);
+                    VisualLineMap.Update(VisibleTextLayout, textManager, logicalStartLine, logicalLineCount, globalStartIndexOffset);
+                    visualLineMapIsFull = false;
+                }
+
+                layoutToDraw = VisibleTextLayout ?? DrawnTextLayout;
+
+                float offsetWithinLine = 0f;
+                int logicalVisualStart = VisualLineMap.GetVisualLineIndex(logicalStartLine);
+                if (logicalVisualStart >= 0 && startVisualLine > logicalVisualStart)
+                {
+                    var metrics = DrawnTextLayout.LineMetrics;
+                    int maxIndex = Math.Min(startVisualLine, metrics.Length);
+                    for (int i = logicalVisualStart; i < maxIndex; i++)
+                        offsetWithinLine += metrics[i].Height;
+                }
+
+                float scrollRemainder = VerticalScrollPixels - (startVisualLine * SingleLineHeight);
+                textOffsetY = TextRenderOffsetY - scrollRemainder - offsetWithinLine;
+            }
+        }
 
         lineNumberRenderer.CheckGenerateLineNumberText();
 
@@ -348,19 +492,18 @@ internal class TextRenderer
                 SearchHighlightsRenderer.RenderHighlights(
                     args,
                     ccls,
-                    DrawnTextLayout,
-                    RenderedText,
+                    layoutToDraw,
+                    visibleRenderTextData.Text,
                     searchManager.MatchingSearchLines,
                     searchManager.searchParameter.SearchExpression,
                     (float)-scrollManager.HorizontalScroll,
-                    WordWrapEnabled ? TextRenderOffsetY - VerticalScrollPixels : SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
+                    WordWrapEnabled ? textOffsetY : SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
                     designHelper._Design.SearchHighlightColor
                     );
 
-            float textOffsetY = WordWrapEnabled ? TextRenderOffsetY - VerticalScrollPixels : SingleLineHeight;
-            ccls.DrawTextLayout(DrawnTextLayout, (float)-scrollManager.HorizontalScroll, textOffsetY, designHelper.TextColorBrush);
+            ccls.DrawTextLayout(layoutToDraw, (float)-scrollManager.HorizontalScroll, textOffsetY, designHelper.TextColorBrush);
 
-            invisibleCharactersRenderer.DrawTabsAndSpaces(args, ccls, RenderedText, DrawnTextLayout, textOffsetY);
+            invisibleCharactersRenderer.DrawTabsAndSpaces(args, ccls, visibleRenderTextData.Text, layoutToDraw, textOffsetY);
         }
         args.DrawingSession.DrawImage(canvasCommandList);
 

@@ -32,6 +32,7 @@ internal sealed class VisualLineMap
     private int[] logicalLineStartIndices = Array.Empty<int>();
     private int[] logicalLineVisualStart = Array.Empty<int>();
     private int[] logicalLineVisualCount = Array.Empty<int>();
+    private int logicalLineOffset;
 
     public IReadOnlyList<VisualLineInfo> VisualLines => visualLines;
     public int TotalVisualLines => visualLines.Count;
@@ -39,6 +40,8 @@ internal sealed class VisualLineMap
     public void Update(CanvasTextLayout layout, TextManager textManager)
     {
         visualLines.Clear();
+
+        logicalLineOffset = 0;
 
         int lineCount = textManager.LinesCount;
         if (layout == null || lineCount == 0)
@@ -93,6 +96,71 @@ internal sealed class VisualLineMap
         }
     }
 
+    public void Update(CanvasTextLayout layout, TextManager textManager, int startLine, int lineCount, int globalStartIndexOffset)
+    {
+        visualLines.Clear();
+
+        logicalLineOffset = startLine;
+
+        if (layout == null || lineCount <= 0)
+        {
+            logicalLineStartIndices = Array.Empty<int>();
+            logicalLineVisualStart = Array.Empty<int>();
+            logicalLineVisualCount = Array.Empty<int>();
+            return;
+        }
+
+        logicalLineStartIndices = new int[lineCount];
+        logicalLineVisualStart = new int[lineCount];
+        logicalLineVisualCount = new int[lineCount];
+
+        int lineEndingLength = textManager.NewLineCharacter.Length;
+        int currentIndex = 0;
+        for (int i = 0; i < lineCount; i++)
+        {
+            logicalLineStartIndices[i] = currentIndex;
+            logicalLineVisualStart[i] = -1;
+            logicalLineVisualCount[i] = 0;
+
+            int logicalLineIndex = startLine + i;
+            currentIndex += textManager.GetLineLength(logicalLineIndex);
+            if (i < lineCount - 1)
+                currentIndex += lineEndingLength;
+        }
+
+        var lineMetrics = layout.LineMetrics;
+        int localStart = 0;
+        int globalStart = globalStartIndexOffset;
+        for (int i = 0; i < lineMetrics.Length; i++)
+        {
+            var metrics = lineMetrics[i];
+            int logicalLineIndex = GetLogicalLineIndexFromGlobal(localStart);
+            if (logicalLineIndex < 0)
+                continue;
+
+            int localLineIndex = logicalLineIndex - logicalLineOffset;
+            if (localLineIndex < 0 || localLineIndex >= logicalLineStartIndices.Length)
+                continue;
+
+            int lineStartIndex = logicalLineStartIndices[localLineIndex];
+            int lineLength = textManager.GetLineLength(logicalLineIndex);
+            int startChar = Math.Clamp(localStart - lineStartIndex, 0, lineLength);
+            int remainingLength = Math.Max(0, lineLength - startChar);
+            int layoutLength = Math.Max(0, metrics.CharacterCount);
+            int length = Math.Clamp(layoutLength, 0, remainingLength);
+            bool isContinuation = startChar > 0;
+
+            visualLines.Add(new VisualLineInfo(i, logicalLineIndex, startChar, length, layoutLength, globalStart, isContinuation));
+
+            if (logicalLineVisualStart[localLineIndex] == -1)
+                logicalLineVisualStart[localLineIndex] = i;
+            logicalLineVisualCount[localLineIndex]++;
+
+            localStart += layoutLength;
+            globalStart += layoutLength;
+        }
+    }
+
     public int GetLogicalLineIndex(int visualLineIndex)
     {
         if (visualLineIndex < 0 || visualLineIndex >= visualLines.Count)
@@ -111,18 +179,20 @@ internal sealed class VisualLineMap
 
     public int GetVisualLineIndex(int logicalLineIndex)
     {
-        if (logicalLineIndex < 0 || logicalLineIndex >= logicalLineVisualStart.Length)
+        int localIndex = logicalLineIndex - logicalLineOffset;
+        if (localIndex < 0 || localIndex >= logicalLineVisualStart.Length)
             return -1;
 
-        return logicalLineVisualStart[logicalLineIndex];
+        return logicalLineVisualStart[localIndex];
     }
 
     public int GetVisualLineCount(int logicalLineIndex)
     {
-        if (logicalLineIndex < 0 || logicalLineIndex >= logicalLineVisualCount.Length)
+        int localIndex = logicalLineIndex - logicalLineOffset;
+        if (localIndex < 0 || localIndex >= logicalLineVisualCount.Length)
             return 0;
 
-        return logicalLineVisualCount[logicalLineIndex];
+        return logicalLineVisualCount[localIndex];
     }
 
     public bool TryGetVisualPosition(int globalIndex, out int visualLineIndex, out int column)
@@ -167,10 +237,10 @@ internal sealed class VisualLineMap
 
         int index = Array.BinarySearch(logicalLineStartIndices, globalIndex);
         if (index >= 0)
-            return index;
+            return index + logicalLineOffset;
 
         index = ~index - 1;
-        return Math.Clamp(index, 0, logicalLineStartIndices.Length - 1);
+        return Math.Clamp(index, 0, logicalLineStartIndices.Length - 1) + logicalLineOffset;
     }
 
     private int GetVisualLineIndexFromGlobal(int globalIndex)
