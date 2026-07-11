@@ -98,7 +98,22 @@ namespace TextControlBoxNS.Core.Renderer
                 characterPosEnd = textManager.totalLines.Span[endLine].Length;
             }
 
-            if (startLine == endLine)
+            if (textRenderer.IsHorizontallyVirtualized)
+            {
+                // Every visible line is sliced to the same horizontal window; map both endpoints into the
+                // multi-line sliced layout via the per-line prefix offsets. This replaces the cumulative
+                // full-line-length math below, which would over-count because the rendered prior lines are
+                // sliced (shorter) than their document length.
+                selStartIndex = textRenderer.GetRenderedLayoutIndexForDocument(startLine, characterPosStart);
+                selEndIndex = textRenderer.GetRenderedLayoutIndexForDocument(endLine, characterPosEnd);
+                if (selStartIndex < 0 || selEndIndex < 0)
+                {
+                    selectionManager.currentTextSelection.renderedIndex = 0;
+                    selectionManager.currentTextSelection.renderedLength = 0;
+                    return;
+                }
+            }
+            else if (startLine == endLine)
             {
                 int lenghtToLine = 0;
                 for (int i = 0; i < startLine - unrenderedLinesToRenderStart; i++)

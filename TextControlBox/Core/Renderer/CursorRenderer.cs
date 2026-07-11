@@ -94,14 +94,19 @@ internal class CursorRenderer
             if (characterPos > currentLineLength)
                 characterPos = currentLineLength;
 
+            // Map the caret's document column into the (possibly sliced) current-line layout and shift its x
+            // by the slice pixel offset via HorizontalOffset. Both are no-ops when horizontal virtualization
+            // is inactive, so this path is unchanged for ordinary files.
+            int renderedCharacterPos = textRenderer.GetRenderedCharacterIndexForDocumentCharacter(cursorManager.LineNumber, characterPos);
+
             // Only paint the caret during the "on" phase of the blink. The current-line highlighter
             // below stays unconditional so the highlighted line does not flicker while the caret blinks.
-            if (caretBlinkManager.IsCaretVisible)
+            if (caretBlinkManager.IsCaretVisible && renderedCharacterPos >= 0)
             {
                 RenderCursor(
                     textRenderer.CurrentLineTextLayout,
-                    characterPos,
-                    (float)-scrollManager.HorizontalScroll,
+                    renderedCharacterPos,
+                    textRenderer.HorizontalOffset,
                     renderPosY,
                     zoomManager.ZoomedFontSize,
                     _CursorSize,
