@@ -60,6 +60,16 @@ namespace TextControlBoxNS.Core.Renderer
             int startLine = selectionManager.selectionStart.LineNumber;
             int endLine = selectionManager.selectionEnd.LineNumber;
 
+            // Selecting inside a virtualized (multi-megabyte) single wrapped line is not supported yet: the
+            // layout is only a visible row slice, so document-space indices don't map onto it. Skip rather
+            // than draw a wrong region (or overrun GetCharacterRegions).
+            if (textRenderer.IsVirtualizedWrappedLine)
+            {
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
+            }
+
             int lineEndingLength = textManager.NewLineCharacter.Length;
 
             if (endLine > textManager.totalLines.Count)
