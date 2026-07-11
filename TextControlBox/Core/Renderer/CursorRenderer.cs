@@ -60,10 +60,12 @@ internal class CursorRenderer
 
 
         Vector2 vector = textLayout.GetCaretPosition(characterPosition < 0 ? 0 : characterPosition, false);
+        // vector.Y is the caret's row within the (possibly wrapped) layout — 0 for a single-row line, so this
+        // is unchanged in non-wrap mode and follows the wrapped row in wrap mode.
         if (customSize == null)
-            args.DrawingSession.FillRectangle(vector.X + xOffset, y, 2, fontSize, cursorColorBrush);
+            args.DrawingSession.FillRectangle(vector.X + xOffset, y + vector.Y, 2, fontSize, cursorColorBrush);
         else
-            args.DrawingSession.FillRectangle(vector.X + xOffset + customSize.OffsetX, y + customSize.OffsetY, (float)customSize.Width, (float)customSize.Height, cursorColorBrush);
+            args.DrawingSession.FillRectangle(vector.X + xOffset + customSize.OffsetX, y + vector.Y + customSize.OffsetY, (float)customSize.Width, (float)customSize.Height, cursorColorBrush);
     }
 
     public void Draw(CanvasControl canvasText, CanvasControl canvasCursor, CanvasDrawEventArgs args)
@@ -79,8 +81,16 @@ internal class CursorRenderer
             cursorManager.CharacterPosition = currentLineLength;
         }
 
-        float renderPosY = (float)((cursorManager.LineNumber - textRenderer.NumberOfStartLine) * textRenderer.SingleLineHeight) + textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;  
-        if (renderPosY > textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight || renderPosY < 0)
+        // In wrap mode the caret's line sits at its visual-row top (GetLineTopY), matching the wrapped text
+        // draw offset; in non-wrap mode this reduces to the original document-line position.
+        float topInset = textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
+        float renderPosY = textRenderer.IsWordWrapEnabled
+            ? textRenderer.GetLineTopY(cursorManager.LineNumber) + textRenderer.SingleLineHeight + topInset
+            : (float)((cursorManager.LineNumber - textRenderer.NumberOfStartLine) * textRenderer.SingleLineHeight) + topInset;
+        bool offscreen = textRenderer.IsWordWrapEnabled
+            ? (renderPosY > canvasCursor.ActualHeight || renderPosY + textRenderer.SingleLineHeight < 0)
+            : (renderPosY > textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight || renderPosY < 0);
+        if (offscreen)
             return;
 
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
@@ -94,14 +104,19 @@ internal class CursorRenderer
             if (characterPos > currentLineLength)
                 characterPos = currentLineLength;
 
+            // Map the caret's document column into the (possibly sliced) current-line layout and shift its x
+            // by the slice pixel offset via HorizontalOffset. Both are no-ops when horizontal virtualization
+            // is inactive, so this path is unchanged for ordinary files.
+            int renderedCharacterPos = textRenderer.GetRenderedCharacterIndexForDocumentCharacter(cursorManager.LineNumber, characterPos);
+
             // Only paint the caret during the "on" phase of the blink. The current-line highlighter
             // below stays unconditional so the highlighted line does not flicker while the caret blinks.
-            if (caretBlinkManager.IsCaretVisible)
+            if (caretBlinkManager.IsCaretVisible && renderedCharacterPos >= 0)
             {
                 RenderCursor(
                     textRenderer.CurrentLineTextLayout,
-                    characterPos,
-                    (float)-scrollManager.HorizontalScroll,
+                    renderedCharacterPos,
+                    textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset,
                     renderPosY,
                     zoomManager.ZoomedFontSize,
                     _CursorSize,
