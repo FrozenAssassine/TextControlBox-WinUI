@@ -206,8 +206,8 @@ namespace TextControlBoxNS.Core.Renderer
                 DrawSelection(
                     textRenderer.DrawnTextLayout,
                     args,
-                    textRenderer.HorizontalOffset,
-                    textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
+                    textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset,
+                    GetSelectionTopMargin(),
                     textRenderer.NumberOfStartLine,
                     textRenderer.NumberOfRenderedLines,
                     zoomManager.ZoomedFontSize,
@@ -222,6 +222,16 @@ namespace TextControlBoxNS.Core.Renderer
                 selectionManager.OldTextSelection.StartPosition.SetChangeValues(selectionManager.currentTextSelection.StartPosition);
                 eventsManager.CallSelectionChanged();
             }
+        }
+
+        // Top margin for the selection regions. In wrap mode the whole layout is nudged up by the rows of the
+        // first visible line scrolled above the viewport, matching the wrapped text draw offset.
+        private float GetSelectionTopMargin()
+        {
+            float topInset = textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
+            if (!textRenderer.IsWordWrapEnabled)
+                return topInset;
+            return topInset - (textRenderer.WrappedStartRowOffset * textRenderer.SingleLineHeight);
         }
     }
 }

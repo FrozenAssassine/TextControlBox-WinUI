@@ -741,6 +741,14 @@ public partial class TextControlBox : UserControl
         set => coreTextBox.FontFamily = value;
     }
     /// <summary>
+    /// Gets or sets whether long lines wrap at the control width instead of scrolling horizontally.
+    /// </summary>
+    public bool WordWrap
+    {
+        get => coreTextBox.WordWrap;
+        set => coreTextBox.WordWrap = value;
+    }
+    /// <summary>
     /// Gets or sets the font size used for displaying text in the textbox.
     /// </summary>
 
