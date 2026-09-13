@@ -50,7 +50,12 @@ internal class CursorHelper
 
         //GetCursorLineFromPoint returns absolute line index.    
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
-        cursorPos.CharacterPosition = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, (float)-scrollManager.HorizontalScroll);
+
+        // The current-line layout is sliced to the horizontal window when virtualized, so hit-test against
+        // the slice-shifted margin, then map the rendered index back to a document column. Both helpers are
+        // no-ops when horizontal virtualization is inactive.
+        int renderedCharacterPosition = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, textRenderer.HorizontalOffset);
+        cursorPos.CharacterPosition = textRenderer.GetDocumentCharacterIndexFromRenderedIndex(cursorPos.LineNumber, renderedCharacterPosition);
     }
 }
 
