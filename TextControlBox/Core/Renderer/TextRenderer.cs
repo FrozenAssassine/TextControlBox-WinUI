@@ -21,7 +21,37 @@ internal class TextRenderer
 
     public bool NeedsUpdateTextLayout = true;
     public bool NeedsTextFormatUpdate = true;
-    public float SingleLineHeight { get => TextFormat == null ? 0 : TextFormat.LineSpacing; }
+    private bool _isEnsuringTextFormat = false;
+    public void EnsureTextFormat()
+    {
+        if (_isEnsuringTextFormat)
+            return;
+
+        if (NeedsTextFormatUpdate || TextFormat == null)
+        {
+            _isEnsuringTextFormat = true;
+            try
+            {
+                TextFormat?.Dispose();
+                TextFormat = textLayoutManager.CreateCanvasTextFormat();
+                NeedsTextFormatUpdate = false;
+            }
+            finally
+            {
+                _isEnsuringTextFormat = false;
+            }
+        }
+    }
+
+    public float SingleLineHeight
+    {
+        get
+        {
+            if (TextFormat == null && !_isEnsuringTextFormat)
+                EnsureTextFormat();
+            return TextFormat == null ? 0 : TextFormat.LineSpacing;
+        }
+    }
     public float HorizontalOffset => (float)-scrollManager.HorizontalScroll + HorizontalSlicePixelOffset;
     public int NumberOfStartLine = 0;
     public int NumberOfRenderedLines = 0;
@@ -164,6 +194,7 @@ internal class TextRenderer
             return;
         }
 
+        EnsureTextFormat();
         if (IsWordWrapEnabled)
             EnsureWrapMetrics(canvasText);
 
@@ -353,7 +384,14 @@ internal class TextRenderer
 
     // ── Word-wrap visual-row metrics ─────────────────────────────────────────────────────
 
-    private float GetWrapWidth(CanvasControl canvasText) => Math.Max(1, (float)canvasText.ActualWidth);
+    private float GetWrapWidth(CanvasControl canvasText)
+    {
+        if (canvasText != null && canvasText.ActualWidth > 10)
+            return (float)canvasText.ActualWidth;
+        if (coreTextbox != null && coreTextbox.ActualWidth > 10)
+            return (float)coreTextbox.ActualWidth;
+        return 800f;
+    }
 
     /// <summary>Forces a full wrap-metrics rebuild on the next <see cref="EnsureWrapMetrics"/>.</summary>
     public void InvalidateWrapMetrics()
@@ -367,6 +405,7 @@ internal class TextRenderer
     /// reflows immediately (there is no per-line change event to subscribe to).</summary>
     public void EnsureWrapMetrics(CanvasControl canvasText)
     {
+        EnsureTextFormat();
         if (!IsWordWrapEnabled || canvasText == null || TextFormat == null)
             return;
 
@@ -492,13 +531,14 @@ internal class TextRenderer
 
     private CanvasTextLayout CreateWrappedLineTextLayout(CanvasControl canvasText, int lineIndex, bool includeCaretMarker = false)
     {
+        EnsureTextFormat();
         string lineText = textManager.GetLineText(lineIndex);
         if (includeCaretMarker)
             lineText += "|";
 
         float singleLineHeight = Math.Max(1, SingleLineHeight);
         int rowCount = GetWrappedRowCount(lineIndex);
-        float layoutHeight = (float)Math.Max(canvasText.Size.Height, (rowCount + 1) * singleLineHeight);
+        float layoutHeight = (float)Math.Max(Math.Max(singleLineHeight, (float)canvasText.Size.Height), (rowCount + 1) * singleLineHeight);
         float wrapWidth = cachedWrapWidth > 1 ? cachedWrapWidth : GetWrapWidth(canvasText);
 
         return textLayoutManager.CreateTextLayout(canvasText, TextFormat, lineText, wrapWidth, layoutHeight);
@@ -672,8 +712,7 @@ internal class TextRenderer
         {
             lineNumberRenderer.CreateLineNumberTextFormat();
 
-            TextFormat?.Dispose();
-            TextFormat = textLayoutManager.CreateCanvasTextFormat();
+            EnsureTextFormat();
 
             invisibleCharactersRenderer.UpdateTextFormat(canvasText, TextFormat);
 

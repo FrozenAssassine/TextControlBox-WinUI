@@ -1,5 +1,6 @@
-﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
+using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System;
 using TextControlBoxNS.Core.Text;
@@ -39,7 +40,8 @@ internal class TextLayoutManager
     }
     public CanvasTextFormat CreateCanvasTextFormat()
     {
-        return CreateCanvasTextFormat(zoomManager.ZoomedFontSize, zoomManager.ZoomedFontSize + LineSpacingPadding, textManager._FontFamily);
+        float fontSize = zoomManager.ZoomedFontSize > 0 ? zoomManager.ZoomedFontSize : Math.Max(1, textManager._FontSize);
+        return CreateCanvasTextFormat(fontSize, fontSize + LineSpacingPadding, textManager._FontFamily);
     }
 
     public CanvasTextFormat CreateCanvasTextFormat(float zoomedFontSize, float lineSpacing, FontFamily fontFamily)
@@ -58,13 +60,30 @@ internal class TextLayoutManager
         textFormat.TrimmingSign = CanvasTrimmingSign.None;
         return textFormat;
     }
+    private static ICanvasResourceCreator ResolveResourceCreator(ICanvasResourceCreator resourceCreator)
+    {
+        if (resourceCreator is CanvasControl cc)
+        {
+            try
+            {
+                if (cc.Device != null)
+                    return cc;
+            }
+            catch
+            {
+                return CanvasDevice.GetSharedDevice();
+            }
+        }
+        return resourceCreator ?? CanvasDevice.GetSharedDevice();
+    }
+
     public CanvasTextLayout CreateTextLayout(ICanvasResourceCreator resourceCreator, CanvasTextFormat textFormat, string text, Size canvasSize)
     {
-        return new CanvasTextLayout(resourceCreator, text, textFormat, (float)canvasSize.Width, (float)canvasSize.Height);
+        return new CanvasTextLayout(ResolveResourceCreator(resourceCreator), text, textFormat, (float)canvasSize.Width, (float)canvasSize.Height);
     }
     public CanvasTextLayout CreateTextLayout(ICanvasResourceCreator resourceCreator, CanvasTextFormat textFormat, string text, float width, float height)
     {
-        return new CanvasTextLayout(resourceCreator, text, textFormat, width, height);
+        return new CanvasTextLayout(ResolveResourceCreator(resourceCreator), text, textFormat, width, height);
     }
     public CanvasTextFormat CreateLinenumberTextFormat()
     {

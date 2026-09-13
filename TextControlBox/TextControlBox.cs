@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -337,6 +337,14 @@ public partial class TextControlBox : UserControl
     public void ScrollIntoViewHorizontally()
     {
         coreTextBox.ScrollIntoViewHorizontally();
+    }
+
+    /// <summary>
+    /// Horizontally centers the current cursor column in the viewport (no-op in word-wrap mode).
+    /// </summary>
+    public void ScrollIntoViewHorizontallyCentered()
+    {
+        coreTextBox.ScrollIntoViewHorizontallyCentered();
     }
 
     /// <summary>

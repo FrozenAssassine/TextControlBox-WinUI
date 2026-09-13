@@ -15,16 +15,22 @@
     </Window.SystemBackdrop>
 
     <Grid>
-            <StackPanel>
-                <Button Content="Format" Click="Format1_Click">
-                </Button>
-                <Button Content="Format" Click="Format2_Click">
-                </Button>
-                <Button Content="Format" Click="Format3_Click">
-                </Button>
-                <Button Content="Format" Click="Format4_Click">
-                </Button>
-            </StackPanel>
-            <textcontrolbox:TextControlBox Margin="50,0,0,0" x:Name="textbox"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="10,8,10,8">
+            <ToggleButton x:Name="WordWrapToggle" Content="WordWrap: Aus" Click="WordWrapToggle_Click"/>
+            <Button Content="Load 100k Line" Click="LoadLongLine_Click"/>
+            <Button Content="Load Code Sample" Click="LoadCodeSample_Click"/>
+            <Button Content="Center Scroll Cursor" Click="CenterScroll_Click"/>
+            <Button Content="Zoom -" Click="ZoomOut_Click"/>
+            <Button Content="Zoom +" Click="ZoomIn_Click"/>
+            <Button Content="Reset Zoom" Click="ZoomReset_Click"/>
+            <TextBlock x:Name="StatusText" VerticalAlignment="Center" Margin="12,0,0,0" Text="Bereit"/>
+        </StackPanel>
+
+        <textcontrolbox:TextControlBox Grid.Row="1" x:Name="textbox"/>
     </Grid>
 </Window>
