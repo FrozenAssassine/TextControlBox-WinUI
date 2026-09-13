@@ -48,7 +48,7 @@ internal class TextRenderer
     /// <summary>Measured width of one character in the current font (monospace assumption); falls back to an
     /// estimate until measured.</summary>
     private float _cachedCharWidth;
-    private float CachedCharWidth => _cachedCharWidth > 0 ? _cachedCharWidth : Math.Max(1, zoomManager.ZoomedFontSize * 0.6f);
+    internal float CachedCharWidth => _cachedCharWidth > 0 ? _cachedCharWidth : Math.Max(1, zoomManager.ZoomedFontSize * 0.6f);
     /// <summary>Visible char range covered by the current window's buffered safe zone [start, end); while the
     /// viewport stays inside it the window is reused so small horizontal scrolls don't re-slice.</summary>
     private int _hSliceVisibleStart;
