@@ -76,7 +76,7 @@ public class WrapRowMetricsTests
     {
         var m = BuildSample(out _);
         Assert.AreEqual(4, m.GetRenderedVisualRowCount(0, 2, 4)); // lines 0..1 => 1 + 3
-        Assert.AreEqual(3, m.GetRenderedVisualRowCount(1, 2, 4)); // lines 1..2 => 3 + 1
+        Assert.AreEqual(4, m.GetRenderedVisualRowCount(1, 2, 4)); // lines 1..2 => 3 + 1
         Assert.AreEqual(7, m.GetRenderedVisualRowCount(0, 4, 4)); // whole doc
     }
 
