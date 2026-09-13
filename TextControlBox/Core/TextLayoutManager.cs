@@ -9,6 +9,11 @@ namespace TextControlBoxNS.Core;
 
 internal class TextLayoutManager
 {
+    /// <summary>Pixels added to the font size to form the line height (<c>LineSpacing</c>), so
+    /// <c>SingleLineHeight = ZoomedFontSize + LineSpacingPadding</c>. Kept as a named constant so the zoom
+    /// anchor can compute the post-zoom line height before the format is rebuilt.</summary>
+    public const float LineSpacingPadding = 2f;
+
     private TextManager textManager;
     private ZoomManager zoomManager;
 
@@ -34,7 +39,7 @@ internal class TextLayoutManager
     }
     public CanvasTextFormat CreateCanvasTextFormat()
     {
-        return CreateCanvasTextFormat(zoomManager.ZoomedFontSize, zoomManager.ZoomedFontSize + 2, textManager._FontFamily);
+        return CreateCanvasTextFormat(zoomManager.ZoomedFontSize, zoomManager.ZoomedFontSize + LineSpacingPadding, textManager._FontFamily);
     }
 
     public CanvasTextFormat CreateCanvasTextFormat(float zoomedFontSize, float lineSpacing, FontFamily fontFamily)
