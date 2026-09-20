@@ -10,15 +10,34 @@ namespace TextControlBoxNS.Core;
 internal static class ZoomScrollAnchor
 {
     /// <summary>
-    /// New vertical pixel offset that keeps the document row under the vertical viewport centre stationary
+    /// New vertical pixel offset that keeps the specified top document row stationary
+    /// at the given line height.
+    /// </summary>
+    public static double AnchorVerticalOffset(int topRow, double newLineHeight)
+    {
+        double newOffset = Math.Max(0, topRow) * newLineHeight;
+        return newOffset < 0 ? 0 : newOffset;
+    }
+
+    /// <summary>
+    /// New vertical pixel offset that keeps the top document row stationary
     /// when the line height changes from <paramref name="oldLineHeight"/> to <paramref name="newLineHeight"/>.
+    /// </summary>
+    public static double AnchorVerticalOffset(double verticalOffset, double oldLineHeight, double newLineHeight)
+    {
+        if (oldLineHeight <= 0.5)
+            return verticalOffset;
+
+        int topRow = (int)Math.Round(verticalOffset / oldLineHeight);
+        return AnchorVerticalOffset(topRow, newLineHeight);
+    }
+
+    /// <summary>
+    /// Overload that accepts viewportHeight for backwards compatibility.
     /// </summary>
     public static double AnchorVerticalOffset(double verticalOffset, double viewportHeight, double oldLineHeight, double newLineHeight)
     {
-        double halfViewport = viewportHeight / 2.0;
-        double centreRow = (verticalOffset + halfViewport) / oldLineHeight;
-        double newOffset = centreRow * newLineHeight - halfViewport;
-        return newOffset < 0 ? 0 : newOffset;
+        return AnchorVerticalOffset(verticalOffset, oldLineHeight, newLineHeight);
     }
 
     /// <summary>

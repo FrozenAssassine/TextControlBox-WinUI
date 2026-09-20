@@ -458,6 +458,7 @@ internal class PointerActionsManager
         //Check both so pinch-to-zoom works on precision touchpads.
         if (Utils.IsKeyPressed(VirtualKey.Control) || e.KeyModifiers.HasFlag(VirtualKeyModifiers.Control))
         {
+            e.Handled = true;
             zoomManager._ZoomFactor += delta / 20;
             zoomManager.UpdateZoom();
             return;
@@ -465,18 +466,21 @@ internal class PointerActionsManager
         //Scroll horizontal using mousewheel
         else if (Utils.IsKeyPressed(VirtualKey.Shift))
         {
+            zoomManager.ZoomAnchorLine = null;
             scrollManager.horizontalScrollBar.Value -= delta * scrollManager._HorizontalScrollSensitivity;
             needsUpdate = true;
         }
         //Scroll horizontal using touchpad
         else if (e.GetCurrentPoint(coreTextbox.canvasSelection).Properties.IsHorizontalMouseWheel)
         {
+            zoomManager.ZoomAnchorLine = null;
             scrollManager.horizontalScrollBar.Value += delta * scrollManager._HorizontalScrollSensitivity;
             needsUpdate = true;
         }
         //Scroll vertical using mousewheel
         else
         {
+            zoomManager.ZoomAnchorLine = null;
             scrollManager.verticalScrollBar.Value -= (delta * scrollManager._VerticalScrollSensitivity) / scrollManager.DefaultVerticalScrollSensitivity;
             if (textRenderer.IsWordWrapEnabled)
             {

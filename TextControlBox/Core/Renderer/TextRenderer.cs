@@ -1051,15 +1051,32 @@ internal class TextRenderer
             return CalculateWrappedLinesToRender(coreTextbox.canvasText, singleLineHeight);
 
         //Measure text position and apply the value to the scrollbar
-        scrollManager.verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * singleLineHeight - scrollGrid.ActualHeight) / scrollManager.DefaultVerticalScrollSensitivity;
+        scrollManager.verticalScrollBar.Maximum = Math.Max(0, ((textManager.LinesCount + 1) * singleLineHeight - scrollGrid.ActualHeight) / scrollManager.DefaultVerticalScrollSensitivity);
         scrollManager.verticalScrollBar.ViewportSize = coreTextbox.canvasText.ActualHeight;
 
         //Calculate number of lines that need to be rendered
         int linesToRenderCount = (int)(coreTextbox.canvasText.ActualHeight / singleLineHeight);
         linesToRenderCount = Math.Min(linesToRenderCount, textManager.LinesCount);
 
-        int startLine = (int)((scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity) / singleLineHeight);
-        startLine = Math.Min(startLine, textManager.LinesCount);
+        int startLine;
+        if (zoomManager.ZoomAnchorLine.HasValue)
+        {
+            startLine = Math.Clamp(zoomManager.ZoomAnchorLine.Value, 0, Math.Max(0, textManager.LinesCount - 1));
+            double targetScrollValue = (startLine * singleLineHeight) / scrollManager.DefaultVerticalScrollSensitivity;
+            scrollManager.verticalScrollBar.Value = Math.Clamp(targetScrollValue, 0, scrollManager.verticalScrollBar.Maximum);
+            startLine = (int)((scrollManager.verticalScrollBar.Value * scrollManager.DefaultVerticalScrollSensitivity) / singleLineHeight);
+            startLine = Math.Min(startLine, textManager.LinesCount);
+        }
+        else
+        {
+            startLine = (int)((scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity) / singleLineHeight);
+            startLine = Math.Min(startLine, textManager.LinesCount);
+        }
+
+        if (zoomManager.ZoomAnchorHorizontalRatio > 0 && scrollManager.horizontalScrollBar != null)
+        {
+            scrollManager.horizontalScrollBar.Value = Math.Clamp(zoomManager.ZoomAnchorHorizontalRatio * zoomManager.ZoomedFontSize, scrollManager.horizontalScrollBar.Minimum, scrollManager.horizontalScrollBar.Maximum);
+        }
 
         int linesToRender = Math.Min(linesToRenderCount, textManager.LinesCount - startLine);
 
@@ -1083,6 +1100,14 @@ internal class TextRenderer
         //    can always be scrolled completely into view with clear breathing room.
         scrollManager.verticalScrollBar.Maximum = Math.Max(0, ((totalVisualRows + WrappedBottomBufferRows) * singleLineHeight - viewportHeight) / scrollManager.DefaultVerticalScrollSensitivity);
         scrollManager.verticalScrollBar.ViewportSize = viewportHeight;
+
+        if (zoomManager.ZoomAnchorLine.HasValue)
+        {
+            int anchorDocLine = Math.Clamp(zoomManager.ZoomAnchorLine.Value, 0, Math.Max(0, textManager.LinesCount - 1));
+            int targetVisualRow = GetLineVisualStartRow(anchorDocLine);
+            double targetScrollValue = (targetVisualRow * singleLineHeight) / scrollManager.DefaultVerticalScrollSensitivity;
+            scrollManager.verticalScrollBar.Value = Math.Clamp(targetScrollValue, 0, scrollManager.verticalScrollBar.Maximum);
+        }
 
         StartVisualRow = GetStartVisualRowFromScroll();
 
@@ -1135,6 +1160,7 @@ internal class TextRenderer
         }
 
         (NumberOfStartLine, NumberOfRenderedLines) = CalculateLinesToRender();
+        coreTextbox.SyncScrollTrackerToOffsetNow();
 
         // Decide horizontal virtualization BEFORE materializing the visible text. Joining many very long
         // lines (megabytes) into one string every frame — then laying it out — is the actual scroll-stutter

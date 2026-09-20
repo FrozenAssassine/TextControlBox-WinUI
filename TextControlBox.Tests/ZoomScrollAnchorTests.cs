@@ -8,26 +8,32 @@ namespace TextControlBox.Tests;
 public class ZoomScrollAnchorTests
 {
     [TestMethod]
-    public void AnchorVerticalOffset_KeepsCentreRowStationary()
+    public void AnchorVerticalOffset_KeepsTopRowStationary()
     {
-        // Viewport 200, old line height 20 => centre pixel 100+? offset 100 => centre pixel 200 => row 10.
-        // After line height 40, row 10 must remain at the viewport centre.
-        double oldLineHeight = 20, newLineHeight = 40, viewport = 200, offset = 100;
-        double centreRow = (offset + viewport / 2) / oldLineHeight; // (100 + 100)/20 = 10
-        double result = ZoomScrollAnchor.AnchorVerticalOffset(offset, viewport, oldLineHeight, newLineHeight);
-        // Row 10 at new height => centre pixel 10*40 = 400; offset = 400 - 100 = 300.
-        Assert.AreEqual(300, result, 0.001);
-        // The centre row is preserved: (result + viewport/2)/newLineHeight == centreRow.
-        Assert.AreEqual(centreRow, (result + viewport / 2) / newLineHeight, 0.001);
+        // Old line height 20, vertical offset 100 => top row is 5.
+        // After line height 40, top row must remain 5 => offset 200.
+        double oldLineHeight = 20, newLineHeight = 40, offset = 100;
+        double result = ZoomScrollAnchor.AnchorVerticalOffset(offset, oldLineHeight, newLineHeight);
+        Assert.AreEqual(200, result, 0.001);
+
+        // Directly anchor row 150 across various line heights:
+        Assert.AreEqual(3000, ZoomScrollAnchor.AnchorVerticalOffset(topRow: 150, newLineHeight: 20), 0.001);
+        Assert.AreEqual(4500, ZoomScrollAnchor.AnchorVerticalOffset(topRow: 150, newLineHeight: 30), 0.001);
+        Assert.AreEqual(6000, ZoomScrollAnchor.AnchorVerticalOffset(topRow: 150, newLineHeight: 40), 0.001);
     }
 
     [TestMethod]
     public void AnchorVerticalOffset_ClampsAtZero()
     {
-        // Zooming out (smaller line height) near the top must not produce a negative offset.
-        double result = ZoomScrollAnchor.AnchorVerticalOffset(verticalOffset: 5, viewportHeight: 200, oldLineHeight: 40, newLineHeight: 10);
-        Assert.IsTrue(result >= 0);
-        Assert.AreEqual(0, result, 0.001); // centre row ~2.6 * 10 - 100 < 0 => clamped
+        // Offset 0 stays 0 across any zoom change.
+        double result = ZoomScrollAnchor.AnchorVerticalOffset(verticalOffset: 0, oldLineHeight: 40, newLineHeight: 10);
+        Assert.AreEqual(0, result, 0.001);
+
+        double negResult = ZoomScrollAnchor.AnchorVerticalOffset(verticalOffset: -10, oldLineHeight: 40, newLineHeight: 10);
+        Assert.AreEqual(0, negResult, 0.001);
+
+        double negRowResult = ZoomScrollAnchor.AnchorVerticalOffset(topRow: -5, newLineHeight: 30);
+        Assert.AreEqual(0, negRowResult, 0.001);
     }
 
     [TestMethod]

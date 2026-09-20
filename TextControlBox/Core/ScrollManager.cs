@@ -22,7 +22,7 @@ internal class ScrollManager
     // pixel API semantics for the public surface but store through the pixel offset source.
     public IScrollOffsetSource OffsetSource { get; private set; }
 
-    public double VerticalScroll { get => OffsetSource.VerticalOffset / DefaultVerticalScrollSensitivity; set { OffsetSource.VerticalOffset = (value < 0 ? 0 : value) * DefaultVerticalScrollSensitivity; canvasHelper.UpdateAll(); } }
+    public double VerticalScroll { get => OffsetSource.VerticalOffset / DefaultVerticalScrollSensitivity; set { zoomManager.ZoomAnchorLine = null; OffsetSource.VerticalOffset = (value < 0 ? 0 : value) * DefaultVerticalScrollSensitivity; canvasHelper.UpdateAll(); } }
     public double HorizontalScroll { get => OffsetSource.HorizontalOffset; set { OffsetSource.HorizontalOffset = value < 0 ? 0 : value; canvasHelper.UpdateAll(); } }
 
     public ScrollBar verticalScrollBar;
@@ -63,6 +63,7 @@ internal class ScrollManager
     }
     internal void VerticalScrollBar_Scroll(object sender, ScrollEventArgs e)
     {
+        zoomManager.ZoomAnchorLine = null;
         if (textRenderer.IsWordWrapEnabled)
         {
             canvasHelper.UpdateAll();
@@ -94,12 +95,14 @@ internal class ScrollManager
 
     public void ScrollOneLineUp(bool update = true)
     {
+        zoomManager.ZoomAnchorLine = null;
         OffsetSource.VerticalOffset -= textRenderer.SingleLineHeight;
         if(update)
             canvasHelper.UpdateAll();
     }
     public void ScrollOneLineDown(bool update = true)
     {
+        zoomManager.ZoomAnchorLine = null;
         OffsetSource.VerticalOffset += textRenderer.SingleLineHeight;
         if(update)
             canvasHelper.UpdateAll();
@@ -107,6 +110,7 @@ internal class ScrollManager
 
     public void ScrollLineIntoView(int line, bool update = true)
     {
+        zoomManager.ZoomAnchorLine = null;
         OffsetSource.VerticalOffset = (line - textRenderer.NumberOfRenderedLines / 2) * textRenderer.SingleLineHeight;
         
         if(update)
@@ -115,12 +119,14 @@ internal class ScrollManager
 
     public void ScrollTopIntoView(bool update = true)
     {
+        zoomManager.ZoomAnchorLine = null;
         OffsetSource.VerticalOffset = (cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight;
         if(update)
             canvasHelper.UpdateAll();
     }
     public void ScrollBottomIntoView(bool update = true)
     {
+        zoomManager.ZoomAnchorLine = null;
         OffsetSource.VerticalOffset = (cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight;
         if(update)
             canvasHelper.UpdateAll();
@@ -128,6 +134,7 @@ internal class ScrollManager
 
     public void ScrollPageUp()
     {
+        zoomManager.ZoomAnchorLine = null;
         if (!cursorManager.PreferredCharacterPosition.HasValue)
             cursorManager.PreferredCharacterPosition = cursorManager.CharacterPosition;
 
@@ -143,6 +150,7 @@ internal class ScrollManager
 
     public void ScrollPageDown()
     {
+        zoomManager.ZoomAnchorLine = null;
         if (!cursorManager.PreferredCharacterPosition.HasValue)
             cursorManager.PreferredCharacterPosition = cursorManager.CharacterPosition;
 
@@ -157,6 +165,7 @@ internal class ScrollManager
 
     public void UpdateScrollToShowCursor(bool update = true)
     {
+        zoomManager.ZoomAnchorLine = null;
         if (textRenderer.IsWordWrapEnabled)
         {
             UpdateScrollToShowCursorWrapped(update);
