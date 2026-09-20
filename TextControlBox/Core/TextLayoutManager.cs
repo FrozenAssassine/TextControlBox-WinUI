@@ -66,6 +66,9 @@ internal class TextLayoutManager
         {
             try
             {
+                if (cc == null)
+                    return CanvasDevice.GetSharedDevice();
+
                 if (cc.Device != null)
                     return cc;
             }

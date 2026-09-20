@@ -404,6 +404,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void RemoveText(bool controlIsPressed = false)
         {
+            cursorManager.ResetPreferredPosition();
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
             if (textManager._IsReadOnly)
@@ -426,6 +427,7 @@ namespace TextControlBoxNS.Core.Text
         }
         public void AddNewLine()
         {
+            cursorManager.ResetPreferredPosition();
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
             if (textManager._IsReadOnly)
@@ -462,6 +464,7 @@ namespace TextControlBoxNS.Core.Text
         }
         public void DeleteText(bool controlIsPressed = false, bool shiftIsPressed = false)
         {
+            cursorManager.ResetPreferredPosition();
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
             if (textManager._IsReadOnly)
@@ -486,6 +489,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void AddCharacter(string text, bool ignoreSelection = false, bool ignoreIsReadOnly = false)
         {
+            cursorManager.ResetPreferredPosition();
             if (!ignoreIsReadOnly && textManager._IsReadOnly)
                 return;
 

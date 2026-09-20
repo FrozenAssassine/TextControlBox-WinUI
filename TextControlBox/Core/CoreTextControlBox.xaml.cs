@@ -1014,6 +1014,9 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public Point GetCursorPosition()
     {
+        if (textRenderer.CurrentLineTextLayout == null && canvasText != null)
+            textRenderer.UpdateCurrentLineTextLayout(canvasText);
+
         float withinLineRowOffset = 0;
         if (textRenderer.IsWordWrapEnabled && textRenderer.CurrentLineTextLayout != null)
         {
@@ -1153,6 +1156,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             if (textLayoutManager.WordWrap == value)
                 return;
 
+            textRenderer.NeedsTextFormatUpdate = true;
             if (value)
             {
                 textLayoutManager.WordWrap = true;
@@ -1171,7 +1175,6 @@ internal sealed partial class CoreTextControlBox : UserControl
                 longestLineManager.CheckRecalculateLongestLine(true);
             }
 
-            textRenderer.NeedsTextFormatUpdate = true;
             textRenderer.NeedsUpdateTextLayout = true;
             textRenderer.OldRenderedText = null;
             textRenderer.InvalidateWrapMetrics();

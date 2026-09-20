@@ -123,10 +123,14 @@ internal class ScrollManager
 
     public void ScrollPageUp()
     {
+        if (!cursorManager.PreferredCharacterPosition.HasValue)
+            cursorManager.PreferredCharacterPosition = cursorManager.CharacterPosition;
+
         cursorManager.LineNumber -= textRenderer.NumberOfRenderedLines;
         if (cursorManager.LineNumber < 0)
             cursorManager.LineNumber = 0;
 
+        cursorManager.CharacterPosition = Math.Clamp(cursorManager.PreferredCharacterPosition.Value, 0, textManager.GetLineLength(cursorManager.LineNumber));
         OffsetSource.VerticalOffset -= textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight;
         canvasHelper.UpdateAll();
     }
@@ -134,9 +138,14 @@ internal class ScrollManager
 
     public void ScrollPageDown()
     {
+        if (!cursorManager.PreferredCharacterPosition.HasValue)
+            cursorManager.PreferredCharacterPosition = cursorManager.CharacterPosition;
+
         cursorManager.LineNumber += textRenderer.NumberOfRenderedLines;
         if (cursorManager.LineNumber > textManager.LinesCount - 1)
             cursorManager.LineNumber = textManager.LinesCount - 1;
+
+        cursorManager.CharacterPosition = Math.Clamp(cursorManager.PreferredCharacterPosition.Value, 0, textManager.GetLineLength(cursorManager.LineNumber));
         OffsetSource.VerticalOffset += textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight;
         canvasHelper.UpdateAll();
     }
@@ -189,9 +198,9 @@ internal class ScrollManager
                 int renderedPos = textRenderer.GetRenderedCharacterIndexForDocumentCharacter(lineIndex, cursorManager.CharacterPosition);
                 if (renderedPos >= 0)
                 {
-                    var regions = textRenderer.CurrentLineTextLayout.GetCharacterRegions(renderedPos, 1);
-                    if (regions.Length > 0)
-                        withinLineRow = (int)Math.Round(regions[0].LayoutBounds.Y / Math.Max(1, singleLine));
+                    float baseRowY = textRenderer.CurrentLineTextLayout.GetCaretPosition(0, false).Y;
+                    var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedPos, false);
+                    withinLineRow = (int)Math.Round((vector.Y - baseRowY) / Math.Max(1, singleLine));
                 }
             }
         }

@@ -477,11 +477,18 @@ internal class TextRenderer
         if (lineText.Length >= LongLineRowEstimateThreshold)
             return EstimateWrappedRowCount(canvasText, lineText.Length);
 
+        float wrapWidth = cachedWrapWidth > 1 ? cachedWrapWidth : GetWrapWidth(canvasText);
         float layoutHeight = Math.Max(singleLineHeight, (lineText.Length + 1) * singleLineHeight);
-        using CanvasTextLayout lineLayout = textLayoutManager.CreateTextLayout(canvasText, TextFormat, lineText, cachedWrapWidth, layoutHeight);
+        using CanvasTextLayout lineLayout = textLayoutManager.CreateTextLayout(canvasText, TextFormat, lineText, wrapWidth, layoutHeight);
         // Avoid CanvasTextLayout.LineMetrics (CanvasLineMetrics is non-blittable and throws
-        // NotSupportedException on newer .NET). Use layout height / line height instead.
-        int rowCount = (int)Math.Ceiling(lineLayout.LayoutBounds.Height / singleLineHeight);
+        // NotSupportedException on newer .NET). Also avoid lineLayout.LayoutBounds.Height / singleLineHeight
+        // because DirectWrite LayoutBounds.Height reflects font ascent/descent leading rather than LineSpacing,
+        // which rounds up and incorrectly measures 1-row lines as 2 rows.
+        // The distance between the last character's caret Y and the first character's caret Y is an exact
+        // multiple of SingleLineHeight (LineSpacing).
+        float baseRowY = lineLayout.GetCaretPosition(0, false).Y;
+        float endRowY = lineLayout.GetCaretPosition(lineText.Length, false).Y;
+        int rowCount = 1 + (int)Math.Round(Math.Max(0, endRowY - baseRowY) / singleLineHeight);
         return Math.Max(1, rowCount);
     }
 
@@ -702,9 +709,18 @@ internal class TextRenderer
         if (ShouldVirtualizeWrappedLine(lineIndex))
         {
             int charsPerRow = EstimateWrappedCharsPerRow(canvasText);
-            int currentColumn = characterPosition % charsPerRow;
+            if (!cursorManager.PreferredCharacterPosition.HasValue)
+                cursorManager.PreferredCharacterPosition = characterPosition % charsPerRow;
+
+            int currentColumn = cursorManager.PreferredCharacterPosition.Value;
+            if (!cursorManager.PreferredCaretX.HasValue)
+                cursorManager.PreferredCaretX = currentColumn * _cachedCharWidth;
+
             int virtualCurrentVisualRow = GetLineVisualStartRow(lineIndex) + characterPosition / charsPerRow;
             int virtualTargetVisualRow = Math.Clamp(virtualCurrentVisualRow + rowDelta, 0, Math.Max(0, wrapMetrics.TotalVisualRows - 1));
+            if (virtualTargetVisualRow == virtualCurrentVisualRow)
+                return false;
+
             int virtualTargetLine = GetDocumentLineFromVisualRow(virtualTargetVisualRow);
             int virtualTargetRowOffset = virtualTargetVisualRow - GetLineVisualStartRow(virtualTargetLine);
             int targetLength = textManager.GetLineLength(virtualTargetLine);
@@ -719,15 +735,35 @@ internal class TextRenderer
         float baseRowY = currentLayout.GetCaretPosition(0, false).Y;
         var currentCaret = currentLayout.GetCaretPosition(characterPosition, false);
         int withinLineRow = (int)Math.Round((currentCaret.Y - baseRowY) / Math.Max(1, SingleLineHeight));
+        withinLineRow = Math.Clamp(withinLineRow, 0, Math.Max(0, GetWrappedRowCount(lineIndex) - 1));
         int currentVisualRow = GetLineVisualStartRow(lineIndex) + withinLineRow;
         int targetVisualRow = Math.Clamp(currentVisualRow + rowDelta, 0, Math.Max(0, wrapMetrics.TotalVisualRows - 1));
+        if (targetVisualRow == currentVisualRow)
+            return false;
+
+        // Remember the preferred X position for vertical navigation
+        if (!cursorManager.PreferredCaretX.HasValue)
+            cursorManager.PreferredCaretX = currentCaret.X;
+
+        float targetCaretX = cursorManager.PreferredCaretX.Value;
+
         int targetLine = GetDocumentLineFromVisualRow(targetVisualRow);
         int targetRowOffset = targetVisualRow - GetLineVisualStartRow(targetLine);
+        targetRowOffset = Math.Clamp(targetRowOffset, 0, Math.Max(0, GetWrappedRowCount(targetLine) - 1));
+
+        if (ShouldVirtualizeWrappedLine(targetLine))
+        {
+            int targetCharsPerRow = EstimateWrappedCharsPerRow(canvasText);
+            int targetLength = textManager.GetLineLength(targetLine);
+            int targetCol = (int)Math.Round(targetCaretX / Math.Max(1, _cachedCharWidth));
+            cursorPosition.LineNumber = targetLine;
+            cursorPosition.CharacterPosition = Math.Clamp(targetRowOffset * targetCharsPerRow + targetCol, 0, targetLength);
+            return true;
+        }
 
         using CanvasTextLayout targetLayout = CreateWrappedLineTextLayout(canvasText, targetLine, true);
-        float targetBaseRowY = targetLayout.GetCaretPosition(0, false).Y;
-        float targetHitY = targetBaseRowY + (targetRowOffset + 0.5f) * Math.Max(1, SingleLineHeight);
-        targetLayout.HitTest(currentCaret.X, targetHitY, out var targetRegion);
+        float targetHitY = (targetRowOffset + 0.5f) * Math.Max(1, SingleLineHeight);
+        targetLayout.HitTest(targetCaretX, targetHitY, out var targetRegion);
 
         cursorPosition.LineNumber = targetLine;
         cursorPosition.CharacterPosition = Math.Clamp(targetRegion.CharacterIndex, 0, textManager.GetLineLength(targetLine));

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
 
@@ -27,15 +27,26 @@ internal class CursorManager
         this.currentLineManager = currentLineManager;
     }
 
+    public int? PreferredCharacterPosition { get; set; } = null;
+    public float? PreferredCaretX { get; set; } = null;
+
+    public void ResetPreferredPosition()
+    {
+        PreferredCharacterPosition = null;
+        PreferredCaretX = null;
+    }
+
     public void SetCursorPosition(int line, int character)
     {
         this.LineNumber = line;
         this.CharacterPosition = character;
+        ResetPreferredPosition();
     }
     public void SetCursorPositionCopyValues(CursorPosition cursorPosition)
     {
         this.currentCursorPosition.LineNumber = cursorPosition.LineNumber;
         this.currentCursorPosition.CharacterPosition = cursorPosition.CharacterPosition;
+        ResetPreferredPosition();
     }
 
     public int GetCurPosInLine()
@@ -179,6 +190,8 @@ internal class CursorManager
     //Move cursor:
     public void MoveLeft()
     {
+        ResetPreferredPosition();
+
         if (LineNumber < 0)
             return;
 
@@ -195,6 +208,8 @@ internal class CursorManager
     }
     public void MoveRight()
     {
+        ResetPreferredPosition();
+
         int lineLength = textManager.GetLineLength(LineNumber);
 
         if (LineNumber > textManager.LinesCount - 1)
@@ -214,23 +229,33 @@ internal class CursorManager
     public void MoveDown()
     {
         if (LineNumber < textManager.LinesCount - 1)
-            LineNumber += 1;
+        {
+            if (!PreferredCharacterPosition.HasValue)
+                PreferredCharacterPosition = CharacterPosition;
 
-        CharacterPosition = Math.Clamp(CharacterPosition, 0, textManager.GetLineLength(LineNumber));
+            LineNumber += 1;
+            CharacterPosition = Math.Clamp(PreferredCharacterPosition.Value, 0, textManager.GetLineLength(LineNumber));
+        }
     }
     public void MoveUp()
     {
         if (LineNumber > 0)
-            LineNumber -= 1;
+        {
+            if (!PreferredCharacterPosition.HasValue)
+                PreferredCharacterPosition = CharacterPosition;
 
-        CharacterPosition = Math.Clamp(CharacterPosition, 0, textManager.GetLineLength(LineNumber));
+            LineNumber -= 1;
+            CharacterPosition = Math.Clamp(PreferredCharacterPosition.Value, 0, textManager.GetLineLength(LineNumber));
+        }
     }
     public void MoveToLineEnd(CursorPosition cursorPosition)
     {
+        ResetPreferredPosition();
         cursorPosition.CharacterPosition = currentLineManager.Length;
     }
     public void MoveToLineStart(CursorPosition cursorPosition)
     {
+        ResetPreferredPosition();
         cursorPosition.CharacterPosition = 0;
     }
 
