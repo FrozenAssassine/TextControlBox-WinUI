@@ -1018,6 +1018,8 @@ internal sealed partial class CoreTextControlBox : UserControl
             textRenderer.UpdateCurrentLineTextLayout(canvasText);
 
         float withinLineRowOffset = 0;
+        float cursorX = 0;
+        bool cursorXComputed = false;
         if (textRenderer.IsWordWrapEnabled && textRenderer.CurrentLineTextLayout != null)
         {
             int renderedPos = textRenderer.GetRenderedCharacterIndexForDocumentCharacter(CursorPosition.LineNumber, CursorPosition.CharacterPosition);
@@ -1027,12 +1029,14 @@ internal sealed partial class CoreTextControlBox : UserControl
                 var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedPos, CursorPosition.IsTrailing);
                 int visualRow = (int)Math.Round((vector.Y - baseRowY) / Math.Max(1, textRenderer.SingleLineHeight));
                 withinLineRowOffset = visualRow * textRenderer.SingleLineHeight;
+                cursorX = vector.X;
+                cursorXComputed = true;
             }
         }
         return new Point
         {
             Y = textRenderer.GetCurrentLineLayoutTopY(CursorPosition.LineNumber) + withinLineRowOffset + textRenderer.TopInset,
-            X = CursorHelper.GetCursorPositionInLine(textRenderer.CurrentLineTextLayout, CursorPosition, textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset)
+            X = cursorXComputed ? cursorX : CursorHelper.GetCursorPositionInLine(textRenderer.CurrentLineTextLayout, CursorPosition, textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset)
         };
     }
 

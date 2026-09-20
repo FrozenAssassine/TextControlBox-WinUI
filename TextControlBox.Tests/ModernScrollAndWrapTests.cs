@@ -306,6 +306,7 @@ public class ModernScrollAndWrapTests
         // Line 0 wraps across multiple rows: row 0 ends with a colon
         string text = "Hello world this is a wrapped line that ends with colon: and this text continues on row one";
         core.SetText(text);
+        core.Width = 575;
         core.WordWrap = true;
         core.textRenderer.EnsureTextFormat();
         core.textRenderer.CalculateLinesToRender();
@@ -355,9 +356,11 @@ public class ModernScrollAndWrapTests
         core.textActionManager.AddCharacter("X");
         Assert.AreEqual("X", core.textManager.GetLineText(0).Substring(colonIndex + 1, 1), "Typing with IsTrailing must insert after the colon");
 
-        // Check CaretPosition trailing on colon vs leading on next char
-        var trailingColon = core.textRenderer.CurrentLineTextLayout.GetCaretPosition(colonIndex, true);
-        var leadingNext = core.textRenderer.CurrentLineTextLayout.GetCaretPosition(colonIndex + 1, false);
+        // Check CaretPosition trailing on colon vs leading on next row character
+        var layout = core.textRenderer.CurrentLineTextLayout;
+        int nextRowIndex = core.textManager.GetLineText(0).IndexOf("and");
+        var trailingColon = layout.GetCaretPosition(colonIndex, true);
+        var leadingNext = layout.GetCaretPosition(nextRowIndex, false);
         Assert.IsTrue(trailingColon.Y < leadingNext.Y, $"Trailing caret Y ({trailingColon.Y}) must be on row 0, above row 1 leading Y ({leadingNext.Y})");
         Assert.IsTrue(trailingColon.X > 0, "Trailing caret X must be at the end of row 0");
     }
@@ -797,6 +800,7 @@ public class ModernScrollAndWrapTests
 
         float singleLine = core.textRenderer.SingleLineHeight;
         double initialOffset = 50 * singleLine;
+        core.scrollManager.verticalScrollBar.Maximum = 10000;
         core.scrollManager.OffsetSource.VerticalOffset = initialOffset;
 
         // Caret is at char 5200 (visible in the slice at row 2)
@@ -805,6 +809,50 @@ public class ModernScrollAndWrapTests
         // UpdateScrollToShowCursor should detect that the caret is visible on screen and not change VerticalOffset
         core.scrollManager.UpdateScrollToShowCursor(update: false);
         Assert.AreEqual(initialOffset, core.scrollManager.OffsetSource.VerticalOffset, 0.001);
+    }
+
+    [UITestMethod]
+    public void Cursor_VirtualizedWrappedLine_TypingAtEnd_CaretRendersAtEnd()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        string longLine = new string('X', 100_000) + "END ";
+        core.SetText(longLine);
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+        core.textRenderer.EnsureWrapMetrics(core.canvasText);
+
+        int charsPerRow = core.textRenderer.EstimateWrappedCharsPerRow(core.canvasText);
+        int totalRows = (int)Math.Ceiling(longLine.Length / (double)charsPerRow);
+        int startRow = Math.Max(0, totalRows - 5);
+        core.scrollManager.OffsetSource.VerticalOffset = startRow * core.textRenderer.SingleLineHeight;
+        core.textRenderer.NumberOfStartLine = 0;
+        core.textRenderer.NumberOfRenderedLines = 1;
+        core.textRenderer.IsVirtualizedWrappedLine = true;
+        core.textRenderer.VirtualizedLineIndex = 0;
+        core.textRenderer.VirtualizedLineCharsPerRow = charsPerRow;
+        core.textRenderer.WrappedStartRowOffset = startRow;
+        core.textRenderer.StartVisualRow = startRow;
+        core.textRenderer.VirtualizedLineSliceStart = startRow * charsPerRow;
+        core.textRenderer.VirtualizedWrappedRowsToRender = 5;
+        core.textRenderer.RenderedText = new string('X', 1000);
+        core.textRenderer.UpdateCurrentLineTextLayout(core.canvasText);
+
+        // Move cursor to end of the line (after "END ")
+        core.SetCursorPosition(0, longLine.Length, scrollIntoView: false);
+        var ptBefore = core.GetCursorPosition();
+
+        // User types 'a' at the end of the line
+        core.textActionManager.AddCharacter("a");
+
+        core.textRenderer.CalculateLinesToRender();
+        core.textRenderer.UpdateCurrentLineTextLayout(core.canvasText);
+        Assert.IsNotNull(core.textRenderer.CurrentLineTextLayout);
+
+        int renderedPos = core.textRenderer.GetRenderedCharacterIndexForDocumentCharacter(0, core.CursorPosition.CharacterPosition);
+        Assert.IsTrue(renderedPos >= 0, "Rendered position must be valid in slice");
+
+        var ptAfter = core.GetCursorPosition();
+        Assert.IsTrue(ptAfter.X > ptBefore.X, $"Cursor X after typing 'a' ({ptAfter.X}) must be to the right of cursor before typing ({ptBefore.X})");
     }
 
     [UITestMethod]
@@ -873,6 +921,7 @@ public class ModernScrollAndWrapTests
     {
         var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
         core.WordWrap = false;
+        core.textRenderer.EnsureTextFormat();
 
         // Create 3 lines: line 0 short, line 1 very long, line 2 short
         core.SetText("Line 1 short\n" + new string('X', 200) + "\nLine 3 short");
@@ -893,6 +942,37 @@ public class ModernScrollAndWrapTests
         double postTypeHorizontalOffset = core.scrollManager.OffsetSource.HorizontalOffset;
         Assert.IsTrue(postTypeHorizontalOffset >= initialHorizontalOffset,
             $"HorizontalOffset should stay scrolled after typing (was {initialHorizontalOffset}, now {postTypeHorizontalOffset})");
+    }
+
+    [UITestMethod]
+    public void WordWrap_VirtualizedWrappedLine_LinesAfterEndAreRenderedWithLineNumbers()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        string longLine = new string('X', 100_000) + "_END";
+        core.SetText("Line 0 short\n" + longLine + "\nLine 2 after long\nLine 3 at end");
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+        core.textRenderer.EnsureWrapMetrics(core.canvasText);
+
+        int charsPerRow = core.textRenderer.EstimateWrappedCharsPerRow(core.canvasText);
+        int totalRows = (int)Math.Ceiling(longLine.Length / (double)charsPerRow);
+        // Scroll so the end of long line (line 1) is visible with 2 rows remaining in viewport
+        int startRowInLongLine = totalRows - 2;
+        int longLineStartVisualRow = core.textRenderer.GetLineVisualStartRow(1);
+        int startVisualRow = longLineStartVisualRow + startRowInLongLine;
+
+        core.scrollManager.OffsetSource.VerticalOffset = startVisualRow * core.textRenderer.SingleLineHeight;
+        var (startLine, linesToRender) = core.textRenderer.CalculateLinesToRender();
+
+        Assert.AreEqual(1, startLine, "StartLine should be line 1 (the long line)");
+        Assert.IsTrue(linesToRender > 1, $"Lines to render ({linesToRender}) must include subsequent lines");
+
+        // Render line numbers
+        core.lineNumberRenderer.GenerateLineNumberText(linesToRender, startLine);
+        string lineNumbers = core.lineNumberRenderer.LineNumberTextToRender;
+        Assert.IsNotNull(lineNumbers);
+        Assert.IsTrue(lineNumbers.Contains("3"), "Line numbers must contain '3' for Line 2");
+        Assert.IsTrue(lineNumbers.Contains("4"), "Line numbers must contain '4' for Line 3");
     }
 }
 

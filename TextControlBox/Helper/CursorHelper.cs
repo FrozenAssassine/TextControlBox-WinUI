@@ -33,19 +33,29 @@ internal class CursorHelper
             out var textLayoutRegion,
             out bool isTrailingHit);
 
-        if (!isTrailingHit)
-            return (textLayoutRegion.CharacterIndex, false);
-
         int nextIndex = textLayoutRegion.CharacterIndex + 1;
-        if (isSelecting)
-            return (nextIndex, false);
 
-        // If not selecting, check if the trailing position wraps to the next visual row.
-        // If it does, keep the cursor on the current visual row at the trailing edge of this character.
+        // If the trailing position wraps to the next visual row, keep the cursor/selection
+        // on the current visual row at the trailing edge of the last visible word.
         var hitPos = textLayout.GetCaretPosition(textLayoutRegion.CharacterIndex, false);
         var nextPos = textLayout.GetCaretPosition(nextIndex, false);
         if (nextPos.Y > hitPos.Y + 1)
-            return (textLayoutRegion.CharacterIndex, true);
+        {
+            int charIndex = textLayoutRegion.CharacterIndex;
+            string currentLine = currentLineManager.GetCurrentLineText();
+            if (currentLine != null && charIndex < currentLine.Length && char.IsWhiteSpace(currentLine[charIndex]) && charIndex > 0)
+            {
+                charIndex--;
+            }
+
+            if (isSelecting)
+                return (charIndex + 1, false);
+
+            return (charIndex, true);
+        }
+
+        if (isSelecting)
+            return (nextIndex, false);
 
         return (nextIndex, false);
     }
@@ -73,7 +83,7 @@ internal class CursorHelper
         
 
         cursorPos.LineNumber = GetCursorLineFromPoint(textRenderer, point);
-        cursorPos.LineNumber = Math.Clamp(cursorPos.LineNumber, 0, textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines - 1); //Clamp to visible? or total? GetCursorLineFromPoint handles relative logic, but we need to clamp to document bounds.
+        cursorPos.LineNumber = Math.Clamp(cursorPos.LineNumber, 0, Math.Max(0, textRenderer.LinesCount - 1));
 
         //GetCursorLineFromPoint returns absolute line index.    
         textRenderer.UpdateCurrentLineTextLayout(canvasText);

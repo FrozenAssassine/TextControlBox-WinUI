@@ -58,7 +58,17 @@ internal class TextRenderer
     public float HorizontalOffset => (float)-scrollManager.HorizontalScroll + HorizontalSlicePixelOffset;
     public int NumberOfStartLine = 0;
     public int NumberOfRenderedLines = 0;
-    public string RenderedText = "";
+    private string _renderedText = "";
+    private bool _renderedTextDirty = false;
+    public string RenderedText
+    {
+        get => _renderedText;
+        set
+        {
+            _renderedText = value;
+            _renderedTextDirty = false;
+        }
+    }
     public string OldRenderedText = null;
 
     // ── Horizontal virtualization (non-wrap, very long lines) ──────────────────────────
@@ -167,6 +177,7 @@ internal class TextRenderer
         if (lineIndex >= 0 && lineIndex < textManager.LinesCount)
         {
             dirtyWrapLines.Add(lineIndex);
+            _renderedTextDirty = true;
             InvalidateLineLayout(lineIndex);
         }
     }
@@ -247,12 +258,14 @@ internal class TextRenderer
     public int VirtualizedLineSliceStart { get; internal set; }
     /// <summary>Estimated characters per wrapped row for the virtualized line.</summary>
     public int VirtualizedLineCharsPerRow { get; internal set; }
+    private int _virtualizedSliceTextLength = 0;
     private const int VirtualizedWrappedLinePaddingRows = 2;
 
 
 
     private CursorManager cursorManager;
     private TextManager textManager;
+    public int LinesCount => textManager?.LinesCount ?? 0;
     private ScrollManager scrollManager;
     private LineNumberRenderer lineNumberRenderer;
     private TextLayoutManager textLayoutManager;
@@ -337,29 +350,38 @@ internal class TextRenderer
 
         float wrapWidth = GetWrapWidth(canvasText);
         string currentLineText = textManager.GetLineText(cursorManager.LineNumber);
+        bool shouldVirtualize = ShouldVirtualizeWrappedLine(cursorManager.LineNumber);
 
         // Check if current cached layout is still valid
         if (CurrentLineTextLayout != null &&
             !NeedsTextFormatUpdate &&
+            !_renderedTextDirty &&
             _currentLineLayoutLineIndex == cursorManager.LineNumber &&
             _currentLineLayoutIsWrapped == IsWordWrapEnabled &&
             _currentLineLayoutText == currentLineText &&
             (!IsWordWrapEnabled || Math.Abs(_currentLineLayoutWrapWidth - wrapWidth) < 0.5f) &&
+            (!shouldVirtualize || (_currentLineLayoutSliceStart == VirtualizedLineSliceStart && _currentLineLayoutSliceLength == VirtualizedWrappedRowsToRender)) &&
             (IsWordWrapEnabled || (!IsHorizontallyVirtualized && _currentLineLayoutSliceStart == -1) ||
              (IsHorizontallyVirtualized && _currentLineLayoutSliceStart == HorizontalSliceStart && _currentLineLayoutSliceLength == HorizontalSliceLength)))
         {
             return;
         }
 
-        // A very-long wrapped line backs its caret/click with the same virtualized row-slice layout the main
-        // text uses (reusing the already-built RenderedText when this line is the render start).
-        if (ShouldVirtualizeWrappedLine(cursorManager.LineNumber))
+        // A very-long wrapped line backs its caret/click with a virtualized row-slice layout
+        if (shouldVirtualize)
         {
             InvalidateCurrentLineLayout();
             int vLine = VirtualizedLineIndex >= 0 ? VirtualizedLineIndex : NumberOfStartLine;
-            LineSliceResult virtualizedText = IsVirtualizedWrappedLine && cursorManager.LineNumber == vLine && cursorManager.LineNumber == NumberOfStartLine
+            bool canReuseRenderedText = !_renderedTextDirty
+                && IsVirtualizedWrappedLine
+                && cursorManager.LineNumber == vLine
+                && cursorManager.LineNumber == NumberOfStartLine
+                && !string.IsNullOrEmpty(RenderedText);
+
+            LineSliceResult virtualizedText = canReuseRenderedText
                 ? new LineSliceResult(RenderedText, ReadOnlySpan<string>.Empty)
                 : BuildVirtualizedWrappedLineRenderData(canvasText, cursorManager.LineNumber);
+
             CurrentLineTextLayout = textLayoutManager.CreateTextLayout(
                 canvasText,
                 TextFormat,
@@ -370,6 +392,8 @@ internal class TextRenderer
             _currentLineLayoutText = currentLineText;
             _currentLineLayoutWrapWidth = wrapWidth;
             _currentLineLayoutIsWrapped = true;
+            _currentLineLayoutSliceStart = VirtualizedLineSliceStart;
+            _currentLineLayoutSliceLength = VirtualizedWrappedRowsToRender;
             return;
         }
 
@@ -449,7 +473,7 @@ internal class TextRenderer
             int maxDocumentChars = VirtualizedWrappedRowsToRender * VirtualizedLineCharsPerRow;
             if (relative > maxDocumentChars)
                 return -1;
-            int row = relative / VirtualizedLineCharsPerRow;
+            int row = Math.Min(relative / VirtualizedLineCharsPerRow, Math.Max(0, VirtualizedWrappedRowsToRender - 1));
             return relative + row * textManager.NewLineCharacter.Length;
         }
         if (IsHorizontallyVirtualized)
@@ -542,9 +566,12 @@ internal class TextRenderer
             if (offsetInSlice <= 0)
                 return Math.Clamp(prefix, 0, renderedTextLen);
 
-            int maxSliceChars = VirtualizedWrappedRowsToRender * VirtualizedLineCharsPerRow;
-            if (offsetInSlice > maxSliceChars)
-                offsetInSlice = maxSliceChars;
+            if (VirtualizedWrappedRowsToRender > 0)
+            {
+                int maxSliceChars = VirtualizedWrappedRowsToRender * VirtualizedLineCharsPerRow;
+                if (offsetInSlice > maxSliceChars)
+                    offsetInSlice = maxSliceChars;
+            }
 
             int row = offsetInSlice / VirtualizedLineCharsPerRow;
             int col = offsetInSlice % VirtualizedLineCharsPerRow;
@@ -554,7 +581,13 @@ internal class TextRenderer
         }
         else
         {
-            return renderedTextLen;
+            int offset = _virtualizedSliceTextLength;
+            for (int i = vLine + 1; i < lineIndex && i < textManager.LinesCount; i++)
+            {
+                offset += newlineLen + textManager.GetLineLength(i);
+            }
+            offset += newlineLen + Math.Clamp(characterPosition, 0, textManager.GetLineLength(lineIndex));
+            return Math.Clamp(offset, 0, renderedTextLen);
         }
     }
 
@@ -643,6 +676,10 @@ internal class TextRenderer
             return (float)canvasText.ActualWidth;
         if (coreTextbox != null && coreTextbox.ActualWidth > 10)
             return (float)coreTextbox.ActualWidth;
+        if (coreTextbox != null && coreTextbox.Width > 10)
+            return (float)coreTextbox.Width;
+        if (canvasText != null && canvasText.Width > 10)
+            return (float)canvasText.Width;
         return 800f;
     }
 
@@ -650,6 +687,7 @@ internal class TextRenderer
     public void InvalidateWrapMetrics()
     {
         wrapMetricsDirty = true;
+        _renderedTextDirty = true;
         dirtyWrapLines.Clear();
         ClearLineLayoutCache();
         InvalidateCurrentLineLayout();
@@ -737,6 +775,7 @@ internal class TextRenderer
         VirtualizedLineSliceStart = 0;
         VirtualizedLineCharsPerRow = 0;
         VirtualizedLineIndex = -1;
+        _virtualizedSliceTextLength = 0;
     }
 
     internal bool ShouldVirtualizeWrappedLine(int lineIndex)
@@ -818,7 +857,7 @@ internal class TextRenderer
     /// <summary>Builds the visible ROW slice of a very-long wrapped line (never materializing the whole
     /// multi-megabyte line): starting at <see cref="WrappedStartRowOffset"/>, laid out on an estimated
     /// char-per-row grid and joined by the newline. Records the slice metrics for caret/click mapping.</summary>
-    private LineSliceResult BuildVirtualizedWrappedLineRenderData(CanvasControl canvasText, int lineIndex)
+    private LineSliceResult BuildVirtualizedWrappedLineRenderData(CanvasControl canvasText, int lineIndex, int lineCount = 1)
     {
         string lineText = textManager.GetLineText(lineIndex);
         int charsPerRow = EstimateWrappedCharsPerRow(canvasText);
@@ -845,9 +884,18 @@ internal class TextRenderer
         if (rowsRendered == 0)
             rowsRendered = 1;
 
+        int virtualizedRows = rowsRendered;
+        _virtualizedSliceTextLength = builder.Length;
+
+        for (int i = lineIndex + 1; i < lineIndex + lineCount && i < textManager.LinesCount; i++)
+        {
+            builder.Append(textManager.NewLineCharacter);
+            builder.Append(textManager.GetLineText(i));
+        }
+
         IsVirtualizedWrappedLine = true;
         VirtualizedLineIndex = lineIndex;
-        VirtualizedWrappedRowsToRender = rowsRendered;
+        VirtualizedWrappedRowsToRender = virtualizedRows;
         VirtualizedLineSliceStart = sliceStart;
         VirtualizedLineCharsPerRow = charsPerRow;
         return new LineSliceResult(builder.ToString(), ReadOnlySpan<string>.Empty);
@@ -901,7 +949,14 @@ internal class TextRenderer
     }
 
     public int GetVisibleVisualRowCount(CanvasControl canvasText, int extraRows = 0)
-        => Math.Max(1, (int)Math.Ceiling(canvasText.ActualHeight / Math.Max(1, SingleLineHeight)) + extraRows);
+    {
+        float height = canvasText != null && canvasText.ActualHeight > 10
+            ? (float)canvasText.ActualHeight
+            : (coreTextbox != null && coreTextbox.ActualHeight > 10
+                ? (float)coreTextbox.ActualHeight
+                : (scrollGrid != null && scrollGrid.ActualHeight > 10 ? (float)scrollGrid.ActualHeight : 600f));
+        return Math.Max(1, (int)Math.Ceiling(height / Math.Max(1, SingleLineHeight))) + extraRows;
+    }
 
     public int GetRenderedVisualRowCount(int startLine, int lineCount)
     {
@@ -1050,12 +1105,18 @@ internal class TextRenderer
         if (IsWordWrapEnabled)
             return CalculateWrappedLinesToRender(coreTextbox.canvasText, singleLineHeight);
 
+        float viewportHeight = coreTextbox.canvasText != null && coreTextbox.canvasText.ActualHeight > 10
+            ? (float)coreTextbox.canvasText.ActualHeight
+            : (coreTextbox != null && coreTextbox.ActualHeight > 10
+                ? (float)coreTextbox.ActualHeight
+                : (scrollGrid != null && scrollGrid.ActualHeight > 10 ? (float)scrollGrid.ActualHeight : 600f));
+
         //Measure text position and apply the value to the scrollbar
-        scrollManager.verticalScrollBar.Maximum = Math.Max(0, ((textManager.LinesCount + 1) * singleLineHeight - scrollGrid.ActualHeight) / scrollManager.DefaultVerticalScrollSensitivity);
-        scrollManager.verticalScrollBar.ViewportSize = coreTextbox.canvasText.ActualHeight;
+        scrollManager.verticalScrollBar.Maximum = Math.Max(0, ((textManager.LinesCount + 1) * singleLineHeight - viewportHeight) / scrollManager.DefaultVerticalScrollSensitivity);
+        scrollManager.verticalScrollBar.ViewportSize = viewportHeight;
 
         //Calculate number of lines that need to be rendered
-        int linesToRenderCount = (int)(coreTextbox.canvasText.ActualHeight / singleLineHeight);
+        int linesToRenderCount = (int)(viewportHeight / singleLineHeight);
         linesToRenderCount = Math.Min(linesToRenderCount, textManager.LinesCount);
 
         int startLine;
@@ -1083,7 +1144,7 @@ internal class TextRenderer
         return (startLine, linesToRender);
     }
 
-    public const int WrappedBottomBufferRows = 1;
+    public const int WrappedBottomBufferRows = 2;
 
     private (int startLine, int linesToRender) CalculateWrappedLinesToRender(CanvasControl canvasText, float singleLineHeight)
     {
@@ -1115,26 +1176,42 @@ internal class TextRenderer
         int startLineVisualRow = GetLineVisualStartRow(startLine);
         WrappedStartRowOffset = Math.Max(0, StartVisualRow - startLineVisualRow);
 
+        int visibleRows = GetVisibleVisualRowCount(canvasText, 2);
         if (ShouldVirtualizeWrappedLine(startLine))
         {
-            return (startLine, 1);
+            int startLineRowCount = GetWrappedRowCount(startLine);
+            int remainingRowsInStartLine = Math.Max(0, startLineRowCount - WrappedStartRowOffset);
+            if (remainingRowsInStartLine >= visibleRows)
+            {
+                return (startLine, 1);
+            }
+
+            int rowsToCover = visibleRows - remainingRowsInStartLine;
+            int linesToRender = 1;
+            for (int i = startLine + 1; i < textManager.LinesCount && rowsToCover > 0; i++)
+            {
+                rowsToCover -= GetWrappedRowCount(i);
+                linesToRender++;
+                if (ShouldVirtualizeWrappedLine(i))
+                    break;
+            }
+            return (startLine, linesToRender);
         }
 
-        int visibleRows = GetVisibleVisualRowCount(canvasText, 2);
-        int rowsToCover = visibleRows + WrappedStartRowOffset;
-        int linesToRender = 0;
-        for (int i = startLine; i < textManager.LinesCount && rowsToCover > 0; i++)
+        int rowsToCoverFromStart = visibleRows + WrappedStartRowOffset;
+        int normalLinesToRender = 0;
+        for (int i = startLine; i < textManager.LinesCount && rowsToCoverFromStart > 0; i++)
         {
             if (i > startLine && ShouldVirtualizeWrappedLine(i))
             {
-                linesToRender++;
+                normalLinesToRender++;
                 break;
             }
-            rowsToCover -= GetWrappedRowCount(i);
-            linesToRender++;
+            rowsToCoverFromStart -= GetWrappedRowCount(i);
+            normalLinesToRender++;
         }
 
-        return (startLine, Math.Max(0, linesToRender));
+        return (startLine, Math.Max(0, normalLinesToRender));
     }
 
     public void Draw(CanvasControl canvasText, CanvasDrawEventArgs args)
@@ -1177,7 +1254,7 @@ internal class TextRenderer
         {
             // A wrapped line so long it is virtualized: render only its visible ROW
             // slice (a few KB) instead of laying out the whole multi-megabyte line.
-            renderTextData = BuildVirtualizedWrappedLineRenderData(canvasText, NumberOfStartLine);
+            renderTextData = BuildVirtualizedWrappedLineRenderData(canvasText, NumberOfStartLine, NumberOfRenderedLines);
             RenderedText = renderTextData.Text;
             IsHorizontallyVirtualized = false;
             HorizontalSliceStart = 0;
@@ -1230,7 +1307,7 @@ internal class TextRenderer
         float searchHighlightOffsetY = drawTextOffsetY;
 
         int renderedVisualRows = IsVirtualizedWrappedLine
-            ? VirtualizedWrappedRowsToRender
+            ? VirtualizedWrappedRowsToRender + (NumberOfRenderedLines > 1 ? GetRenderedVisualRowCount(NumberOfStartLine + 1, NumberOfRenderedLines - 1) : 0)
             : GetRenderedVisualRowCount(NumberOfStartLine, NumberOfRenderedLines);
         float computedLayoutHeight = IsVirtualizedWrappedLine
             ? Math.Max((float)canvasText.Size.Height + (VirtualizedWrappedLinePaddingRows * SingleLineHeight), (renderedVisualRows + 2) * SingleLineHeight)
@@ -1259,6 +1336,10 @@ internal class TextRenderer
 
             DrawnTextLayout = textLayoutManager.CreateTextResource(canvasText, DrawnTextLayout, TextFormat, RenderedText, layoutSize);
             SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(renderTextData, textManager.NewLineCharacter, DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting);
+            if (IsVirtualizedWrappedLine && _currentLineLayoutLineIndex == NumberOfStartLine)
+            {
+                InvalidateCurrentLineLayout();
+            }
         }
 
         if (linkHighlightManager.HighlightLinks)

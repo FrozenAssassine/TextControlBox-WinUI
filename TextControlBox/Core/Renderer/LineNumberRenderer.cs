@@ -53,12 +53,36 @@ namespace TextControlBoxNS.Core.Renderer
         {
             if (textRenderer.IsVirtualizedWrappedLine)
             {
-                if (renderedLines > 1)
+                int vLine = textRenderer.VirtualizedLineIndex >= 0 ? textRenderer.VirtualizedLineIndex : startLine;
+                if (vLine == startLine)
+                {
+                    int vRows = Math.Max(1, textRenderer.VirtualizedWrappedRowsToRender);
+                    if (textRenderer.VirtualizedLineSliceStart == 0)
+                    {
+                        LineNumberContent.AppendLine((startLine + 1).ToString());
+                        for (int r = 1; r < vRows; r++)
+                            LineNumberContent.AppendLine();
+                    }
+                    else
+                    {
+                        for (int r = 0; r < vRows; r++)
+                            LineNumberContent.AppendLine();
+                    }
+
+                    for (int i = startLine + 1; i < startLine + renderedLines && i < textManager.LinesCount; i++)
+                    {
+                        int rowCount = textRenderer.GetWrappedRowCount(i);
+                        LineNumberContent.AppendLine((i + 1).ToString());
+                        for (int r = 1; r < rowCount; r++)
+                            LineNumberContent.AppendLine();
+                    }
+                }
+                else
                 {
                     int totalEmittedRows = 0;
                     for (int i = startLine; i < startLine + renderedLines && i < textManager.LinesCount; i++)
                     {
-                        if (textRenderer.ShouldVirtualizeWrappedLine(i))
+                        if (i == vLine)
                         {
                             int remainingRows = Math.Max(1, textRenderer.VirtualizedWrappedRowsToRender - totalEmittedRows);
                             LineNumberContent.AppendLine((i + 1).ToString());
@@ -71,21 +95,6 @@ namespace TextControlBoxNS.Core.Renderer
                         for (int r = 1; r < rowCount; r++)
                             LineNumberContent.AppendLine();
                         totalEmittedRows += rowCount;
-                    }
-                }
-                else
-                {
-                    int rows = Math.Max(1, textRenderer.VirtualizedWrappedRowsToRender);
-                    if (textRenderer.VirtualizedLineSliceStart == 0)
-                    {
-                        LineNumberContent.AppendLine((startLine + 1).ToString());
-                        for (int r = 1; r < rows; r++)
-                            LineNumberContent.AppendLine();
-                    }
-                    else
-                    {
-                        for (int r = 0; r < rows; r++)
-                            LineNumberContent.AppendLine();
                     }
                 }
                 LineNumberTextToRender = LineNumberContent.ToString();
@@ -145,7 +154,7 @@ namespace TextControlBoxNS.Core.Renderer
 
             int renderedVisualRows = textRenderer.IsWordWrapEnabled
                 ? (textRenderer.IsVirtualizedWrappedLine
-                    ? textRenderer.VirtualizedWrappedRowsToRender
+                    ? textRenderer.VirtualizedWrappedRowsToRender + (textRenderer.NumberOfRenderedLines > 1 ? textRenderer.GetRenderedVisualRowCount(textRenderer.NumberOfStartLine + 1, textRenderer.NumberOfRenderedLines - 1) : 0)
                     : textRenderer.GetRenderedVisualRowCount(textRenderer.NumberOfStartLine, textRenderer.NumberOfRenderedLines))
                 : textRenderer.NumberOfRenderedLines;
 

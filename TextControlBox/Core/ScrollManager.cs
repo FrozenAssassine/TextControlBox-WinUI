@@ -204,8 +204,12 @@ internal class ScrollManager
         }
 
         float canvasHeight = (float)(coreTextbox.canvasText?.ActualHeight ?? 0);
-        if (canvasHeight <= 0)
+        if (canvasHeight <= 10 && coreTextbox != null && coreTextbox.ActualHeight > 10)
             canvasHeight = (float)coreTextbox.ActualHeight;
+        if (canvasHeight <= 10 && coreTextbox?.scrollGrid != null && coreTextbox.scrollGrid.ActualHeight > 10)
+            canvasHeight = (float)coreTextbox.scrollGrid.ActualHeight;
+        if (canvasHeight <= 10)
+            canvasHeight = 600f;
 
         int lineIndex = Math.Clamp(cursorManager.LineNumber, 0, Math.Max(0, textManager.LinesCount - 1));
 
@@ -280,8 +284,12 @@ internal class ScrollManager
 
     public bool ScrollIntoViewHorizontal(CanvasControl canvasText, bool update = true)
     {
-        if (coreTextbox.WordWrap || canvasText == null || canvasText.ActualWidth <= 0)
+        if (coreTextbox.WordWrap)
             return false;
+
+        float viewportWidth = canvasText != null && canvasText.ActualWidth > 10
+            ? (float)canvasText.ActualWidth
+            : (coreTextbox != null && coreTextbox.ActualWidth > 10 ? (float)coreTextbox.ActualWidth : 800f);
 
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
         float curPosInLine = GetCurrentCursorPixelPositionInLine();
@@ -290,7 +298,7 @@ internal class ScrollManager
             return false;
 
         double visibleStart = OffsetSource.HorizontalOffset;
-        double visibleEnd = visibleStart + canvasText.ActualWidth;
+        double visibleEnd = visibleStart + viewportWidth;
 
         bool changed = false;
         if (curPosInLine < visibleStart + 3)
@@ -301,7 +309,7 @@ internal class ScrollManager
         else if (curPosInLine > visibleEnd)
         {
             changed = true;
-            OffsetSource.HorizontalOffset = Math.Min(curPosInLine - canvasText.ActualWidth + 5, horizontalScrollBar.Maximum + 5);
+            OffsetSource.HorizontalOffset = Math.Min(curPosInLine - viewportWidth + 5, horizontalScrollBar.Maximum + 5);
         }
 
         OldHorizontalScrollValue = curPosInLine;
@@ -331,14 +339,15 @@ internal class ScrollManager
             return false;
         }
 
-        if (canvasText == null || canvasText.ActualWidth <= 0)
-            return false;
+        float viewportWidth = canvasText != null && canvasText.ActualWidth > 10
+            ? (float)canvasText.ActualWidth
+            : (coreTextbox != null && coreTextbox.ActualWidth > 10 ? (float)coreTextbox.ActualWidth : 800f);
 
         textRenderer.UpdateCurrentLineTextLayout(canvasText);
         float curPosInLine = GetCurrentCursorPixelPositionInLine();
 
         double maxOffset = Math.Max(horizontalScrollBar.Minimum, horizontalScrollBar.Maximum);
-        double target = Math.Clamp(curPosInLine - canvasText.ActualWidth / 2, horizontalScrollBar.Minimum, maxOffset);
+        double target = Math.Clamp(curPosInLine - viewportWidth / 2, horizontalScrollBar.Minimum, maxOffset);
 
         bool changed = Math.Abs(target - OffsetSource.HorizontalOffset) > 0.5;
         if (changed)
@@ -408,8 +417,11 @@ internal class ScrollManager
         longestLineManager.CheckRecalculateLongestLine(forceRecalculateLongestLine);
 
         //Apply longest width to scrollbar
-        horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
-        double maxScroll = longestLineManager.longestLineWidth.Width <= canvasText.ActualWidth ? 0 : longestLineManager.longestLineWidth.Width - canvasText.ActualWidth + (zoomManager.ZoomedFontSize / 2);
+        float viewportWidth = canvasText != null && canvasText.ActualWidth > 10
+            ? (float)canvasText.ActualWidth
+            : (coreTextbox != null && coreTextbox.ActualWidth > 10 ? (float)coreTextbox.ActualWidth : 800f);
+        horizontalScrollBar.ViewportSize = viewportWidth;
+        double maxScroll = longestLineManager.longestLineWidth.Width <= viewportWidth ? 0 : longestLineManager.longestLineWidth.Width - viewportWidth + (zoomManager.ZoomedFontSize / 2);
         horizontalScrollBar.Maximum = maxScroll;
 
         if (OffsetSource.HorizontalOffset > maxScroll)

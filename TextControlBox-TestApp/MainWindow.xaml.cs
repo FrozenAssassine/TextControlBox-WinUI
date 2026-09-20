@@ -69,7 +69,7 @@ namespace TextControlBox_TestApp
         private void LoadLongLine_Click(object sender, RoutedEventArgs e)
         {
             // Pathologische 100k Zeile zum Testen von horizontaler Virtualisierung und Wrapped-Line Virtualisierung
-            string longLine = "START_" + new string('X', 100_000) + "_END";
+            string longLine = "START_" + new string('X', 100_00000) + "_END";
             textbox.LoadLines([
                 "Zeile 1 (Kurz): Willkommen zum Testen von TextControlBox-WinUI!",
                 longLine,
@@ -80,7 +80,7 @@ namespace TextControlBox_TestApp
 
         private void LoadCodeSample_Click(object sender, RoutedEventArgs e)
         {
-            textbox.LoadLines(Enumerable.Range(1, 200).Select(i => $"// Code Zeile {i}: int value{i} = {i * 10}; // Das ist ein längerer Kommentar um Zeilenumbruch und Rendering zu prüfen"));
+            textbox.LoadLines(Enumerable.Range(1, 200000).Select(i => $"// Code Zeile {i}: int value{i} = {i * 10}; // Das ist ein längerer Kommentar um Zeilenumbruch und Rendering zu prüfen"));
             StatusText.Text = "200 Code-Zeilen geladen.";
         }
 
