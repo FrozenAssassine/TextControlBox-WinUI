@@ -42,13 +42,13 @@ internal sealed class WrapRowMetrics
     {
         _rowCountByLine.Clear();
         _startRow.Clear();
+        _startRow.Capacity = Math.Max(_startRow.Capacity, lineCount + 1);
 
         int visualRow = 0;
         _startRow.Add(visualRow);
         for (int i = 0; i < lineCount; i++)
         {
             int rows = Math.Max(1, measureRows(i));
-            _rowCountByLine[i] = rows;
             visualRow += rows;
             _startRow.Add(visualRow);
         }
@@ -71,12 +71,11 @@ internal sealed class WrapRowMetrics
             if (line < 0 || line >= lineCount)
                 continue;
 
-            int oldRows = _rowCountByLine.TryGetValue(line, out int cached) ? cached : 1;
+            int oldRows = GetRowCount(line);
             int newRows = Math.Max(1, measureRows(line));
             if (newRows == oldRows)
                 continue;
 
-            _rowCountByLine[line] = newRows;
             int delta = newRows - oldRows;
             for (int i = line + 1; i < _startRow.Count; i++)
                 _startRow[i] += delta;
@@ -91,7 +90,12 @@ internal sealed class WrapRowMetrics
 
     /// <summary>Visual rows document line <paramref name="lineIndex"/> occupies (1 when unknown/out of range).</summary>
     public int GetRowCount(int lineIndex)
-        => _rowCountByLine.TryGetValue(lineIndex, out int rows) ? rows : 1;
+    {
+        if (lineIndex >= 0 && lineIndex + 1 < _startRow.Count)
+            return _startRow[lineIndex + 1] - _startRow[lineIndex];
+
+        return _rowCountByLine.TryGetValue(lineIndex, out int rows) ? rows : 1;
+    }
 
     /// <summary>First visual row of document line <paramref name="lineIndex"/>. Falls back to summing row
     /// counts when the prefix cache is not valid for <paramref name="lineCount"/>.</summary>

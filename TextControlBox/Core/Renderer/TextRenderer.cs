@@ -182,7 +182,7 @@ internal class TextRenderer
         }
     }
 
-    internal CanvasTextLayout GetOrCreateWrappedLineLayout(CanvasControl canvasText, int lineIndex, bool includeCaretMarker = true)
+    internal CanvasTextLayout GetOrCreateWrappedLineLayout(CanvasControl canvasText, int lineIndex)
     {
         EnsureTextFormat();
         if (lineIndex < 0 || lineIndex >= textManager.LinesCount)
@@ -220,7 +220,7 @@ internal class TextRenderer
             foreach (var kvp in _lineLayoutCache)
             {
                 if (kvp.Value.layout != CurrentLineTextLayout)
-                {
+                    {
                     keyToEvict = kvp.Key;
                     break;
                 }
@@ -232,7 +232,7 @@ internal class TextRenderer
             }
         }
 
-        CanvasTextLayout newLayout = CreateWrappedLineTextLayout(canvasText, lineIndex, includeCaretMarker);
+        CanvasTextLayout newLayout = CreateWrappedLineTextLayout(canvasText, lineIndex);
         _lineLayoutCache[lineIndex] = (newLayout, lineText, wrapWidth);
         return newLayout;
     }
@@ -243,6 +243,9 @@ internal class TextRenderer
     // Above this line length, estimate the wrapped row count instead of laying the whole line out (a
     // multi-megabyte line would otherwise create a giant measurement layout).
     private const int LongLineRowEstimateThreshold = 100_000;
+    // Above this line count, whole-document measurement delegates to row-count estimation
+    // to avoid UI freezes during window resizing on huge files (e.g. 2 million lines).
+    private const int LargeDocumentWrapEstimateThreshold = 10_000;
 
     // ── Wrapped-line virtualization (a single line so long it wraps to more rows than fit) ──────────
     // At/above LongLineRowEstimateThreshold a single wrapped line can span tens of thousands of rows, so
@@ -399,7 +402,7 @@ internal class TextRenderer
 
         if (IsWordWrapEnabled)
         {
-            CanvasTextLayout cachedLayout = GetOrCreateWrappedLineLayout(canvasText, cursorManager.LineNumber, true);
+            CanvasTextLayout cachedLayout = GetOrCreateWrappedLineLayout(canvasText, cursorManager.LineNumber);
             if (CurrentLineTextLayout != cachedLayout)
             {
                 bool oldInCache = false;
@@ -714,7 +717,10 @@ internal class TextRenderer
 
         if (wrapMetricsDirty || !wrapMetrics.IsValidFor(textManager.LinesCount))
         {
-            wrapMetrics.Rebuild(textManager.LinesCount, i => MeasureWrappedRowCount(canvasText, i));
+            int charsPerRow = EstimateWrappedCharsPerRow(canvasText);
+            bool isLargeDoc = textManager.LinesCount >= LargeDocumentWrapEstimateThreshold;
+
+            wrapMetrics.Rebuild(textManager.LinesCount, i => MeasureWrappedRowCount(canvasText, i, charsPerRow, isLargeDoc));
             wrapMetricsDirty = false;
             dirtyWrapLines.Clear();
             ClearLineLayoutCache();
@@ -724,12 +730,15 @@ internal class TextRenderer
 
         if (dirtyWrapLines.Count > 0)
         {
+            int charsPerRow = EstimateWrappedCharsPerRow(canvasText);
+            bool isLargeDoc = textManager.LinesCount >= LargeDocumentWrapEstimateThreshold;
+
             bool patched = wrapMetrics.ApplyIncremental(
                 textManager.LinesCount, dirtyWrapLines, dirtyWrapLines.Count, IncrementalWrapRemeasureLimit,
-                i => MeasureWrappedRowCount(canvasText, i));
+                i => MeasureWrappedRowCount(canvasText, i, charsPerRow, isLargeDoc));
             if (!patched)
             {
-                wrapMetrics.Rebuild(textManager.LinesCount, i => MeasureWrappedRowCount(canvasText, i));
+                wrapMetrics.Rebuild(textManager.LinesCount, i => MeasureWrappedRowCount(canvasText, i, charsPerRow, isLargeDoc));
                 wrapMetricsDirty = false;
                 ClearLineLayoutCache();
                 InvalidateCurrentLineLayout();
@@ -738,19 +747,28 @@ internal class TextRenderer
         }
     }
 
-    private int MeasureWrappedRowCount(CanvasControl canvasText, int lineIndex)
+    private int MeasureWrappedRowCount(CanvasControl canvasText, int lineIndex, int charsPerRow = 0, bool isLargeDoc = false)
     {
         if (lineIndex < 0 || lineIndex >= textManager.LinesCount)
             return 1;
 
-        string lineText = textManager.GetLineText(lineIndex);
-        if (lineText.Length == 0)
+        int lineLength = textManager.GetLineLength(lineIndex);
+        if (lineLength == 0)
             return 1;
 
-        float singleLineHeight = Math.Max(1, SingleLineHeight);
-        if (lineText.Length >= LongLineRowEstimateThreshold)
-            return EstimateWrappedRowCount(canvasText, lineText.Length);
+        if (charsPerRow <= 0)
+            charsPerRow = EstimateWrappedCharsPerRow(canvasText);
 
+        // Fast path: if the line length is less than or equal to the maximum characters that can
+        // fit on one row, it is mathematically impossible for the line to wrap.
+        if (lineLength <= charsPerRow)
+            return 1;
+
+        if (lineLength >= LongLineRowEstimateThreshold || isLargeDoc)
+            return EstimateWrappedRowCount(canvasText, lineLength, charsPerRow);
+
+        string lineText = textManager.GetLineText(lineIndex);
+        float singleLineHeight = Math.Max(1, SingleLineHeight);
         float wrapWidth = cachedWrapWidth > 1 ? cachedWrapWidth : GetWrapWidth(canvasText);
         float layoutHeight = Math.Max(singleLineHeight, (lineText.Length + 1) * singleLineHeight);
         using CanvasTextLayout lineLayout = textLayoutManager.CreateTextLayout(canvasText, TextFormat, lineText, wrapWidth, layoutHeight);
@@ -846,13 +864,17 @@ internal class TextRenderer
 
     internal int EstimateWrappedCharsPerRow(CanvasControl canvasText)
     {
-        float wrapWidth = GetWrapWidth(canvasText);
+        float wrapWidth = cachedWrapWidth > 1 ? cachedWrapWidth : GetWrapWidth(canvasText);
         float charWidth = CachedCharWidth;
         return Math.Max(1, (int)Math.Floor(wrapWidth / charWidth));
     }
 
-    private int EstimateWrappedRowCount(CanvasControl canvasText, int textLength)
-        => Math.Max(1, (int)Math.Ceiling(textLength / (double)EstimateWrappedCharsPerRow(canvasText)));
+    private int EstimateWrappedRowCount(CanvasControl canvasText, int textLength, int charsPerRow = 0)
+    {
+        if (charsPerRow <= 0)
+            charsPerRow = EstimateWrappedCharsPerRow(canvasText);
+        return Math.Max(1, (int)Math.Ceiling(textLength / (double)charsPerRow));
+    }
 
     /// <summary>Builds the visible ROW slice of a very-long wrapped line (never materializing the whole
     /// multi-megabyte line): starting at <see cref="WrappedStartRowOffset"/>, laid out on an estimated
@@ -901,12 +923,10 @@ internal class TextRenderer
         return new LineSliceResult(builder.ToString(), ReadOnlySpan<string>.Empty);
     }
 
-    private CanvasTextLayout CreateWrappedLineTextLayout(CanvasControl canvasText, int lineIndex, bool includeCaretMarker = false)
+    private CanvasTextLayout CreateWrappedLineTextLayout(CanvasControl canvasText, int lineIndex)
     {
         EnsureTextFormat();
         string lineText = textManager.GetLineText(lineIndex);
-        if (includeCaretMarker)
-            lineText += "|";
 
         float singleLineHeight = Math.Max(1, SingleLineHeight);
         int rowCount = GetWrappedRowCount(lineIndex);
@@ -1046,7 +1066,7 @@ internal class TextRenderer
             return true;
         }
 
-        CanvasTextLayout currentLayout = GetOrCreateWrappedLineLayout(canvasText, lineIndex, true);
+        CanvasTextLayout currentLayout = GetOrCreateWrappedLineLayout(canvasText, lineIndex);
         if (currentLayout == null)
             return false;
 
@@ -1081,7 +1101,7 @@ internal class TextRenderer
 
         CanvasTextLayout targetLayout = (targetLine == lineIndex)
             ? currentLayout
-            : GetOrCreateWrappedLineLayout(canvasText, targetLine, true);
+            : GetOrCreateWrappedLineLayout(canvasText, targetLine);
         if (targetLayout == null)
             return false;
 

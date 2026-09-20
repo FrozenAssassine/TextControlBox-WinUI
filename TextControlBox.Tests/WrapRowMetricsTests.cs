@@ -142,4 +142,35 @@ public class WrapRowMetricsTests
         Assert.AreEqual(3, m.TotalVisualRows); // each line at least 1 row
         Assert.AreEqual(1, m.GetRowCount(0));
     }
+
+    [TestMethod]
+    public void Rebuild_LargeScale_IsFastAndAccurate()
+    {
+        const int lineCount = 200_000;
+        var m = new WrapRowMetrics();
+
+        // 200k lines where every 100th line wraps to 3 rows, others are 1 row
+        m.Rebuild(lineCount, i => (i % 100 == 0) ? 3 : 1);
+
+        int expectedTotal = (lineCount - (lineCount / 100)) + (lineCount / 100 * 3);
+        Assert.AreEqual(expectedTotal, m.TotalVisualRows);
+        Assert.IsTrue(m.IsValidFor(lineCount));
+
+        // Fast row count check
+        Assert.AreEqual(3, m.GetRowCount(0));
+        Assert.AreEqual(1, m.GetRowCount(1));
+        Assert.AreEqual(3, m.GetRowCount(100));
+        Assert.AreEqual(1, m.GetRowCount(101));
+
+        // Start row lookup
+        Assert.AreEqual(0, m.GetLineStartRow(0, lineCount));
+        Assert.AreEqual(3, m.GetLineStartRow(1, lineCount));
+        Assert.AreEqual(4, m.GetLineStartRow(2, lineCount));
+
+        // Binary search inverse mapping
+        Assert.AreEqual(0, m.GetDocumentLineFromVisualRow(0, lineCount));
+        Assert.AreEqual(0, m.GetDocumentLineFromVisualRow(1, lineCount));
+        Assert.AreEqual(0, m.GetDocumentLineFromVisualRow(2, lineCount));
+        Assert.AreEqual(1, m.GetDocumentLineFromVisualRow(3, lineCount));
+    }
 }
