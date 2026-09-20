@@ -1031,7 +1031,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         }
         return new Point
         {
-            Y = textRenderer.GetLineTopY(CursorPosition.LineNumber) + withinLineRowOffset,
+            Y = textRenderer.GetCurrentLineLayoutTopY(CursorPosition.LineNumber) + withinLineRowOffset,
             X = CursorHelper.GetCursorPositionInLine(textRenderer.CurrentLineTextLayout, CursorPosition, textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset)
         };
     }

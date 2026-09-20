@@ -88,6 +88,8 @@ internal class CursorRenderer
             characterPos = currentLineLength;
 
         int renderedCharacterPos = textRenderer.GetRenderedCharacterIndexForDocumentCharacter(cursorManager.LineNumber, characterPos);
+        if (textRenderer.IsWordWrapEnabled && textRenderer.IsVirtualizedWrappedLine && renderedCharacterPos < 0)
+            return;
 
         float withinLineRowOffset = 0;
         if (textRenderer.IsWordWrapEnabled && textRenderer.CurrentLineTextLayout != null && renderedCharacterPos >= 0)
@@ -98,7 +100,7 @@ internal class CursorRenderer
             withinLineRowOffset = visualRow * textRenderer.SingleLineHeight;
         }
 
-        float renderPosY = textRenderer.GetLineTopY(cursorManager.LineNumber) + withinLineRowOffset;
+        float renderPosY = textRenderer.GetCurrentLineLayoutTopY(cursorManager.LineNumber) + withinLineRowOffset;
         
         bool offscreen = renderPosY > canvasCursor.ActualHeight || renderPosY + textRenderer.SingleLineHeight < 0;
         if (offscreen)

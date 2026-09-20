@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
 using TextControlBoxNS;
 using TextControlBoxNS.Core;
+using TextControlBoxNS.Core.Renderer;
 
 namespace TextControlBox.Tests;
 
@@ -574,4 +575,209 @@ public class ModernScrollAndWrapTests
         Assert.AreEqual(0, core.cursorManager.LineNumber);
         Assert.AreEqual(16, core.cursorManager.CharacterPosition, "Should restore column 16 on line 0");
     }
+
+    [UITestMethod]
+    public void Selection_InMultiLineWithVirtualizedWrappedLine_MapsCleanly()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        string longLine = "START_" + new string('X', 100_000) + "_END";
+        core.SetText("Line 0 short\n" + longLine + "\nLine 2 short");
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+
+        // Simulate multi-line rendering where StartLine is 0 and Line 1 is virtualized
+        core.textRenderer.NumberOfStartLine = 0;
+        core.textRenderer.NumberOfRenderedLines = 2;
+        core.textRenderer.IsVirtualizedWrappedLine = true;
+        core.textRenderer.VirtualizedLineIndex = 1;
+        core.textRenderer.VirtualizedLineCharsPerRow = 100;
+        core.textRenderer.VirtualizedLineSliceStart = 0;
+        core.textRenderer.VirtualizedWrappedRowsToRender = 10;
+        core.textRenderer.RenderedText = "Line 0 short\n" + new string('X', 1000);
+
+        int line0Prefix = core.textManager.GetLineLength(0) + core.textManager.NewLineCharacter.Length;
+
+        // Selection on Line 1 from char 10 to char 50
+        int idxStart = core.textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(1, 10);
+        int idxEnd = core.textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(1, 50);
+
+        Assert.AreEqual(line0Prefix + 10, idxStart);
+        Assert.AreEqual(line0Prefix + 50, idxEnd);
+        Assert.IsTrue(idxEnd > idxStart);
+
+        // Selection spanning from Line 0 (char 5) to Line 1 (char 25)
+        int crossStart = core.textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(0, 5);
+        int crossEnd = core.textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(1, 25);
+
+        Assert.AreEqual(5, crossStart);
+        Assert.AreEqual(line0Prefix + 25, crossEnd);
+        Assert.IsTrue(crossEnd > crossStart);
+    }
+
+    [UITestMethod]
+    public void Selection_SingleVirtualizedWrappedLine_ClampsToBounds()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        string longLine = new string('X', 100_000);
+        core.SetText(longLine);
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+
+        core.textRenderer.NumberOfStartLine = 0;
+        core.textRenderer.NumberOfRenderedLines = 1;
+        core.textRenderer.IsVirtualizedWrappedLine = true;
+        core.textRenderer.VirtualizedLineIndex = 0;
+        core.textRenderer.VirtualizedLineCharsPerRow = 100;
+        core.textRenderer.VirtualizedLineSliceStart = 5000;
+        core.textRenderer.VirtualizedWrappedRowsToRender = 5; // 500 chars rendered
+        core.textRenderer.RenderedText = new string('X', 500 + 4 * core.textManager.NewLineCharacter.Length);
+
+        // Before slice start -> clamps to 0
+        int idxBefore = core.textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(0, 1000);
+        Assert.AreEqual(0, idxBefore);
+
+        // At slice start (5000) -> 0
+        int idxAtStart = core.textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(0, 5000);
+        Assert.AreEqual(0, idxAtStart);
+
+        // Char 5050 -> row 0, col 50 -> 50
+        int idxRow0 = core.textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(0, 5050);
+        Assert.AreEqual(50, idxRow0);
+
+        // Char 5150 -> row 1, col 50 -> 100 + newlineLen + 50
+        int newlineLen = core.textManager.NewLineCharacter.Length;
+        int idxRow1 = core.textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(0, 5150);
+        Assert.AreEqual(100 + newlineLen + 50, idxRow1);
+    }
+
+    [UITestMethod]
+    public void Cursor_VirtualizedWrappedLine_Scrolled_CaretYMatchesVisualRow()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        string longLine = new string('X', 100_000);
+        core.SetText(longLine);
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+
+        core.textRenderer.NumberOfStartLine = 0;
+        core.textRenderer.NumberOfRenderedLines = 1;
+        core.textRenderer.IsVirtualizedWrappedLine = true;
+        core.textRenderer.VirtualizedLineIndex = 0;
+        core.textRenderer.VirtualizedLineCharsPerRow = 100;
+        core.textRenderer.WrappedStartRowOffset = 50; // scrolled down 50 rows
+        core.textRenderer.StartVisualRow = 50;
+        core.textRenderer.VirtualizedLineSliceStart = 5000;
+        core.textRenderer.VirtualizedWrappedRowsToRender = 10;
+        core.textRenderer.RenderedText = new string('X', 1000 + 9 * core.textManager.NewLineCharacter.Length);
+        core.textRenderer.UpdateCurrentLineTextLayout(core.canvasText);
+
+        // GetCurrentLineLayoutTopY for line 0 when virtualized and at start line must be 0, not -50 * SingleLineHeight
+        float layoutTop = core.textRenderer.GetCurrentLineLayoutTopY(0);
+        Assert.AreEqual(0f, layoutTop, 0.001f);
+
+        // Cursor at char 5200 (row 2 in the visible slice, col 0)
+        core.SetCursorPosition(0, 5200, scrollIntoView: false);
+        var pt = core.GetCursorPosition();
+        float singleLine = core.textRenderer.SingleLineHeight;
+
+        // Visual row in slice is 2, so Y must be 2 * singleLine (around 40px), NOT negative or shifted up by 50 rows
+        Assert.AreEqual(2 * singleLine, (float)pt.Y, 1.0f);
+    }
+
+    [UITestMethod]
+    public void UpdateScrollToShowCursor_WhenCaretVisible_DoesNotScroll()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        string longLine = new string('X', 100_000);
+        core.SetText(longLine);
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+
+        core.textRenderer.NumberOfStartLine = 0;
+        core.textRenderer.NumberOfRenderedLines = 1;
+        core.textRenderer.IsVirtualizedWrappedLine = true;
+        core.textRenderer.VirtualizedLineIndex = 0;
+        core.textRenderer.VirtualizedLineCharsPerRow = 100;
+        core.textRenderer.WrappedStartRowOffset = 50;
+        core.textRenderer.StartVisualRow = 50;
+        core.textRenderer.VirtualizedLineSliceStart = 5000;
+        core.textRenderer.VirtualizedWrappedRowsToRender = 10;
+        core.textRenderer.RenderedText = new string('X', 1000 + 9 * core.textManager.NewLineCharacter.Length);
+        core.textRenderer.UpdateCurrentLineTextLayout(core.canvasText);
+
+        float singleLine = core.textRenderer.SingleLineHeight;
+        double initialOffset = 50 * singleLine;
+        core.scrollManager.OffsetSource.VerticalOffset = initialOffset;
+
+        // Caret is at char 5200 (visible in the slice at row 2)
+        core.SetCursorPosition(0, 5200, scrollIntoView: false);
+
+        // UpdateScrollToShowCursor should detect that the caret is visible on screen and not change VerticalOffset
+        core.scrollManager.UpdateScrollToShowCursor(update: false);
+        Assert.AreEqual(initialOffset, core.scrollManager.OffsetSource.VerticalOffset, 0.001);
+    }
+
+    [UITestMethod]
+    public void WordWrap_ScrollbarMaximum_IncludesBottomBuffer()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        string longLine = new string('A', 100_000);
+        core.SetText(longLine);
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+        core.textRenderer.EnsureWrapMetrics(core.canvasText);
+
+        core.textRenderer.CalculateLinesToRender();
+
+        float singleLine = core.textRenderer.SingleLineHeight;
+        int sensitivity = core.scrollManager.DefaultVerticalScrollSensitivity;
+        double gridHeight = core.canvasText != null && core.canvasText.ActualHeight > 0 ? core.canvasText.ActualHeight : core.scrollGrid.ActualHeight;
+
+        int totalRows = core.textRenderer.GetWrappedRowCount(0);
+        double expectedMax = Math.Max(0, ((totalRows + TextRenderer.WrappedBottomBufferRows) * singleLine - gridHeight) / sensitivity);
+        Assert.AreEqual(expectedMax, core.scrollManager.verticalScrollBar.Maximum, 0.5);
+    }
+
+    [UITestMethod]
+    public void WordWrap_MaxScroll_LastLineAlwaysFullyVisible_AcrossWindowHeights()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        // 50 lines of wrapped text
+        var lines = System.Linq.Enumerable.Range(0, 50).Select(i => $"Line {i}: Some text to test word wrap buffering at the bottom of the editor").ToArray();
+        core.LoadLines(lines);
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+        core.textRenderer.EnsureWrapMetrics(core.canvasText);
+
+        float singleLine = core.textRenderer.SingleLineHeight;
+        int sensitivity = core.scrollManager.DefaultVerticalScrollSensitivity;
+        int totalVisualRows = 0;
+        for (int i = 0; i < lines.Length; i++)
+            totalVisualRows += core.textRenderer.GetWrappedRowCount(i);
+
+        // Test various window heights: multiples of singleLine, sub-line remainders, small, medium, large
+        double[] testHeights = [ 200, 205, 219, 300, 311, 400, 401, 415, 419, 420, 421, 500, 505.5, 612.3 ];
+        foreach (double height in testHeights)
+        {
+            double maxScroll = Math.Max(0, ((totalVisualRows + TextRenderer.WrappedBottomBufferRows) * singleLine - height) / sensitivity);
+            core.scrollManager.verticalScrollBar.Maximum = maxScroll;
+            core.scrollManager.verticalScrollBar.Value = maxScroll;
+
+            int startVisualRow = core.textRenderer.GetStartVisualRowFromScroll();
+            int lastVisualRow = totalVisualRows - 1;
+
+            // Distance from start visual row to last visual row
+            int rowsFromStart = lastVisualRow - startVisualRow;
+            // The top of the rendered layout starts with a SingleLineHeight offset
+            float lastRowTop = singleLine + rowsFromStart * singleLine;
+            float lastRowBottom = lastRowTop + singleLine;
+
+            // The last row bottom must never exceed the viewport height (never cut off at the bottom)
+            Assert.IsTrue(lastRowBottom <= height + 0.001,
+                $"At window height {height}, last visual row bottom {lastRowBottom} exceeded viewport (cut off by {lastRowBottom - height}px)!");
+        }
+    }
 }
+
+
+

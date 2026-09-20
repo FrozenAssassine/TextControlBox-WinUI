@@ -256,7 +256,6 @@ namespace TextControlBoxNS.Core.Renderer
                 return;
             }
 
-            int lineIndex = textRenderer.NumberOfStartLine;
             int startLine = selectionManager.selectionStart.LineNumber;
             int startChar = selectionManager.selectionStart.CharacterPosition;
             int endLine = selectionManager.selectionEnd.LineNumber;
@@ -268,43 +267,8 @@ namespace TextControlBoxNS.Core.Renderer
                 (startChar, endChar) = (endChar, startChar);
             }
 
-            if (lineIndex < startLine || lineIndex > endLine)
-            {
-                selectionManager.currentTextSelection.renderedIndex = 0;
-                selectionManager.currentTextSelection.renderedLength = 0;
-                return;
-            }
-
-            int lineLength = textManager.GetLineLength(lineIndex);
-            int docCharStart = lineIndex > startLine ? 0 : startChar;
-            int docCharEnd = lineIndex < endLine ? lineLength : endChar;
-
-            docCharStart = Math.Clamp(docCharStart, 0, lineLength);
-            docCharEnd = Math.Clamp(docCharEnd, 0, lineLength);
-
-            if (docCharStart >= docCharEnd)
-            {
-                selectionManager.currentTextSelection.renderedIndex = 0;
-                selectionManager.currentTextSelection.renderedLength = 0;
-                return;
-            }
-
-            int sliceStart = textRenderer.VirtualizedLineSliceStart;
-            int sliceCharCount = textRenderer.VirtualizedWrappedRowsToRender * textRenderer.VirtualizedLineCharsPerRow;
-            int sliceEnd = Math.Min(lineLength, sliceStart + sliceCharCount);
-
-            if (docCharEnd <= sliceStart || docCharStart >= sliceEnd)
-            {
-                selectionManager.currentTextSelection.renderedIndex = 0;
-                selectionManager.currentTextSelection.renderedLength = 0;
-                return;
-            }
-
-            int visStart = Math.Max(docCharStart, sliceStart);
-            int visEnd = Math.Min(docCharEnd, sliceEnd);
-
-            int selStartIndex = textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(visStart);
-            int selEndIndex = textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(visEnd);
+            int selStartIndex = textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(startLine, startChar);
+            int selEndIndex = textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(endLine, endChar);
 
             if (selStartIndex < 0 || selEndIndex < 0)
             {

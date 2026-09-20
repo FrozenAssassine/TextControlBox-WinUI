@@ -53,6 +53,11 @@ internal class ScrollManager
 
     internal void VerticalScrollbar_Loaded(object sender, RoutedEventArgs e)
     {
+        if (textRenderer.IsWordWrapEnabled)
+        {
+            textRenderer.CalculateLinesToRender();
+            return;
+        }
         verticalScrollBar.Maximum = ((textManager.LinesCount + 1) * textRenderer.SingleLineHeight - scrollGrid.ActualHeight) / DefaultVerticalScrollSensitivity;
         verticalScrollBar.ViewportSize = coreTextbox.ActualHeight;
     }
@@ -184,42 +189,67 @@ internal class ScrollManager
             return;
         }
 
-        // Calculate the cursor's visual row (document line start row + within-line row offset)
+        float canvasHeight = (float)(coreTextbox.canvasText?.ActualHeight ?? 0);
+        if (canvasHeight <= 0)
+            canvasHeight = (float)coreTextbox.ActualHeight;
+
         int lineIndex = Math.Clamp(cursorManager.LineNumber, 0, Math.Max(0, textManager.LinesCount - 1));
-        int lineVisualStart = textRenderer.GetLineVisualStartRow(lineIndex);
-        int withinLineRow = 0;
-        int lineRowCount = textRenderer.GetWrappedRowCount(lineIndex);
-        if (lineRowCount > 1 && coreTextbox.canvasText != null)
+
+        // If the current line layout is available and contains the cursor, check screen visibility directly
+        textRenderer.UpdateCurrentLineTextLayout(coreTextbox.canvasText);
+        if (textRenderer.CurrentLineTextLayout != null)
         {
-            // Use the current line layout to find which visual row the cursor is on
-            textRenderer.UpdateCurrentLineTextLayout(coreTextbox.canvasText);
-            if (textRenderer.CurrentLineTextLayout != null)
+            int renderedPos = textRenderer.GetRenderedCharacterIndexForDocumentCharacter(lineIndex, cursorManager.CharacterPosition);
+            if (renderedPos >= 0)
             {
-                int renderedPos = textRenderer.GetRenderedCharacterIndexForDocumentCharacter(lineIndex, cursorManager.CharacterPosition);
-                if (renderedPos >= 0)
+                float baseRowY = textRenderer.CurrentLineTextLayout.GetCaretPosition(0, false).Y;
+                var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedPos, false);
+                int visualRow = (int)Math.Round((vector.Y - baseRowY) / Math.Max(1, singleLine));
+                float caretY = textRenderer.GetCurrentLineLayoutTopY(lineIndex) + visualRow * singleLine;
+
+                // If the caret is already visible within the viewport bounds, don't scroll at all!
+                if (caretY >= 0 && caretY + singleLine <= canvasHeight)
+                    return;
+
+                if (caretY + singleLine > canvasHeight)
                 {
-                    float baseRowY = textRenderer.CurrentLineTextLayout.GetCaretPosition(0, false).Y;
-                    var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedPos, false);
-                    withinLineRow = (int)Math.Round((vector.Y - baseRowY) / Math.Max(1, singleLine));
+                    // Caret is below viewport bottom: scroll down just enough to reveal it
+                    OffsetSource.VerticalOffset += (caretY + singleLine - canvasHeight);
+                    if (update) canvasHelper.UpdateAll();
+                    return;
+                }
+                else if (caretY < 0)
+                {
+                    // Caret is above viewport top: scroll up just enough to reveal it
+                    OffsetSource.VerticalOffset += caretY;
+                    if (update) canvasHelper.UpdateAll();
+                    return;
                 }
             }
         }
+
+        // Fallback: cursor is outside the currently rendered slice/layout, compute target offset from estimated visual row
+        int lineVisualStart = textRenderer.GetLineVisualStartRow(lineIndex);
+        int withinLineRow = 0;
+        if (textRenderer.ShouldVirtualizeWrappedLine(lineIndex))
+        {
+            int charsPerRow = textRenderer.EstimateWrappedCharsPerRow(coreTextbox.canvasText);
+            withinLineRow = charsPerRow > 0 ? cursorManager.CharacterPosition / charsPerRow : 0;
+        }
         int cursorVisualRow = lineVisualStart + withinLineRow;
 
-        int startVR = textRenderer.StartVisualRow;
-        int visibleRows = Math.Max(1, (int)(coreTextbox.canvasText?.ActualHeight / Math.Max(1, singleLine) ?? 10));
+        int startVR = (int)Math.Floor(OffsetSource.VerticalOffset / Math.Max(1, singleLine));
+        int visibleRows = Math.Max(1, (int)(canvasHeight / singleLine));
 
         if (cursorVisualRow >= startVR + visibleRows)
         {
             // Scroll down: place cursor visual row at the bottom of the viewport
-            float targetPixelY = (cursorVisualRow - visibleRows + 2) * singleLine;
-            OffsetSource.VerticalOffset = targetPixelY;
+            OffsetSource.VerticalOffset = (cursorVisualRow - visibleRows + 1) * singleLine;
         }
         else if (cursorVisualRow < startVR)
         {
             // Scroll up: place cursor visual row at the top of the viewport
-            float targetPixelY = cursorVisualRow * singleLine;
-            OffsetSource.VerticalOffset = targetPixelY;
+            OffsetSource.VerticalOffset = cursorVisualRow * singleLine;
         }
 
         if (update)
@@ -228,6 +258,8 @@ internal class ScrollManager
 
     public bool ScrollIntoViewHorizontal(CanvasControl canvasText, bool update = true)
     {
+        if (coreTextbox.WordWrap)
+            return false;
         float curPosInLine = GetCurrentCursorPixelPositionInLine();
 
         if (curPosInLine == OldHorizontalScrollValue)
