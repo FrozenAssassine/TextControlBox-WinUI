@@ -185,6 +185,11 @@ internal class ScrollManager
                 textRenderer.SingleLineHeight;
         }
 
+        if (coreTextbox.canvasText != null && coreTextbox.longestLineManager != null)
+        {
+            EnsureHorizontalScrollBounds(coreTextbox.canvasText, coreTextbox.longestLineManager, false);
+        }
+
         if (update)
             canvasHelper.UpdateAll();
     }
@@ -275,8 +280,10 @@ internal class ScrollManager
 
     public bool ScrollIntoViewHorizontal(CanvasControl canvasText, bool update = true)
     {
-        if (coreTextbox.WordWrap)
+        if (coreTextbox.WordWrap || canvasText == null || canvasText.ActualWidth <= 0)
             return false;
+
+        textRenderer.UpdateCurrentLineTextLayout(canvasText);
         float curPosInLine = GetCurrentCursorPixelPositionInLine();
 
         if (curPosInLine == OldHorizontalScrollValue)
@@ -324,6 +331,10 @@ internal class ScrollManager
             return false;
         }
 
+        if (canvasText == null || canvasText.ActualWidth <= 0)
+            return false;
+
+        textRenderer.UpdateCurrentLineTextLayout(canvasText);
         float curPosInLine = GetCurrentCursorPixelPositionInLine();
 
         double maxOffset = Math.Max(horizontalScrollBar.Minimum, horizontalScrollBar.Maximum);
@@ -365,11 +376,23 @@ internal class ScrollManager
             return cursorManager.currentCursorPosition.CharacterPosition * textRenderer.CachedCharWidth;
         }
 
-        return CursorHelper.GetCursorPositionInLine(
+        if (textRenderer.CurrentLineTextLayout == null)
+        {
+            return cursorManager.currentCursorPosition.CharacterPosition * textRenderer.CachedCharWidth;
+        }
+
+        float pos = CursorHelper.GetCursorPositionInLine(
             textRenderer.CurrentLineTextLayout,
             new CursorPosition(charPosForLayout, cursorManager.currentCursorPosition.LineNumber),
             textRenderer.HorizontalSlicePixelOffset
         );
+
+        if (pos <= 0 && cursorManager.currentCursorPosition.CharacterPosition > 0)
+        {
+            return cursorManager.currentCursorPosition.CharacterPosition * textRenderer.CachedCharWidth;
+        }
+
+        return pos;
     }
 
     public void EnsureHorizontalScrollBounds(CanvasControl canvasText, LongestLineManager longestLineManager, bool triggeredByCursor, bool forceRecalculateLongestLine = false)
@@ -386,7 +409,13 @@ internal class ScrollManager
 
         //Apply longest width to scrollbar
         horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
-        horizontalScrollBar.Maximum = (longestLineManager.longestLineWidth.Width <= canvasText.ActualWidth ? 0 : longestLineManager.longestLineWidth.Width - canvasText.ActualWidth + (zoomManager.ZoomedFontSize / 2));
+        double maxScroll = longestLineManager.longestLineWidth.Width <= canvasText.ActualWidth ? 0 : longestLineManager.longestLineWidth.Width - canvasText.ActualWidth + (zoomManager.ZoomedFontSize / 2);
+        horizontalScrollBar.Maximum = maxScroll;
+
+        if (OffsetSource.HorizontalOffset > maxScroll)
+        {
+            OffsetSource.HorizontalOffset = maxScroll;
+        }
 
         if(ScrollIntoViewHorizontal(canvasText, false))
         {

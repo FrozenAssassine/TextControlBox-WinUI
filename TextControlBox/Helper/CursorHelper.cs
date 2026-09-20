@@ -56,7 +56,14 @@ internal class CursorHelper
         if (currentLineTextLayout == null)
             return 0;
 
-        return currentLineTextLayout.GetCaretPosition(cursorPosition.CharacterPosition < 0 ? 0 : cursorPosition.CharacterPosition, cursorPosition.IsTrailing).X + xOffset;
+        try
+        {
+            return currentLineTextLayout.GetCaretPosition(cursorPosition.CharacterPosition < 0 ? 0 : cursorPosition.CharacterPosition, cursorPosition.IsTrailing).X + xOffset;
+        }
+        catch
+        {
+            return 0;
+        }
     }
 
     public static void UpdateCursorPosFromPoint(CanvasControl canvasText, CurrentLineManager currentLineManager, TextRenderer textRenderer, ScrollManager scrollManager, Point point, CursorPosition cursorPos, bool isSelecting = false)

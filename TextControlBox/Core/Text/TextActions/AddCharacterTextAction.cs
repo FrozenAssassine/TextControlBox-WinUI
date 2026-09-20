@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Extensions;
@@ -74,7 +74,7 @@ internal class AddCharacterTextAction
             selectionManager.InsertText(text);
         }, cursorManager.LineNumber, 1, splittedTextLength);
         
-        longestLineManager.CheckRecalculateLongestLine(text);
+        longestLineManager.Recalculate();
     }
 
     public void HandleTextWithSelection(string text, int splittedTextLength)

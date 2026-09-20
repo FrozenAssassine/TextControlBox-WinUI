@@ -867,6 +867,33 @@ public class ModernScrollAndWrapTests
                 $"At window height {height}, last visual row bottom {lastRowBottom} exceeded viewport (cut off by {lastRowBottom - height}px)!");
         }
     }
+
+    [UITestMethod]
+    public void NoWrap_TypingAtEndOfLine_DoesNotGlitchHorizontalScrollToZero()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        core.WordWrap = false;
+
+        // Create 3 lines: line 0 short, line 1 very long, line 2 short
+        core.SetText("Line 1 short\n" + new string('X', 200) + "\nLine 3 short");
+
+        // Move cursor to end of the long line (line 1, char 200)
+        core.SetCursorPosition(1, 200, scrollIntoView: false);
+
+        // Position viewport horizontally to reveal the cursor
+        core.scrollManager.EnsureHorizontalScrollBounds(core.canvasText, core.longestLineManager, true);
+
+        double initialHorizontalOffset = core.scrollManager.OffsetSource.HorizontalOffset;
+        Assert.IsTrue(initialHorizontalOffset > 0, "HorizontalOffset should be scrolled to the right for a 200-char line.");
+
+        // Simulate typing a character at the end of the line
+        core.textActionManager.AddCharacter("Y");
+
+        // HorizontalOffset must remain scrolled to the right and not bounce to 0
+        double postTypeHorizontalOffset = core.scrollManager.OffsetSource.HorizontalOffset;
+        Assert.IsTrue(postTypeHorizontalOffset >= initialHorizontalOffset,
+            $"HorizontalOffset should stay scrolled after typing (was {initialHorizontalOffset}, now {postTypeHorizontalOffset})");
+    }
 }
 
 

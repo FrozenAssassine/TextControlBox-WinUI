@@ -143,7 +143,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, currentLineManager, selectionManager, linkHighlightManager);
         textLayoutManager.Init(textManager, zoomManager);
         autoIndentionManager.Init(textManager, tabSpaceManager);
-        replaceManager.Init(canvasUpdateManager, undoRedo, textManager, searchManager, cursorManager, textActionManager, selectionRenderer, selectionManager, eventsManager);
+        replaceManager.Init(canvasUpdateManager, undoRedo, textManager, searchManager, cursorManager, textActionManager, selectionRenderer, selectionManager, eventsManager, longestLineManager);
         initializationManager.Init(eventsManager);
         moveLineManager.Init(selectionManager, cursorManager, textManager, undoRedo);
         invisibleCharactersRenderer.Init(designHelper, scrollManager, zoomManager, textLayoutManager, whitespaceCharactersManager);

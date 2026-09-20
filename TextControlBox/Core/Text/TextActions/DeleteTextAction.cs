@@ -1,4 +1,4 @@
-﻿namespace TextControlBoxNS.Core.Text.TextActions;
+namespace TextControlBoxNS.Core.Text.TextActions;
 
 internal class DeleteTextAction
 {
@@ -54,8 +54,7 @@ internal class DeleteTextAction
 
         if (lineToAdd != null)
         {
-            if (cursorManager.LineNumber == longestLineManager.longestIndex)
-                longestLineManager.needsRecalculation = true;
+            longestLineManager.needsRecalculation = true;
 
             undoRedo.RecordUndoAction(() =>
             {

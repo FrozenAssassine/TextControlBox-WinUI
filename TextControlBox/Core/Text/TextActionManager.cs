@@ -70,7 +70,7 @@ namespace TextControlBoxNS.Core.Text
             removeTextAction.Init(textManager, undoRedo, currentLineManager, longestLineManager, cursorManager);
             deleteTextAction.Init(textManager, coreTextbox, undoRedo, currentLineManager, longestLineManager, cursorManager);
             addCharacterTextAction.Init(textManager, coreTextbox, undoRedo, currentLineManager, longestLineManager, cursorManager, selectionManager, canvasUpdateHelper);
-            addNewLineTextAction.Init(textManager, undoRedo, currentLineManager, cursorManager, eventsManager, canvasUpdateManager, selectionManager, autoIndentionManager, this);
+            addNewLineTextAction.Init(textManager, undoRedo, currentLineManager, cursorManager, eventsManager, canvasUpdateManager, selectionManager, autoIndentionManager, this, longestLineManager);
         }
 
         public void SelectAll()
@@ -401,6 +401,7 @@ namespace TextControlBoxNS.Core.Text
                 selectionManager.ClearSelection();
             }, selectionManager.currentTextSelection, wholeLineSelected ? 0 : 1, wholeLineSelected ? 1 : -1);
 
+            canvasUpdateManager.UpdateText();
             canvasUpdateManager.UpdateSelection();
             canvasUpdateManager.UpdateCursor();
         }
@@ -490,6 +491,8 @@ namespace TextControlBoxNS.Core.Text
             eventsManager.CallTextChanged();
             coreTextbox.textRenderer.MarkLineWrapDirty(cursorManager.LineNumber);
             scrollManager.UpdateScrollToShowCursor();
+            canvasUpdateManager.UpdateText();
+            canvasUpdateManager.UpdateCursor();
         }
 
         public void AddCharacter(string text, bool ignoreSelection = false, bool ignoreIsReadOnly = false)
@@ -554,8 +557,14 @@ namespace TextControlBoxNS.Core.Text
             }, line, 1, textManager.LinesCount == 1 ? 1 : 0);
 
 
+            if (cursorManager.LineNumber >= textManager.LinesCount)
+            {
+                cursorManager.LineNumber = Math.Max(0, textManager.LinesCount - 1);
+                cursorManager.CharacterPosition = Math.Min(cursorManager.CharacterPosition, textManager.GetLineLength(cursorManager.LineNumber));
+            }
+
             eventsManager.CallTextChanged();
-            canvasUpdateManager.UpdateText();
+            canvasUpdateManager.UpdateAll();
             return true;
         }
 

@@ -1162,6 +1162,10 @@ internal class TextRenderer
         (NumberOfStartLine, NumberOfRenderedLines) = CalculateLinesToRender();
         coreTextbox.SyncScrollTrackerToOffsetNow();
 
+        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false, zoomManager.ZoomNeedsRecalculateLongestLine);
+        if (zoomManager.ZoomNeedsRecalculateLongestLine)
+            zoomManager.ZoomNeedsRecalculateLongestLine = false;
+
         // Decide horizontal virtualization BEFORE materializing the visible text. Joining many very long
         // lines (megabytes) into one string every frame — then laying it out — is the actual scroll-stutter
         // cost on files like JSONL logs (hundreds of 50k+ char lines). When any visible line is very long we
@@ -1256,10 +1260,6 @@ internal class TextRenderer
             DrawnTextLayout = textLayoutManager.CreateTextResource(canvasText, DrawnTextLayout, TextFormat, RenderedText, layoutSize);
             SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(renderTextData, textManager.NewLineCharacter, DrawnTextLayout, designHelper._AppTheme, textManager._SyntaxHighlighting, coreTextbox.EnableSyntaxHighlighting);
         }
-
-        scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false, zoomManager.ZoomNeedsRecalculateLongestLine);
-        if (zoomManager.ZoomNeedsRecalculateLongestLine)
-            zoomManager.ZoomNeedsRecalculateLongestLine = false;
 
         if (linkHighlightManager.HighlightLinks)
         {

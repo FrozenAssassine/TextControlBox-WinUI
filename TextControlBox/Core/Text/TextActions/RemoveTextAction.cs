@@ -1,4 +1,4 @@
-﻿
+
 namespace TextControlBoxNS.Core.Text.TextActions;
 
 internal class RemoveTextAction
@@ -57,8 +57,7 @@ internal class RemoveTextAction
         if (cursorManager.LineNumber <= 0)
             return;
 
-        if (cursorManager.LineNumber == longestLineManager.longestIndex)
-            longestLineManager.needsRecalculation = true;
+        longestLineManager.needsRecalculation = true;
 
         undoRedo.RecordUndoAction(() =>
         {

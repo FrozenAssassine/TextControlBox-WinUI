@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -21,6 +21,7 @@ internal class ReplaceManager
     private SelectionRenderer selectionRenderer;
     private SelectionManager selectionManager;
     private EventsManager eventsManager;
+    private LongestLineManager longestLineManager;
 
     public void Init(
         CanvasUpdateManager canvasUpdateManager,
@@ -31,7 +32,8 @@ internal class ReplaceManager
         TextActionManager textActionManager,
         SelectionRenderer selectionRenderer,
         SelectionManager selectionManager,
-        EventsManager eventsManager)
+        EventsManager eventsManager,
+        LongestLineManager longestLineManager)
     {
         this.canvasUpdateManager = canvasUpdateManager;
         this.undoRedo = undoRedo;
@@ -42,6 +44,7 @@ internal class ReplaceManager
         this.selectionRenderer = selectionRenderer;
         this.selectionManager = selectionManager;
         this.eventsManager = eventsManager;
+        this.longestLineManager = longestLineManager;
     }
 
     public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord)
@@ -68,6 +71,9 @@ internal class ReplaceManager
 
         eventsManager.CallTextChanged();
 
+        if (isFound)
+            longestLineManager.needsRecalculation = true;
+
         canvasUpdateManager.UpdateText();
         return isFound ? SearchResult.Found : SearchResult.NotFound;
     }
@@ -88,6 +94,7 @@ internal class ReplaceManager
             }, selectionManager.currentTextSelection, 1);
 
             eventsManager.CallTextChanged();
+            longestLineManager.needsRecalculation = true;
 
             var start = res.Selection.StartPosition;
             selectionManager.ClearSelection();

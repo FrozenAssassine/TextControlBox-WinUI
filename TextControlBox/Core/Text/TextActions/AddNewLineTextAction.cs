@@ -13,6 +13,7 @@ internal class AddNewLineTextAction
     private EventsManager eventsManager;
     private AutoIndentionManager autoIndentionManager;
     private TextActionManager textActionManager;
+    private LongestLineManager longestLineManager;
 
     public void Init(
         TextManager textManager,
@@ -23,7 +24,8 @@ internal class AddNewLineTextAction
         CanvasUpdateManager canvasUpdateManager,
         SelectionManager selectionManager,
         AutoIndentionManager autoIndentionManager,
-        TextActionManager textActionsManager
+        TextActionManager textActionsManager,
+        LongestLineManager longestLineManager
         )
     {
         this.textManager = textManager;
@@ -34,6 +36,7 @@ internal class AddNewLineTextAction
         this.selectionManager = selectionManager;
         this.autoIndentionManager = autoIndentionManager;
         this.textActionManager = textActionsManager;
+        this.longestLineManager = longestLineManager;
     }
 
 
@@ -59,6 +62,7 @@ internal class AddNewLineTextAction
             }, 0, textManager.LinesCount, 2);
 
             selectionManager.ClearSelection();
+            longestLineManager.needsRecalculation = true;
             canvasUpdateManager.UpdateAll();
             eventsManager.CallTextChanged();
             return true;
@@ -85,6 +89,7 @@ internal class AddNewLineTextAction
             cursorManager.SetCursorPosition(lineNumber + 1, indentation.Length);
         }, lineNumber, 1, 2);
 
+        longestLineManager.needsRecalculation = true;
     }
 
     public void ReplaceSelectionWithNewLine()
