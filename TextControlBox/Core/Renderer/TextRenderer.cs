@@ -35,6 +35,8 @@ internal class TextRenderer
                 TextFormat?.Dispose();
                 TextFormat = textLayoutManager.CreateCanvasTextFormat();
                 NeedsTextFormatUpdate = false;
+                ClearLineLayoutCache();
+                InvalidateCurrentLineLayout();
             }
             finally
             {
@@ -101,6 +103,128 @@ internal class TextRenderer
     public bool IsWordWrapEnabled => textLayoutManager?.WordWrap == true;
     private readonly WrapRowMetrics wrapMetrics = new();
     private readonly HashSet<int> dirtyWrapLines = new();
+    private readonly System.Collections.Generic.Dictionary<int, (CanvasTextLayout layout, string text, float wrapWidth)> _lineLayoutCache = new();
+    private const int MaxCachedLineLayouts = 32;
+
+    private int _currentLineLayoutLineIndex = -1;
+    private string _currentLineLayoutText = null;
+    private float _currentLineLayoutWrapWidth = -1f;
+    private bool _currentLineLayoutIsWrapped = false;
+    private int _currentLineLayoutSliceStart = -1;
+    private int _currentLineLayoutSliceLength = -1;
+
+    public void InvalidateCurrentLineLayout()
+    {
+        bool inCache = false;
+        foreach (var entry in _lineLayoutCache.Values)
+        {
+            if (entry.layout == CurrentLineTextLayout)
+            {
+                inCache = true;
+                break;
+            }
+        }
+        if (!inCache)
+        {
+            CurrentLineTextLayout?.Dispose();
+        }
+        CurrentLineTextLayout = null;
+        _currentLineLayoutLineIndex = -1;
+        _currentLineLayoutText = null;
+        _currentLineLayoutWrapWidth = -1f;
+        _currentLineLayoutIsWrapped = false;
+        _currentLineLayoutSliceStart = -1;
+        _currentLineLayoutSliceLength = -1;
+    }
+
+    public void ClearLineLayoutCache()
+    {
+        foreach (var entry in _lineLayoutCache.Values)
+        {
+            if (entry.layout != null && entry.layout != CurrentLineTextLayout)
+            {
+                entry.layout.Dispose();
+            }
+        }
+        _lineLayoutCache.Clear();
+    }
+
+    public void InvalidateLineLayout(int lineIndex)
+    {
+        if (_lineLayoutCache.Remove(lineIndex, out var entry))
+        {
+            if (entry.layout != null && entry.layout != CurrentLineTextLayout)
+                entry.layout.Dispose();
+        }
+        if (_currentLineLayoutLineIndex == lineIndex)
+        {
+            InvalidateCurrentLineLayout();
+        }
+    }
+
+    public void MarkLineWrapDirty(int lineIndex)
+    {
+        if (lineIndex >= 0 && lineIndex < textManager.LinesCount)
+        {
+            dirtyWrapLines.Add(lineIndex);
+            InvalidateLineLayout(lineIndex);
+        }
+    }
+
+    internal CanvasTextLayout GetOrCreateWrappedLineLayout(CanvasControl canvasText, int lineIndex, bool includeCaretMarker = true)
+    {
+        EnsureTextFormat();
+        if (lineIndex < 0 || lineIndex >= textManager.LinesCount)
+            return null;
+
+        float wrapWidth = cachedWrapWidth > 1 ? cachedWrapWidth : GetWrapWidth(canvasText);
+        string lineText = textManager.GetLineText(lineIndex);
+
+        if (CurrentLineTextLayout != null &&
+            _currentLineLayoutLineIndex == lineIndex &&
+            _currentLineLayoutIsWrapped &&
+            _currentLineLayoutText == lineText &&
+            Math.Abs(_currentLineLayoutWrapWidth - wrapWidth) < 0.5f)
+        {
+            return CurrentLineTextLayout;
+        }
+
+        if (_lineLayoutCache.TryGetValue(lineIndex, out var cached))
+        {
+            if (cached.layout != null &&
+                cached.text == lineText &&
+                Math.Abs(cached.wrapWidth - wrapWidth) < 0.5f)
+            {
+                return cached.layout;
+            }
+
+            if (cached.layout != null && cached.layout != CurrentLineTextLayout)
+                cached.layout.Dispose();
+            _lineLayoutCache.Remove(lineIndex);
+        }
+
+        if (_lineLayoutCache.Count >= MaxCachedLineLayouts)
+        {
+            int keyToEvict = -1;
+            foreach (var kvp in _lineLayoutCache)
+            {
+                if (kvp.Value.layout != CurrentLineTextLayout)
+                {
+                    keyToEvict = kvp.Key;
+                    break;
+                }
+            }
+            if (keyToEvict >= 0 && _lineLayoutCache.Remove(keyToEvict, out var evicted))
+            {
+                if (evicted.layout != CurrentLineTextLayout)
+                    evicted.layout?.Dispose();
+            }
+        }
+
+        CanvasTextLayout newLayout = CreateWrappedLineTextLayout(canvasText, lineIndex, includeCaretMarker);
+        _lineLayoutCache[lineIndex] = (newLayout, lineText, wrapWidth);
+        return newLayout;
+    }
     private float cachedWrapWidth;
     private bool wrapMetricsDirty = true;
     // Above this many dirty lines a full rebuild is cheaper than many incremental patches.
@@ -174,13 +298,22 @@ internal class TextRenderer
         this.invisibleCharactersRenderer = invisibleCharactersRenderer;
         this.linkRenderer = linkRenderer;
         this.linkHighlightManager = linkHighlightManager;
+
+        if (coreTextbox?.eventsManager != null)
+        {
+            coreTextbox.eventsManager.TextChanged += () =>
+            {
+                MarkLineWrapDirty(cursorManager.LineNumber);
+            };
+        }
     }
 
     public void CheckDispose()
     {
         TextFormat?.Dispose();
         DrawnTextLayout?.Dispose();
-        CurrentLineTextLayout?.Dispose();
+        ClearLineLayoutCache();
+        InvalidateCurrentLineLayout();
         invisibleCharactersRenderer.CheckDispose();
     }
 
@@ -192,10 +325,9 @@ internal class TextRenderer
 
     public void UpdateCurrentLineTextLayout(CanvasControl canvasText)
     {
-        CurrentLineTextLayout?.Dispose();
-        if (cursorManager.LineNumber >= textManager.LinesCount)
+        if (cursorManager.LineNumber >= textManager.LinesCount || cursorManager.LineNumber < 0)
         {
-            CurrentLineTextLayout = null;
+            InvalidateCurrentLineLayout();
             return;
         }
 
@@ -203,10 +335,27 @@ internal class TextRenderer
         if (IsWordWrapEnabled)
             EnsureWrapMetrics(canvasText);
 
+        float wrapWidth = GetWrapWidth(canvasText);
+        string currentLineText = textManager.GetLineText(cursorManager.LineNumber);
+
+        // Check if current cached layout is still valid
+        if (CurrentLineTextLayout != null &&
+            !NeedsTextFormatUpdate &&
+            _currentLineLayoutLineIndex == cursorManager.LineNumber &&
+            _currentLineLayoutIsWrapped == IsWordWrapEnabled &&
+            _currentLineLayoutText == currentLineText &&
+            (!IsWordWrapEnabled || Math.Abs(_currentLineLayoutWrapWidth - wrapWidth) < 0.5f) &&
+            (IsWordWrapEnabled || (!IsHorizontallyVirtualized && _currentLineLayoutSliceStart == -1) ||
+             (IsHorizontallyVirtualized && _currentLineLayoutSliceStart == HorizontalSliceStart && _currentLineLayoutSliceLength == HorizontalSliceLength)))
+        {
+            return;
+        }
+
         // A very-long wrapped line backs its caret/click with the same virtualized row-slice layout the main
         // text uses (reusing the already-built RenderedText when this line is the render start).
         if (ShouldVirtualizeWrappedLine(cursorManager.LineNumber))
         {
+            InvalidateCurrentLineLayout();
             int vLine = VirtualizedLineIndex >= 0 ? VirtualizedLineIndex : NumberOfStartLine;
             LineSliceResult virtualizedText = IsVirtualizedWrappedLine && cursorManager.LineNumber == vLine && cursorManager.LineNumber == NumberOfStartLine
                 ? new LineSliceResult(RenderedText, ReadOnlySpan<string>.Empty)
@@ -217,33 +366,69 @@ internal class TextRenderer
                 virtualizedText.Text,
                 GetWrapWidth(canvasText),
                 (float)Math.Max(canvasText.Size.Height, (VirtualizedWrappedRowsToRender + 1) * Math.Max(1, SingleLineHeight)));
+            _currentLineLayoutLineIndex = cursorManager.LineNumber;
+            _currentLineLayoutText = currentLineText;
+            _currentLineLayoutWrapWidth = wrapWidth;
+            _currentLineLayoutIsWrapped = true;
             return;
         }
 
-        string lineText = textManager.GetLineText(cursorManager.LineNumber) + "|";
+        if (IsWordWrapEnabled)
+        {
+            CanvasTextLayout cachedLayout = GetOrCreateWrappedLineLayout(canvasText, cursorManager.LineNumber, true);
+            if (CurrentLineTextLayout != cachedLayout)
+            {
+                bool oldInCache = false;
+                foreach (var entry in _lineLayoutCache.Values)
+                {
+                    if (entry.layout == CurrentLineTextLayout)
+                    {
+                        oldInCache = true;
+                        break;
+                    }
+                }
+                if (!oldInCache)
+                    CurrentLineTextLayout?.Dispose();
+
+                CurrentLineTextLayout = cachedLayout;
+            }
+            _currentLineLayoutLineIndex = cursorManager.LineNumber;
+            _currentLineLayoutText = currentLineText;
+            _currentLineLayoutWrapWidth = wrapWidth;
+            _currentLineLayoutIsWrapped = true;
+            return;
+        }
+
+        // Non-wrapped mode
+        InvalidateCurrentLineLayout();
+        string lineText = currentLineText + "|";
 
         // Slice the current line to the SAME horizontal window as the main text (non-wrap only) so the caret
         // and click hit-testing line up with the sliced layout: the caret's rendered index is
         // (documentChar - HorizontalSliceStart) and its x adds HorizontalSlicePixelOffset. A window computed
         // independently here would misplace the caret.
+        int sliceStartVal = -1;
+        int sliceLenVal = -1;
         if (IsHorizontallyVirtualized && !IsWordWrapEnabled && HorizontalSliceLength > 0)
         {
             int sliceStart = Math.Min(HorizontalSliceStart, lineText.Length);
             int len = Math.Min(HorizontalSliceLength, lineText.Length - sliceStart);
             lineText = len > 0 ? lineText.Substring(sliceStart, len) : string.Empty;
+            sliceStartVal = HorizontalSliceStart;
+            sliceLenVal = HorizontalSliceLength;
         }
-
-        // In wrap mode the current line is laid out at the wrap width across as many rows as it needs, so the
-        // caret and click hit-testing resolve a wrapped row via the layout's own multi-row geometry.
-        Size layoutSize = IsWordWrapEnabled
-            ? new Size(GetWrapWidth(canvasText), Math.Max(canvasText.Size.Height, (GetWrappedRowCount(cursorManager.LineNumber) + 1) * Math.Max(1, SingleLineHeight)))
-            : canvasText.Size;
 
         CurrentLineTextLayout = textLayoutManager.CreateTextLayout(
             canvasText,
             TextFormat,
             lineText,
-            layoutSize);
+            canvasText.Size);
+        _currentLineLayoutLineIndex = cursorManager.LineNumber;
+        _currentLineLayoutText = currentLineText;
+        _currentLineLayoutWrapWidth = wrapWidth;
+        _currentLineLayoutIsWrapped = false;
+        _currentLineLayoutSliceStart = sliceStartVal;
+        _currentLineLayoutSliceLength = sliceLenVal;
     }
 
     // ── Horizontal virtualization helpers ──────────────────────────────────────────────
@@ -466,11 +651,12 @@ internal class TextRenderer
     {
         wrapMetricsDirty = true;
         dirtyWrapLines.Clear();
+        ClearLineLayoutCache();
+        InvalidateCurrentLineLayout();
     }
 
     /// <summary>Ensures the document-line ↔ visual-row mapping is current for the wrap width. Rebuilds on a
-    /// width change or when the line count changed; otherwise re-measures the current line so live typing
-    /// reflows immediately (there is no per-line change event to subscribe to).</summary>
+    /// width change or when the line count changed; otherwise re-measures dirty lines incrementally.</summary>
     public void EnsureWrapMetrics(CanvasControl canvasText)
     {
         EnsureTextFormat();
@@ -484,6 +670,8 @@ internal class TextRenderer
             wrapMetricsDirty = true;
             NeedsUpdateTextLayout = true;
             lineNumberRenderer.NeedsUpdateLineNumbers();
+            ClearLineLayoutCache();
+            InvalidateCurrentLineLayout();
         }
 
         if (wrapMetricsDirty || !wrapMetrics.IsValidFor(textManager.LinesCount))
@@ -491,13 +679,10 @@ internal class TextRenderer
             wrapMetrics.Rebuild(textManager.LinesCount, i => MeasureWrappedRowCount(canvasText, i));
             wrapMetricsDirty = false;
             dirtyWrapLines.Clear();
+            ClearLineLayoutCache();
+            InvalidateCurrentLineLayout();
             return;
         }
-
-        // Keep the current line fresh so typing reflows without a full rebuild. A line add/remove changes the
-        // line count, which forces a rebuild via IsValidFor above.
-        if (cursorManager.LineNumber >= 0 && cursorManager.LineNumber < textManager.LinesCount)
-            dirtyWrapLines.Add(cursorManager.LineNumber);
 
         if (dirtyWrapLines.Count > 0)
         {
@@ -508,6 +693,8 @@ internal class TextRenderer
             {
                 wrapMetrics.Rebuild(textManager.LinesCount, i => MeasureWrappedRowCount(canvasText, i));
                 wrapMetricsDirty = false;
+                ClearLineLayoutCache();
+                InvalidateCurrentLineLayout();
             }
             dirtyWrapLines.Clear();
         }
@@ -804,7 +991,10 @@ internal class TextRenderer
             return true;
         }
 
-        using CanvasTextLayout currentLayout = CreateWrappedLineTextLayout(canvasText, lineIndex, true);
+        CanvasTextLayout currentLayout = GetOrCreateWrappedLineLayout(canvasText, lineIndex, true);
+        if (currentLayout == null)
+            return false;
+
         float baseRowY = currentLayout.GetCaretPosition(0, false).Y;
         var currentCaret = currentLayout.GetCaretPosition(characterPosition, false);
         int withinLineRow = (int)Math.Round((currentCaret.Y - baseRowY) / Math.Max(1, SingleLineHeight));
@@ -834,7 +1024,12 @@ internal class TextRenderer
             return true;
         }
 
-        using CanvasTextLayout targetLayout = CreateWrappedLineTextLayout(canvasText, targetLine, true);
+        CanvasTextLayout targetLayout = (targetLine == lineIndex)
+            ? currentLayout
+            : GetOrCreateWrappedLineLayout(canvasText, targetLine, true);
+        if (targetLayout == null)
+            return false;
+
         float targetHitY = (targetRowOffset + 0.5f) * Math.Max(1, SingleLineHeight);
         targetLayout.HitTest(targetCaretX, targetHitY, out var targetRegion);
 

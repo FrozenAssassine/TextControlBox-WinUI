@@ -108,6 +108,7 @@ namespace TextControlBoxNS.Core.Text
             coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
 
             longestLineManager.needsRecalculation = true;
+            coreTextbox.textRenderer.InvalidateWrapMetrics();
 
             ResetUndoRedoSelection(cursor, selection);
 
@@ -126,6 +127,7 @@ namespace TextControlBoxNS.Core.Text
             coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
 
             longestLineManager.needsRecalculation = true;
+            coreTextbox.textRenderer.InvalidateWrapMetrics();
 
             ResetUndoRedoSelection(cursor, selection);
 
@@ -389,6 +391,7 @@ namespace TextControlBoxNS.Core.Text
 
             //line gets deleted -> recalculate the longest line:
             longestLineManager.CheckSelection();
+            coreTextbox.textRenderer.InvalidateWrapMetrics();
 
             bool wholeLineSelected = selectionManager.WholeLineSelected();
 
@@ -420,6 +423,7 @@ namespace TextControlBoxNS.Core.Text
             }
 
             eventsManager.CallTextChanged();
+            coreTextbox.textRenderer.MarkLineWrapDirty(cursorManager.LineNumber);
 
             scrollManager.UpdateScrollToShowCursor(false);
             canvasUpdateManager.UpdateText();
@@ -484,6 +488,7 @@ namespace TextControlBoxNS.Core.Text
             }
 
             eventsManager.CallTextChanged();
+            coreTextbox.textRenderer.MarkLineWrapDirty(cursorManager.LineNumber);
             scrollManager.UpdateScrollToShowCursor();
         }
 
@@ -519,6 +524,7 @@ namespace TextControlBoxNS.Core.Text
             }
 
             eventsManager.CallTextChanged();
+            coreTextbox.textRenderer.MarkLineWrapDirty(cursorManager.LineNumber);
             // Keep the caret visible after typing using the same helper every other edit
             // operation uses. Backspace, Delete, AddNewLine, Undo and Redo all call
             // UpdateScrollToShowCursor; AddCharacter was the only one still using the

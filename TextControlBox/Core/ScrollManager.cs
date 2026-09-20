@@ -209,7 +209,15 @@ internal class ScrollManager
 
                 // If the caret is already visible within the viewport bounds, don't scroll at all!
                 if (caretY >= 0 && caretY + singleLine <= canvasHeight)
+                {
+                    if (update)
+                    {
+                        if (coreTextbox.selectionManager.HasSelection)
+                            canvasHelper.UpdateSelection();
+                        canvasHelper.UpdateCursor();
+                    }
                     return;
+                }
 
                 if (caretY + singleLine > canvasHeight)
                 {
