@@ -1,4 +1,4 @@
-﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
@@ -60,13 +60,16 @@ namespace TextControlBoxNS.Core.Renderer
             int startLine = selectionManager.selectionStart.LineNumber;
             int endLine = selectionManager.selectionEnd.LineNumber;
 
-            // Selecting inside a virtualized (multi-megabyte) single wrapped line is not supported yet: the
-            // layout is only a visible row slice, so document-space indices don't map onto it. Skip rather
-            // than draw a wrong region (or overrun GetCharacterRegions).
-            if (textRenderer.IsVirtualizedWrappedLine)
+            if (textLayout == null || numberOfRenderedLines <= 0 || textRenderer.RenderedText == null)
             {
                 selectionManager.currentTextSelection.renderedIndex = 0;
                 selectionManager.currentTextSelection.renderedLength = 0;
+                return;
+            }
+
+            if (textRenderer.IsVirtualizedWrappedLine)
+            {
+                DrawVirtualizedWrappedLineSelection(textLayout, args, marginLeft, marginTop, fontSize, selectionColor);
                 return;
             }
 
@@ -159,15 +162,12 @@ namespace TextControlBoxNS.Core.Renderer
                 selEndIndex += characterPosEnd;
             }
 
-            renderedSelectionStart = Math.Max(0, Math.Min(selStartIndex, selEndIndex));
+            int textLength = textRenderer.RenderedText?.Length ?? 0;
+            renderedSelectionStart = Math.Clamp(Math.Min(selStartIndex, selEndIndex), 0, textLength);
+            int maxEnd = Math.Clamp(Math.Max(selStartIndex, selEndIndex), 0, textLength);
+            renderedSelectionLength = maxEnd - renderedSelectionStart;
 
-            renderedSelectionLength = selEndIndex > selStartIndex ?
-                selEndIndex - selStartIndex :
-                selStartIndex - selEndIndex;
-
-            //no selection can be rendered. 
-            //GetCharacterRegions(0,0) still returns a "ghost" region, so stop rendering here
-            if(renderedSelectionLength == 0)
+            if (renderedSelectionLength <= 0)
             {
                 selectionManager.currentTextSelection.renderedIndex = 0;
                 selectionManager.currentTextSelection.renderedLength = 0;
@@ -178,9 +178,16 @@ namespace TextControlBoxNS.Core.Renderer
             using (var ccls = canvasCommandList.CreateDrawingSession())
             {
                 CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
-                float width = fontSize / scrollManager.DefaultVerticalScrollSensitivity;
+                float width = fontSize / (scrollManager == null ? 4 : Math.Max(1, scrollManager.DefaultVerticalScrollSensitivity));
                 for (int i = 0; i < regions.Length; i++)
                 {
+                    // Viewport culling to prevent Direct2D texture overflow
+                    if (regions[i].LayoutBounds.Y + marginTop > 2500 ||
+                        regions[i].LayoutBounds.Bottom + marginTop < -500)
+                    {
+                        continue;
+                    }
+
                     //Change the width if selection in an empty line or starts at a line end
                     if (regions[i].LayoutBounds.Width == 0)
                     {
@@ -234,14 +241,137 @@ namespace TextControlBoxNS.Core.Renderer
             }
         }
 
+        private void DrawVirtualizedWrappedLineSelection(
+            CanvasTextLayout textLayout,
+            CanvasDrawEventArgs args,
+            float marginLeft,
+            float marginTop,
+            float fontSize,
+            Color selectionColor)
+        {
+            if (textLayout == null || textRenderer.VirtualizedLineCharsPerRow <= 0)
+            {
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
+            }
+
+            int lineIndex = textRenderer.NumberOfStartLine;
+            int startLine = selectionManager.selectionStart.LineNumber;
+            int startChar = selectionManager.selectionStart.CharacterPosition;
+            int endLine = selectionManager.selectionEnd.LineNumber;
+            int endChar = selectionManager.selectionEnd.CharacterPosition;
+
+            if (startLine > endLine || (startLine == endLine && startChar > endChar))
+            {
+                (startLine, endLine) = (endLine, startLine);
+                (startChar, endChar) = (endChar, startChar);
+            }
+
+            if (lineIndex < startLine || lineIndex > endLine)
+            {
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
+            }
+
+            int lineLength = textManager.GetLineLength(lineIndex);
+            int docCharStart = lineIndex > startLine ? 0 : startChar;
+            int docCharEnd = lineIndex < endLine ? lineLength : endChar;
+
+            docCharStart = Math.Clamp(docCharStart, 0, lineLength);
+            docCharEnd = Math.Clamp(docCharEnd, 0, lineLength);
+
+            if (docCharStart >= docCharEnd)
+            {
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
+            }
+
+            int sliceStart = textRenderer.VirtualizedLineSliceStart;
+            int sliceCharCount = textRenderer.VirtualizedWrappedRowsToRender * textRenderer.VirtualizedLineCharsPerRow;
+            int sliceEnd = Math.Min(lineLength, sliceStart + sliceCharCount);
+
+            if (docCharEnd <= sliceStart || docCharStart >= sliceEnd)
+            {
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
+            }
+
+            int visStart = Math.Max(docCharStart, sliceStart);
+            int visEnd = Math.Min(docCharEnd, sliceEnd);
+
+            int selStartIndex = textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(visStart);
+            int selEndIndex = textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(visEnd);
+
+            if (selStartIndex < 0 || selEndIndex < 0)
+            {
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
+            }
+
+            int renderedTextLen = textRenderer.RenderedText?.Length ?? 0;
+            selStartIndex = Math.Clamp(selStartIndex, 0, renderedTextLen);
+            selEndIndex = Math.Clamp(selEndIndex, 0, renderedTextLen);
+
+            int length = selEndIndex - selStartIndex;
+            if (length <= 0)
+            {
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
+            }
+
+            renderedSelectionStart = selStartIndex;
+            renderedSelectionLength = length;
+
+            using CanvasCommandList canvasCommandList = new CanvasCommandList(args.DrawingSession);
+            using (var ccls = canvasCommandList.CreateDrawingSession())
+            {
+                CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
+                float width = fontSize / (scrollManager == null ? 4 : Math.Max(1, scrollManager.DefaultVerticalScrollSensitivity));
+                for (int i = 0; i < regions.Length; i++)
+                {
+                    // Viewport culling to prevent Direct2D texture overflow
+                    if (regions[i].LayoutBounds.Y + marginTop > 2500 ||
+                        regions[i].LayoutBounds.Bottom + marginTop < -500)
+                    {
+                        continue;
+                    }
+
+                    if (regions[i].LayoutBounds.Width == 0)
+                    {
+                        var bounds = regions[i].LayoutBounds;
+                        regions[i].LayoutBounds = new Rect
+                        {
+                            Width = width,
+                            Height = bounds.Height,
+                            X = bounds.X,
+                            Y = bounds.Y
+                        };
+                    }
+
+                    ccls.FillRectangle(Utils.CreateRect(regions[i].LayoutBounds, marginLeft, marginTop), selectionColor);
+                }
+            }
+            args.DrawingSession.DrawImage(canvasCommandList);
+
+            selectionManager.currentTextSelection.renderedIndex = renderedSelectionStart;
+            selectionManager.currentTextSelection.renderedLength = renderedSelectionLength;
+        }
+
         // Top margin for the selection regions. In wrap mode the whole layout is nudged up by the rows of the
         // first visible line scrolled above the viewport, matching the wrapped text draw offset.
         private float GetSelectionTopMargin()
         {
-            float topInset = textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
             if (!textRenderer.IsWordWrapEnabled)
-                return topInset;
-            return topInset - (textRenderer.WrappedStartRowOffset * textRenderer.SingleLineHeight);
+                return 0;
+            if (textRenderer.IsVirtualizedWrappedLine)
+                return 0;
+            return -(textRenderer.WrappedStartRowOffset * textRenderer.SingleLineHeight);
         }
     }
 }

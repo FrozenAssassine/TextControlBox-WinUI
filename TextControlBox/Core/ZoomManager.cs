@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Text;
 
@@ -61,6 +61,7 @@ internal class ZoomManager
 
             ZoomNeedsRecalculateLongestLine = true;
             textRenderer.NeedsTextFormatUpdate = true;
+            textRenderer.InvalidateWrapMetrics();
             canvasHelper.UpdateAll();
         }
     }

@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Input;
+using Microsoft.UI.Input;
 using TextControlBoxNS.Core.Renderer;
 
 namespace TextControlBoxNS.Core;
@@ -68,6 +68,7 @@ internal class CanvasUpdateManager
 
     public void UpdateAll()
     {
+        UpdateLineNumbers();
         UpdateText();
         UpdateSelection();
         UpdateCursor();

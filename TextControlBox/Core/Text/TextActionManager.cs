@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Input;
+using Collections.Pooled;
+using Microsoft.UI.Input;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -235,6 +236,14 @@ namespace TextControlBoxNS.Core.Text
                 throw new OutOfMemoryException();
             }
         }
+
+        PooledList<string> allLinesBuffer = new();
+
+        private void LoadLines(IEnumerable<string> lines)
+        {
+             this.allLinesBuffer = new(lines);
+        }
+
         public void Safe_LoadLines(IEnumerable<string> lines, bool autodetectTabsSpaces = true, LineEnding lineEnding = LineEnding.CRLF, bool HandleException = true)
         {
             try
@@ -266,6 +275,8 @@ namespace TextControlBoxNS.Core.Text
                 cursorManager.SetToTextEnd();
 
                 longestLineManager.needsRecalculation = true;
+                coreTextbox.textRenderer.InvalidateWrapMetrics();
+                coreTextbox.textRenderer.NeedsUpdateTextLayout = true;
                 canvasUpdateManager.UpdateAll();
 
                 eventsManager.CallTextLoaded();
@@ -306,6 +317,8 @@ namespace TextControlBoxNS.Core.Text
                 undoRedo.ClearAll();
 
                 longestLineManager.needsRecalculation = true;
+                coreTextbox.textRenderer.InvalidateWrapMetrics();
+                coreTextbox.textRenderer.NeedsUpdateTextLayout = true;
 
                 if (text.Length == 0)
                     textManager.ClearText(true);
@@ -339,6 +352,8 @@ namespace TextControlBoxNS.Core.Text
                 }
 
                 longestLineManager.needsRecalculation = true;
+                coreTextbox.textRenderer.InvalidateWrapMetrics();
+                coreTextbox.textRenderer.NeedsUpdateTextLayout = true;
                 undoRedo.RecordUndoAction(() =>
                 {
                     selectionManager.ClearSelection();

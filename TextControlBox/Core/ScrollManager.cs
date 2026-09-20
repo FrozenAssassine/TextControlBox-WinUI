@@ -1,4 +1,4 @@
-﻿using Microsoft.Graphics.Canvas.UI.Xaml;
+using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -58,6 +58,12 @@ internal class ScrollManager
     }
     internal void VerticalScrollBar_Scroll(object sender, ScrollEventArgs e)
     {
+        if (textRenderer.IsWordWrapEnabled)
+        {
+            canvasHelper.UpdateAll();
+            return;
+        }
+
         //only update when a line was scrolled
         if ((int)(OffsetSource.VerticalOffset / textRenderer.SingleLineHeight) != textRenderer.NumberOfStartLine)
         {
@@ -137,6 +143,12 @@ internal class ScrollManager
 
     public void UpdateScrollToShowCursor(bool update = true)
     {
+        if (textRenderer.IsWordWrapEnabled)
+        {
+            UpdateScrollToShowCursorWrapped(update);
+            return;
+        }
+
         if (textRenderer.NumberOfStartLine + textRenderer.NumberOfRenderedLines - 1 <= cursorManager.LineNumber)
         {
             OffsetSource.VerticalOffset =
@@ -148,6 +160,57 @@ internal class ScrollManager
             OffsetSource.VerticalOffset =
                 cursorManager.LineNumber *
                 textRenderer.SingleLineHeight;
+        }
+
+        if (update)
+            canvasHelper.UpdateAll();
+    }
+
+    private void UpdateScrollToShowCursorWrapped(bool update)
+    {
+        float singleLine = textRenderer.SingleLineHeight;
+        if (singleLine <= 0)
+        {
+            if (update) canvasHelper.UpdateAll();
+            return;
+        }
+
+        // Calculate the cursor's visual row (document line start row + within-line row offset)
+        int lineIndex = Math.Clamp(cursorManager.LineNumber, 0, Math.Max(0, textManager.LinesCount - 1));
+        int lineVisualStart = textRenderer.GetLineVisualStartRow(lineIndex);
+        int withinLineRow = 0;
+        int lineRowCount = textRenderer.GetWrappedRowCount(lineIndex);
+        if (lineRowCount > 1 && coreTextbox.canvasText != null)
+        {
+            // Use the current line layout to find which visual row the cursor is on
+            textRenderer.UpdateCurrentLineTextLayout(coreTextbox.canvasText);
+            if (textRenderer.CurrentLineTextLayout != null)
+            {
+                int renderedPos = textRenderer.GetRenderedCharacterIndexForDocumentCharacter(lineIndex, cursorManager.CharacterPosition);
+                if (renderedPos >= 0)
+                {
+                    var regions = textRenderer.CurrentLineTextLayout.GetCharacterRegions(renderedPos, 1);
+                    if (regions.Length > 0)
+                        withinLineRow = (int)Math.Round(regions[0].LayoutBounds.Y / Math.Max(1, singleLine));
+                }
+            }
+        }
+        int cursorVisualRow = lineVisualStart + withinLineRow;
+
+        int startVR = textRenderer.StartVisualRow;
+        int visibleRows = Math.Max(1, (int)(coreTextbox.canvasText?.ActualHeight / Math.Max(1, singleLine) ?? 10));
+
+        if (cursorVisualRow >= startVR + visibleRows)
+        {
+            // Scroll down: place cursor visual row at the bottom of the viewport
+            float targetPixelY = (cursorVisualRow - visibleRows + 2) * singleLine;
+            OffsetSource.VerticalOffset = targetPixelY;
+        }
+        else if (cursorVisualRow < startVR)
+        {
+            // Scroll up: place cursor visual row at the top of the viewport
+            float targetPixelY = cursorVisualRow * singleLine;
+            OffsetSource.VerticalOffset = targetPixelY;
         }
 
         if (update)
@@ -253,6 +316,14 @@ internal class ScrollManager
 
     public void EnsureHorizontalScrollBounds(CanvasControl canvasText, LongestLineManager longestLineManager, bool triggeredByCursor, bool forceRecalculateLongestLine = false)
     {
+        if (textRenderer.IsWordWrapEnabled)
+        {
+            horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
+            horizontalScrollBar.Maximum = 0;
+            horizontalScrollBar.Value = 0;
+            return;
+        }
+
         longestLineManager.CheckRecalculateLongestLine(forceRecalculateLongestLine);
 
         //Apply longest width to scrollbar

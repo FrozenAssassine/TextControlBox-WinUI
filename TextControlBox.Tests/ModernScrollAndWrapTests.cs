@@ -146,4 +146,201 @@ public class ModernScrollAndWrapTests
         // Unload should tear down composition tracker and timer cleanly
         core.Unload();
     }
+
+    [UITestMethod]
+    public void WordWrap_LineNumbers_AlignWithWrappedRows()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        // Short line, long wrapping line, short line
+        core.SetText("Line 1\nA very long line that wraps across multiple visual rows in word wrap mode because it contains many words and characters.\nLine 3");
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+        core.textRenderer.EnsureWrapMetrics(core.canvasText);
+        core.lineNumberRenderer.CreateLineNumberTextFormat();
+        core.textRenderer.NumberOfRenderedLines = core.textManager.LinesCount;
+        core.lineNumberRenderer.CheckGenerateLineNumberText();
+
+        string lineNumberText = core.lineNumberRenderer.LineNumberTextToRender;
+        Assert.IsNotNull(lineNumberText);
+
+        string[] rows = lineNumberText.Split(Environment.NewLine, StringSplitOptions.None);
+        // First row must be "1"
+        Assert.AreEqual("1", rows[0]);
+        // Second row must be "2" (start of line 2)
+        Assert.AreEqual("2", rows[1]);
+        // Wrapped continuation rows of line 2 must be blank
+        int line2RowCount = core.textRenderer.GetWrappedRowCount(1);
+        Assert.IsTrue(line2RowCount > 1, "Line 2 should wrap to at least 2 rows");
+        for (int r = 1; r < line2RowCount; r++)
+        {
+            Assert.AreEqual("", rows[1 + r], $"Continuation row {r} of wrapped line 2 should be empty string");
+        }
+        // Next row after line 2's wrapped rows must be "3"
+        Assert.AreEqual("3", rows[1 + line2RowCount]);
+    }
+
+    [UITestMethod]
+    public void CursorRenderer_WordWrapOff_CaretPositionAndHeight()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        core.SetText("Line 1\nLine 2\nLine 3");
+        core.WordWrap = false;
+        core.SetCursorPosition(0, 0);
+
+        core.textRenderer.EnsureTextFormat();
+        core.textRenderer.UpdateCurrentLineTextLayout(core.canvasText);
+
+        var cursorPoint = core.GetCursorPosition();
+        float singleLineHeight = core.textRenderer.SingleLineHeight;
+        float topInset = core.textRenderer.TopInset;
+
+        // In non-wrap mode, line 0 caret Y should be TopInset
+        Assert.AreEqual(topInset, (float)cursorPoint.Y, 0.5f);
+
+        // Caret on line 1 should be at TopInset + SingleLineHeight
+        core.SetCursorPosition(1, 0);
+        var cursorPointLine1 = core.GetCursorPosition();
+        Assert.AreEqual(topInset + singleLineHeight, (float)cursorPointLine1.Y, 0.5f);
+    }
+
+    [UITestMethod]
+    public void CursorRenderer_WordWrapOn_LineHighlighterMatchesCursorRow()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        core.SetText("Line 1 short\nA very long line that wraps across multiple visual rows in word wrap mode because it contains many words and characters.\nLine 3 short");
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+        core.textRenderer.UpdateRenderedLineRange(core.canvasText);
+        core.textRenderer.UpdateCurrentLineTextLayout(core.canvasText);
+
+        float singleLineHeight = core.textRenderer.SingleLineHeight;
+        float topInset = core.textRenderer.TopInset;
+
+        // Cursor on line 0 (row 0)
+        core.SetCursorPosition(0, 0);
+        var p0 = core.GetCursorPosition();
+        Assert.AreEqual(topInset, (float)p0.Y, 0.5f);
+
+        // Cursor on line 1, column 0 (first row of line 1)
+        core.SetCursorPosition(1, 0);
+        core.textRenderer.UpdateCurrentLineTextLayout(core.canvasText);
+        var pLine1Row0 = core.GetCursorPosition();
+        Assert.AreEqual(topInset + singleLineHeight, (float)pLine1Row0.Y, 0.5f);
+
+        // Cursor on line 1 at end (wrapped row of line 1)
+        int line1Len = core.textManager.GetLineLength(1);
+        core.SetCursorPosition(1, line1Len);
+        core.textRenderer.UpdateCurrentLineTextLayout(core.canvasText);
+        var pLine1RowEnd = core.GetCursorPosition();
+        int wrappedRowCount = core.textRenderer.GetWrappedRowCount(1);
+        Assert.AreEqual(topInset + (wrappedRowCount) * singleLineHeight, (float)pLine1RowEnd.Y, 0.5f);
+    }
+
+    [UITestMethod]
+    public void WordWrap_HorizontalScrollBarMaximum_IsAlwaysZero()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        core.SetText(new string('w', 10000));
+        core.WordWrap = true;
+
+        core.scrollManager.EnsureHorizontalScrollBounds(core.canvasText, core.longestLineManager, false, true);
+        Assert.AreEqual(0.0, core.scrollManager.horizontalScrollBar.Maximum);
+    }
+
+    [UITestMethod]
+    public void VirtualizedWrappedLine_IndexMapping_RowStrideIsAccurate()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        core.SetText(new string('x', 60000));
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+
+        // Simulate virtualization state: charsPerRow = 100, sliceStart = 1000
+        core.textRenderer.IsVirtualizedWrappedLine = true;
+        core.textRenderer.VirtualizedLineCharsPerRow = 100;
+        core.textRenderer.VirtualizedLineSliceStart = 1000;
+        core.textRenderer.RenderedText = new string('x', 2000);
+        public static bool Contains(this string text, SearchParameter parameter)
+        {
+            if (parameter.WholeWord)
+                return Regex.IsMatch(text, parameter.SearchExpression, RegexOptions.Compiled);
+
+            if (parameter.MatchCase)
+                return text.Contains(parameter.Word, StringComparison.Ordinal);
+            else
+                return text.Contains(parameter.Word, StringComparison.OrdinalIgnoreCase);
+        }
+        int newlineLen = core.textManager.NewLineCharacter.Length;
+
+        // Position 1000 is start of slice -> row 0, col 0 -> layoutIndex 0
+        int idx0 = core.textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(1000);
+        Assert.AreEqual(0, idx0);
+
+        // Position 1050 is row 0, col 50 -> layoutIndex 50
+        int idx50 = core.textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(1050);
+        Assert.AreEqual(50, idx50);
+
+        // Position 1100 is row 1, col 0 -> layoutIndex 100 + newlineLen
+        int idxRow1 = core.textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(1100);
+        Assert.AreEqual(100 + newlineLen, idxRow1);
+    }
+
+    [UITestMethod]
+    public void HitTesting_NonWrap_ClickOnLine0And1_MapsCorrectly()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        core.SetText("Line 0\nLine 1\nLine 2");
+        core.WordWrap = false;
+        core.textRenderer.EnsureTextFormat();
+
+        float lineHeight = core.textRenderer.SingleLineHeight;
+        float topInset = core.textRenderer.TopInset;
+
+        // TopInset should equal SingleLineHeight for full top margin
+        Assert.AreEqual(lineHeight, topInset);
+
+        // Click on top margin (y < topInset) should clamp to Line 0
+        int lineTopMargin = TextControlBoxNS.Helper.CursorHelper.GetCursorLineFromPoint(core.textRenderer, new Windows.Foundation.Point(10, 5));
+        Assert.AreEqual(0, lineTopMargin);
+
+        // Click on Line 0 (y in [topInset, topInset + lineHeight))
+        int line0 = TextControlBoxNS.Helper.CursorHelper.GetCursorLineFromPoint(core.textRenderer, new Windows.Foundation.Point(10, topInset + 5));
+        Assert.AreEqual(0, line0);
+
+        // Click on Line 1 (y in [topInset + lineHeight, topInset + 2 * lineHeight))
+        int line1 = TextControlBoxNS.Helper.CursorHelper.GetCursorLineFromPoint(core.textRenderer, new Windows.Foundation.Point(10, topInset + lineHeight + 5));
+        Assert.AreEqual(1, line1);
+    }
+
+    [UITestMethod]
+    public void SelectLine_TripleClickSimulation_SelectsCorrectLine()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        core.SetText("Zeile 1 kurz\n" + "START_" + new string('X', 500) + "_END\n" + "Zeile 3 kurz");
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+
+        // Select line 1 (the wrapped line)
+        bool success = core.SelectLine(1);
+        Assert.IsTrue(success);
+        Assert.AreEqual(1, core.selectionManager.selectionStart.LineNumber);
+        Assert.AreEqual(0, core.selectionManager.selectionStart.CharacterPosition);
+        Assert.AreEqual(1, core.selectionManager.selectionEnd.LineNumber);
+        Assert.IsTrue(core.selectionManager.HasSelection);
+    }
+
+    [UITestMethod]
+    public void CalculateWrappedLinesToRender_IncludesLongLineWhenStartingBeforeIt()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        string longLine = "START_" + new string('X', 100_000) + "_END";
+        core.SetText("Line 0 short\n" + longLine + "\nLine 2 short");
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+
+        var (startLine, linesToRender) = core.textRenderer.CalculateLinesToRender();
+        Assert.AreEqual(0, startLine);
+        // Includes line 0 and the virtualized visible slice of line 1
+        Assert.AreEqual(2, linesToRender);
+    }
 }

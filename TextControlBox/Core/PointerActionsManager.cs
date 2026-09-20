@@ -1,4 +1,4 @@
-﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -97,13 +97,23 @@ internal class PointerActionsManager
         selectionManager.SelectSingleWord(canvasUpdateManager);
     }
 
-    private void HandleTripleClick()
+    private void HandleTripleClick(Point pointerPosition)
     {
         PointerClickTimer.Stop();
         PointerClickCount = 0;
+        isPendingCursorPlacement = false;
+        selectionTimer.Stop();
+        selectionManager.IsSelecting = false;
+
+        CursorHelper.UpdateCursorPosFromPoint(
+            coreTextbox.canvasText,
+            currentLineManager,
+            textRenderer,
+            scrollManager,
+            pointerPosition,
+            cursorManager.currentCursorPosition);
 
         coreTextbox.SelectLine(cursorManager.LineNumber);
-        return;
     }
 
     private void HandleSingleRightClick(object sender, Point pointerPosition)
@@ -219,7 +229,7 @@ internal class PointerActionsManager
         };
 
         if (PointerClickCount == 3)
-            HandleTripleClick();
+            HandleTripleClick(pointerPosition);
         else if (PointerClickCount == 2)
             HandleDoubleClicked(pointerPosition);
         else

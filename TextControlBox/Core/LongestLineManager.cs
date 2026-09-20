@@ -1,4 +1,4 @@
-﻿using Collections.Pooled;
+using Collections.Pooled;
 using Microsoft.Graphics.Canvas;
 using System;
 using TextControlBoxNS.Core.Renderer;
@@ -88,7 +88,15 @@ internal class LongestLineManager
         longestLineLength = textManager.totalLines[_longestIndex].Length;
         if (textRenderer.TextFormat != null)
         {
-            longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[longestIndex], textRenderer.TextFormat);
+            if (longestLineLength >= TextRenderer.HorizontalVirtualizationThreshold)
+            {
+                float charWidth = textRenderer.CachedCharWidth;
+                longestLineWidth = new Size(longestLineLength * charWidth, textRenderer.SingleLineHeight);
+            }
+            else
+            {
+                longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[longestIndex], textRenderer.TextFormat);
+            }
         }
     }
 

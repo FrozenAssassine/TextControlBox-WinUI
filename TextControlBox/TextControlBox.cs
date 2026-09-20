@@ -15,6 +15,7 @@ namespace TextControlBoxNS;
 public partial class TextControlBox : UserControl
 {
     private readonly CoreTextControlBox coreTextBox;
+    internal CoreTextControlBox CoreTextBox => coreTextBox;
 
     /// <summary>
     /// Initializes a new instance of the TextControlBox class.
@@ -578,6 +579,19 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Gets the line number at the specified coordinate point.
+    /// </summary>
+    public int GetLineFromPoint(Point point)
+    {
+        return coreTextBox.GetLineFromPoint(point);
+    }
+
+    /// <summary>
+    /// Gets the height in pixels of a single line.
+    /// </summary>
+    public float SingleLineHeight => coreTextBox.SingleLineHeight;
+
+    /// <summary>
     /// Set the position of the cursor. 
     /// If autoclamp is set to false and invalid values are provided it throws IndexOutOfRangeException.
     /// </summary>
@@ -664,6 +678,7 @@ public partial class TextControlBox : UserControl
     /// <remarks>
     /// This method modifies the text programmatically and is unaffected by
     /// <see cref="IsReadOnly"/>.
+    /// </remarks>
     /// <param name="start">The zero based index to start from</param>
     /// <param name="text">The array of lines to add</param>
     /// <returns>True if successfull</returns>
@@ -688,8 +703,6 @@ public partial class TextControlBox : UserControl
     /// <param name="spaces">The number of spaces to use when converting tabs to spaces. Must be greater than zero.</param>
     /// <param name="useSpacesInsteadTabs">Indicates whether tabs should be replaced with spaces.</param>
     /// <param name="ignoreIsReadOnly">Ignores the isReadOnly property of the textbox.</param>
-    /// </remarks>
-
     public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs, bool ignoreIsReadOnly = false)
     {
         coreTextBox.RewriteTabsSpaces(spaces, useSpacesInsteadTabs, ignoreIsReadOnly);

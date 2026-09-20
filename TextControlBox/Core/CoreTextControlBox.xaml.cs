@@ -1014,12 +1014,31 @@ internal sealed partial class CoreTextControlBox : UserControl
 
     public Point GetCursorPosition()
     {
+        float withinLineRowOffset = 0;
+        if (textRenderer.IsWordWrapEnabled && textRenderer.CurrentLineTextLayout != null)
+        {
+            int renderedPos = textRenderer.GetRenderedCharacterIndexForDocumentCharacter(CursorPosition.LineNumber, CursorPosition.CharacterPosition);
+            if (renderedPos >= 0)
+            {
+                float baseRowY = textRenderer.CurrentLineTextLayout.GetCaretPosition(0, false).Y;
+                var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedPos, false);
+                int visualRow = (int)Math.Round((vector.Y - baseRowY) / Math.Max(1, textRenderer.SingleLineHeight));
+                withinLineRowOffset = visualRow * textRenderer.SingleLineHeight;
+            }
+        }
         return new Point
         {
-            Y = (float)((CursorPosition.LineNumber - textRenderer.NumberOfStartLine) * textRenderer.SingleLineHeight) + textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity,
-            X = CursorHelper.GetCursorPositionInLine(textRenderer.CurrentLineTextLayout, CursorPosition, 0)
+            Y = textRenderer.GetLineTopY(CursorPosition.LineNumber) + withinLineRowOffset,
+            X = CursorHelper.GetCursorPositionInLine(textRenderer.CurrentLineTextLayout, CursorPosition, textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset)
         };
     }
+
+    public int GetLineFromPoint(Point point)
+    {
+        return CursorHelper.GetCursorLineFromPoint(textRenderer, point);
+    }
+
+    public float SingleLineHeight => textRenderer.SingleLineHeight;
 
     public void SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true, bool autoClamp = true)
     {
@@ -1133,11 +1152,31 @@ internal sealed partial class CoreTextControlBox : UserControl
         {
             if (textLayoutManager.WordWrap == value)
                 return;
-            textLayoutManager.WordWrap = value;
+
+            if (value)
+            {
+                textLayoutManager.WordWrap = true;
+                textRenderer.EnsureWrapMetrics(canvasText);
+                int targetVisualRow = textRenderer.GetLineVisualStartRow(textRenderer.NumberOfStartLine);
+                scrollManager.VerticalScroll = (targetVisualRow * textRenderer.SingleLineHeight) / scrollManager.DefaultVerticalScrollSensitivity;
+                scrollManager.HorizontalScroll = 0;
+            }
+            else
+            {
+                int currentDocLine = textRenderer.GetDocumentLineFromVisualRow(textRenderer.StartVisualRow);
+                textLayoutManager.WordWrap = false;
+                scrollManager.VerticalScroll = (currentDocLine * textRenderer.SingleLineHeight) / scrollManager.DefaultVerticalScrollSensitivity;
+                scrollManager.HorizontalScroll = 0;
+                longestLineManager.needsRecalculation = true;
+                longestLineManager.CheckRecalculateLongestLine(true);
+            }
+
             textRenderer.NeedsTextFormatUpdate = true;
+            textRenderer.NeedsUpdateTextLayout = true;
+            textRenderer.OldRenderedText = null;
             textRenderer.InvalidateWrapMetrics();
-            scrollManager.HorizontalScroll = 0;
             lineNumberRenderer.NeedsUpdateLineNumbers();
+            canvasUpdateManager.UpdateLineNumbers();
             canvasUpdateManager.UpdateAll();
         }
     }

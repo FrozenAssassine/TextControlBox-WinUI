@@ -1,4 +1,4 @@
-﻿using Microsoft.Graphics.Canvas.Text;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
 using System.Text;
@@ -35,10 +35,72 @@ namespace TextControlBoxNS.Core.Renderer
 
         public void GenerateLineNumberText(int renderedLines, int startLine)
         {
-            //TODO! check performance:
+            if (textRenderer.IsWordWrapEnabled)
+            {
+                GenerateWrappedLineNumberText(renderedLines, startLine);
+                return;
+            }
+
             for (int i = 0; i < renderedLines; i++)
             {
                 LineNumberContent.AppendLine((i + 1 + startLine).ToString());
+            }
+            LineNumberTextToRender = LineNumberContent.ToString();
+            LineNumberContent.Clear();
+        }
+
+        private void GenerateWrappedLineNumberText(int renderedLines, int startLine)
+        {
+            if (textRenderer.IsVirtualizedWrappedLine)
+            {
+                if (renderedLines > 1)
+                {
+                    int totalEmittedRows = 0;
+                    for (int i = startLine; i < startLine + renderedLines && i < textManager.LinesCount; i++)
+                    {
+                        if (textRenderer.ShouldVirtualizeWrappedLine(i))
+                        {
+                            int remainingRows = Math.Max(1, textRenderer.VirtualizedWrappedRowsToRender - totalEmittedRows);
+                            LineNumberContent.AppendLine((i + 1).ToString());
+                            for (int r = 1; r < remainingRows; r++)
+                                LineNumberContent.AppendLine();
+                            break;
+                        }
+                        int rowCount = textRenderer.GetWrappedRowCount(i);
+                        LineNumberContent.AppendLine((i + 1).ToString());
+                        for (int r = 1; r < rowCount; r++)
+                            LineNumberContent.AppendLine();
+                        totalEmittedRows += rowCount;
+                    }
+                }
+                else
+                {
+                    int rows = Math.Max(1, textRenderer.VirtualizedWrappedRowsToRender);
+                    if (textRenderer.VirtualizedLineSliceStart == 0)
+                    {
+                        LineNumberContent.AppendLine((startLine + 1).ToString());
+                        for (int r = 1; r < rows; r++)
+                            LineNumberContent.AppendLine();
+                    }
+                    else
+                    {
+                        for (int r = 0; r < rows; r++)
+                            LineNumberContent.AppendLine();
+                    }
+                }
+                LineNumberTextToRender = LineNumberContent.ToString();
+                LineNumberContent.Clear();
+                return;
+            }
+
+            for (int i = startLine; i < startLine + renderedLines && i < textManager.LinesCount; i++)
+            {
+                int rowCount = textRenderer.GetWrappedRowCount(i);
+                LineNumberContent.AppendLine((i + 1).ToString());
+                for (int r = 1; r < rowCount; r++)
+                {
+                    LineNumberContent.AppendLine();
+                }
             }
             LineNumberTextToRender = LineNumberContent.ToString();
             LineNumberContent.Clear();
@@ -75,13 +137,27 @@ namespace TextControlBoxNS.Core.Renderer
 
             OldLineNumberTextToRender = LineNumberTextToRender;
 
+            float drawLineNumberOffsetY = textRenderer.IsWordWrapEnabled
+                ? (textRenderer.IsVirtualizedWrappedLine
+                    ? textRenderer.SingleLineHeight
+                    : textRenderer.SingleLineHeight - (textRenderer.WrappedStartRowOffset * textRenderer.SingleLineHeight))
+                : textRenderer.SingleLineHeight;
+
+            int renderedVisualRows = textRenderer.IsWordWrapEnabled
+                ? (textRenderer.IsVirtualizedWrappedLine
+                    ? textRenderer.VirtualizedWrappedRowsToRender
+                    : textRenderer.GetRenderedVisualRowCount(textRenderer.NumberOfStartLine, textRenderer.NumberOfRenderedLines))
+                : textRenderer.NumberOfRenderedLines;
+
+            float layoutHeight = Math.Max((float)canvas.Size.Height, (renderedVisualRows + 2) * textRenderer.SingleLineHeight);
+
             LineNumberTextLayout?.Dispose();
-            LineNumberTextLayout = textLayoutManager.CreateTextLayout(canvas, LineNumberTextFormat, LineNumberTextToRender, posX, (float)canvas.Size.Height);
+            LineNumberTextLayout = textLayoutManager.CreateTextLayout(canvas, LineNumberTextFormat, LineNumberTextToRender, posX, layoutHeight);
 
             args.DrawingSession.DrawTextLayout(
                 LineNumberTextLayout,
                 10,
-                textRenderer.SingleLineHeight,
+                drawLineNumberOffsetY,
                 designHelper.LineNumberColorBrush);
         }
 

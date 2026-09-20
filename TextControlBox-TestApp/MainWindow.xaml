@@ -28,6 +28,7 @@
             <Button Content="Zoom -" Click="ZoomOut_Click"/>
             <Button Content="Zoom +" Click="ZoomIn_Click"/>
             <Button Content="Reset Zoom" Click="ZoomReset_Click"/>
+            <Button Content="Diagnose Coordinates" Click="DiagnosePositions_Click"/>
             <TextBlock x:Name="StatusText" VerticalAlignment="Center" Margin="12,0,0,0" Text="Bereit"/>
         </StackPanel>
 

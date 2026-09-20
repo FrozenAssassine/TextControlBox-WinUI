@@ -15,7 +15,7 @@ internal static class WrapGeometry
     public static int CalculateVisualRowFromPointY(double y, int startVisualRow, float singleLineHeight, int defaultVerticalScrollSensitivity)
     {
         double rowHeight = Math.Max(1, singleLineHeight);
-        double topInset = rowHeight / Math.Max(1, defaultVerticalScrollSensitivity);
+        double topInset = 0;
         int relativeRow = (int)Math.Floor(Math.Max(0, y - topInset) / rowHeight);
         return startVisualRow + relativeRow;
     }
@@ -27,7 +27,7 @@ internal static class WrapGeometry
     public static float CalculateWrappedLineHitTestYFromPointY(double y, float lineTopY, float singleLineHeight, int defaultVerticalScrollSensitivity, int wrappedRowCount)
     {
         double rowHeight = Math.Max(1, singleLineHeight);
-        double topInset = rowHeight / Math.Max(1, defaultVerticalScrollSensitivity);
+        double topInset = 0;
         double maxHitTestY = Math.Max(0, wrappedRowCount * rowHeight - 0.001);
         return (float)Math.Clamp(y - lineTopY - topInset, 0, maxHitTestY);
     }

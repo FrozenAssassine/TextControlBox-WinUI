@@ -52,6 +52,7 @@ internal class TextRenderer
             return TextFormat == null ? 0 : TextFormat.LineSpacing;
         }
     }
+    public float TopInset => 0f;
     public float HorizontalOffset => (float)-scrollManager.HorizontalScroll + HorizontalSlicePixelOffset;
     public int NumberOfStartLine = 0;
     public int NumberOfRenderedLines = 0;
@@ -64,7 +65,7 @@ internal class TextRenderer
     // exceeds the threshold we lay out ONLY a sliced window of each visible line instead of the whole line,
     // and record enough offsets to map document positions in and out of that sliced layout for the caret,
     // click hit-testing and selection.
-    private const int HorizontalVirtualizationThreshold = 50_000;
+    internal const int HorizontalVirtualizationThreshold = 50_000;
     /// <summary>First document column kept by the current horizontal slice window.</summary>
     public int HorizontalSliceStart { get; private set; }
     /// <summary>Width (in chars) of the horizontal slice window; 0 when not sliced.</summary>
@@ -113,13 +114,13 @@ internal class TextRenderer
     // laying the whole line out is prohibitive. When such a line is the only visible one we render just the
     // visible slice of its rows (estimated char-per-row grid) and map caret/click within it.
     /// <summary>True when the current frame renders a single very-long wrapped line as a row slice.</summary>
-    public bool IsVirtualizedWrappedLine { get; private set; }
+    public bool IsVirtualizedWrappedLine { get; internal set; }
     /// <summary>Rows of the virtualized line materialized this frame.</summary>
-    public int VirtualizedWrappedRowsToRender { get; private set; }
+    public int VirtualizedWrappedRowsToRender { get; internal set; }
     /// <summary>Document char offset where the rendered row slice starts.</summary>
-    public int VirtualizedLineSliceStart { get; private set; }
+    public int VirtualizedLineSliceStart { get; internal set; }
     /// <summary>Estimated characters per wrapped row for the virtualized line.</summary>
-    public int VirtualizedLineCharsPerRow { get; private set; }
+    public int VirtualizedLineCharsPerRow { get; internal set; }
     private const int VirtualizedWrappedLinePaddingRows = 2;
 
     private CursorManager cursorManager;
@@ -305,6 +306,24 @@ internal class TextRenderer
         return _renderedLineSlicePrefix[ordinal] + inLine;
     }
 
+    /// <summary>Maps a document character position inside a virtualized wrapped line to its character index
+    /// inside <see cref="DrawnTextLayout"/> via row-stride arithmetic. Clamps to slice bounds.</summary>
+    public int GetRenderedLayoutIndexForVirtualizedWrappedLine(int characterPosition)
+    {
+        if (!IsVirtualizedWrappedLine || VirtualizedLineCharsPerRow <= 0)
+            return -1;
+        int offsetInSlice = characterPosition - VirtualizedLineSliceStart;
+        if (offsetInSlice < 0)
+            return 0;
+        int row = offsetInSlice / VirtualizedLineCharsPerRow;
+        int col = offsetInSlice % VirtualizedLineCharsPerRow;
+        int rowStride = VirtualizedLineCharsPerRow + textManager.NewLineCharacter.Length;
+        int index = row * rowStride + col;
+        if (RenderedText != null && index > RenderedText.Length)
+            index = RenderedText.Length;
+        return index;
+    }
+
     /// <summary>Decides whether to horizontally virtualize this frame and, if so, the slice window
     /// [<paramref name="sliceStart"/>, sliceStart + <paramref name="sliceLen"/>). Only triggers when at least
     /// one visible line exceeds <see cref="HorizontalVirtualizationThreshold"/>, so ordinary files keep the
@@ -476,17 +495,76 @@ internal class TextRenderer
         VirtualizedLineCharsPerRow = 0;
     }
 
-    private bool ShouldVirtualizeWrappedLine(int lineIndex)
+    internal bool ShouldVirtualizeWrappedLine(int lineIndex)
         => IsWordWrapEnabled
            && lineIndex >= 0
            && lineIndex < textManager.LinesCount
            && textManager.GetLineLength(lineIndex) >= LongLineRowEstimateThreshold;
 
+    private bool HasVirtualizedLineInRenderRange(int startLine, int lineCount, out int virtualLineIndex)
+    {
+        for (int i = startLine; i < startLine + lineCount && i < textManager.LinesCount; i++)
+        {
+            if (ShouldVirtualizeWrappedLine(i))
+            {
+                virtualLineIndex = i;
+                return true;
+            }
+        }
+        virtualLineIndex = -1;
+        return false;
+    }
+
+    private LineSliceResult BuildMultiLineWithVirtualizedWrappedLineRenderData(CanvasControl canvasText, int startLine, int lineCount, int virtualLineIndex)
+    {
+        var builder = new StringBuilder();
+        int rowsRenderedSoFar = 0;
+
+        for (int i = startLine; i < virtualLineIndex; i++)
+        {
+            if (i > startLine)
+                builder.Append(textManager.NewLineCharacter);
+            builder.Append(textManager.GetLineText(i));
+            rowsRenderedSoFar += GetWrappedRowCount(i);
+        }
+
+        if (virtualLineIndex > startLine)
+            builder.Append(textManager.NewLineCharacter);
+
+        string virtualLineText = textManager.GetLineText(virtualLineIndex);
+        int charsPerRow = EstimateWrappedCharsPerRow(canvasText);
+        int totalVirtualRows = Math.Max(1, (int)Math.Ceiling(virtualLineText.Length / (double)charsPerRow));
+        int remainingVisibleRows = Math.Max(1, GetVisibleVisualRowCount(canvasText, VirtualizedWrappedLinePaddingRows) - rowsRenderedSoFar);
+        int rowsToRender = Math.Min(totalVirtualRows, remainingVisibleRows);
+
+        int offset = 0;
+        int rowsRendered = 0;
+        while (rowsRendered < rowsToRender && offset < virtualLineText.Length)
+        {
+            if (rowsRendered > 0)
+                builder.Append(textManager.NewLineCharacter);
+
+            int length = Math.Min(charsPerRow, virtualLineText.Length - offset);
+            builder.Append(virtualLineText, offset, length);
+            offset += length;
+            rowsRendered++;
+        }
+
+        if (rowsRendered == 0)
+            rowsRendered = 1;
+
+        IsVirtualizedWrappedLine = true;
+        VirtualizedWrappedRowsToRender = rowsRenderedSoFar + rowsRendered;
+        VirtualizedLineSliceStart = 0;
+        VirtualizedLineCharsPerRow = charsPerRow;
+        return new LineSliceResult(builder.ToString(), ReadOnlySpan<string>.Empty);
+    }
+
     private int EstimateWrappedCharsPerRow(CanvasControl canvasText)
     {
         float wrapWidth = GetWrapWidth(canvasText);
-        float averageCharWidth = Math.Max(1, zoomManager.ZoomedFontSize * 0.58f);
-        return Math.Max(1, (int)Math.Floor(wrapWidth / averageCharWidth));
+        float charWidth = CachedCharWidth;
+        return Math.Max(1, (int)Math.Floor(wrapWidth / charWidth));
     }
 
     private int EstimateWrappedRowCount(CanvasControl canvasText, int textLength)
@@ -603,6 +681,7 @@ internal class TextRenderer
     {
         if (!IsWordWrapEnabled)
             return (lineIndex - NumberOfStartLine) * SingleLineHeight;
+
         return (GetLineVisualStartRow(lineIndex) - StartVisualRow) * SingleLineHeight;
     }
 
@@ -637,14 +716,18 @@ internal class TextRenderer
         }
 
         using CanvasTextLayout currentLayout = CreateWrappedLineTextLayout(canvasText, lineIndex, true);
+        float baseRowY = currentLayout.GetCaretPosition(0, false).Y;
         var currentCaret = currentLayout.GetCaretPosition(characterPosition, false);
-        int currentVisualRow = GetLineVisualStartRow(lineIndex) + (int)Math.Floor(Math.Max(0, currentCaret.Y) / Math.Max(1, SingleLineHeight));
+        int withinLineRow = (int)Math.Round((currentCaret.Y - baseRowY) / Math.Max(1, SingleLineHeight));
+        int currentVisualRow = GetLineVisualStartRow(lineIndex) + withinLineRow;
         int targetVisualRow = Math.Clamp(currentVisualRow + rowDelta, 0, Math.Max(0, wrapMetrics.TotalVisualRows - 1));
         int targetLine = GetDocumentLineFromVisualRow(targetVisualRow);
         int targetRowOffset = targetVisualRow - GetLineVisualStartRow(targetLine);
 
         using CanvasTextLayout targetLayout = CreateWrappedLineTextLayout(canvasText, targetLine, true);
-        targetLayout.HitTest(currentCaret.X, targetRowOffset * Math.Max(1, SingleLineHeight), out var targetRegion);
+        float targetBaseRowY = targetLayout.GetCaretPosition(0, false).Y;
+        float targetHitY = targetBaseRowY + (targetRowOffset + 0.5f) * Math.Max(1, SingleLineHeight);
+        targetLayout.HitTest(currentCaret.X, targetHitY, out var targetRegion);
 
         cursorPosition.LineNumber = targetLine;
         cursorPosition.CharacterPosition = Math.Clamp(targetRegion.CharacterIndex, 0, textManager.GetLineLength(targetLine));
@@ -693,11 +776,21 @@ internal class TextRenderer
         int startLineVisualRow = GetLineVisualStartRow(startLine);
         WrappedStartRowOffset = Math.Max(0, StartVisualRow - startLineVisualRow);
 
+        if (ShouldVirtualizeWrappedLine(startLine))
+        {
+            return (startLine, 1);
+        }
+
         int visibleRows = GetVisibleVisualRowCount(canvasText, 2);
         int rowsToCover = visibleRows + WrappedStartRowOffset;
         int linesToRender = 0;
         for (int i = startLine; i < textManager.LinesCount && rowsToCover > 0; i++)
         {
+            if (i > startLine && ShouldVirtualizeWrappedLine(i))
+            {
+                linesToRender++;
+                break;
+            }
             rowsToCover -= GetWrappedRowCount(i);
             linesToRender++;
         }
@@ -722,7 +815,8 @@ internal class TextRenderer
             // slice-to-pixel offset. Re-measured whenever the format is rebuilt (font/zoom change).
             using (var measureLayout = new CanvasTextLayout(args.DrawingSession, "M", TextFormat, 0, 0))
             {
-                _cachedCharWidth = Math.Max(1, (float)measureLayout.DrawBounds.Width);
+                var regions = measureLayout.GetCharacterRegions(0, 1);
+                _cachedCharWidth = Math.Max(1, (float)(regions.Length > 0 ? regions[0].LayoutBounds.Width : measureLayout.LayoutBounds.Width));
             }
         }
 
@@ -735,11 +829,21 @@ internal class TextRenderer
         // caret/selection can still map document positions into the sliced multi-line layout.
         LineSliceResult renderTextData;
         ResetVirtualizedWrappedLineState();
-        if (IsWordWrapEnabled && NumberOfRenderedLines == 1 && ShouldVirtualizeWrappedLine(NumberOfStartLine))
+        if (IsWordWrapEnabled && ShouldVirtualizeWrappedLine(NumberOfStartLine))
         {
-            // A single wrapped line so long it fills the viewport by itself: render only its visible ROW
+            // A wrapped line so long it is virtualized: render only its visible ROW
             // slice (a few KB) instead of laying out the whole multi-megabyte line.
             renderTextData = BuildVirtualizedWrappedLineRenderData(canvasText, NumberOfStartLine);
+            RenderedText = renderTextData.Text;
+            IsHorizontallyVirtualized = false;
+            HorizontalSliceStart = 0;
+            HorizontalSliceLength = 0;
+            _hSliceVisibleStart = 0;
+            _hSliceVisibleEnd = 0;
+        }
+        else if (IsWordWrapEnabled && HasVirtualizedLineInRenderRange(NumberOfStartLine, NumberOfRenderedLines, out int virtualLineIndex))
+        {
+            renderTextData = BuildMultiLineWithVirtualizedWrappedLineRenderData(canvasText, NumberOfStartLine, NumberOfRenderedLines, virtualLineIndex);
             RenderedText = renderTextData.Text;
             IsHorizontallyVirtualized = false;
             HorizontalSliceStart = 0;
@@ -772,23 +876,27 @@ internal class TextRenderer
         // the first visible line that are scrolled above the viewport top; a virtualized single line already
         // renders from its own row slice so it sits at the top. Both reduce to the non-wrap values when wrap
         // is off, so the normal render path is unchanged.
+        float zoomFactor = (zoomManager == null ? 100f : zoomManager._ZoomFactor) / 100f;
+        float textVerticalAdjustment = Math.Max(1f, (float)Math.Round(1.5f * zoomFactor));
+
         float drawTextOffsetX = IsWordWrapEnabled ? 0 : HorizontalOffset;
-        float drawTextOffsetY = IsVirtualizedWrappedLine
-            ? SingleLineHeight
-            : (IsWordWrapEnabled ? SingleLineHeight - (WrappedStartRowOffset * SingleLineHeight) : SingleLineHeight);
-        float searchHighlightOffsetY = IsWordWrapEnabled
-            ? drawTextOffsetY - SingleLineHeight + (SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity)
-            : SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
+        float drawTextOffsetY = (IsWordWrapEnabled
+            ? (IsVirtualizedWrappedLine ? SingleLineHeight : SingleLineHeight - (WrappedStartRowOffset * SingleLineHeight))
+            : SingleLineHeight) - textVerticalAdjustment;
+        float searchHighlightOffsetY = drawTextOffsetY;
 
         int renderedVisualRows = IsVirtualizedWrappedLine
             ? VirtualizedWrappedRowsToRender
             : GetRenderedVisualRowCount(NumberOfStartLine, NumberOfRenderedLines);
+        float computedLayoutHeight = IsVirtualizedWrappedLine
+            ? Math.Max((float)canvasText.Size.Height + (VirtualizedWrappedLinePaddingRows * SingleLineHeight), (renderedVisualRows + 2) * SingleLineHeight)
+            : Math.Max((float)canvasText.Size.Height + (WrappedStartRowOffset + 2) * SingleLineHeight, (renderedVisualRows + 2) * SingleLineHeight);
+        computedLayoutHeight = Math.Min(16000f, computedLayoutHeight);
+
         Size layoutSize = IsWordWrapEnabled
             ? new Size
             {
-                Height = IsVirtualizedWrappedLine
-                    ? Math.Max(canvasText.Size.Height + (VirtualizedWrappedLinePaddingRows * SingleLineHeight), (renderedVisualRows + 2) * SingleLineHeight)
-                    : Math.Max(canvasText.Size.Height + (WrappedStartRowOffset + 2) * SingleLineHeight, (renderedVisualRows + 2) * SingleLineHeight),
+                Height = computedLayoutHeight,
                 Width = GetWrapWidth(canvasText)
             }
             : new Size { Height = canvasText.Size.Height, Width = coreTextbox.ActualWidth };
@@ -838,7 +946,7 @@ internal class TextRenderer
 
             ccls.DrawTextLayout(DrawnTextLayout, drawTextOffsetX, drawTextOffsetY, designHelper.TextColorBrush);
 
-            invisibleCharactersRenderer.DrawTabsAndSpaces(args, ccls, RenderedText, DrawnTextLayout, SingleLineHeight);
+            invisibleCharactersRenderer.DrawTabsAndSpaces(args, ccls, RenderedText, DrawnTextLayout, drawTextOffsetY);
         }
         args.DrawingSession.DrawImage(canvasCommandList);
 
