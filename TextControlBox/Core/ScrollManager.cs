@@ -205,7 +205,7 @@ internal class ScrollManager
                 float baseRowY = textRenderer.CurrentLineTextLayout.GetCaretPosition(0, false).Y;
                 var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedPos, false);
                 int visualRow = (int)Math.Round((vector.Y - baseRowY) / Math.Max(1, singleLine));
-                float caretY = textRenderer.GetCurrentLineLayoutTopY(lineIndex) + visualRow * singleLine;
+                float caretY = textRenderer.GetCurrentLineLayoutTopY(lineIndex) + visualRow * singleLine + textRenderer.TopInset;
 
                 // If the caret is already visible within the viewport bounds, don't scroll at all!
                 if (caretY >= 0 && caretY + singleLine <= canvasHeight)

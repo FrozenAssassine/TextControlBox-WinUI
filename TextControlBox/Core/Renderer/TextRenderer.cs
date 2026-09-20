@@ -52,7 +52,7 @@ internal class TextRenderer
             return TextFormat == null ? 0 : TextFormat.LineSpacing;
         }
     }
-    public float TopInset => 0f;
+    public float TopInset => (float)Math.Round(2f * ((zoomManager == null ? 100f : zoomManager._ZoomFactor) / 100f));
     public float HorizontalOffset => (float)-scrollManager.HorizontalScroll + HorizontalSlicePixelOffset;
     public int NumberOfStartLine = 0;
     public int NumberOfRenderedLines = 0;
@@ -287,7 +287,7 @@ internal class TextRenderer
         }
         if (IsHorizontallyVirtualized)
             return HorizontalSliceMath.ColumnForRenderedIndex(renderedIndex, HorizontalSliceStart, textManager.GetLineLength(lineIndex));
-        return renderedIndex;
+        return Math.Clamp(renderedIndex, 0, textManager.GetLineLength(lineIndex));
     }
 
     /// <summary>Chars line <paramref name="lineIndex"/> contributes to the current slice: its length past
@@ -724,7 +724,7 @@ internal class TextRenderer
     }
 
     public int GetVisualRowFromPointY(double y)
-        => WrapGeometry.CalculateVisualRowFromPointY(y, StartVisualRow, SingleLineHeight, scrollManager.DefaultVerticalScrollSensitivity);
+        => WrapGeometry.CalculateVisualRowFromPointY(y, StartVisualRow, SingleLineHeight, scrollManager.DefaultVerticalScrollSensitivity, TopInset);
 
     public float GetWrappedLineHitTestYFromPointY(int lineIndex, double y)
     {
@@ -734,9 +734,9 @@ internal class TextRenderer
         if (IsVirtualizedWrappedLine && lineIndex == vLine)
         {
             float lineTopY = GetCurrentLineLayoutTopY(lineIndex);
-            return WrapGeometry.CalculateWrappedLineHitTestYFromPointY(y, lineTopY, SingleLineHeight, scrollManager.DefaultVerticalScrollSensitivity, Math.Max(1, VirtualizedWrappedRowsToRender));
+            return WrapGeometry.CalculateWrappedLineHitTestYFromPointY(y, lineTopY, SingleLineHeight, scrollManager.DefaultVerticalScrollSensitivity, Math.Max(1, VirtualizedWrappedRowsToRender), TopInset);
         }
-        return WrapGeometry.CalculateWrappedLineHitTestYFromPointY(y, GetLineTopY(lineIndex), SingleLineHeight, scrollManager.DefaultVerticalScrollSensitivity, GetWrappedRowCount(lineIndex));
+        return WrapGeometry.CalculateWrappedLineHitTestYFromPointY(y, GetLineTopY(lineIndex), SingleLineHeight, scrollManager.DefaultVerticalScrollSensitivity, GetWrappedRowCount(lineIndex), TopInset);
     }
 
     /// <summary>

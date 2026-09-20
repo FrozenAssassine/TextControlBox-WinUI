@@ -147,7 +147,8 @@ internal class PointerActionsManager
             textRenderer,
             scrollManager,
             pointerPosition,
-            cursorManager.currentCursorPosition);
+            cursorManager.currentCursorPosition,
+            isSelecting: false);
 
         //change cursor when clicking on links
         if (linkHighlightManager.NeedsCheckLinkHighlights())
@@ -159,15 +160,25 @@ internal class PointerActionsManager
             }
         }
 
+        // For selectionStart, compute position with isSelecting = true so dragging from right-outside includes the last character
+        CursorPosition selStart = new CursorPosition(0, 0);
+        CursorHelper.UpdateCursorPosFromPoint(coreTextbox.canvasText,
+            currentLineManager,
+            textRenderer,
+            scrollManager,
+            pointerPosition,
+            selStart,
+            isSelecting: true);
+
         //Clear the selection when pressing anywhere
         if (selectionManager.HasSelection)
         {
             selectionManager.ClearSelection();
-            selectionManager.SetSelectionStart(cursorManager.currentCursorPosition);
+            selectionManager.SetSelectionStart(selStart);
         }
         else
         {
-            selectionManager.SetSelectionStart(cursorManager.currentCursorPosition);
+            selectionManager.SetSelectionStart(selStart);
         }
     }
 
@@ -188,7 +199,8 @@ internal class PointerActionsManager
                 textRenderer,
                 scrollManager,
                 pointerPosition,
-                cursorManager.currentCursorPosition);
+                cursorManager.currentCursorPosition,
+                isSelecting: true);
 
             selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
             canvasUpdateManager.UpdateSelection();
@@ -407,7 +419,8 @@ internal class PointerActionsManager
                         textRenderer,
                         scrollManager,
                         point,
-                        cursorManager.currentCursorPosition);
+                        cursorManager.currentCursorPosition,
+                        isSelecting: true);
                 }
 
                 canvasUpdateManager.UpdateCursor();
@@ -482,7 +495,8 @@ internal class PointerActionsManager
                 textRenderer,
                 scrollManager,
                 e.GetCurrentPoint(coreTextbox.canvasSelection).Position,
-                cursorManager.currentCursorPosition);
+                cursorManager.currentCursorPosition,
+                isSelecting: true);
 
             canvasUpdateManager.UpdateCursor();
 

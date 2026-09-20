@@ -1,4 +1,4 @@
-﻿using TextControlBoxNS.Core.Selection;
+using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Extensions;
 
 namespace TextControlBoxNS.Core.Text.TextActions;
@@ -69,7 +69,7 @@ internal class AddNewLineTextAction
     public void ApplyLineSplitWithIndentation()
     {
         int lineNumber = cursorManager.LineNumber;
-        int charPosition = cursorManager.CharacterPosition;
+        int charPosition = cursorManager.GetCurPosInLine();
 
         string currentLineText = textManager.GetLineText(lineNumber);
         int indentationLevel = autoIndentionManager.OnEnterPressed(lineNumber);

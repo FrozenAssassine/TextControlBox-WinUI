@@ -8,8 +8,9 @@ internal class CursorManager
 {
     public CursorPosition oldCursorPosition = new CursorPosition(0, 0);
     public CursorPosition currentCursorPosition { get; private set; } = new CursorPosition(0, 0);
-    public int LineNumber { get => currentCursorPosition.LineNumber; set => currentCursorPosition.LineNumber = value; }
-    public int CharacterPosition { get => currentCursorPosition.CharacterPosition; set { currentCursorPosition.CharacterPosition = value; } }
+    public int LineNumber { get => currentCursorPosition.LineNumber; set { currentCursorPosition.LineNumber = value; currentCursorPosition.IsTrailing = false; } }
+    public int CharacterPosition { get => currentCursorPosition.CharacterPosition; set { currentCursorPosition.CharacterPosition = value; currentCursorPosition.IsTrailing = false; } }
+    public bool IsTrailing { get => currentCursorPosition.IsTrailing; set => currentCursorPosition.IsTrailing = value; }
 
     private TextManager textManager;
     private CurrentLineManager currentLineManager;
@@ -40,20 +41,22 @@ internal class CursorManager
     {
         this.LineNumber = line;
         this.CharacterPosition = character;
+        this.IsTrailing = false;
         ResetPreferredPosition();
     }
     public void SetCursorPositionCopyValues(CursorPosition cursorPosition)
     {
         this.currentCursorPosition.LineNumber = cursorPosition.LineNumber;
         this.currentCursorPosition.CharacterPosition = cursorPosition.CharacterPosition;
+        this.currentCursorPosition.IsTrailing = cursorPosition.IsTrailing;
         ResetPreferredPosition();
     }
 
     public int GetCurPosInLine()
     {
         int curLineLength = currentLineManager.Length;
-
-        return Math.Clamp(CharacterPosition, 0, curLineLength);
+        int pos = CharacterPosition + (IsTrailing ? 1 : 0);
+        return Math.Clamp(pos, 0, curLineLength);
     }
 
     private int CheckIndex(string str, int index) => Math.Clamp(index, 0, str.Length - 1);
@@ -63,7 +66,7 @@ internal class CursorManager
             return false;
 
         if (curPos1.LineNumber == curPos2.LineNumber)
-            return curPos1.CharacterPosition == curPos2.CharacterPosition;
+            return curPos1.CharacterPosition == curPos2.CharacterPosition && curPos1.IsTrailing == curPos2.IsTrailing;
         return false;
     }
 
@@ -195,6 +198,12 @@ internal class CursorManager
         if (LineNumber < 0)
             return;
 
+        if (IsTrailing)
+        {
+            IsTrailing = false;
+            return;
+        }
+
         int currentLineLength = textManager.GetLineLength(LineNumber);
         if (CharacterPosition == 0 && LineNumber > 0)
         {
@@ -209,6 +218,13 @@ internal class CursorManager
     public void MoveRight()
     {
         ResetPreferredPosition();
+
+        if (IsTrailing)
+        {
+            IsTrailing = false;
+            CharacterPosition++;
+            return;
+        }
 
         int lineLength = textManager.GetLineLength(LineNumber);
 
@@ -228,6 +244,7 @@ internal class CursorManager
     }
     public void MoveDown()
     {
+        IsTrailing = false;
         if (LineNumber < textManager.LinesCount - 1)
         {
             if (!PreferredCharacterPosition.HasValue)
@@ -239,6 +256,7 @@ internal class CursorManager
     }
     public void MoveUp()
     {
+        IsTrailing = false;
         if (LineNumber > 0)
         {
             if (!PreferredCharacterPosition.HasValue)

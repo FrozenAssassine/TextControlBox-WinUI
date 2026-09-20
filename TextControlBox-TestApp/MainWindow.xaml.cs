@@ -152,11 +152,13 @@ namespace TextControlBox_TestApp
             float lineH = textbox.SingleLineHeight;
             sb.AppendLine($"SingleLineHeight: {lineH:F2} px");
 
+            float topInset = textbox.CoreTextBox?.textRenderer?.TopInset ?? 0f;
+
             for (int line = 0; line <= 2; line++)
             {
                 textbox.SetCursorPosition(line, 0);
                 var pt = textbox.GetCursorPosition();
-                float expectedY = line * lineH;
+                float expectedY = line * lineH + topInset;
                 float highlighterY = (float)pt.Y;
                 float highlighterHeight = lineH;
                 bool ok = Math.Abs(pt.Y - expectedY) < 1.0;
@@ -188,13 +190,13 @@ namespace TextControlBox_TestApp
             var vec0 = layout?.GetCaretPosition(0, false) ?? default;
             var regions0 = layout?.GetCharacterRegions(0, 1);
             sb.AppendLine($"[DEBUG WRAP LINE 0] GetLineTopY(0)={tr?.GetLineTopY(0)}, StartVR={tr?.StartVisualRow}, CaretVec=({vec0.X}, {vec0.Y}), Region0={(regions0?.Length > 0 ? regions0[0].LayoutBounds.ToString() : "none")}, LayoutBounds={layout?.LayoutBounds}");
-            sb.AppendLine($"[WORD-WRAP] Line 0 (start): CursorPos=({ptWrap0.X:F1}, {ptWrap0.Y:F1}), HighlighterY={ptWrap0.Y:F1} => {(Math.Abs(ptWrap0.Y - 0) < 1.0 ? "PASS" : "FAIL")}");
+            sb.AppendLine($"[WORD-WRAP] Line 0 (start): CursorPos=({ptWrap0.X:F1}, {ptWrap0.Y:F1}), HighlighterY={ptWrap0.Y:F1} => {(Math.Abs(ptWrap0.Y - topInset) < 1.0 ? "PASS" : "FAIL")}");
 
             textbox.SetCursorPosition(1, 0);
             var ptWrap1 = textbox.GetCursorPosition();
             var vec1 = layout?.GetCaretPosition(0, false) ?? default;
             sb.AppendLine($"[DEBUG WRAP LINE 1] GetLineTopY(1)={tr?.GetLineTopY(1)}, CaretVec=({vec1.X}, {vec1.Y})");
-            sb.AppendLine($"[WORD-WRAP] Line 1 (first row): CursorPos=({ptWrap1.X:F1}, {ptWrap1.Y:F1}), HighlighterY={ptWrap1.Y:F1} => {(Math.Abs(ptWrap1.Y - lineH) < 1.0 ? "PASS" : "FAIL")}");
+            sb.AppendLine($"[WORD-WRAP] Line 1 (first row): CursorPos=({ptWrap1.X:F1}, {ptWrap1.Y:F1}), HighlighterY={ptWrap1.Y:F1} => {(Math.Abs(ptWrap1.Y - (lineH + topInset)) < 1.0 ? "PASS" : "FAIL")}");
 
             textbox.SetCursorPosition(1, longLine.Length);
             var ptWrap1End = textbox.GetCursorPosition();

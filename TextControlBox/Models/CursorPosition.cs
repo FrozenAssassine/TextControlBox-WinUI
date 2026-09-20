@@ -1,4 +1,4 @@
-﻿namespace TextControlBoxNS;
+namespace TextControlBoxNS;
 
 /// <summary>
 /// Represents the position of the cursor in the textbox.
@@ -20,14 +20,18 @@ public class CursorPosition
     /// Gets the line number in which the cursor is currently positioned.
     /// </summary>
     public int LineNumber { get; internal set; } = 0;
+    /// <summary>
+    /// Gets whether the cursor has trailing affinity (e.g. at the trailing edge of a character before a wrap).
+    /// </summary>
+    public bool IsTrailing { get; internal set; } = false;
 
     internal CursorPosition(CursorPosition curPos)
     {
-        SetChangeValues(curPos.LineNumber, curPos.CharacterPosition);
+        SetChangeValues(curPos.LineNumber, curPos.CharacterPosition, curPos.IsTrailing);
     }
-    internal CursorPosition(int characterPosition = 0, int lineNumber = 0)
+    internal CursorPosition(int characterPosition = 0, int lineNumber = 0, bool isTrailing = false)
     {
-        SetChangeValues(lineNumber, characterPosition);
+        SetChangeValues(lineNumber, characterPosition, isTrailing);
     }
 
     internal void SetChangeValues(CursorPosition curPos)
@@ -40,19 +44,22 @@ public class CursorPosition
 
         this.LineNumber = curPos.LineNumber;
         this.CharacterPosition = curPos.CharacterPosition;
+        this.IsTrailing = curPos.IsTrailing;
         this.IsNull = curPos.IsNull;
     }
 
-    internal void SetChangeValues(int line, int cursor)
+    internal void SetChangeValues(int line, int cursor, bool isTrailing = false)
     {
         this.IsNull = false;
         this.LineNumber = line;
         this.CharacterPosition = cursor;
+        this.IsTrailing = isTrailing;
     }
 
-    public string ToString()
+    /// <inheritdoc/>
+    public override string ToString()
     {
-        return $"Line: {LineNumber}, Char: {CharacterPosition}";
+        return $"Line: {LineNumber}, Char: {CharacterPosition}" + (IsTrailing ? " (Trailing)" : "");
     }
 
     internal bool IsNull { get; set; } = false;

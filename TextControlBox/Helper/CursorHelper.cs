@@ -18,20 +18,36 @@ internal class CursorHelper
             return textRenderer.GetDocumentLineFromVisualRow(textRenderer.GetVisualRowFromPointY(point.Y));
 
         //Calculate the relative linenumber, where the pointer was pressed at
-        double adjustedY = Math.Max(0, point.Y);
+        double adjustedY = Math.Max(0, point.Y - textRenderer.TopInset);
         int relativeLine = (int)Math.Floor(adjustedY / textRenderer.SingleLineHeight);
 
         return Math.Max(0, relativeLine + textRenderer.NumberOfStartLine);
     }
-    public static int GetCharacterPositionFromPoint(CurrentLineManager currentLineManager, CanvasTextLayout textLayout, Point cursorPosition, float marginLeft, float y = 0)
+    public static (int CharacterIndex, bool IsTrailing) GetCharacterPositionFromPoint(CurrentLineManager currentLineManager, CanvasTextLayout textLayout, Point cursorPosition, float marginLeft, float y = 0, bool isSelecting = false)
     {
         if (currentLineManager.GetCurrentLineText() == null || textLayout == null)
-            return 0;
+            return (0, false);
 
         textLayout.HitTest(
             (float)cursorPosition.X - marginLeft, y,
-            out var textLayoutRegion);
-        return textLayoutRegion.CharacterIndex;
+            out var textLayoutRegion,
+            out bool isTrailingHit);
+
+        if (!isTrailingHit)
+            return (textLayoutRegion.CharacterIndex, false);
+
+        int nextIndex = textLayoutRegion.CharacterIndex + 1;
+        if (isSelecting)
+            return (nextIndex, false);
+
+        // If not selecting, check if the trailing position wraps to the next visual row.
+        // If it does, keep the cursor on the current visual row at the trailing edge of this character.
+        var hitPos = textLayout.GetCaretPosition(textLayoutRegion.CharacterIndex, false);
+        var nextPos = textLayout.GetCaretPosition(nextIndex, false);
+        if (nextPos.Y > hitPos.Y + 1)
+            return (textLayoutRegion.CharacterIndex, true);
+
+        return (nextIndex, false);
     }
 
     //Return the position in pixels of the cursor in the current line
@@ -40,10 +56,10 @@ internal class CursorHelper
         if (currentLineTextLayout == null)
             return 0;
 
-        return currentLineTextLayout.GetCaretPosition(cursorPosition.CharacterPosition < 0 ? 0 : cursorPosition.CharacterPosition, false).X + xOffset;
+        return currentLineTextLayout.GetCaretPosition(cursorPosition.CharacterPosition < 0 ? 0 : cursorPosition.CharacterPosition, cursorPosition.IsTrailing).X + xOffset;
     }
 
-    public static void UpdateCursorPosFromPoint(CanvasControl canvasText, CurrentLineManager currentLineManager, TextRenderer textRenderer, ScrollManager scrollManager, Point point, CursorPosition cursorPos)
+    public static void UpdateCursorPosFromPoint(CanvasControl canvasText, CurrentLineManager currentLineManager, TextRenderer textRenderer, ScrollManager scrollManager, Point point, CursorPosition cursorPos, bool isSelecting = false)
     {
         //Apply an offset to the cursorposition to make selection easier
         point.X += textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
@@ -63,8 +79,9 @@ internal class CursorHelper
             ? textRenderer.GetWrappedLineHitTestYFromPointY(cursorPos.LineNumber, point.Y)
             : 0;
         float marginLeft = textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset;
-        int renderedCharacterPosition = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, marginLeft, hitTestY);
+        var (renderedCharacterPosition, isTrailing) = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, marginLeft, hitTestY, isSelecting);
         cursorPos.CharacterPosition = textRenderer.GetDocumentCharacterIndexFromRenderedIndex(cursorPos.LineNumber, renderedCharacterPosition);
+        cursorPos.IsTrailing = isTrailing;
     }
 }
 

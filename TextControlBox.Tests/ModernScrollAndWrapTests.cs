@@ -288,8 +288,8 @@ public class ModernScrollAndWrapTests
         float lineHeight = core.textRenderer.SingleLineHeight;
         float topInset = core.textRenderer.TopInset;
 
-        // TopInset is 0 for non-wrapped rendering
-        Assert.AreEqual(0f, topInset);
+        // TopInset is consistent
+        Assert.AreEqual(core.textRenderer.TopInset, topInset);
 
         // Click on Line 0 (y in [0, lineHeight))
         int line0 = TextControlBoxNS.Helper.CursorHelper.GetCursorLineFromPoint(core.textRenderer, new Windows.Foundation.Point(10, 5));
@@ -298,6 +298,94 @@ public class ModernScrollAndWrapTests
         // Click on Line 1 (y in [lineHeight, 2 * lineHeight))
         int line1 = TextControlBoxNS.Helper.CursorHelper.GetCursorLineFromPoint(core.textRenderer, new Windows.Foundation.Point(10, lineHeight + 5));
         Assert.AreEqual(1, line1);
+    }
+    [UITestMethod]
+    public void WordWrap_HitTesting_ClickPastEndOfVisualRow_ReturnsPositionAfterLastChar()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        // Line 0 wraps across multiple rows: row 0 ends with a colon
+        string text = "Hello world this is a wrapped line that ends with colon: and this text continues on row one";
+        core.SetText(text);
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+        core.textRenderer.CalculateLinesToRender();
+
+        int colonIndex = text.IndexOf(':');
+        Assert.IsTrue(colonIndex > 0);
+
+        // Update current line text layout
+        core.textRenderer.UpdateCurrentLineTextLayout(core.canvasText);
+        Assert.IsNotNull(core.textRenderer.CurrentLineTextLayout);
+
+        // Hit-test for cursor placement (isSelecting = false): cursor stays on visual row 0 at the colon
+        var cursorPos = new TextControlBoxNS.CursorPosition(0, 0);
+        float hitY = core.textRenderer.TopInset + core.textRenderer.SingleLineHeight * 0.5f;
+        TextControlBoxNS.Helper.CursorHelper.UpdateCursorPosFromPoint(
+            core.canvasText,
+            core.currentLineManager,
+            core.textRenderer,
+            core.scrollManager,
+            new Windows.Foundation.Point(9999, hitY),
+            cursorPos,
+            isSelecting: false);
+
+        Assert.AreEqual(0, cursorPos.LineNumber);
+        Assert.AreEqual(colonIndex, cursorPos.CharacterPosition, "For cursor placement, cursor must stay on row 0 (at colon) instead of jumping to row 1 at col 0");
+        Assert.IsTrue(cursorPos.IsTrailing, "Cursor must have IsTrailing set to true when placed at the end of a wrapped line");
+
+        // Set cursor in core and verify GetCursorPosition() is on row 0 at the trailing edge (behind the colon)
+        core.cursorManager.SetCursorPositionCopyValues(cursorPos);
+        var cursorPoint = core.GetCursorPosition();
+        Assert.AreEqual(core.textRenderer.TopInset, (float)cursorPoint.Y, 0.5f, "Cursor Y must be on row 0 (TopInset)");
+        Assert.IsTrue(cursorPoint.X > 0, "Cursor X must be at the end of row 0 (behind colon)");
+
+        // Hit-test for selection (isSelecting = true): must yield colonIndex + 1 so selection includes the colon
+        var selPos = new TextControlBoxNS.CursorPosition(0, 0);
+        TextControlBoxNS.Helper.CursorHelper.UpdateCursorPosFromPoint(
+            core.canvasText,
+            core.currentLineManager,
+            core.textRenderer,
+            core.scrollManager,
+            new Windows.Foundation.Point(9999, hitY),
+            selPos,
+            isSelecting: true);
+        Assert.AreEqual(colonIndex + 1, selPos.CharacterPosition, "Selection must include the colon");
+
+        // Typing a character at trailing position must insert after the colon
+        core.textActionManager.AddCharacter("X");
+        Assert.AreEqual("X", core.textManager.GetLineText(0).Substring(colonIndex + 1, 1), "Typing with IsTrailing must insert after the colon");
+
+        // Check CaretPosition trailing on colon vs leading on next char
+        var trailingColon = core.textRenderer.CurrentLineTextLayout.GetCaretPosition(colonIndex, true);
+        var leadingNext = core.textRenderer.CurrentLineTextLayout.GetCaretPosition(colonIndex + 1, false);
+        Assert.IsTrue(trailingColon.Y < leadingNext.Y, $"Trailing caret Y ({trailingColon.Y}) must be on row 0, above row 1 leading Y ({leadingNext.Y})");
+        Assert.IsTrue(trailingColon.X > 0, "Trailing caret X must be at the end of row 0");
+    }
+
+    [UITestMethod]
+    public void ClickPastEndOfLine5_WordWrapTrue_DoesNotJumpToLine6()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        core.SetText("Line 0\nLine 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6");
+        core.WordWrap = true;
+        core.textRenderer.EnsureTextFormat();
+        core.textRenderer.CalculateLinesToRender();
+
+        float lineHeight = core.textRenderer.SingleLineHeight;
+        float hitY = core.textRenderer.TopInset + 5.5f * lineHeight; // Line 5
+        var cursorPos = new TextControlBoxNS.CursorPosition(0, 0);
+
+        TextControlBoxNS.Helper.CursorHelper.UpdateCursorPosFromPoint(
+            core.canvasText,
+            core.currentLineManager,
+            core.textRenderer,
+            core.scrollManager,
+            new Windows.Foundation.Point(9999, hitY),
+            cursorPos,
+            isSelecting: false);
+
+        Assert.AreEqual(5, cursorPos.LineNumber);
+        Assert.AreEqual(6, cursorPos.CharacterPosition);
     }
 
     [UITestMethod]
@@ -680,8 +768,10 @@ public class ModernScrollAndWrapTests
         var pt = core.GetCursorPosition();
         float singleLine = core.textRenderer.SingleLineHeight;
 
-        // Visual row in slice is 2, so Y must be 2 * singleLine (around 40px), NOT negative or shifted up by 50 rows
-        Assert.AreEqual(2 * singleLine, (float)pt.Y, 1.0f);
+        float topInset = core.textRenderer.TopInset;
+
+        // Visual row in slice is 2, so Y must be topInset + 2 * singleLine (around 40px), NOT negative or shifted up by 50 rows
+        Assert.AreEqual(topInset + 2 * singleLine, (float)pt.Y, 1.0f);
     }
 
     [UITestMethod]

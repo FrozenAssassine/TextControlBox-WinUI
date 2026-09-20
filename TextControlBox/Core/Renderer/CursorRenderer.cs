@@ -54,12 +54,12 @@ internal class CursorRenderer
         this.caretBlinkManager = caretBlinkManager;
     }
 
-    public void RenderCursor(CanvasTextLayout textLayout, int characterPosition, float xOffset, float y, float fontSize, CursorSize customSize, CanvasDrawEventArgs args, CanvasSolidColorBrush cursorColorBrush)
+    public void RenderCursor(CanvasTextLayout textLayout, int characterPosition, float xOffset, float y, float fontSize, CursorSize customSize, CanvasDrawEventArgs args, CanvasSolidColorBrush cursorColorBrush, bool isTrailing = false)
     {
         if (textLayout == null)
             return;
 
-        Vector2 vector = textLayout.GetCaretPosition(characterPosition < 0 ? 0 : characterPosition, false);
+        Vector2 vector = textLayout.GetCaretPosition(characterPosition < 0 ? 0 : characterPosition, isTrailing);
         if (customSize == null)
             args.DrawingSession.FillRectangle(vector.X + xOffset, y, 2, fontSize, cursorColorBrush);
         else
@@ -91,16 +91,18 @@ internal class CursorRenderer
         if (textRenderer.IsWordWrapEnabled && textRenderer.IsVirtualizedWrappedLine && renderedCharacterPos < 0)
             return;
 
+        bool isTrailing = cursorManager.currentCursorPosition.IsTrailing;
+
         float withinLineRowOffset = 0;
         if (textRenderer.IsWordWrapEnabled && textRenderer.CurrentLineTextLayout != null && renderedCharacterPos >= 0)
         {
             float baseRowY = textRenderer.CurrentLineTextLayout.GetCaretPosition(0, false).Y;
-            var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedCharacterPos, false);
+            var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedCharacterPos, isTrailing);
             int visualRow = (int)Math.Round((vector.Y - baseRowY) / Math.Max(1, textRenderer.SingleLineHeight));
             withinLineRowOffset = visualRow * textRenderer.SingleLineHeight;
         }
 
-        float renderPosY = textRenderer.GetCurrentLineLayoutTopY(cursorManager.LineNumber) + withinLineRowOffset;
+        float renderPosY = textRenderer.GetCurrentLineLayoutTopY(cursorManager.LineNumber) + withinLineRowOffset + textRenderer.TopInset;
         
         bool offscreen = renderPosY > canvasCursor.ActualHeight || renderPosY + textRenderer.SingleLineHeight < 0;
         if (offscreen)
@@ -124,7 +126,8 @@ internal class CursorRenderer
                     zoomManager.ZoomedFontSize,
                     _CursorSize,
                     args,
-                    designHelper.CursorColorBrush);
+                    designHelper.CursorColorBrush,
+                    isTrailing);
             }
 
             if (!cursorManager.Equals(cursorManager.currentCursorPosition, cursorManager.oldCursorPosition))

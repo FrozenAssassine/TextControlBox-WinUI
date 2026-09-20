@@ -1024,14 +1024,14 @@ internal sealed partial class CoreTextControlBox : UserControl
             if (renderedPos >= 0)
             {
                 float baseRowY = textRenderer.CurrentLineTextLayout.GetCaretPosition(0, false).Y;
-                var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedPos, false);
+                var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedPos, CursorPosition.IsTrailing);
                 int visualRow = (int)Math.Round((vector.Y - baseRowY) / Math.Max(1, textRenderer.SingleLineHeight));
                 withinLineRowOffset = visualRow * textRenderer.SingleLineHeight;
             }
         }
         return new Point
         {
-            Y = textRenderer.GetCurrentLineLayoutTopY(CursorPosition.LineNumber) + withinLineRowOffset,
+            Y = textRenderer.GetCurrentLineLayoutTopY(CursorPosition.LineNumber) + withinLineRowOffset + textRenderer.TopInset,
             X = CursorHelper.GetCursorPositionInLine(textRenderer.CurrentLineTextLayout, CursorPosition, textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset)
         };
     }

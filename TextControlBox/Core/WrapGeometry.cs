@@ -12,10 +12,9 @@ internal static class WrapGeometry
     /// Visual row under pointer Y. <paramref name="startVisualRow"/> is the first visual row currently
     /// scrolled into view; the small top inset (a fraction of a row) matches the vertical draw offset.
     /// </summary>
-    public static int CalculateVisualRowFromPointY(double y, int startVisualRow, float singleLineHeight, int defaultVerticalScrollSensitivity)
+    public static int CalculateVisualRowFromPointY(double y, int startVisualRow, float singleLineHeight, int defaultVerticalScrollSensitivity, float topInset = 0)
     {
         double rowHeight = Math.Max(1, singleLineHeight);
-        double topInset = 0;
         int relativeRow = (int)Math.Floor(Math.Max(0, y - topInset) / rowHeight);
         return startVisualRow + relativeRow;
     }
@@ -24,10 +23,9 @@ internal static class WrapGeometry
     /// Y coordinate (relative to a wrapped line's own layout) to hit-test against, clamped to that line's
     /// wrapped extent so a click below the last row maps to the last row rather than past it.
     /// </summary>
-    public static float CalculateWrappedLineHitTestYFromPointY(double y, float lineTopY, float singleLineHeight, int defaultVerticalScrollSensitivity, int wrappedRowCount)
+    public static float CalculateWrappedLineHitTestYFromPointY(double y, float lineTopY, float singleLineHeight, int defaultVerticalScrollSensitivity, int wrappedRowCount, float topInset = 0)
     {
         double rowHeight = Math.Max(1, singleLineHeight);
-        double topInset = 0;
         double maxHitTestY = Math.Max(0, wrappedRowCount * rowHeight - 0.001);
         return (float)Math.Clamp(y - lineTopY - topInset, 0, maxHitTestY);
     }
