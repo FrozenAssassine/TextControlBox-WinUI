@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
 using System;
 using System.Diagnostics;
@@ -506,5 +506,229 @@ public class UndoRedoTests
         Assert.AreEqual(textBefore, coreTextbox.GetText());
         coreTextbox.Undo();
         Assert.AreEqual(textBefore, coreTextbox.GetText());
+    }
+
+    [UITestMethod]
+    public void UndoBatching_ConsecutiveWordCharacters_SingleUndo()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox();
+        coreTextbox.SetCursorPosition(0, 0);
+        string textBefore = coreTextbox.GetText();
+
+        foreach (char c in "Hello")
+        {
+            coreTextbox.textActionManager.AddCharacter(c.ToString());
+        }
+
+        Assert.StartsWith("Hello", coreTextbox.GetLineText(0));
+
+        // A single Undo should revert the whole word
+        coreTextbox.Undo();
+        Assert.AreEqual(textBefore, coreTextbox.GetText());
+
+        // A single Redo should restore the whole word
+        coreTextbox.Redo();
+        Assert.StartsWith("Hello", coreTextbox.GetLineText(0));
+    }
+
+    [UITestMethod]
+    public void UndoBatching_WordAndSpace_SeparateUndo()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox();
+        coreTextbox.SetCursorPosition(0, 0);
+        string textBefore = coreTextbox.GetText();
+
+        foreach (char c in "Hello World")
+        {
+            coreTextbox.textActionManager.AddCharacter(c.ToString());
+        }
+
+        Assert.StartsWith("Hello World", coreTextbox.GetLineText(0));
+
+        // Undo #1 undos "World"
+        coreTextbox.Undo();
+        Assert.StartsWith("Hello ", coreTextbox.GetLineText(0));
+
+        // Undo #2 undos the space " "
+        coreTextbox.Undo();
+        Assert.StartsWith("Hello", coreTextbox.GetLineText(0));
+
+        // Undo #3 undos "Hello"
+        coreTextbox.Undo();
+        Assert.AreEqual(textBefore, coreTextbox.GetText());
+
+        // Redo restores each step in order
+        coreTextbox.Redo();
+        Assert.StartsWith("Hello", coreTextbox.GetLineText(0));
+
+        coreTextbox.Redo();
+        Assert.StartsWith("Hello ", coreTextbox.GetLineText(0));
+
+        coreTextbox.Redo();
+        Assert.StartsWith("Hello World", coreTextbox.GetLineText(0));
+    }
+
+    [UITestMethod]
+    public void UndoBatching_WordAndSymbol_SeparateUndo()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox();
+        coreTextbox.SetCursorPosition(0, 0);
+        string textBefore = coreTextbox.GetText();
+
+        foreach (char c in "foo.bar")
+        {
+            coreTextbox.textActionManager.AddCharacter(c.ToString());
+        }
+
+        Assert.StartsWith("foo.bar", coreTextbox.GetLineText(0));
+
+        // Undo #1 undos "bar"
+        coreTextbox.Undo();
+        Assert.StartsWith("foo.", coreTextbox.GetLineText(0));
+
+        // Undo #2 undos "."
+        coreTextbox.Undo();
+        Assert.StartsWith("foo", coreTextbox.GetLineText(0));
+
+        // Undo #3 undos "foo"
+        coreTextbox.Undo();
+        Assert.AreEqual(textBefore, coreTextbox.GetText());
+    }
+
+    [UITestMethod]
+    public void UndoBatching_CursorMovement_BreaksBatch()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox();
+        coreTextbox.SetCursorPosition(0, 0);
+        string textBefore = coreTextbox.GetText();
+
+        foreach (char c in "Hello")
+        {
+            coreTextbox.textActionManager.AddCharacter(c.ToString());
+        }
+
+        // Reposition cursor to start
+        coreTextbox.SetCursorPosition(0, 0);
+        coreTextbox.undoRedo.EndBatch();
+
+        // Type 'X'
+        coreTextbox.textActionManager.AddCharacter("X");
+        Assert.StartsWith("XHello", coreTextbox.GetLineText(0));
+
+        // Undo #1 should revert 'X'
+        coreTextbox.Undo();
+        Assert.StartsWith("Hello", coreTextbox.GetLineText(0));
+
+        // Undo #2 should revert "Hello"
+        coreTextbox.Undo();
+        Assert.AreEqual(textBefore, coreTextbox.GetText());
+    }
+
+    [UITestMethod]
+    public void UndoBatching_Backspace_BreaksBatch()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox();
+        coreTextbox.SetCursorPosition(0, 0);
+        string textBefore = coreTextbox.GetText();
+
+        foreach (char c in "Hello")
+        {
+            coreTextbox.textActionManager.AddCharacter(c.ToString());
+        }
+
+        // Backspace removes the 'o'
+        coreTextbox.textActionManager.RemoveText(false);
+        Assert.StartsWith("Hell", coreTextbox.GetLineText(0));
+
+        // Undo #1 should revert the Backspace (restores 'o')
+        coreTextbox.Undo();
+        Assert.StartsWith("Hello", coreTextbox.GetLineText(0));
+
+        // Undo #2 should revert "Hello"
+        coreTextbox.Undo();
+        Assert.AreEqual(textBefore, coreTextbox.GetText());
+    }
+
+    [UITestMethod]
+    public void UndoBatching_Timeout_BreaksBatch()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox();
+        coreTextbox.undoRedo.BatchTimeout = TimeSpan.FromMilliseconds(50);
+        coreTextbox.SetCursorPosition(0, 0);
+        string textBefore = coreTextbox.GetText();
+
+        foreach (char c in "He")
+        {
+            coreTextbox.textActionManager.AddCharacter(c.ToString());
+        }
+
+        // Wait longer than timeout
+        System.Threading.Thread.Sleep(70);
+
+        foreach (char c in "llo")
+        {
+            coreTextbox.textActionManager.AddCharacter(c.ToString());
+        }
+
+        Assert.StartsWith("Hello", coreTextbox.GetLineText(0));
+
+        // Undo #1 should revert "llo"
+        coreTextbox.Undo();
+        Assert.StartsWith("He", coreTextbox.GetLineText(0));
+
+        // Undo #2 should revert "He"
+        coreTextbox.Undo();
+        Assert.AreEqual(textBefore, coreTextbox.GetText());
+    }
+
+    [UITestMethod]
+    public void UndoBatching_Disabled_BehavesCharByChar()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox();
+        coreTextbox.undoRedo.UndoBatching = false;
+        coreTextbox.SetCursorPosition(0, 0);
+        string textBefore = coreTextbox.GetText();
+
+        foreach (char c in "Hi")
+        {
+            coreTextbox.textActionManager.AddCharacter(c.ToString());
+        }
+
+        Assert.StartsWith("Hi", coreTextbox.GetLineText(0));
+
+        // When batching is disabled, Undo reverts char by char
+        coreTextbox.Undo();
+        Assert.StartsWith("H", coreTextbox.GetLineText(0));
+
+        coreTextbox.Undo();
+        Assert.AreEqual(textBefore, coreTextbox.GetText());
+    }
+
+    [UITestMethod]
+    public void UndoBatching_RedoStackClearedOnNewEdit()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox();
+        coreTextbox.SetCursorPosition(0, 0);
+
+        foreach (char c in "Hello")
+        {
+            coreTextbox.textActionManager.AddCharacter(c.ToString());
+        }
+
+        // Undo "Hello"
+        coreTextbox.Undo();
+        Assert.IsTrue(coreTextbox.undoRedo.CanRedo);
+
+        // Type a new word "World" -> RedoStack must be cleared!
+        foreach (char c in "World")
+        {
+            coreTextbox.textActionManager.AddCharacter(c.ToString());
+        }
+
+        Assert.IsFalse(coreTextbox.undoRedo.CanRedo);
+
+        // Undo should now revert "World"
+        coreTextbox.Undo();
+        Assert.IsTrue(coreTextbox.undoRedo.CanRedo);
     }
 }

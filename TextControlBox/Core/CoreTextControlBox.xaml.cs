@@ -193,6 +193,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         if (e.Key == VirtualKey.Tab)
         {
+            undoRedo.EndBatch();
             if (IsReadOnly)
             {
                 e.Handled = true;
@@ -302,6 +303,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                 break;
             case VirtualKey.Left:
                 {
+                    undoRedo.EndBatch();
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
@@ -325,6 +327,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                 }
             case VirtualKey.Right:
                 {
+                    undoRedo.EndBatch();
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
@@ -348,6 +351,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                 }
             case VirtualKey.Down:
                 {
+                    undoRedo.EndBatch();
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
@@ -372,6 +376,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                 }
             case VirtualKey.Up:
                 {
+                    undoRedo.EndBatch();
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
@@ -401,16 +406,19 @@ internal sealed partial class CoreTextControlBox : UserControl
                     break;
                 }
             case VirtualKey.PageUp:
+                undoRedo.EndBatch();
                 ScrollPageUp();
                 e.Handled = true;
                 break;
             case VirtualKey.PageDown:
+                undoRedo.EndBatch();
                 ScrollPageDown();
                 e.Handled = true;
                 break;
             case VirtualKey.Home:
             case VirtualKey.End:
                 {
+                    undoRedo.EndBatch();
                     bool isHome = e.Key == VirtualKey.Home;
 
                     //start or clear selection
@@ -611,6 +619,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     }
     private void InputManager_LostFocus(object sender, RoutedEventArgs e)
     {
+        undoRedo.EndBatch();
         focusManager.RemoveFocus();
     }
 

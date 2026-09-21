@@ -221,6 +221,7 @@ internal class PointerActionsManager
     {
         coreTextbox.Focus(FocusState.Programmatic);
         cursorManager.ResetPreferredPosition();
+        coreTextbox.undoRedo.EndBatch();
 
         bool leftButtonPressed = properties.IsLeftButtonPressed;
         bool rightButtonPressed = properties.IsRightButtonPressed;

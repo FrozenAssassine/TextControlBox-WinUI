@@ -1072,6 +1072,11 @@ public partial class TextControlBox : UserControl
     public bool UndoRedoEnabled { get => coreTextBox.undoRedo.UndoRedoEnabled; set => coreTextBox.undoRedo.UndoRedoEnabled = value; }
 
     /// <summary>
+    /// Gets or sets whether consecutive character typing within words is batched into a single undo/redo operation (like VS Code).
+    /// </summary>
+    public bool UndoBatching { get => coreTextBox.undoRedo.UndoBatching; set => coreTextBox.undoRedo.UndoBatching = value; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether whitespace characters (spaces and tabs)
     /// are visually displayed in the text box (e.g., as dots or arrows).
     /// </summary>

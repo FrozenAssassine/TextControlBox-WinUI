@@ -1,6 +1,7 @@
 using System;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Helper;
+using TextControlBoxNS.Models;
 
 namespace TextControlBoxNS.Core;
 
@@ -15,12 +16,6 @@ internal class CursorManager
     private TextManager textManager;
     private CurrentLineManager currentLineManager;
 
-    enum CharClass
-    {
-        Whitespace,
-        Word,
-        Symbol
-    }
 
     public void Init(TextManager textManager, CurrentLineManager currentLineManager)
     {
@@ -108,16 +103,7 @@ internal class CursorManager
         return stepsToMove;
     }
 
-    CharClass GetCharClass(char c)
-    {
-        if (char.IsWhiteSpace(c))
-            return CharClass.Whitespace;
-
-        if (char.IsLetterOrDigit(c) || c == '_')
-            return CharClass.Word;
-
-        return CharClass.Symbol;
-    }
+    CharClass GetCharClass(char c) => CharClassHelper.GetCharClass(c);
     private int CountCharactersToMoveLeft(int startPosition)
     {
         var line = currentLineManager.CurrentLine;

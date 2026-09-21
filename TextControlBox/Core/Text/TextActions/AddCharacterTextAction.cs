@@ -48,7 +48,7 @@ internal class AddCharacterTextAction
         var res = AutoPairing.AutoPair(coreTextbox, text);
         text = res.text;
 
-        undoRedo.RecordUndoAction(() =>
+        undoRedo.RecordTypingAction(() =>
         {
             var characterPos = cursorManager.GetCurPosInLine();
 
@@ -58,7 +58,7 @@ internal class AddCharacterTextAction
                 currentLineManager.AddText(text, characterPos);
 
             cursorManager.CharacterPosition = res.length + characterPos;
-        }, cursorManager.LineNumber, 1, 1);
+        }, cursorManager.LineNumber, text, isAutoPaired: text.Length > 1);
 
         if (currentLineManager.Length > longestLineManager.longestLineLength)
         {

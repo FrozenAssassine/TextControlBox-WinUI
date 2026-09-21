@@ -75,6 +75,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void SelectAll()
         {
+            undoRedo.EndBatch();
             //No selection can be shown
             if (textManager.LinesCount == 1 && textManager.GetLineLength(0) == 0)
                 return;
@@ -138,6 +139,7 @@ namespace TextControlBoxNS.Core.Text
         //Trys running the code and clears the memory if OutOfMemoryException gets thrown
         public async void Safe_Paste(bool handleException = true)
         {
+            undoRedo.EndBatch();
             if (textManager._IsReadOnly)
                 return;
 
@@ -189,6 +191,7 @@ namespace TextControlBoxNS.Core.Text
         }
         public void Safe_Cut(bool handleException = true)
         {
+            undoRedo.EndBatch();
             if (textManager._IsReadOnly)
                 return;
 
@@ -248,6 +251,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void Safe_LoadLines(IEnumerable<string> lines, bool autodetectTabsSpaces = true, LineEnding lineEnding = LineEnding.CRLF, bool HandleException = true)
         {
+            undoRedo.EndBatch();
             try
             {
                 if (lines == null)
@@ -296,6 +300,7 @@ namespace TextControlBoxNS.Core.Text
         }
         public void Safe_LoadText(string text, bool autodetectTabsSpaces = true, bool handleException = true)
         {
+            undoRedo.EndBatch();
             try
             {
                 if (text == null)
@@ -345,6 +350,7 @@ namespace TextControlBoxNS.Core.Text
         }
         public void Safe_SetText(string text, bool handleException = true)
         {
+            undoRedo.EndBatch();
             try
             {
                 if (text == null)
@@ -386,6 +392,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void DeleteSelection()
         {
+            undoRedo.EndBatch();
             if (!selectionManager.HasSelection)
                 return;
 
@@ -408,6 +415,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void RemoveText(bool controlIsPressed = false)
         {
+            undoRedo.EndBatch();
             cursorManager.ResetPreferredPosition();
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
@@ -432,6 +440,7 @@ namespace TextControlBoxNS.Core.Text
         }
         public void AddNewLine()
         {
+            undoRedo.EndBatch();
             cursorManager.ResetPreferredPosition();
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
@@ -469,6 +478,7 @@ namespace TextControlBoxNS.Core.Text
         }
         public void DeleteText(bool controlIsPressed = false, bool shiftIsPressed = false)
         {
+            undoRedo.EndBatch();
             cursorManager.ResetPreferredPosition();
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
@@ -542,6 +552,7 @@ namespace TextControlBoxNS.Core.Text
 
         public bool DeleteLine(int line)
         {
+            undoRedo.EndBatch();
             if (line >= textManager.LinesCount || line < 0)
                 return false;
 
@@ -570,6 +581,7 @@ namespace TextControlBoxNS.Core.Text
 
         public bool AddLine(int line, string text)
         {
+            undoRedo.EndBatch();
             if (line > textManager.LinesCount || line < 0)
                 return false;
 
@@ -594,6 +606,7 @@ namespace TextControlBoxNS.Core.Text
 
         public bool AddLines(int atLine, string[] lines)
         {
+            undoRedo.EndBatch();
             if (atLine > textManager.LinesCount || atLine < 0)
                 return false;
 
@@ -613,6 +626,7 @@ namespace TextControlBoxNS.Core.Text
 
         public bool SetLineText(int line, string text)
         {
+            undoRedo.EndBatch();
             if (line >= textManager.LinesCount || line < 0)
                 return false;
 
@@ -636,6 +650,7 @@ namespace TextControlBoxNS.Core.Text
 
         public void DuplicateLine(int line)
         {
+            undoRedo.EndBatch();
             longestLineManager.needsRecalculation = true;
             undoRedo.RecordUndoAction(() =>
             {
