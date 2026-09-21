@@ -81,8 +81,8 @@ namespace TextControlBoxNS.Core.Renderer
             if (characterPosStart > textManager.totalLines.Span[startLine].Length)
                 characterPosStart = textManager.totalLines.Span[startLine].Length;
 
-            if (characterPosEnd > textManager.totalLines.Span[endLine].Length)
-                characterPosEnd = textManager.totalLines.Span[endLine].Length;
+            if (characterPosEnd > textManager.totalLines.Span[endLine].Length + 1)
+                characterPosEnd = textManager.totalLines.Span[endLine].Length + 1;
 
             //Render the selection on position 0 if the user scrolled the start away
             if (startLine < unrenderedLinesToRenderStart)
@@ -117,8 +117,11 @@ namespace TextControlBoxNS.Core.Renderer
                 // multi-line sliced layout via the per-line prefix offsets. This replaces the cumulative
                 // full-line-length math below, which would over-count because the rendered prior lines are
                 // sliced (shorter) than their document length.
-                selStartIndex = textRenderer.GetRenderedLayoutIndexForDocument(startLine, characterPosStart);
-                selEndIndex = textRenderer.GetRenderedLayoutIndexForDocument(endLine, characterPosEnd);
+                int startLineLen = textManager.totalLines.Span[startLine].Length;
+                int endLineLen = textManager.totalLines.Span[endLine].Length;
+                selStartIndex = textRenderer.GetRenderedLayoutIndexForDocument(startLine, Math.Min(characterPosStart, startLineLen));
+                selEndIndex = textRenderer.GetRenderedLayoutIndexForDocument(endLine, Math.Min(characterPosEnd, endLineLen));
+
                 if (selStartIndex < 0 || selEndIndex < 0)
                 {
                     selectionManager.currentTextSelection.renderedIndex = 0;
@@ -137,8 +140,9 @@ namespace TextControlBoxNS.Core.Renderer
                     }
                 }
 
-                selStartIndex = characterPosStart + lenghtToLine;
-                selEndIndex = characterPosEnd + lenghtToLine;
+                int currentLineLen = textManager.totalLines.Span[startLine].Length;
+                selStartIndex = Math.Min(characterPosStart, currentLineLen) + lenghtToLine;
+                selEndIndex = Math.Min(characterPosEnd, currentLineLen) + lenghtToLine;
             }
             else
             {
@@ -149,7 +153,8 @@ namespace TextControlBoxNS.Core.Renderer
                     selStartIndex += textManager.totalLines.Span[textRenderer.NumberOfStartLine + i].Length + lineEndingLength;
                 }
 
-                selStartIndex += characterPosStart;
+                int startLineLen = textManager.totalLines.Span[startLine].Length;
+                selStartIndex += Math.Min(characterPosStart, startLineLen);
 
                 for (int i = 0; i < endLine - unrenderedLinesToRenderStart; i++)
                 {
@@ -159,7 +164,8 @@ namespace TextControlBoxNS.Core.Renderer
                     selEndIndex += textManager.totalLines.Span[textRenderer.NumberOfStartLine + i].Length + lineEndingLength;
                 }
 
-                selEndIndex += characterPosEnd;
+                int endLineLen = textManager.totalLines.Span[endLine].Length;
+                selEndIndex += Math.Min(characterPosEnd, endLineLen);
             }
 
             int textLength = textRenderer.RenderedText?.Length ?? 0;
@@ -267,8 +273,13 @@ namespace TextControlBoxNS.Core.Renderer
                 (startChar, endChar) = (endChar, startChar);
             }
 
-            int selStartIndex = textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(startLine, startChar);
-            int selEndIndex = textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(endLine, endChar);
+            int startLineLen = textManager.totalLines.Span[startLine].Length;
+            int endLineLen = textManager.totalLines.Span[endLine].Length;
+            int clampedStartChar = Math.Min(startChar, startLineLen);
+            int clampedEndChar = Math.Min(endChar, endLineLen);
+
+            int selStartIndex = textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(startLine, clampedStartChar);
+            int selEndIndex = textRenderer.GetRenderedLayoutIndexForVirtualizedWrappedLine(endLine, clampedEndChar);
 
             if (selStartIndex < 0 || selEndIndex < 0)
             {

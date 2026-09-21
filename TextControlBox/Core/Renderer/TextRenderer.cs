@@ -491,9 +491,10 @@ internal class TextRenderer
     }
 
     /// <summary>Document column for a rendered index inside the current line's sliced layout, clamped to the
-    /// document line length. When not sliced the document column equals the rendered index.</summary>
-    public int GetDocumentCharacterIndexFromRenderedIndex(int lineIndex, int renderedIndex)
+    /// document line length (or line length + 1 when allowNewline is true). When not sliced the document column equals the rendered index.</summary>
+    public int GetDocumentCharacterIndexFromRenderedIndex(int lineIndex, int renderedIndex, bool allowNewline = false)
     {
+        int maxLen = textManager.GetLineLength(lineIndex) + (allowNewline && lineIndex < textManager.LinesCount - 1 ? 1 : 0);
         int vLine = VirtualizedLineIndex >= 0 ? VirtualizedLineIndex : NumberOfStartLine;
         if (IsVirtualizedWrappedLine && lineIndex == vLine && VirtualizedLineCharsPerRow > 0)
         {
@@ -501,11 +502,11 @@ internal class TextRenderer
             int row = Math.Max(0, renderedIndex / rowStride);
             int column = Math.Clamp(renderedIndex % rowStride, 0, VirtualizedLineCharsPerRow);
             int characterPosition = VirtualizedLineSliceStart + row * VirtualizedLineCharsPerRow + column;
-            return Math.Clamp(characterPosition, 0, textManager.GetLineLength(lineIndex));
+            return Math.Clamp(characterPosition, 0, maxLen);
         }
         if (IsHorizontallyVirtualized)
-            return HorizontalSliceMath.ColumnForRenderedIndex(renderedIndex, HorizontalSliceStart, textManager.GetLineLength(lineIndex));
-        return Math.Clamp(renderedIndex, 0, textManager.GetLineLength(lineIndex));
+            return Math.Clamp(renderedIndex + HorizontalSliceStart, 0, maxLen);
+        return Math.Clamp(renderedIndex, 0, maxLen);
     }
 
     /// <summary>Chars line <paramref name="lineIndex"/> contributes to the current slice: its length past

@@ -146,14 +146,27 @@ internal class SelectionManager
     {
         return SelectionHelper.OrderTextSelectionSeparated(currentTextSelection, HasSelection);
     }
-    //line was triple clicked, so completely selected
+    //line was triple clicked, or completely selected including newline
     public bool WholeLineSelected()
     {
         var sel = OrderTextSelectionSeparated();
-        if (sel.startNull && sel.endNull)
+        if (sel.startNull || sel.endNull)
             return false;
 
-        return sel.startLine == sel.endLine && sel.startChar == 0 && sel.endChar == textManager.GetLineLength(sel.endLine) + 1;
+        // Form 1: (line, 0) to (line, lineLength + 1)
+        if (sel.startLine == sel.endLine && sel.startChar == 0 && sel.endChar == textManager.GetLineLength(sel.endLine) + 1)
+            return true;
+
+        // Form 2: (line, 0) to (line + 1, 0)
+        if (sel.endLine == sel.startLine + 1 && sel.startChar == 0 && sel.endChar == 0)
+            return true;
+
+        // Form 3: On the last line of the document, where no newline exists: (lastLine, 0) to (lastLine, length)
+        if (sel.startLine == sel.endLine && sel.startLine == textManager.LinesCount - 1 &&
+            sel.startChar == 0 && sel.endChar == textManager.GetLineLength(sel.endLine))
+            return true;
+
+        return false;
     }
     public bool WholeTextSelected()
     {

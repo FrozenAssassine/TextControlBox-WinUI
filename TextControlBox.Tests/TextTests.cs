@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
 using System;
 using System.Diagnostics;
@@ -183,6 +183,7 @@ public class TextTests
         Assert.AreEqual(5, cur.CharacterPosition);
         Assert.AreEqual(coreTextbox.GetText(), text);
     }
+
     [UITestMethod]
     public void DeleteSelectionMultiLineSelectionWholeLines()
     {
@@ -241,6 +242,83 @@ public class TextTests
         Assert.AreEqual(0, cur.CharacterPosition);
         Assert.AreEqual(str1, split);
     }
+    [UITestMethod]
+    public void DeleteSelection_LineContentOnly_EmptiesLineWithoutDeletingLine()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        coreTextbox.SetText("Line 1\nLine 2\nLine 3");
+        int linesBefore = coreTextbox.textManager.LinesCount;
+
+        // Select only the text of line 0, without newline: (0, 0) to (0, 6)
+        coreTextbox.SetSelection(0, 0, 0, coreTextbox.GetLineText(0).Length);
+        Assert.IsFalse(coreTextbox.selectionManager.WholeLineSelected());
+
+        coreTextbox.textActionManager.DeleteSelection();
+        CheckUndoRedo(coreTextbox);
+
+        Assert.AreEqual(linesBefore, coreTextbox.textManager.LinesCount);
+        Assert.AreEqual("", coreTextbox.GetLineText(0));
+        Assert.AreEqual("Line 2", coreTextbox.GetLineText(1));
+    }
+
+    [UITestMethod]
+    public void DeleteSelection_WholeLineWithNewline_DeletesLine()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        coreTextbox.SetText("Line 1\nLine 2\nLine 3");
+        int linesBefore = coreTextbox.textManager.LinesCount;
+
+        // Select whole line 0 including newline: (0, 0) to (1, 0)
+        coreTextbox.SetSelection(0, 0, 1, 0);
+        Assert.IsTrue(coreTextbox.selectionManager.WholeLineSelected());
+
+        coreTextbox.textActionManager.DeleteSelection();
+        CheckUndoRedo(coreTextbox);
+
+        Assert.AreEqual(linesBefore - 1, coreTextbox.textManager.LinesCount);
+        Assert.AreEqual("Line 2", coreTextbox.GetLineText(0));
+        Assert.AreEqual("Line 3", coreTextbox.GetLineText(1));
+    }
+
+    [UITestMethod]
+    public void DeleteSelection_WholeLineWithNewline_WhenNextLineIsEmpty_DeletesLine()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        // Line 1 is empty!
+        coreTextbox.SetText("Line 1\n\nLine 3");
+        int linesBefore = coreTextbox.textManager.LinesCount;
+
+        // Select whole line 0 including newline: (0, 0) to (1, 0)
+        coreTextbox.SetSelection(0, 0, 1, 0);
+        Assert.IsTrue(coreTextbox.selectionManager.WholeLineSelected());
+
+        coreTextbox.textActionManager.DeleteSelection();
+        CheckUndoRedo(coreTextbox);
+
+        // Line 0 ("Line 1") must be deleted, so line 0 is now the empty line, and line 1 is "Line 3"
+        Assert.AreEqual(linesBefore - 1, coreTextbox.textManager.LinesCount);
+        Assert.AreEqual("", coreTextbox.GetLineText(0));
+        Assert.AreEqual("Line 3", coreTextbox.GetLineText(1));
+    }
+
+    [UITestMethod]
+    public void DeleteSelection_MultipleWholeLines_DeletesAllSelectedLines()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        coreTextbox.SetText("Line 1\nLine 2\nLine 3\nLine 4");
+        int linesBefore = coreTextbox.textManager.LinesCount;
+
+        // Select whole lines 0 and 1 including newlines: (0, 0) to (2, 0)
+        coreTextbox.SetSelection(0, 0, 2, 0);
+
+        coreTextbox.textActionManager.DeleteSelection();
+        CheckUndoRedo(coreTextbox);
+
+        Assert.AreEqual(linesBefore - 2, coreTextbox.textManager.LinesCount);
+        Assert.AreEqual("Line 3", coreTextbox.GetLineText(0));
+        Assert.AreEqual("Line 4", coreTextbox.GetLineText(1));
+    }
+
     [UITestMethod]
     public void DeleteSelectionLinesSelectedCompletelyNotWholeText()
     {

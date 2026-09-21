@@ -58,7 +58,18 @@ internal class CursorHelper
         }
 
         if (isSelecting)
+        {
+            string currentLine = currentLineManager.GetCurrentLineText();
+            if (currentLine != null && nextIndex >= currentLine.Length)
+            {
+                float relativeX = (float)cursorPosition.X - marginLeft;
+                if (relativeX > textLayoutRegion.LayoutBounds.Right + 6)
+                {
+                    return (currentLine.Length + 1, false);
+                }
+            }
             return (nextIndex, false);
+        }
 
         return (nextIndex, false);
     }
@@ -98,7 +109,7 @@ internal class CursorHelper
             : 0;
         float marginLeft = textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset;
         var (renderedCharacterPosition, isTrailing) = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, marginLeft, hitTestY, isSelecting);
-        cursorPos.CharacterPosition = textRenderer.GetDocumentCharacterIndexFromRenderedIndex(cursorPos.LineNumber, renderedCharacterPosition);
+        cursorPos.CharacterPosition = textRenderer.GetDocumentCharacterIndexFromRenderedIndex(cursorPos.LineNumber, renderedCharacterPosition, isSelecting);
         cursorPos.IsTrailing = isTrailing;
     }
 }
