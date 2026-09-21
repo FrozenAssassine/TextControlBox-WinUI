@@ -33,6 +33,9 @@ internal class CursorHelper
             out var textLayoutRegion,
             out bool isTrailingHit);
 
+        if (!isTrailingHit)
+            return (textLayoutRegion.CharacterIndex, false);
+
         int nextIndex = textLayoutRegion.CharacterIndex + 1;
 
         // If the trailing position wraps to the next visual row, keep the cursor/selection
@@ -78,8 +81,6 @@ internal class CursorHelper
 
     public static void UpdateCursorPosFromPoint(CanvasControl canvasText, CurrentLineManager currentLineManager, TextRenderer textRenderer, ScrollManager scrollManager, Point point, CursorPosition cursorPos, bool isSelecting = false)
     {
-        //Apply an offset to the cursorposition to make selection easier
-        point.X += textRenderer.SingleLineHeight / scrollManager.DefaultVerticalScrollSensitivity;
         
 
         cursorPos.LineNumber = GetCursorLineFromPoint(textRenderer, point);
