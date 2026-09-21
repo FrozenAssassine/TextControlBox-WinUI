@@ -13,13 +13,24 @@ using Windows.System;
 
 namespace TextControlBoxNS.Core;
 
+internal enum PointerSelectionMode
+{
+    Character,
+    Word,
+    Line
+}
+
 internal class PointerActionsManager
 {
     private Point? OldTouchPosition = null;
     public int PointerClickCount = 0;
-    public DispatcherTimer PointerClickTimer = new DispatcherTimer { Interval = new TimeSpan(0, 0, 0, 0, 200) };
+    public DispatcherTimer PointerClickTimer = new DispatcherTimer { Interval = new TimeSpan(0, 0, 0, 0, 250) };
     private DispatcherTimer selectionTimer;
     private bool isPendingCursorPlacement = false;
+
+    private PointerSelectionMode _selectionMode = PointerSelectionMode.Character;
+    private CursorPosition _wordSelectionAnchorStart = new CursorPosition(0, 0);
+    private CursorPosition _wordSelectionAnchorEnd = new CursorPosition(0, 0);
 
     private SelectionRenderer selectionRenderer;
     private CoreTextControlBox coreTextbox;
@@ -37,6 +48,7 @@ internal class PointerActionsManager
     public void StartLineSelection(int line)
     {
         _storedSelectionStartLine = line;
+        _selectionMode = PointerSelectionMode.Line;
         selectionManager.IsSelecting = true;
         selectionManager.IsSelectingOverLinenumbers = true;
     }
@@ -80,12 +92,19 @@ internal class PointerActionsManager
                 canvasUpdateManager.UpdateCursor();
             }
         };
+
+        PointerClickTimer.Interval = TimeSpan.FromMilliseconds(250);
+        PointerClickTimer.Tick += (s, e) =>
+        {
+            PointerClickTimer.Stop();
+            PointerClickCount = 0;
+        };
     }
 
     private void HandleDoubleClicked(Point pointerPosition)
     {
-        isPendingCursorPlacement = true;
-        selectionTimer.Start();
+        isPendingCursorPlacement = false;
+        selectionTimer.Stop();
 
         CursorHelper.UpdateCursorPosFromPoint(coreTextbox.canvasText,
                 currentLineManager,
@@ -94,7 +113,24 @@ internal class PointerActionsManager
                 pointerPosition,
                 cursorManager.currentCursorPosition);
 
-        selectionManager.SelectSingleWord(canvasUpdateManager);
+        if (textManager.LinesCount == 0)
+            return;
+
+        int line = cursorManager.LineNumber;
+        string lineText = textManager.GetLineText(line);
+        var (wordStart, wordEnd) = SelectionHelper.GetWordBoundaries(lineText, cursorManager.CharacterPosition);
+
+        _wordSelectionAnchorStart.SetChangeValues(line, wordStart);
+        _wordSelectionAnchorEnd.SetChangeValues(line, wordEnd);
+
+        selectionManager.SetSelection(_wordSelectionAnchorStart, _wordSelectionAnchorEnd);
+        cursorManager.SetCursorPosition(line, wordEnd);
+
+        _selectionMode = PointerSelectionMode.Word;
+        selectionManager.IsSelecting = true;
+
+        canvasUpdateManager.UpdateSelection();
+        canvasUpdateManager.UpdateCursor();
     }
 
     private void HandleTripleClick(Point pointerPosition)
@@ -103,7 +139,6 @@ internal class PointerActionsManager
         PointerClickCount = 0;
         isPendingCursorPlacement = false;
         selectionTimer.Stop();
-        selectionManager.IsSelecting = false;
 
         CursorHelper.UpdateCursorPosFromPoint(
             coreTextbox.canvasText,
@@ -113,7 +148,15 @@ internal class PointerActionsManager
             pointerPosition,
             cursorManager.currentCursorPosition);
 
-        coreTextbox.SelectLine(cursorManager.LineNumber);
+        if (textManager.LinesCount == 0)
+            return;
+
+        int line = cursorManager.LineNumber;
+        _storedSelectionStartLine = line;
+        _selectionMode = PointerSelectionMode.Line;
+        selectionManager.IsSelecting = true;
+
+        PointerMovedLineSelection(pointerPosition);
     }
 
     private void HandleSingleRightClick(object sender, Point pointerPosition)
@@ -139,6 +182,7 @@ internal class PointerActionsManager
 
     private void HandleSingleLeftClick(Point pointerPosition)
     {
+        _selectionMode = PointerSelectionMode.Character;
         isPendingCursorPlacement = true;
         selectionTimer.Start();
 
@@ -219,13 +263,14 @@ internal class PointerActionsManager
 
     public void PointerPressedAction(object sender, Point pointerPosition, PointerPointProperties properties)
     {
+        PointerPressedAction(sender, pointerPosition, properties.IsLeftButtonPressed, properties.IsRightButtonPressed);
+    }
+
+    public void PointerPressedAction(object sender, Point pointerPosition, bool leftButtonPressed, bool rightButtonPressed)
+    {
         coreTextbox.Focus(FocusState.Programmatic);
         cursorManager.ResetPreferredPosition();
         coreTextbox.undoRedo.EndBatch();
-
-        bool leftButtonPressed = properties.IsLeftButtonPressed;
-        bool rightButtonPressed = properties.IsRightButtonPressed;
-
 
         if (leftButtonPressed && !Utils.IsKeyPressed(VirtualKey.Shift))
             PointerClickCount++;
@@ -236,11 +281,6 @@ internal class PointerActionsManager
         }
 
         PointerClickTimer.Start();
-        PointerClickTimer.Tick += (s, t) =>
-        {
-            PointerClickTimer.Stop();
-            PointerClickCount = 0;
-        };
 
         if (PointerClickCount == 3)
             HandleTripleClick(pointerPosition);
@@ -263,6 +303,17 @@ internal class PointerActionsManager
             coreTextbox.Focus(FocusState.Programmatic);
 
         selectionManager.IsSelecting = false;
+
+        // If drag modified word selection beyond initial word anchor, reset click count so next click starts fresh
+        if (_selectionMode == PointerSelectionMode.Word &&
+            (selectionManager.selectionEnd.LineNumber != _wordSelectionAnchorEnd.LineNumber ||
+             selectionManager.selectionEnd.CharacterPosition != _wordSelectionAnchorEnd.CharacterPosition))
+        {
+            PointerClickTimer.Stop();
+            PointerClickCount = 0;
+        }
+
+        _selectionMode = PointerSelectionMode.Character;
     }
 
     private void HandleScrollingWhileSelecting(Point point)
@@ -315,7 +366,6 @@ internal class PointerActionsManager
         }
     }
     
-    
     private void PointerMovedDragDrop(Point point)
     {
         CursorHelper.UpdateCursorPosFromPoint(
@@ -328,7 +378,8 @@ internal class PointerActionsManager
 
         canvasUpdateManager.UpdateCursor();
     }
-    private void PointerMovedOverLinenumbers(Point point)
+
+    private void PointerMovedLineSelection(Point point)
     {
         CursorHelper.UpdateCursorPosFromPoint(
             coreTextbox.canvasText,
@@ -338,10 +389,11 @@ internal class PointerActionsManager
             point,
             cursorManager.currentCursorPosition);
 
+        if (textManager.LinesCount == 0)
+            return;
+
         int currentLine = cursorManager.LineNumber;
 
-        // If selection started on line numbers, adjust anchor to behave like line selection
-        // Default to current behavior if _storedSelectionStartLine is invalid (e.g. not set)
         if (_storedSelectionStartLine != -1)
         {
             if (currentLine <= _storedSelectionStartLine)
@@ -361,6 +413,7 @@ internal class PointerActionsManager
                 }
 
                 // Cursor is at start of current line
+                cursorManager.currentCursorPosition.LineNumber = currentLine;
                 cursorManager.currentCursorPosition.CharacterPosition = 0;
             }
             else
@@ -394,6 +447,70 @@ internal class PointerActionsManager
                 cursorManager.currentCursorPosition.CharacterPosition = textManager.GetLineLength(cursorManager.LineNumber);
             }
         }
+
+        selectionManager.selectionStart.IsNull = false;
+        selectionManager.selectionEnd.IsNull = false;
+        selectionManager.selectionEnd.SetChangeValues(cursorManager.currentCursorPosition);
+        selectionManager.HasSelection = SelectionHelper.TextIsSelected(selectionManager.selectionStart, selectionManager.selectionEnd);
+
+        canvasUpdateManager.UpdateCursor();
+        canvasUpdateManager.UpdateSelection();
+    }
+
+    private void PointerMovedWordSelection(Point point)
+    {
+        CursorHelper.UpdateCursorPosFromPoint(
+            coreTextbox.canvasText,
+            currentLineManager,
+            textRenderer,
+            scrollManager,
+            point,
+            cursorManager.currentCursorPosition,
+            isSelecting: true);
+
+        if (textManager.LinesCount == 0)
+            return;
+
+        int curLine = cursorManager.LineNumber;
+        int curChar = cursorManager.CharacterPosition;
+        string lineText = textManager.GetLineText(curLine);
+        var (targetWordStart, targetWordEnd) = SelectionHelper.GetWordBoundaries(lineText, curChar);
+
+        // Forward: pointer is at or after anchor word end
+        if (curLine > _wordSelectionAnchorEnd.LineNumber ||
+            (curLine == _wordSelectionAnchorEnd.LineNumber && curChar >= _wordSelectionAnchorEnd.CharacterPosition))
+        {
+            selectionManager.selectionStart.SetChangeValues(_wordSelectionAnchorStart);
+            cursorManager.currentCursorPosition.SetChangeValues(curLine, targetWordEnd);
+            selectionManager.selectionEnd.SetChangeValues(cursorManager.currentCursorPosition);
+        }
+        // Backward: pointer is at or before anchor word start
+        else if (curLine < _wordSelectionAnchorStart.LineNumber ||
+                 (curLine == _wordSelectionAnchorStart.LineNumber && curChar <= _wordSelectionAnchorStart.CharacterPosition))
+        {
+            selectionManager.selectionStart.SetChangeValues(_wordSelectionAnchorEnd);
+            cursorManager.currentCursorPosition.SetChangeValues(curLine, targetWordStart);
+            selectionManager.selectionEnd.SetChangeValues(cursorManager.currentCursorPosition);
+        }
+        // Inside initial anchor word
+        else
+        {
+            selectionManager.selectionStart.SetChangeValues(_wordSelectionAnchorStart);
+            cursorManager.currentCursorPosition.SetChangeValues(_wordSelectionAnchorEnd);
+            selectionManager.selectionEnd.SetChangeValues(_wordSelectionAnchorEnd);
+        }
+
+        selectionManager.selectionStart.IsNull = false;
+        selectionManager.selectionEnd.IsNull = false;
+        selectionManager.HasSelection = SelectionHelper.TextIsSelected(selectionManager.selectionStart, selectionManager.selectionEnd);
+
+        canvasUpdateManager.UpdateCursor();
+        canvasUpdateManager.UpdateSelection();
+    }
+
+    private void PointerMovedOverLinenumbers(Point point)
+    {
+        PointerMovedLineSelection(point);
     }
 
     public void PointerMovedAction(Point point)
@@ -404,13 +521,15 @@ internal class PointerActionsManager
             //handle pointer moved
             HandleScrollingWhileSelecting(point);
 
-            //Drag drop text -> move the cursor to get the insertion point
             if (selectionManager.IsSelecting)
             {
-                //Selection over linenumbers
-                if (selectionManager.IsSelectingOverLinenumbers)
+                if (_selectionMode == PointerSelectionMode.Line || selectionManager.IsSelectingOverLinenumbers)
                 {
-                    PointerMovedOverLinenumbers(point);
+                    PointerMovedLineSelection(point);
+                }
+                else if (_selectionMode == PointerSelectionMode.Word)
+                {
+                    PointerMovedWordSelection(point);
                 }
                 else //Default selection
                 {
@@ -422,11 +541,11 @@ internal class PointerActionsManager
                         point,
                         cursorManager.currentCursorPosition,
                         isSelecting: true);
-                }
 
-                canvasUpdateManager.UpdateCursor();
-                selectionManager.SetSelectionEnd(cursorManager.LineNumber, cursorManager.CharacterPosition);
-                canvasUpdateManager.UpdateSelection();
+                    canvasUpdateManager.UpdateCursor();
+                    selectionManager.SetSelectionEnd(cursorManager.LineNumber, cursorManager.CharacterPosition);
+                    canvasUpdateManager.UpdateSelection();
+                }
             }
             return;
         }
@@ -495,17 +614,29 @@ internal class PointerActionsManager
 
         if (selectionManager.IsSelecting)
         {
-            CursorHelper.UpdateCursorPosFromPoint(coreTextbox.canvasText,
-                currentLineManager,
-                textRenderer,
-                scrollManager,
-                e.GetCurrentPoint(coreTextbox.canvasSelection).Position,
-                cursorManager.currentCursorPosition,
-                isSelecting: true);
+            Point mousePos = e.GetCurrentPoint(coreTextbox.canvasSelection).Position;
+            if (_selectionMode == PointerSelectionMode.Line || selectionManager.IsSelectingOverLinenumbers)
+            {
+                PointerMovedLineSelection(mousePos);
+            }
+            else if (_selectionMode == PointerSelectionMode.Word)
+            {
+                PointerMovedWordSelection(mousePos);
+            }
+            else
+            {
+                CursorHelper.UpdateCursorPosFromPoint(coreTextbox.canvasText,
+                    currentLineManager,
+                    textRenderer,
+                    scrollManager,
+                    mousePos,
+                    cursorManager.currentCursorPosition,
+                    isSelecting: true);
 
-            canvasUpdateManager.UpdateCursor();
+                canvasUpdateManager.UpdateCursor();
+                selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
+            }
 
-            selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
             selectionManager.IsSelecting = true;
             needsUpdate = true;
         }

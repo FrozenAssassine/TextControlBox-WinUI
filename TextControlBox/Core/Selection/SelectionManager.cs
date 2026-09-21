@@ -505,13 +505,18 @@ internal class SelectionManager
 
     public void SelectSingleWord(CanvasUpdateManager canvashelper)
     {
-        int characterpos = cursorManager.CharacterPosition;
+        if (textManager.LinesCount == 0)
+            return;
 
-        SetSelectionStart(cursorManager.LineNumber, characterpos - cursorManager.CalculateStepsToMoveLeftNoControl(characterpos));
-        SetSelectionEnd(cursorManager.LineNumber, characterpos + cursorManager.CalculateStepsToMoveRightNoControl(characterpos));
+        int line = cursorManager.LineNumber;
+        string lineText = textManager.GetLineText(line);
+        var (start, end) = SelectionHelper.GetWordBoundaries(lineText, cursorManager.CharacterPosition);
+
+        SetSelectionStart(line, start);
+        SetSelectionEnd(line, end);
 
         cursorManager.CharacterPosition = selectionEnd.CharacterPosition;
-        HasSelection = true;
+        HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
 
         canvashelper.UpdateSelection();
         canvashelper.UpdateCursor();

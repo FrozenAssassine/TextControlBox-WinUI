@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas.Text;
+using Microsoft.Graphics.Canvas.Text;
+using System;
 using System.Diagnostics;
 using TextControlBoxNS.Core.Renderer;
 using TextControlBoxNS.Core.Selection;
@@ -109,4 +110,45 @@ internal class SelectionHelper
 
         return sel.startChar == 0 && sel.endChar == textManager.GetLineLength(sel.endLine);
     }
+
+    public static (int start, int end) GetWordBoundaries(string line, int characterPosition)
+    {
+        if (string.IsNullOrEmpty(line))
+            return (0, 0);
+
+        characterPosition = Math.Clamp(characterPosition, 0, line.Length);
+
+        int targetIndex;
+        if (characterPosition < line.Length && !char.IsWhiteSpace(line[characterPosition]))
+        {
+            targetIndex = characterPosition;
+        }
+        else if (characterPosition > 0 && !char.IsWhiteSpace(line[characterPosition - 1]))
+        {
+            targetIndex = characterPosition - 1;
+        }
+        else if (characterPosition < line.Length)
+        {
+            targetIndex = characterPosition;
+        }
+        else
+        {
+            targetIndex = Math.Max(0, line.Length - 1);
+        }
+
+        CharClass targetClass = CharClassHelper.GetCharClass(line[targetIndex]);
+        int start = targetIndex;
+        while (start > 0 && CharClassHelper.GetCharClass(line[start - 1]) == targetClass)
+        {
+            start--;
+        }
+        int end = targetIndex + 1;
+        while (end < line.Length && CharClassHelper.GetCharClass(line[end]) == targetClass)
+        {
+            end++;
+        }
+
+        return (start, end);
+    }
 }
+
