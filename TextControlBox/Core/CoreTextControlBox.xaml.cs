@@ -52,7 +52,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public readonly AutoIndentionManager autoIndentionManager;
     public readonly ReplaceManager replaceManager;
     public readonly InitializationManager initializationManager;
-    private readonly MoveLineManager moveLineManager;
+    public readonly MoveLineManager moveLineManager;
     private readonly WhitespaceCharactersRenderer invisibleCharactersRenderer;
     private readonly WhitespaceCharactersManager whitespaceCharactersManager;
     private readonly LinkHighlightManager linkHighlightManager;

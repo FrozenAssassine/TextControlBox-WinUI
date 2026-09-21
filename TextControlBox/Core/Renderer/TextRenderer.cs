@@ -1106,10 +1106,23 @@ internal class TextRenderer
             return false;
 
         float targetHitY = (targetRowOffset + 0.5f) * Math.Max(1, SingleLineHeight);
-        targetLayout.HitTest(targetCaretX, targetHitY, out var targetRegion);
+        targetLayout.HitTest(targetCaretX, targetHitY, out var targetRegion, out bool isTrailingHit);
+
+        int targetCharIndex = targetRegion.CharacterIndex + (isTrailingHit ? 1 : 0);
+        if (targetCharIndex > targetRegion.CharacterIndex)
+        {
+            float baseRowYTarget = targetLayout.GetCaretPosition(0, false).Y;
+            var caretPos = targetLayout.GetCaretPosition(targetCharIndex, false);
+            int resolvedRow = (int)Math.Round((caretPos.Y - baseRowYTarget) / Math.Max(1, SingleLineHeight));
+            if (resolvedRow > targetRowOffset)
+            {
+                // Trailing hit crossed to the next visual row; keep cursor on targetRowOffset
+                targetCharIndex = targetRegion.CharacterIndex;
+            }
+        }
 
         cursorPosition.LineNumber = targetLine;
-        cursorPosition.CharacterPosition = Math.Clamp(targetRegion.CharacterIndex, 0, textManager.GetLineLength(targetLine));
+        cursorPosition.CharacterPosition = Math.Clamp(targetCharIndex, 0, textManager.GetLineLength(targetLine));
         return true;
     }
 

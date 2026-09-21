@@ -507,6 +507,9 @@ namespace TextControlBoxNS.Core.Text
 
         public void AddCharacter(string text, bool ignoreSelection = false, bool ignoreIsReadOnly = false)
         {
+            if (text == null)
+                return;
+
             cursorManager.ResetPreferredPosition();
             if (!ignoreIsReadOnly && textManager._IsReadOnly)
                 return;

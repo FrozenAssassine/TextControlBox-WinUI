@@ -71,6 +71,6 @@ internal class RemoveTextAction
             cursorManager.LineNumber -= 1;
             cursorManager.CharacterPosition = curpos;
 
-        }, cursorManager.LineNumber - 1, 3, 2);
+        }, cursorManager.LineNumber - 1, 2, 1);
     }
 }

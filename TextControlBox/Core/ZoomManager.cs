@@ -45,8 +45,8 @@ internal class ZoomManager
     {
         float oldZoomedFontSize = ZoomedFontSize > 0 ? ZoomedFontSize : Math.Max(1, textManager._FontSize);
 
-        ZoomedFontSize = Math.Clamp(textManager._FontSize * (float)_ZoomFactor / 100, textManager.MinFontSize, textManager.MaxFontsize);
         _ZoomFactor = Math.Clamp(_ZoomFactor, MinZoom, MaxZoom);
+        ZoomedFontSize = Math.Clamp(textManager._FontSize * (float)_ZoomFactor / 100, textManager.MinFontSize, textManager.MaxFontsize);
 
         if (_ZoomFactor != OldZoomFactor)
         {

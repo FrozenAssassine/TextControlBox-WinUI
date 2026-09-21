@@ -302,9 +302,11 @@ internal class SelectionManager
                 length = numberOfCharacters - startPosition;
         }
 
+        int lineEndingLength = LineEndings.LineEndingToString(textManager.LineEnding).Length;
+
         void GetIndexInLine(int currentIndex, int currentTotalLength)
         {
-            int position = Math.Abs(currentTotalLength - startPosition);
+            int position = Math.Max(0, startPosition - currentTotalLength);
 
             returnValue.StartPosition.SetChangeValues(currentIndex, position);
 
@@ -312,16 +314,56 @@ internal class SelectionManager
                 returnValue.EndPosition.SetChangeValues(returnValue.StartPosition);
             else
             {
-                int lengthCount = 0;
-                for (int i = currentIndex; i < textManager.LinesCount; i++)
+                int remainingLength = length;
+                int currentLineLength = textManager.GetLineLength(currentIndex);
+                int availableInFirstLine = Math.Max(0, currentLineLength - position);
+
+                if (remainingLength <= availableInFirstLine)
                 {
-                    int lineLength = textManager.GetLineLength(i) + 1;
-                    if (lengthCount + lineLength > length)
+                    returnValue.EndPosition.SetChangeValues(currentIndex, position + remainingLength);
+                }
+                else
+                {
+                    remainingLength -= availableInFirstLine;
+                    int endLine = currentIndex;
+                    int endChar = currentLineLength;
+
+                    for (int i = currentIndex; i < textManager.LinesCount; i++)
                     {
-                        returnValue.EndPosition.SetChangeValues(i, Math.Abs(lengthCount - length) + position);
-                        break;
+                        int lineEnding = (i < textManager.LinesCount - 1) ? lineEndingLength : 0;
+                        if (i == currentIndex)
+                        {
+                            if (remainingLength <= lineEnding)
+                            {
+                                endLine = currentIndex + 1;
+                                endChar = 0;
+                                break;
+                            }
+                            remainingLength -= lineEnding;
+                            continue;
+                        }
+
+                        int curLineLen = textManager.GetLineLength(i);
+                        if (remainingLength <= curLineLen)
+                        {
+                            endLine = i;
+                            endChar = remainingLength;
+                            break;
+                        }
+
+                        remainingLength -= curLineLen;
+                        if (remainingLength <= lineEnding)
+                        {
+                            endLine = i + 1;
+                            endChar = 0;
+                            break;
+                        }
+                        remainingLength -= lineEnding;
                     }
-                    lengthCount += lineLength;
+
+                    endLine = Math.Clamp(endLine, 0, Math.Max(0, textManager.LinesCount - 1));
+                    endChar = Math.Clamp(endChar, 0, textManager.GetLineLength(endLine));
+                    returnValue.EndPosition.SetChangeValues(endLine, endChar);
                 }
             }
         }
@@ -330,8 +372,9 @@ internal class SelectionManager
         int totalLength = 0;
         for (int i = 0; i < textManager.LinesCount; i++)
         {
-            int lineLength = textManager.GetLineLength(i) + 1;
-            if (totalLength + lineLength > startPosition)
+            int lineEnding = (i < textManager.LinesCount - 1) ? lineEndingLength : 0;
+            int lineLength = textManager.GetLineLength(i) + lineEnding;
+            if (totalLength + lineLength > startPosition || i == textManager.LinesCount - 1)
             {
                 GetIndexInLine(i, totalLength);
                 break;

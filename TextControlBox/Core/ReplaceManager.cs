@@ -49,9 +49,10 @@ internal class ReplaceManager
 
     public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord)
     {
-        if (word.Length == 0)
+        if (string.IsNullOrEmpty(word))
             return SearchResult.InvalidInput;
 
+        replaceWord ??= "";
         selectionManager.ClearSelection();
 
         SearchParameter searchParameter = new SearchParameter(word, wholeWord, matchCase);
@@ -83,6 +84,7 @@ internal class ReplaceManager
         if (!searchManager.IsSearchOpen)
             return new InternSearchResult(SearchResult.SearchNotOpened, null);
 
+        replaceWord ??= "";
         var res = searchManager.FindNext(cursorManager.currentCursorPosition);
         if (res.Selection != null)
         {

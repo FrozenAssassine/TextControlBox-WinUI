@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -82,14 +82,14 @@ internal class SearchManager
 
     public SearchResult BeginSearch(string word, bool wholeWord, bool matchCase)
     {
-        searchParameter = new SearchParameter(word, wholeWord, matchCase);
-        UpdateSearchLines();
-
-        if (word == null || word.Length == 0)
+        if (string.IsNullOrEmpty(word))
         {
-            IsSearchOpen = false;
+            EndSearch();
             return SearchResult.InvalidInput;
         }
+
+        searchParameter = new SearchParameter(word, wholeWord, matchCase);
+        UpdateSearchLines();
 
         if (MatchingSearchLines.Length > 0)
             IsSearchOpen = true;
