@@ -55,6 +55,12 @@ internal class TextRenderer
         }
     }
     public float TopInset => (float)Math.Round(2f * ((zoomManager == null ? 100f : zoomManager._ZoomFactor) / 100f));
+    public float GetSelectionTopMargin()
+    {
+        if (!IsWordWrapEnabled || IsVirtualizedWrappedLine)
+            return TopInset;
+        return TopInset - (WrappedStartRowOffset * SingleLineHeight);
+    }
     public float HorizontalOffset => (float)-scrollManager.HorizontalScroll + HorizontalSlicePixelOffset;
     public int NumberOfStartLine = 0;
     public int NumberOfRenderedLines = 0;
@@ -1337,7 +1343,7 @@ internal class TextRenderer
         float drawTextOffsetY = (IsWordWrapEnabled
             ? (IsVirtualizedWrappedLine ? SingleLineHeight : SingleLineHeight - (WrappedStartRowOffset * SingleLineHeight))
             : SingleLineHeight) - textVerticalAdjustment;
-        float searchHighlightOffsetY = drawTextOffsetY;
+        float searchHighlightOffsetY = GetSelectionTopMargin();
 
         int renderedVisualRows = IsVirtualizedWrappedLine
             ? VirtualizedWrappedRowsToRender + (NumberOfRenderedLines > 1 ? GetRenderedVisualRowCount(NumberOfStartLine + 1, NumberOfRenderedLines - 1) : 0)

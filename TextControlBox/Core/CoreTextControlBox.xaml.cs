@@ -135,7 +135,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         longestLineManager.Init(selectionManager, textManager, textRenderer);
         designHelper.Init(this, textRenderer, canvasUpdateManager);
         tabSpaceManager.Init(textManager, selectionManager, cursorManager, textActionManager, undoRedo, longestLineManager, eventsManager);
-        searchManager.Init(textManager);
+        searchManager.Init(textManager, selectionManager);
         eventsManager.Init(searchManager, cursorManager);
         lineNumberRenderer.Init(textManager, textLayoutManager, textRenderer, designHelper, lineNumberManager);
         zoomManager.Init(textManager, textRenderer, canvasUpdateManager, eventsManager, lineNumberRenderer, scrollManager);
@@ -153,6 +153,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         // Two-axis precision-touchpad panning: wire the composition InteractionTracker once the control
         // (and its selection canvas' visual) is in the tree. See CoreTextControlBox.DiagonalScroll.cs.
         Loaded += (_, _) => SetupDiagonalScroll();
+        Unloaded += (_, _) => TeardownDiagonalScroll();
     }
 
     public void InitialiseOnStart()

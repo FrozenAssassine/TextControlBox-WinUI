@@ -87,6 +87,13 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
 
         try
         {
+            // If the control was unloaded or the window/visual is closing, tear down immediately.
+            if (!base.IsLoaded || XamlRoot == null)
+            {
+                TeardownDiagonalScroll();
+                return;
+            }
+
             var max = new Vector3(
                 (float)Math.Max(0, src.HorizontalExtent - src.ViewportWidth),
                 (float)Math.Max(0, src.VerticalExtent - src.ViewportHeight),
@@ -109,6 +116,7 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
         catch (Exception ex)
         {
             Debug.WriteLine($"TextControlBox diagonal scroll: SyncScrollTracker failed: {ex}");
+            TeardownDiagonalScroll();
         }
     }
 
@@ -152,12 +160,14 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
             }
 
             if (_scrollTracker is not null && _scrollInteractionSource is not null)
-                _scrollTracker.InteractionSources.RemoveAll();
+            {
+                try { _scrollTracker.InteractionSources.RemoveAll(); } catch { }
+            }
 
-            _scrollInteractionSource?.Dispose();
+            try { _scrollInteractionSource?.Dispose(); } catch { }
             _scrollInteractionSource = null;
 
-            _scrollTracker?.Dispose();
+            try { _scrollTracker?.Dispose(); } catch { }
             _scrollTracker = null;
         }
         catch (Exception ex)
@@ -176,24 +186,35 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
     // to touch the offset source + request a redraw directly.
     public void ValuesChanged(InteractionTracker sender, InteractionTrackerValuesChangedArgs args)
     {
+        if (!_scrollTrackerReady)
+            return;
+
         _lastTrackerX = args.Position.X;
         _lastTrackerY = args.Position.Y;
 
-        if (scrollManager?.OffsetSource is { } src)
+        try
         {
-            // Flag our own touchpad-driven writes so the ViewChanged they raise is ignored by
-            // OnOffsetSourceViewChanged (otherwise a pan would feed back into a redundant reposition).
-            _applyingTrackerScroll = true;
-            try
+            if (scrollManager?.OffsetSource is { } src)
             {
-                src.HorizontalOffset = args.Position.X;
-                src.VerticalOffset = args.Position.Y;
+                // Flag our own touchpad-driven writes so the ViewChanged they raise is ignored by
+                // OnOffsetSourceViewChanged (otherwise a pan would feed back into a redundant reposition).
+                _applyingTrackerScroll = true;
+                try
+                {
+                    src.HorizontalOffset = args.Position.X;
+                    src.VerticalOffset = args.Position.Y;
+                }
+                finally
+                {
+                    _applyingTrackerScroll = false;
+                }
+                canvasUpdateManager.UpdateAll();
             }
-            finally
-            {
-                _applyingTrackerScroll = false;
-            }
-            canvasUpdateManager.UpdateAll();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"TextControlBox diagonal scroll: ValuesChanged failed: {ex}");
+            TeardownDiagonalScroll();
         }
     }
 

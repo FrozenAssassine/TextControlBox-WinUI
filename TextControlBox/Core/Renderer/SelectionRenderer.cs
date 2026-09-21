@@ -329,14 +329,6 @@ namespace TextControlBoxNS.Core.Renderer
 
         // Top margin for the selection regions. In wrap mode the whole layout is nudged up by the rows of the
         // first visible line scrolled above the viewport, matching the wrapped text draw offset.
-        private float GetSelectionTopMargin()
-        {
-            float topInset = textRenderer.TopInset;
-            if (!textRenderer.IsWordWrapEnabled)
-                return topInset;
-            if (textRenderer.IsVirtualizedWrappedLine)
-                return topInset;
-            return topInset - (textRenderer.WrappedStartRowOffset * textRenderer.SingleLineHeight);
-        }
+        private float GetSelectionTopMargin() => textRenderer.GetSelectionTopMargin();
     }
 }
