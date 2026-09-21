@@ -138,7 +138,11 @@ namespace TextControlBoxNS.Core.Renderer
                 return;
 
             float lineNumberWidth = (float)Utils.MeasureTextSize(args.DrawingSession.Device, (textManager.LinesCount).ToString(), LineNumberTextFormat).Width;
-            canvas.Width = lineNumberWidth + 10 + spaceBetweenCanvasAndText;
+            float targetCanvasWidth = lineNumberWidth + 10 + spaceBetweenCanvasAndText;
+            if (Math.Abs(canvas.Width - targetCanvasWidth) > 0.5f)
+            {
+                canvas.Width = targetCanvasWidth;
+            }
 
             float posX = (float)canvas.Size.Width - spaceBetweenCanvasAndText;
             if (posX < 0) 

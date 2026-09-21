@@ -242,7 +242,7 @@ internal class TextRenderer
     private const int IncrementalWrapRemeasureLimit = 64;
     // Above this line length, estimate the wrapped row count instead of laying the whole line out (a
     // multi-megabyte line would otherwise create a giant measurement layout).
-    private const int LongLineRowEstimateThreshold = 100_000;
+    private const int LongLineRowEstimateThreshold = 20_000;
     // Above this line count, whole-document measurement delegates to row-count estimation
     // to avoid UI freezes during window resizing on huge files (e.g. 2 million lines).
     private const int LargeDocumentWrapEstimateThreshold = 10_000;

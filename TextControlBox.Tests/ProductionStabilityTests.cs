@@ -439,4 +439,33 @@ public class ProductionStabilityTests
         Assert.AreEqual(0, cursorPos.LineNumber);
         Assert.AreEqual(5, cursorPos.CharacterPosition, "At 200% zoom, clicking left quarter of 'F' must place cursor at index 5");
     }
+
+    [UITestMethod]
+    public void SyntaxHighlighting_OversizedText_ExitsSafelyWithoutCrashing()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        string giantLine = new string('a', TextControlBoxNS.Core.Renderer.SyntaxHighlightingRenderer.MaxHighlightTextLength + 100);
+        var sliceResult = new TextControlBoxNS.Models.LineSliceResult(giantLine, new string[] { giantLine });
+
+        // Should exit immediately due to MaxHighlightTextLength without throwing
+        TextControlBoxNS.Core.Renderer.SyntaxHighlightingRenderer.UpdateSyntaxHighlighting(
+            sliceResult,
+            "\n",
+            null,
+            Microsoft.UI.Xaml.ApplicationTheme.Dark,
+            null,
+            true);
+    }
+
+    [UITestMethod]
+    public void WordWrap_LineAtOrAboveThreshold_IsVirtualizationCandidate()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        core.WordWrap = true;
+        string line20k = new string('x', 20_000);
+        core.SetText(line20k);
+
+        bool shouldVirtualize = core.textRenderer.ShouldVirtualizeWrappedLine(0);
+        Assert.IsTrue(shouldVirtualize, "A 20,000-character line must be flagged for word-wrap row virtualization to prevent massive layout allocations.");
+    }
 }
