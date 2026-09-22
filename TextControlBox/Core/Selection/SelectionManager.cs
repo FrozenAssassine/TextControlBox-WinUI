@@ -161,11 +161,6 @@ internal class SelectionManager
         if (sel.endLine == sel.startLine + 1 && sel.startChar == 0 && sel.endChar == 0)
             return true;
 
-        // Form 3: On the last line of the document, where no newline exists: (lastLine, 0) to (lastLine, length)
-        if (sel.startLine == sel.endLine && sel.startLine == textManager.LinesCount - 1 &&
-            sel.startChar == 0 && sel.endChar == textManager.GetLineLength(sel.endLine))
-            return true;
-
         return false;
     }
     public bool WholeTextSelected()

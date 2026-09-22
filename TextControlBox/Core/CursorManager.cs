@@ -143,9 +143,12 @@ internal class CursorManager
         return stepsToMove == 0 ? 1 : stepsToMove;
     }
 
-    public int CalculateStepsToMoveRight(int cursorCharPosition)
+    public int CalculateStepsToMoveRight(int cursorCharPosition, bool? controlIsPressed = null)
     {
-        if (!Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
+        if (!controlIsPressed.HasValue && !Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
+            return 1;
+
+        if (controlIsPressed.HasValue && !controlIsPressed.Value)
             return 1;
 
         var line = currentLineManager.CurrentLine;

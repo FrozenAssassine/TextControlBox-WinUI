@@ -1,7 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
 using System;
-using System.Diagnostics;
 using TextControlBoxNS;
 using TextControlBoxNS.Core;
 
@@ -10,23 +9,26 @@ namespace TextControlBox.Tests;
 [TestClass]
 public class TextTests
 {
-    private (bool undo, bool redo) CheckUndoRedo(CoreTextControlBox coreTextbox, int count = 1)
+    private (bool undo, bool redo) CheckUndoRedo(CoreTextControlBox coreTextbox, int count = 1, string? expectedTextAfterUndo = null)
     {
-        string textBefore = coreTextbox.GetText();
+        string textAfterAction = coreTextbox.GetText();
 
         for (int i = 0; i < count; i++)
             coreTextbox.Undo();
 
-        string textAfter = coreTextbox.GetText();
+        string textAfterUndo = coreTextbox.GetText();
 
-        bool undoRes = !textAfter.Equals(textBefore);
+        bool undoRes = expectedTextAfterUndo != null
+            ? textAfterUndo.Equals(expectedTextAfterUndo, StringComparison.Ordinal)
+            : !textAfterUndo.Equals(textAfterAction, StringComparison.Ordinal);
 
         for (int i = 0; i < count; i++)
             coreTextbox.Redo();
 
-        bool redoRes = coreTextbox.GetText().Equals(textBefore);
+        bool redoRes = coreTextbox.GetText().Equals(textAfterAction, StringComparison.Ordinal);
 
-        //Debug.Assert(undoRes && redoRes);
+        Assert.IsTrue(undoRes, "Undo did not revert text as expected.");
+        Assert.IsTrue(redoRes, "Redo did not restore text as expected.");
 
         return (undoRes, redoRes);
     }
@@ -43,7 +45,7 @@ public class TextTests
         var sel = coreTextbox.selectionManager.currentTextSelection;
         bool res = sel.StartPosition.IsNull && sel.EndPosition.IsNull && !coreTextbox.selectionManager.HasSelection;
 
-        Debug.Assert(res);
+        Assert.IsTrue(res);
     }
 
     [UITestMethod]
@@ -56,7 +58,7 @@ public class TextTests
 
         CheckUndoRedo(coreTextbox);
 
-        Debug.Assert(coreTextbox.NumberOfLines == linesBefore - 1);
+        Assert.AreEqual(linesBefore - 1, coreTextbox.NumberOfLines);
     }
 
     [UITestMethod]
@@ -69,8 +71,8 @@ public class TextTests
 
         CheckUndoRedo(coreTextbox);
 
-        Debug.Assert(coreTextbox.NumberOfLines == linesBefore + 1 && coreTextbox.GetLineText(3).Equals("Hello World this is the text of line 3"));
-
+        Assert.AreEqual(linesBefore + 1, coreTextbox.NumberOfLines);
+        Assert.AreEqual("Hello World this is the text of line 3", coreTextbox.GetLineText(3));
     }
 
     [UITestMethod]
@@ -94,7 +96,7 @@ public class TextTests
             cur.LineNumber == lineBefore &&
             coreTextbox.GetLineText(3).Equals(textToAdd + textBefore);
 
-        Debug.Assert(res);
+        Assert.IsTrue(res);
     }
     [UITestMethod]
     public void AddChar_MultilineText_NoSelection()
@@ -115,7 +117,7 @@ public class TextTests
             coreTextbox.GetLineText(3).Substring(0, 10).Equals("Add Line 2") &&
             coreTextbox.GetLineText(4).Substring(0, 10).Equals("Add Line 3") &&
             cur.CharacterPosition == 10;
-        Debug.Assert(res);
+        Assert.IsTrue(res);
     }
     [UITestMethod]
     public void AddChar_NoTextNoSelection()
@@ -133,7 +135,7 @@ public class TextTests
             coreTextbox.GetText().Length == 0 &&
             cur.CharacterPosition == 0;
 
-        Debug.Assert(res);
+        Assert.IsTrue(res);
     }
     [UITestMethod]
     public void AddCharSingleLine_SingleLineSelected()
@@ -164,7 +166,10 @@ public class TextTests
         var cur = coreTextbox.cursorManager.currentCursorPosition;
 
         Assert.AreEqual(2, cur.LineNumber);
-        Assert.AreEqual(11, cur.CharacterPosition);
+        Assert.AreEqual(5, cur.CharacterPosition);
+        Assert.AreEqual("Line Line1", coreTextbox.GetLineText(0));
+        Assert.AreEqual("Line2", coreTextbox.GetLineText(1));
+        Assert.AreEqual("Line3right?", coreTextbox.GetLineText(2));
     }
     [UITestMethod]
     public void AddCharMultiline_MultilineSelection_EverythinkSelected()
@@ -194,8 +199,6 @@ public class TextTests
 
         CheckUndoRedo(coreTextbox);
 
-        var lines = coreTextbox.textManager.totalLines;
-
         var cur = coreTextbox.cursorManager.currentCursorPosition;
 
         Assert.AreEqual(1, cur.LineNumber);        
@@ -222,7 +225,7 @@ public class TextTests
             cur.CharacterPosition == 4 &&
             t.Trim().Equals(expected.Trim());
 
-        Debug.Assert(res);
+        Assert.IsTrue(res);
     }
     [UITestMethod]
     public void DeleteSelection_SingleLineSelection_WholeLine()
@@ -334,7 +337,7 @@ public class TextTests
         bool res = coreTextbox.textManager.LinesCount == linesBefore - 2 &&
                    lineText == "";
 
-        Debug.Assert(res);
+        Assert.IsTrue(res);
     }
     [UITestMethod]
     public void DeleteSelectionStartLineCompletelySelected()
@@ -351,7 +354,7 @@ public class TextTests
         bool res = coreTextbox.GetLineText(0) == expected &&
                    coreTextbox.textManager.LinesCount == linesBefore - 1;
 
-        Debug.Assert(res);
+        Assert.IsTrue(res);
     }
     [UITestMethod]
     public void DeleteSelectionEndLineCompletelySelected()
@@ -369,7 +372,7 @@ public class TextTests
 
         bool res = text.Equals(expected) &&
             coreTextbox.textManager.LinesCount == linesBefore - 1;
-        Debug.Assert(res);
+        Assert.IsTrue(res);
     }
     [UITestMethod]
     public void DeleteSelectionStartEndNotCompletelySelected()
@@ -386,7 +389,7 @@ public class TextTests
         bool res = coreTextbox.GetLineText(1) == expected &&
                    coreTextbox.textManager.LinesCount == linesBefore - 1;
 
-        Debug.Assert(res);
+        Assert.IsTrue(res);
     }
     [UITestMethod]
     public void DuplicateLine()
@@ -402,7 +405,7 @@ public class TextTests
         bool res = coreTextbox.GetLineText(3).Equals(coreTextbox.GetLineText(4)) &&
                    coreTextbox.textManager.LinesCount == linesBefore + 1 && coreTextbox.CursorPosition.LineNumber == 5 && coreTextbox.CursorPosition.CharacterPosition == 10;
 
-        Debug.Assert(res);
+        Assert.IsTrue(res);
     }
     [UITestMethod]
     public void LoadLinesEmptyArray()
@@ -412,7 +415,7 @@ public class TextTests
         coreTextbox.LoadLines(Array.Empty<string>());
         coreTextbox.LoadLines(null);
 
-        Debug.Assert(coreTextbox.textManager.totalLines.Count == 1);
+        Assert.AreEqual(1, coreTextbox.textManager.totalLines.Count);
     }
     [UITestMethod]
     public void LoadTextNullEmptyString()
@@ -422,7 +425,7 @@ public class TextTests
         coreTextbox.LoadText(null);
         coreTextbox.LoadText("");
 
-        Debug.Assert(coreTextbox.textManager.totalLines.Count == 1);
+        Assert.AreEqual(1, coreTextbox.textManager.totalLines.Count);
     }
     [UITestMethod]
     public void SetTextNullEmptyString()
@@ -432,7 +435,7 @@ public class TextTests
         coreTextbox.SetText(null);
         coreTextbox.SetText("");
 
-        Debug.Assert(coreTextbox.textManager.totalLines.Count == 1);
+        Assert.AreEqual(1, coreTextbox.textManager.totalLines.Count);
     }
     [UITestMethod]
     public void MoveSelectionWithTab()
@@ -445,11 +448,19 @@ public class TextTests
         for (int i = 0; i < 3; i++)
             coreTextbox.tabSpaceManager.MoveTab();
 
+        string textAfterTabs = coreTextbox.Text;
+
         coreTextbox.Undo();
         coreTextbox.Undo();
         coreTextbox.Undo();
 
-        Debug.Assert(coreTextbox.Text == originalText);
+        Assert.AreEqual(originalText, coreTextbox.Text);
+
+        coreTextbox.Redo();
+        coreTextbox.Redo();
+        coreTextbox.Redo();
+
+        Assert.AreEqual(textAfterTabs, coreTextbox.Text);
     }
 
     [UITestMethod]
@@ -465,7 +476,7 @@ public class TextTests
         for (int i = 0; i < 3; i++)
             coreTextbox.tabSpaceManager.MoveTabBack();
 
-        Debug.Assert(coreTextbox.Text == originalText);
+        Assert.AreEqual(originalText, coreTextbox.Text);
     }
 
     [UITestMethod]
@@ -480,7 +491,7 @@ public class TextTests
         var res = CheckUndoRedo(coreTextbox);
         coreTextbox.Undo();
 
-        Debug.Assert(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
+        Assert.IsTrue(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
     }
     [UITestMethod]
     public void AddLinesAtBeginning()
@@ -495,7 +506,7 @@ public class TextTests
         var res = CheckUndoRedo(coreTextbox);
         coreTextbox.Undo();
 
-        Debug.Assert(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
+        Assert.IsTrue(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
     }
     [UITestMethod]
     public void AddLinesAtEnd()
@@ -510,7 +521,7 @@ public class TextTests
         var res = CheckUndoRedo(coreTextbox);
         coreTextbox.Undo();
 
-        Debug.Assert(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
+        Assert.IsTrue(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
     }
 
     [UITestMethod]
@@ -533,12 +544,13 @@ public class TextTests
         var res = CheckUndoRedo(coreTextbox);
         coreTextbox.Undo();
 
-        Debug.Assert(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
+        Assert.IsTrue(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
     }
     [UITestMethod]
     public void UndoGroupingExtended()
     {
         var coreTextbox = TestHelper.MakeCoreTextbox();
+
         coreTextbox.SetText("Line1\nLine2\nLine3\nLine4\nLine5");
         string textBefore = coreTextbox.GetText();
 
@@ -564,6 +576,6 @@ public class TextTests
         var res = CheckUndoRedo(coreTextbox);
         coreTextbox.Undo();
 
-        Debug.Assert(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
+        Assert.IsTrue(res.undo && res.redo && textBefore.Equals(coreTextbox.GetText()));
     }
 }

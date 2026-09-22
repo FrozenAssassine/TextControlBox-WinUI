@@ -291,7 +291,7 @@ namespace TextControlBoxNS.Core.Text
             var linesAfter = textManager.GetLinesAsString(startline, redoCount);
             var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
 
-            if (linesBefore.Length > 0 && linesAfter.Length > 0 && BeforeAndAfterAreEqual(linesBefore, linesAfter))
+            if (BeforeAndAfterAreEqual(linesBefore, linesAfter))
                 return;
 
             AddUndoItem(
@@ -398,7 +398,7 @@ namespace TextControlBoxNS.Core.Text
             if (!UndoRedoEnabled)
                 return (null, null);
 
-            if (UndoStack.Count < 1)
+            if (UndoStack == null || UndoStack.Count < 1)
                 return (null, null);
 
             var item = UndoStack.Pop();
@@ -444,12 +444,19 @@ namespace TextControlBoxNS.Core.Text
                 }
             }
 
+            CursorPosition finalCursor = item.CursorBefore;
+            TextSelection finalSelection = item.SelectionBefore;
+
             if (UndoStack.Count > 0)
             {
                 var nextItem = UndoStack.Peek();
                 if (nextItem.HandleNextItemToo)
                 {
-                    Undo(stringManager);
+                    var (recursedCursor, recursedSelection) = Undo(stringManager);
+                    if (recursedCursor != null)
+                        finalCursor = recursedCursor;
+                    if (recursedSelection != null)
+                        finalSelection = recursedSelection;
                 }
             }
 
@@ -464,7 +471,7 @@ namespace TextControlBoxNS.Core.Text
                 }
             }
 
-            return (item.CursorBefore, item.SelectionBefore);
+            return (finalCursor, finalSelection);
         }
         public (CursorPosition cursor, TextSelection selection) Redo(StringManager stringManager)
         {
@@ -473,7 +480,7 @@ namespace TextControlBoxNS.Core.Text
             if (!UndoRedoEnabled)
                 return (null, null);
 
-            if (RedoStack.Count < 1)
+            if (RedoStack == null || RedoStack.Count < 1)
                 return (null, null);
 
             UndoRedoItem item = RedoStack.Pop();
@@ -515,9 +522,16 @@ namespace TextControlBoxNS.Core.Text
                 }
             }
 
+            CursorPosition finalCursor = item.CursorAfter;
+            TextSelection finalSelection = item.SelectionAfter;
+
             if (item.HandleNextItemToo)
             {
-                Redo(stringManager);
+                var (recursedCursor, recursedSelection) = Redo(stringManager);
+                if (recursedCursor != null)
+                    finalCursor = recursedCursor;
+                if (recursedSelection != null)
+                    finalSelection = recursedSelection;
             }
            
             if (item.AdditionalData != null)
@@ -531,7 +545,7 @@ namespace TextControlBoxNS.Core.Text
                 }
             }
 
-            return (item.CursorAfter, item.SelectionAfter);
+            return (finalCursor, finalSelection);
         }
 
         /// <summary>
@@ -558,12 +572,12 @@ namespace TextControlBoxNS.Core.Text
         /// <summary>
         /// Gets if the undo stack contains actions
         /// </summary>
-        public bool CanUndo { get => UndoStack.Count > 0; }
+        public bool CanUndo { get => UndoStack != null && UndoStack.Count > 0; }
 
         /// <summary>
         /// Gets if the redo stack contains actions
         /// </summary>
-        public bool CanRedo { get => RedoStack.Count > 0; }
+        public bool CanRedo { get => RedoStack != null && RedoStack.Count > 0; }
 
         /// <summary>
         /// Gets if an action group is currently being recorded

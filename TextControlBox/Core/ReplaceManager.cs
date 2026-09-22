@@ -90,17 +90,19 @@ internal class ReplaceManager
         {
             selectionManager.SetSelection(res.Selection);
 
+            int splittedTextLength = replaceWord.Length > 1 && replaceWord.Contains(textManager.NewLineCharacter, StringComparison.Ordinal)
+                ? replaceWord.CountLines(textManager.NewLineCharacter)
+                : 1;
+
             undoRedo.RecordUndoAction(() =>
             {
                 selectionManager.Replace(replaceWord);
-            }, selectionManager.currentTextSelection, 1);
+            }, selectionManager.currentTextSelection, splittedTextLength);
 
             eventsManager.CallTextChanged();
             longestLineManager.needsRecalculation = true;
 
-            var start = res.Selection.StartPosition;
             selectionManager.ClearSelection();
-            cursorManager.SetCursorPosition(start.LineNumber, start.CharacterPosition + replaceWord.Length);
         }
         return res;
     }

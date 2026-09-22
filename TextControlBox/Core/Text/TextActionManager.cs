@@ -362,11 +362,15 @@ namespace TextControlBoxNS.Core.Text
                 longestLineManager.needsRecalculation = true;
                 coreTextbox.textRenderer.InvalidateWrapMetrics();
                 coreTextbox.textRenderer.NeedsUpdateTextLayout = true;
+
+                string cleanedText = stringManager.CleanUpString(text);
+                int redoCount = cleanedText.CountLines(textManager.NewLineCharacter);
+
                 undoRedo.RecordUndoAction(() =>
                 {
                     selectionManager.ClearSelection();
 
-                    var splitted = stringManager.CleanUpString(text).Split(textManager.NewLineCharacter);
+                    var splitted = cleanedText.Split(textManager.NewLineCharacter);
                     selectionManager.ReplaceLines(0, textManager.LinesCount, splitted);
 
                     if (textManager.LinesCount == 0) 
@@ -374,7 +378,7 @@ namespace TextControlBoxNS.Core.Text
 
                     cursorManager.SetToTextEnd();
 
-                }, 0, textManager.LinesCount, text.CountLines(textManager.NewLineCharacter));
+                }, 0, textManager.LinesCount, redoCount);
 
                 canvasUpdateManager.UpdateAll();
             }
@@ -400,7 +404,7 @@ namespace TextControlBoxNS.Core.Text
             longestLineManager.CheckSelection();
             coreTextbox.textRenderer.InvalidateWrapMetrics();
 
-            bool wholeLineSelected = selectionManager.WholeLineSelected();
+            bool wholeLineSelected = selectionManager.WholeLineSelected() && textManager.LinesCount > 1;
 
             undoRedo.RecordUndoAction(() =>
             {
@@ -654,6 +658,9 @@ namespace TextControlBoxNS.Core.Text
         public void DuplicateLine(int line)
         {
             undoRedo.EndBatch();
+            if (line >= textManager.LinesCount || line < 0)
+                return;
+
             longestLineManager.needsRecalculation = true;
             undoRedo.RecordUndoAction(() =>
             {

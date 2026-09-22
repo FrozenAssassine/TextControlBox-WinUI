@@ -59,7 +59,7 @@ internal class AddNewLineTextAction
                 textManager.ClearText(true);
                 textManager.InsertOrAdd(-1, "");
                 cursorManager.SetCursorPosition(1, 0);
-            }, 0, textManager.LinesCount, 2);
+            }, selectionManager.currentTextSelection, 2, textManager.LinesCount);
 
             selectionManager.ClearSelection();
             longestLineManager.needsRecalculation = true;

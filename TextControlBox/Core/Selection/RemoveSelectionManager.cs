@@ -22,7 +22,14 @@ internal class RemoveSelectionManager
         //Whole line selected triple click
         if (startPosition == 0 && endPosition == lineText.Length + 1)
         {
-            textManager.DeleteAt(line);
+            if (textManager.LinesCount == 1)
+            {
+                textManager.SetLineText(line, "");
+            }
+            else
+            {
+                textManager.DeleteAt(line);
+            }
         }
         else
         {
