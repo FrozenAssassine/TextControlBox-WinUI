@@ -638,14 +638,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         ChangeCursor(InputSystemCursorShape.IBeam);
     }
-    private void Scrollbar_PointerExited(object sender, PointerRoutedEventArgs e)
-    {
-        ChangeCursor(InputSystemCursorShape.IBeam);
-    }
-    private void Scrollbar_PointerEntered(object sender, PointerRoutedEventArgs e)
-    {
-        ChangeCursor(InputSystemCursorShape.Arrow);
-    }
+
     //Drag Drop text
     private async void UserControl_Drop(object sender, DragEventArgs e)
     {
