@@ -99,4 +99,37 @@ public class PublicApiRegressionTests
         Assert.IsTrue(text.StartsWith("    Line1", StringComparison.Ordinal));
         Assert.IsTrue(text.Contains("\n    Line2", StringComparison.Ordinal));
     }
+
+    [UITestMethod]
+    public void KeepScrollBarsExpanded_DefaultIsFalse_AndCanBeToggled()
+    {
+        var tb = TestHelper.MakeTextbox(0);
+        Assert.IsFalse(tb.KeepScrollBarsExpanded);
+        Assert.IsFalse(tb.KeepScrollBarExpanded);
+
+        tb.KeepScrollBarsExpanded = true;
+        Assert.IsTrue(tb.KeepScrollBarsExpanded);
+        Assert.IsTrue(tb.KeepScrollBarExpanded);
+
+        tb.KeepScrollBarExpanded = false;
+        Assert.IsFalse(tb.KeepScrollBarsExpanded);
+        Assert.IsFalse(tb.KeepScrollBarExpanded);
+    }
+
+    [UITestMethod]
+    public void ScrollBarSize_DefaultIs16_AndCanBeChanged()
+    {
+        var tb = TestHelper.MakeTextbox(0);
+        Assert.AreEqual(16.0, tb.ScrollBarSize);
+
+        tb.ScrollBarSize = 20;
+        Assert.AreEqual(20.0, tb.ScrollBarSize);
+
+        // Invalid non-positive values should be ignored
+        tb.ScrollBarSize = -5;
+        Assert.AreEqual(20.0, tb.ScrollBarSize);
+
+        tb.ScrollBarSize = 0;
+        Assert.AreEqual(20.0, tb.ScrollBarSize);
+    }
 }

@@ -79,6 +79,8 @@ internal sealed partial class CoreTextControlBox : UserControl
         scrollGrid = ScrollGrid;
         horizontalScrollBar = HorizontalScrollbar;
         verticalScrollBar = VerticalScrollbar;
+        ScrollBarExpansionHelper.SetSize(verticalScrollBar, _scrollBarSize);
+        ScrollBarExpansionHelper.SetSize(horizontalScrollBar, _scrollBarSize);
 
         //Classes & Variables:
         textManager = new TextManager();
@@ -1167,19 +1169,23 @@ internal sealed partial class CoreTextControlBox : UserControl
             if (value)
             {
                 textLayoutManager.WordWrap = true;
+                textRenderer.EnsureTextFormat();
                 textRenderer.EnsureWrapMetrics(canvasText);
                 int targetVisualRow = textRenderer.GetLineVisualStartRow(textRenderer.NumberOfStartLine);
                 scrollManager.VerticalScroll = (targetVisualRow * textRenderer.SingleLineHeight) / scrollManager.DefaultVerticalScrollSensitivity;
                 scrollManager.HorizontalScroll = 0;
+                scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false);
             }
             else
             {
                 int currentDocLine = textRenderer.GetDocumentLineFromVisualRow(textRenderer.StartVisualRow);
                 textLayoutManager.WordWrap = false;
+                textRenderer.EnsureTextFormat();
                 scrollManager.VerticalScroll = (currentDocLine * textRenderer.SingleLineHeight) / scrollManager.DefaultVerticalScrollSensitivity;
                 scrollManager.HorizontalScroll = 0;
                 longestLineManager.needsRecalculation = true;
                 longestLineManager.CheckRecalculateLongestLine(true);
+                scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false, true);
             }
 
             textRenderer.NeedsUpdateTextLayout = true;
@@ -1305,6 +1311,29 @@ internal sealed partial class CoreTextControlBox : UserControl
     public double HorizontalScrollSensitivity { get => scrollManager._HorizontalScrollSensitivity; set => scrollManager._HorizontalScrollSensitivity = value < 1 ? 1 : value; }
     public double VerticalScroll { get => VerticalScrollbar.Value; set { VerticalScrollbar.Value = value < 0 ? 0 : value; canvasUpdateManager.UpdateAll(); } }
     public double HorizontalScroll { get => HorizontalScrollbar.Value; set { HorizontalScrollbar.Value = value < 0 ? 0 : value; canvasUpdateManager.UpdateAll(); } }
+    private bool _keepScrollBarsExpanded = false;
+    public bool KeepScrollBarsExpanded
+    {
+        get => _keepScrollBarsExpanded;
+        set
+        {
+            _keepScrollBarsExpanded = value;
+            ScrollBarExpansionHelper.SetKeepExpanded(VerticalScrollbar, value);
+            ScrollBarExpansionHelper.SetKeepExpanded(HorizontalScrollbar, value);
+        }
+    }
+    private double _scrollBarSize = 16;
+    public double ScrollBarSize
+    {
+        get => _scrollBarSize;
+        set
+        {
+            if (value <= 0) return;
+            _scrollBarSize = value;
+            ScrollBarExpansionHelper.SetSize(VerticalScrollbar, value);
+            ScrollBarExpansionHelper.SetSize(HorizontalScrollbar, value);
+        }
+    }
     public new CornerRadius CornerRadius { get => MainGrid.CornerRadius; set => MainGrid.CornerRadius = value; }
     public bool UseSpacesInsteadTabs { get => tabSpaceManager.UseSpacesInsteadTabs; set { tabSpaceManager.UseSpacesInsteadTabs = value; } }
     public int NumberOfSpacesForTab { get => tabSpaceManager.NumberOfSpaces; set { tabSpaceManager.NumberOfSpaces = value; } }

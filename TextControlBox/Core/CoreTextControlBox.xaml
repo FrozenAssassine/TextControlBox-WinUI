@@ -65,11 +65,11 @@
                         VerticalAlignment="Stretch"/>
 
             <controls:CursorGrid Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Stretch">
-                <ScrollBar Maximum="0" Minimum="0" x:Name="VerticalScrollbar" Value="0" IndicatorMode="MouseIndicator" Background="Transparent" HorizontalAlignment="Right" Orientation="Vertical" VerticalAlignment="Stretch"/>
+                <ScrollBar Maximum="0" Minimum="0" x:Name="VerticalScrollbar" Value="0" IndicatorMode="MouseIndicator" Background="Transparent" HorizontalAlignment="Right" Orientation="Vertical" VerticalAlignment="Stretch" Width="16"/>
             </controls:CursorGrid>
         </Grid>
         <controls:CursorGrid Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
-            <ScrollBar Minimum="0" Maximum="0" x:Name="HorizontalScrollbar" Value="0" IndicatorMode="MouseIndicator" Background="Transparent" HorizontalAlignment="Stretch" Orientation="Horizontal" VerticalAlignment="Bottom"/>
+            <ScrollBar Minimum="0" Maximum="0" x:Name="HorizontalScrollbar" Value="0" IndicatorMode="MouseIndicator" Background="Transparent" HorizontalAlignment="Stretch" Orientation="Horizontal" VerticalAlignment="Bottom" Height="16"/>
         </controls:CursorGrid>
         <controls:InputHandlerControl x:Name="inputHandler" GotFocus="InputManager_GotFocus" LostFocus="InputManager_LostFocus" PreviewKeyDown="InputHandler_KeyDown" TextEntered="InputHandler_TextEntered" Grid.Column="1" Opacity="0" Width="0" Height="0"/>
     </Grid>

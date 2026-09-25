@@ -411,6 +411,7 @@ internal class ScrollManager
             horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
             horizontalScrollBar.Maximum = 0;
             horizontalScrollBar.Value = 0;
+            ScrollBarExpansionHelper.HideIndicator(horizontalScrollBar);
             return;
         }
 
@@ -423,6 +424,15 @@ internal class ScrollManager
         horizontalScrollBar.ViewportSize = viewportWidth;
         double maxScroll = longestLineManager.longestLineWidth.Width <= viewportWidth ? 0 : longestLineManager.longestLineWidth.Width - viewportWidth + (zoomManager.ZoomedFontSize / 2);
         horizontalScrollBar.Maximum = maxScroll;
+
+        if (maxScroll > 0)
+        {
+            ScrollBarExpansionHelper.ShowIndicator(horizontalScrollBar);
+        }
+        else
+        {
+            ScrollBarExpansionHelper.HideIndicator(horizontalScrollBar);
+        }
 
         if (OffsetSource.HorizontalOffset > maxScroll)
         {

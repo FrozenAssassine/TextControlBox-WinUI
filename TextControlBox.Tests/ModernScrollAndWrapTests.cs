@@ -250,6 +250,19 @@ public class ModernScrollAndWrapTests
     }
 
     [UITestMethod]
+    public void WordWrap_ToggleOff_HorizontalScrollBarMaximumIsRecalculated()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        core.SetText("Short\n" + string.Join(" ", System.Linq.Enumerable.Repeat("word", 100)) + "\nShort");
+        core.WordWrap = true;
+        Assert.AreEqual(0.0, core.scrollManager.horizontalScrollBar.Maximum);
+
+        core.WordWrap = false;
+        Assert.IsTrue(core.scrollManager.horizontalScrollBar.Maximum > 0,
+            $"Expected Maximum > 0 after toggling WordWrap off, but got {core.scrollManager.horizontalScrollBar.Maximum}");
+    }
+
+    [UITestMethod]
     public void VirtualizedWrappedLine_IndexMapping_RowStrideIsAccurate()
     {
         var core = TestHelper.MakeCoreTextbox(addNewLines: 0);

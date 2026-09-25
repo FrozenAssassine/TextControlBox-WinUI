@@ -1262,6 +1262,7 @@ internal class TextRenderer
             lineNumberRenderer.CreateLineNumberTextFormat();
 
             EnsureTextFormat();
+            longestLineManager.needsRecalculation = true;
 
             invisibleCharactersRenderer.UpdateTextFormat(canvasText, TextFormat);
 

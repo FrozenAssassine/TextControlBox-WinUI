@@ -929,6 +929,33 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the scrollbars should remain permanently expanded instead of minimizing to a thin indicator when idle.
+    /// </summary>
+    public bool KeepScrollBarsExpanded
+    {
+        get => coreTextBox.KeepScrollBarsExpanded;
+        set => coreTextBox.KeepScrollBarsExpanded = value;
+    }
+
+    /// <summary>
+    /// Alias for <see cref="KeepScrollBarsExpanded"/>.
+    /// </summary>
+    public bool KeepScrollBarExpanded
+    {
+        get => KeepScrollBarsExpanded;
+        set => KeepScrollBarsExpanded = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the thickness (width of vertical, height of horizontal) of the scrollbars in pixels. Default is 16.
+    /// </summary>
+    public double ScrollBarSize
+    {
+        get => coreTextBox.ScrollBarSize;
+        set => coreTextBox.ScrollBarSize = value;
+    }
+
+    /// <summary>
     /// Gets or sets the sensitivity of vertical scrolling in the textbox.
     /// </summary>
 
