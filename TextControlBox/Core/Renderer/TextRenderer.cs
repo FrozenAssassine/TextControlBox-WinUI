@@ -75,6 +75,18 @@ internal class TextRenderer
             _renderedTextDirty = false;
         }
     }
+
+    public bool IsRenderedTextDirty
+    {
+        get => _renderedTextDirty;
+        set => _renderedTextDirty = value;
+    }
+
+    public void InvalidateRenderedText()
+    {
+        _renderedTextDirty = true;
+    }
+
     public string OldRenderedText = null;
 
     // ── Horizontal virtualization (non-wrap, very long lines) ──────────────────────────

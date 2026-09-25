@@ -283,6 +283,8 @@ namespace TextControlBoxNS.Core.Text
                 longestLineManager.needsRecalculation = true;
                 coreTextbox.textRenderer.InvalidateWrapMetrics();
                 coreTextbox.textRenderer.NeedsUpdateTextLayout = true;
+                coreTextbox.textRenderer.OldRenderedText = null;
+                coreTextbox.textRenderer.InvalidateRenderedText();
                 canvasUpdateManager.UpdateAll();
 
                 eventsManager.CallTextLoaded();
@@ -326,6 +328,8 @@ namespace TextControlBoxNS.Core.Text
                 longestLineManager.needsRecalculation = true;
                 coreTextbox.textRenderer.InvalidateWrapMetrics();
                 coreTextbox.textRenderer.NeedsUpdateTextLayout = true;
+                coreTextbox.textRenderer.OldRenderedText = null;
+                coreTextbox.textRenderer.InvalidateRenderedText();
 
                 if (text.Length == 0)
                     textManager.ClearText(true);

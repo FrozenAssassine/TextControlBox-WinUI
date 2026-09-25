@@ -11,6 +11,7 @@
     <UseWinUI>true</UseWinUI>
     <WinUIDSKReferences>false</WinUIDSKReferences>
     <EnableMsixTooling>true</EnableMsixTooling>
+    <WindowsPackageType>None</WindowsPackageType>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 

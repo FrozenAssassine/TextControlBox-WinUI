@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -92,6 +92,29 @@ namespace TextControlBox.Tests
                 return span;
 
             return span.Slice(0, startIndex + newLineCharacter.Length);
+        }
+    }
+
+    [Microsoft.VisualStudio.TestTools.UnitTesting.TestClass]
+    public class AssemblyInitializer
+    {
+        private static object? _dispatcherQueueController;
+
+        [Microsoft.VisualStudio.TestTools.UnitTesting.AssemblyInitialize]
+        public static void Initialize(Microsoft.VisualStudio.TestTools.UnitTesting.TestContext context)
+        {
+            if (Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer.UITestMethodAttribute.DispatcherQueue == null)
+            {
+                try
+                {
+                    _dispatcherQueueController = Microsoft.UI.Dispatching.DispatcherQueueController.CreateOnCurrentThread();
+                    Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer.UITestMethodAttribute.DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+                }
+                catch
+                {
+                    // Fallback
+                }
+            }
         }
     }
 }

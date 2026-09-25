@@ -2,6 +2,7 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
@@ -53,13 +54,6 @@ namespace TextControlBoxNS.Core.Renderer
             Color selectionColor
             )
         {
-            int selStartIndex = 0;
-            int selEndIndex = 0;
-            int characterPosStart = selectionManager.selectionStart.CharacterPosition;
-            int characterPosEnd = selectionManager.selectionEnd.CharacterPosition;
-            int startLine = selectionManager.selectionStart.LineNumber;
-            int endLine = selectionManager.selectionEnd.LineNumber;
-
             if (textLayout == null || numberOfRenderedLines <= 0 || textRenderer.RenderedText == null)
             {
                 selectionManager.currentTextSelection.renderedIndex = 0;
@@ -73,54 +67,72 @@ namespace TextControlBoxNS.Core.Renderer
                 return;
             }
 
-            int lineEndingLength = textManager.NewLineCharacter.Length;
-
-            if (endLine > textManager.totalLines.Count)
-                endLine = textManager.totalLines.Count - 1;
-
-            if (characterPosStart > textManager.totalLines.Span[startLine].Length)
-                characterPosStart = textManager.totalLines.Span[startLine].Length;
-
-            if (characterPosEnd > textManager.totalLines.Span[endLine].Length + 1)
-                characterPosEnd = textManager.totalLines.Span[endLine].Length + 1;
-
-            //Render the selection on position 0 if the user scrolled the start away
-            if (startLine < unrenderedLinesToRenderStart)
+            var (startNull, endNull, startLine, characterPosStart, endLine, characterPosEnd) = selectionManager.OrderTextSelectionSeparated();
+            if (startNull || endNull)
             {
-                startLine = unrenderedLinesToRenderStart;
-                characterPosStart = 0;
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
             }
 
-            if (endLine < unrenderedLinesToRenderStart)
+            int linesCount = textManager.totalLines.Count;
+            if (linesCount == 0)
             {
-                endLine = unrenderedLinesToRenderStart;
-                characterPosEnd = 0;
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
             }
 
-            // If start is beyond visible area, clamp it to the end of the visible region
+            startLine = Math.Clamp(startLine, 0, linesCount - 1);
+            endLine = Math.Clamp(endLine, 0, linesCount - 1);
+            characterPosStart = Math.Clamp(characterPosStart, 0, textManager.totalLines.Span[startLine].Length);
+            characterPosEnd = Math.Clamp(characterPosEnd, 0, textManager.totalLines.Span[endLine].Length);
+
             int lastRenderedLine = unrenderedLinesToRenderStart + numberOfRenderedLines - 1;
-            if (startLine > lastRenderedLine)
+
+            // Selection completely outside visible vertical range
+            if (endLine < unrenderedLinesToRenderStart || startLine > lastRenderedLine)
             {
-                startLine = lastRenderedLine;
-                characterPosStart = textManager.totalLines.Span[startLine].Length;
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+                return;
             }
 
-            if (endLine > lastRenderedLine)
+            // Detect actual line ending length matching the currently rendered layout
+            int lineEndingLength = textManager.NewLineCharacter.Length;
+            if (!string.IsNullOrEmpty(textRenderer.RenderedText))
             {
-                endLine = lastRenderedLine;
-                characterPosEnd = textManager.totalLines.Span[endLine].Length;
+                if (textRenderer.RenderedText.Contains("\r\n"))
+                    lineEndingLength = 2;
+                else if (textRenderer.RenderedText.Contains("\n") || textRenderer.RenderedText.Contains("\r"))
+                    lineEndingLength = 1;
             }
+
+            int clampedStartLine = startLine;
+            int clampedStartChar = characterPosStart;
+            if (clampedStartLine < unrenderedLinesToRenderStart)
+            {
+                clampedStartLine = unrenderedLinesToRenderStart;
+                clampedStartChar = 0;
+            }
+
+            int clampedEndLine = endLine;
+            int clampedEndChar = characterPosEnd;
+            if (clampedEndLine > lastRenderedLine)
+            {
+                clampedEndLine = lastRenderedLine;
+                clampedEndChar = textManager.totalLines.Span[clampedEndLine].Length;
+            }
+
+            int selStartIndex = 0;
+            int selEndIndex = 0;
 
             if (textRenderer.IsHorizontallyVirtualized)
             {
-                // Every visible line is sliced to the same horizontal window; map both endpoints into the
-                // multi-line sliced layout via the per-line prefix offsets. This replaces the cumulative
-                // full-line-length math below, which would over-count because the rendered prior lines are
-                // sliced (shorter) than their document length.
-                int startLineLen = textManager.totalLines.Span[startLine].Length;
-                int endLineLen = textManager.totalLines.Span[endLine].Length;
-                selStartIndex = textRenderer.GetRenderedLayoutIndexForDocument(startLine, Math.Min(characterPosStart, startLineLen));
-                selEndIndex = textRenderer.GetRenderedLayoutIndexForDocument(endLine, Math.Min(characterPosEnd, endLineLen));
+                int startLineLen = textManager.totalLines.Span[clampedStartLine].Length;
+                int endLineLen = textManager.totalLines.Span[clampedEndLine].Length;
+                selStartIndex = textRenderer.GetRenderedLayoutIndexForDocument(clampedStartLine, Math.Min(clampedStartChar, startLineLen));
+                selEndIndex = textRenderer.GetRenderedLayoutIndexForDocument(clampedEndLine, Math.Min(clampedEndChar, endLineLen));
 
                 if (selStartIndex < 0 || selEndIndex < 0)
                 {
@@ -129,43 +141,42 @@ namespace TextControlBoxNS.Core.Renderer
                     return;
                 }
             }
-            else if (startLine == endLine)
+            else if (clampedStartLine == clampedEndLine)
             {
-                int lenghtToLine = 0;
-                for (int i = 0; i < startLine - unrenderedLinesToRenderStart; i++)
+                int lengthToLine = 0;
+                for (int i = 0; i < clampedStartLine - unrenderedLinesToRenderStart; i++)
                 {
                     if (i < numberOfRenderedLines)
                     {
-                        lenghtToLine += textManager.totalLines.Span[textRenderer.NumberOfStartLine + i].Length + lineEndingLength;
+                        lengthToLine += textManager.totalLines.Span[textRenderer.NumberOfStartLine + i].Length + lineEndingLength;
                     }
                 }
 
-                int currentLineLen = textManager.totalLines.Span[startLine].Length;
-                selStartIndex = Math.Min(characterPosStart, currentLineLen) + lenghtToLine;
-                selEndIndex = Math.Min(characterPosEnd, currentLineLen) + lenghtToLine;
+                int currentLineLen = textManager.totalLines.Span[clampedStartLine].Length;
+                selStartIndex = Math.Min(clampedStartChar, currentLineLen) + lengthToLine;
+                selEndIndex = Math.Min(clampedEndChar, currentLineLen) + lengthToLine;
             }
             else
             {
-                for (int i = 0; i < startLine - unrenderedLinesToRenderStart; i++)
+                for (int i = 0; i < clampedStartLine - unrenderedLinesToRenderStart; i++)
                 {
-                    if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
+                    if (i >= numberOfRenderedLines)
                         break;
                     selStartIndex += textManager.totalLines.Span[textRenderer.NumberOfStartLine + i].Length + lineEndingLength;
                 }
 
-                int startLineLen = textManager.totalLines.Span[startLine].Length;
-                selStartIndex += Math.Min(characterPosStart, startLineLen);
+                int startLineLen = textManager.totalLines.Span[clampedStartLine].Length;
+                selStartIndex += Math.Min(clampedStartChar, startLineLen);
 
-                for (int i = 0; i < endLine - unrenderedLinesToRenderStart; i++)
+                for (int i = 0; i < clampedEndLine - unrenderedLinesToRenderStart; i++)
                 {
-                    if (i >= numberOfRenderedLines) //Out of range of the List (do nothing)
+                    if (i >= numberOfRenderedLines)
                         break;
-
                     selEndIndex += textManager.totalLines.Span[textRenderer.NumberOfStartLine + i].Length + lineEndingLength;
                 }
 
-                int endLineLen = textManager.totalLines.Span[endLine].Length;
-                selEndIndex += Math.Min(characterPosEnd, endLineLen);
+                int endLineLen = textManager.totalLines.Span[clampedEndLine].Length;
+                selEndIndex += Math.Min(clampedEndChar, endLineLen);
             }
 
             int textLength = textRenderer.RenderedText?.Length ?? 0;
@@ -185,30 +196,7 @@ namespace TextControlBoxNS.Core.Renderer
             {
                 CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
                 float width = fontSize / (scrollManager == null ? 4 : Math.Max(1, scrollManager.DefaultVerticalScrollSensitivity));
-                for (int i = 0; i < regions.Length; i++)
-                {
-                    // Viewport culling to prevent Direct2D texture overflow
-                    if (regions[i].LayoutBounds.Y + marginTop > 2500 ||
-                        regions[i].LayoutBounds.Bottom + marginTop < -500)
-                    {
-                        continue;
-                    }
-
-                    //Change the width if selection in an empty line or starts at a line end
-                    if (regions[i].LayoutBounds.Width == 0)
-                    {
-                        var bounds = regions[i].LayoutBounds;
-                        regions[i].LayoutBounds = new Rect
-                        {
-                            Width = width,
-                            Height = bounds.Height,
-                            X = bounds.X,
-                            Y = bounds.Y
-                        };
-                    }
-
-                    ccls.FillRectangle(Utils.CreateRect(regions[i].LayoutBounds, marginLeft, marginTop), selectionColor);
-                }
+                RenderSelectionRegions(ccls, regions, width, marginLeft, marginTop, selectionColor);
             }
             args.DrawingSession.DrawImage(canvasCommandList);
 
@@ -308,34 +296,73 @@ namespace TextControlBoxNS.Core.Renderer
             {
                 CanvasTextLayoutRegion[] regions = textLayout.GetCharacterRegions(renderedSelectionStart, renderedSelectionLength);
                 float width = fontSize / (scrollManager == null ? 4 : Math.Max(1, scrollManager.DefaultVerticalScrollSensitivity));
-                for (int i = 0; i < regions.Length; i++)
-                {
-                    // Viewport culling to prevent Direct2D texture overflow
-                    if (regions[i].LayoutBounds.Y + marginTop > 2500 ||
-                        regions[i].LayoutBounds.Bottom + marginTop < -500)
-                    {
-                        continue;
-                    }
-
-                    if (regions[i].LayoutBounds.Width == 0)
-                    {
-                        var bounds = regions[i].LayoutBounds;
-                        regions[i].LayoutBounds = new Rect
-                        {
-                            Width = width,
-                            Height = bounds.Height,
-                            X = bounds.X,
-                            Y = bounds.Y
-                        };
-                    }
-
-                    ccls.FillRectangle(Utils.CreateRect(regions[i].LayoutBounds, marginLeft, marginTop), selectionColor);
-                }
+                RenderSelectionRegions(ccls, regions, width, marginLeft, marginTop, selectionColor);
             }
             args.DrawingSession.DrawImage(canvasCommandList);
 
             selectionManager.currentTextSelection.renderedIndex = renderedSelectionStart;
             selectionManager.currentTextSelection.renderedLength = renderedSelectionLength;
+        }
+
+        private static void RenderSelectionRegions(
+            CanvasDrawingSession ccls,
+            CanvasTextLayoutRegion[] regions,
+            float defaultEmptyLineWidth,
+            float marginLeft,
+            float marginTop,
+            Color selectionColor)
+        {
+            if (regions == null || regions.Length == 0)
+                return;
+
+            // Group regions by visual row (Y coordinate) with 1px floating-point tolerance
+            var rows = new List<(float y, float height, List<(float startX, float endX)> spans)>();
+
+            for (int i = 0; i < regions.Length; i++)
+            {
+                var bounds = regions[i].LayoutBounds;
+                float y = (float)bounds.Y;
+                float h = (float)bounds.Height;
+
+                // Viewport culling to prevent Direct2D texture overflow
+                if (y + marginTop > 2500 || y + h + marginTop < -500)
+                    continue;
+
+                float x = (float)bounds.X;
+                float w = (float)bounds.Width;
+
+                int rowIdx = -1;
+                for (int r = 0; r < rows.Count; r++)
+                {
+                    if (Math.Abs(rows[r].y - y) < 1.0f)
+                    {
+                        rowIdx = r;
+                        break;
+                    }
+                }
+
+                if (rowIdx == -1)
+                {
+                    rows.Add((y, h, new List<(float, float)> { (x, x + w) }));
+                }
+                else
+                {
+                    rows[rowIdx].spans.Add((x, x + w));
+                }
+            }
+
+            for (int r = 0; r < rows.Count; r++)
+            {
+                var (y, h, spans) = rows[r];
+                var mergedSpans = SelectionHelper.MergeSelectionIntervals(spans, defaultEmptyLineWidth);
+
+                for (int s = 0; s < mergedSpans.Count; s++)
+                {
+                    var (startX, endX) = mergedSpans[s];
+                    Rect rect = new Rect(startX, y, endX - startX, h);
+                    ccls.FillRectangle(Utils.CreateRect(rect, marginLeft, marginTop), selectionColor);
+                }
+            }
         }
 
         // Top margin for the selection regions. In wrap mode the whole layout is nudged up by the rows of the
