@@ -150,6 +150,9 @@ internal class SelectionHelper
             end++;
         }
 
+        start = TextElementHelper.SnapToTextElementStart(line, start);
+        end = TextElementHelper.SnapToTextElementEnd(line, end);
+
         return (start, end);
     }
 

@@ -766,6 +766,19 @@ internal class TextRenderer
         }
     }
 
+    private static bool MayContainWideOrSpecialCharacters(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return false;
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (c > 127 || c == '\t' || char.IsSurrogate(c))
+                return true;
+        }
+        return false;
+    }
+
     private int MeasureWrappedRowCount(CanvasControl canvasText, int lineIndex, int charsPerRow = 0, bool isLargeDoc = false)
     {
         if (lineIndex < 0 || lineIndex >= textManager.LinesCount)
@@ -778,15 +791,17 @@ internal class TextRenderer
         if (charsPerRow <= 0)
             charsPerRow = EstimateWrappedCharsPerRow(canvasText);
 
-        // Fast path: if the line length is less than or equal to the maximum characters that can
-        // fit on one row, it is mathematically impossible for the line to wrap.
-        if (lineLength <= charsPerRow)
+        string lineText = textManager.GetLineText(lineIndex);
+
+        // Fast path: for pure ASCII text without tabs in monospace fonts, if the line length is
+        // <= charsPerRow, it is mathematically impossible for the line to wrap.
+        // Emojis, surrogates, wide CJK characters or tabs take more space and must be measured.
+        if (lineLength <= charsPerRow && !MayContainWideOrSpecialCharacters(lineText))
             return 1;
 
         if (lineLength >= LongLineRowEstimateThreshold || isLargeDoc)
             return EstimateWrappedRowCount(canvasText, lineLength, charsPerRow);
 
-        string lineText = textManager.GetLineText(lineIndex);
         float singleLineHeight = Math.Max(1, SingleLineHeight);
         float wrapWidth = cachedWrapWidth > 1 ? cachedWrapWidth : GetWrapWidth(canvasText);
         float layoutHeight = Math.Max(singleLineHeight, (lineText.Length + 1) * singleLineHeight);
@@ -799,7 +814,16 @@ internal class TextRenderer
         // multiple of SingleLineHeight (LineSpacing).
         float baseRowY = lineLayout.GetCaretPosition(0, false).Y;
         float endRowY = lineLayout.GetCaretPosition(lineText.Length, false).Y;
-        int rowCount = 1 + (int)Math.Round(Math.Max(0, endRowY - baseRowY) / singleLineHeight);
+        if (lineText.Length > 0)
+        {
+            float lastCharTrailingY = lineLayout.GetCaretPosition(lineText.Length - 1, true).Y;
+            if (lastCharTrailingY > endRowY)
+                endRowY = lastCharTrailingY;
+        }
+
+        int rowCountFromCaret = 1 + (int)Math.Round(Math.Max(0, endRowY - baseRowY) / singleLineHeight);
+        int rowCountFromBounds = Math.Max(1, (int)Math.Round(lineLayout.LayoutBounds.Height / singleLineHeight));
+        int rowCount = Math.Max(rowCountFromCaret, rowCountFromBounds);
         return Math.Max(1, rowCount);
     }
 
@@ -1113,8 +1137,9 @@ internal class TextRenderer
             int targetCharsPerRow = EstimateWrappedCharsPerRow(canvasText);
             int targetLength = textManager.GetLineLength(targetLine);
             int targetCol = (int)Math.Round(targetCaretX / Math.Max(1, _cachedCharWidth));
+            string targetLineText = textManager.GetLineText(targetLine);
             cursorPosition.LineNumber = targetLine;
-            cursorPosition.CharacterPosition = Math.Clamp(targetRowOffset * targetCharsPerRow + targetCol, 0, targetLength);
+            cursorPosition.CharacterPosition = TextElementHelper.SnapToTextElementStart(targetLineText, Math.Clamp(targetRowOffset * targetCharsPerRow + targetCol, 0, targetLength));
             return true;
         }
 
@@ -1127,11 +1152,11 @@ internal class TextRenderer
         float targetHitY = (targetRowOffset + 0.5f) * Math.Max(1, SingleLineHeight);
         targetLayout.HitTest(targetCaretX, targetHitY, out var targetRegion, out bool isTrailingHit);
 
-        int targetCharIndex = targetRegion.CharacterIndex + (isTrailingHit ? 1 : 0);
+        int targetCharIndex = targetRegion.CharacterIndex + (isTrailingHit ? targetRegion.CharacterCount : 0);
         if (targetCharIndex > targetRegion.CharacterIndex)
         {
             float baseRowYTarget = targetLayout.GetCaretPosition(0, false).Y;
-            var caretPos = targetLayout.GetCaretPosition(targetCharIndex, false);
+            var caretPos = targetLayout.GetCaretPosition(Math.Min(targetCharIndex, textManager.GetLineLength(targetLine)), false);
             int resolvedRow = (int)Math.Round((caretPos.Y - baseRowYTarget) / Math.Max(1, SingleLineHeight));
             if (resolvedRow > targetRowOffset)
             {
@@ -1140,8 +1165,9 @@ internal class TextRenderer
             }
         }
 
+        string finalLineText = textManager.GetLineText(targetLine);
         cursorPosition.LineNumber = targetLine;
-        cursorPosition.CharacterPosition = Math.Clamp(targetCharIndex, 0, textManager.GetLineLength(targetLine));
+        cursorPosition.CharacterPosition = TextElementHelper.SnapToTextElementStart(finalLineText, Math.Clamp(targetCharIndex, 0, finalLineText.Length));
         return true;
     }
 

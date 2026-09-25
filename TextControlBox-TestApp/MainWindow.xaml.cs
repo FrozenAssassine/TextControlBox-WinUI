@@ -225,6 +225,27 @@ namespace TextControlBox_TestApp
             bool bulkOk = startL == 0 && renderedL > 0;
             sb.AppendLine($"[100K/BULK LINES IN WRAP] StartLine={startL}, RenderedLines={renderedL} => {(bulkOk ? "PASS" : "FAIL")}");
 
+            // 7. EMOJI WORD-WRAP DIAGNOSTICS
+            textbox.WordWrap = true;
+            string emojiLine = "Line 5 " + string.Concat(Enumerable.Repeat("💵 ", 47)).TrimEnd();
+            textbox.LoadLines([
+                "Line 0",
+                "Line 1",
+                "Line 2",
+                "Line 3",
+                "Line 4",
+                emojiLine,
+                "Line 6"
+            ]);
+            var (emStartL, emRenderedL) = textbox.CoreTextBox.textRenderer.CalculateLinesToRender();
+            int emojiRowCount = tr.GetWrappedRowCount(5);
+            int line6StartRow = tr.GetLineVisualStartRow(6);
+            float line6TopY = tr.GetLineTopY(6);
+            textbox.SetCursorPosition(6, 0);
+            var ptLine6 = textbox.GetCursorPosition();
+            sb.AppendLine($"[EMOJI WRAP] Line 5 text length={emojiLine.Length}, CharsPerRow={tr.EstimateWrappedCharsPerRow(textbox.CoreTextBox.canvasText)}, RowCount={emojiRowCount}");
+            sb.AppendLine($"[EMOJI WRAP] Line 6 VisualStartRow={line6StartRow}, TopY={line6TopY:F1}, CursorPos=({ptLine6.X:F1}, {ptLine6.Y:F1})");
+
             sb.AppendLine("=== DIAGNOSTICS COMPLETE ===");
 
             string logText = sb.ToString();

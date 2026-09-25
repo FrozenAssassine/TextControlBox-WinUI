@@ -36,30 +36,30 @@ internal class CursorHelper
         if (!isTrailingHit)
             return (textLayoutRegion.CharacterIndex, false);
 
-        int nextIndex = textLayoutRegion.CharacterIndex + 1;
+        int nextIndex = textLayoutRegion.CharacterIndex + textLayoutRegion.CharacterCount;
 
         // If the trailing position wraps to the next visual row, keep the cursor/selection
         // on the current visual row at the trailing edge of the last visible word.
         var hitPos = textLayout.GetCaretPosition(textLayoutRegion.CharacterIndex, false);
-        var nextPos = textLayout.GetCaretPosition(nextIndex, false);
+        string currentLine = currentLineManager.GetCurrentLineText();
+        int lineLength = currentLine?.Length ?? nextIndex;
+        var nextPos = textLayout.GetCaretPosition(Math.Min(nextIndex, lineLength), false);
         if (nextPos.Y > hitPos.Y + 1)
         {
             int charIndex = textLayoutRegion.CharacterIndex;
-            string currentLine = currentLineManager.GetCurrentLineText();
             if (currentLine != null && charIndex < currentLine.Length && char.IsWhiteSpace(currentLine[charIndex]) && charIndex > 0)
             {
                 charIndex--;
             }
 
             if (isSelecting)
-                return (charIndex + 1, false);
+                return (charIndex + textLayoutRegion.CharacterCount, false);
 
             return (charIndex, true);
         }
 
         if (isSelecting)
         {
-            string currentLine = currentLineManager.GetCurrentLineText();
             if (currentLine != null && nextIndex >= currentLine.Length)
             {
                 float relativeX = (float)cursorPosition.X - marginLeft;
@@ -109,7 +109,13 @@ internal class CursorHelper
             : 0;
         float marginLeft = textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset;
         var (renderedCharacterPosition, isTrailing) = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, marginLeft, hitTestY, isSelecting);
-        cursorPos.CharacterPosition = textRenderer.GetDocumentCharacterIndexFromRenderedIndex(cursorPos.LineNumber, renderedCharacterPosition, isSelecting);
+        int docIndex = textRenderer.GetDocumentCharacterIndexFromRenderedIndex(cursorPos.LineNumber, renderedCharacterPosition, isSelecting);
+        string currentLine = currentLineManager.GetCurrentLineText();
+        if (!string.IsNullOrEmpty(currentLine))
+        {
+            docIndex = TextElementHelper.SnapToTextElementStart(currentLine, Math.Clamp(docIndex, 0, currentLine.Length));
+        }
+        cursorPos.CharacterPosition = docIndex;
         cursorPos.IsTrailing = isTrailing;
     }
 }

@@ -70,7 +70,7 @@ internal class DeleteTextAction
     public void RemoveTextInLine(bool controlIsPressed)
     {
         int characterPos = cursorManager.GetCurPosInLine();
-        int stepsToMove = controlIsPressed ? cursorManager.CalculateStepsToMoveRight(characterPos, controlIsPressed) : 1;
+        int stepsToMove = cursorManager.CalculateStepsToMoveRight(characterPos, controlIsPressed);
 
         if (cursorManager.LineNumber == longestLineManager.longestIndex)
             longestLineManager.needsRecalculation = true;

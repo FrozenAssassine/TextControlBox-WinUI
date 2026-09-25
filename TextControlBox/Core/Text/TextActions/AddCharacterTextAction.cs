@@ -58,7 +58,7 @@ internal class AddCharacterTextAction
                 currentLineManager.AddText(text, characterPos);
 
             cursorManager.CharacterPosition = res.length + characterPos;
-        }, cursorManager.LineNumber, text, isAutoPaired: text.Length > 1);
+        }, cursorManager.LineNumber, text, isAutoPaired: res.length < text.Length);
 
         if (currentLineManager.Length > longestLineManager.longestLineLength)
         {

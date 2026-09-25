@@ -50,7 +50,14 @@ internal class CursorManager
     public int GetCurPosInLine()
     {
         int curLineLength = currentLineManager.Length;
-        int pos = CharacterPosition + (IsTrailing ? 1 : 0);
+        int trailingOffset = 0;
+        if (IsTrailing)
+        {
+            trailingOffset = TextElementHelper.GetNextTextElementLength(currentLineManager.CurrentLine, CharacterPosition);
+            if (trailingOffset <= 0)
+                trailingOffset = 1;
+        }
+        int pos = CharacterPosition + trailingOffset;
         return Math.Clamp(pos, 0, curLineLength);
     }
 
@@ -131,31 +138,40 @@ internal class CursorManager
     }
     public int CalculateStepsToMoveLeft(int cursorCharPosition, bool? controlIsPressed = null)
     {
-        if (!controlIsPressed.HasValue && !Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
+        if (cursorCharPosition <= 0)
             return 1;
 
-        if (controlIsPressed.HasValue && !controlIsPressed.Value)
-            return 1;
+        bool ctrl = controlIsPressed ?? Utils.IsKeyPressed(Windows.System.VirtualKey.Control);
+        if (!ctrl)
+        {
+            return TextElementHelper.GetPreviousTextElementLength(currentLineManager.CurrentLine, cursorCharPosition);
+        }
 
         int startPos = cursorCharPosition - 1;
         int stepsToMove = CountCharactersToMoveLeft(startPos);
+        if (stepsToMove == 0)
+        {
+            return TextElementHelper.GetPreviousTextElementLength(currentLineManager.CurrentLine, cursorCharPosition);
+        }
 
-        return stepsToMove == 0 ? 1 : stepsToMove;
+        int targetPos = cursorCharPosition - stepsToMove;
+        int snappedPos = TextElementHelper.SnapToTextElementStart(currentLineManager.CurrentLine, targetPos);
+        return Math.Max(1, cursorCharPosition - snappedPos);
     }
 
     public int CalculateStepsToMoveRight(int cursorCharPosition, bool? controlIsPressed = null)
     {
-        if (!controlIsPressed.HasValue && !Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
-            return 1;
-
-        if (controlIsPressed.HasValue && !controlIsPressed.Value)
-            return 1;
-
         var line = currentLineManager.CurrentLine;
         int length = currentLineManager.Length;
 
         if (cursorCharPosition >= length)
             return 0;
+
+        bool ctrl = controlIsPressed ?? Utils.IsKeyPressed(Windows.System.VirtualKey.Control);
+        if (!ctrl)
+        {
+            return TextElementHelper.GetNextTextElementLength(line, cursorCharPosition);
+        }
 
         int i = cursorCharPosition;
         int moved = 0;
@@ -176,7 +192,14 @@ internal class CursorManager
             moved++;
         }
 
-        return moved == 0 ? 1 : moved;
+        if (moved == 0)
+        {
+            return TextElementHelper.GetNextTextElementLength(line, cursorCharPosition);
+        }
+
+        int targetPos = cursorCharPosition + moved;
+        int snappedPos = TextElementHelper.SnapToTextElementEnd(line, targetPos);
+        return Math.Max(1, snappedPos - cursorCharPosition);
     }
 
     //Move cursor:
@@ -211,7 +234,7 @@ internal class CursorManager
         if (IsTrailing)
         {
             IsTrailing = false;
-            CharacterPosition++;
+            CharacterPosition += CalculateStepsToMoveRight(CharacterPosition);
             return;
         }
 
@@ -240,7 +263,10 @@ internal class CursorManager
                 PreferredCharacterPosition = CharacterPosition;
 
             LineNumber += 1;
-            CharacterPosition = Math.Clamp(PreferredCharacterPosition.Value, 0, textManager.GetLineLength(LineNumber));
+            int targetLength = textManager.GetLineLength(LineNumber);
+            int targetPos = Math.Clamp(PreferredCharacterPosition.Value, 0, targetLength);
+            string targetLine = textManager.GetLineText(LineNumber);
+            CharacterPosition = TextElementHelper.SnapToTextElementStart(targetLine, targetPos);
         }
     }
     public void MoveUp()
@@ -252,7 +278,10 @@ internal class CursorManager
                 PreferredCharacterPosition = CharacterPosition;
 
             LineNumber -= 1;
-            CharacterPosition = Math.Clamp(PreferredCharacterPosition.Value, 0, textManager.GetLineLength(LineNumber));
+            int targetLength = textManager.GetLineLength(LineNumber);
+            int targetPos = Math.Clamp(PreferredCharacterPosition.Value, 0, targetLength);
+            string targetLine = textManager.GetLineText(LineNumber);
+            CharacterPosition = TextElementHelper.SnapToTextElementStart(targetLine, targetPos);
         }
     }
     public void MoveToLineEnd(CursorPosition cursorPosition)
