@@ -1351,6 +1351,7 @@ internal sealed partial class CoreTextControlBox : UserControl
             { SyntaxHighlightID.Inifile, new IniHighlighter() },
             { SyntaxHighlightID.CSS, new CSS() },
             { SyntaxHighlightID.CSVImproved, new CSVEnhanced() },
+            { SyntaxHighlightID.Log, new LogHighlighter() },
             { SyntaxHighlightID.CSV, new CSV() },
             { SyntaxHighlightID.GCode, new GCode() },
             { SyntaxHighlightID.Gitignore, new GitIgnore() },

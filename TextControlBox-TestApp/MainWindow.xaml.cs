@@ -19,7 +19,7 @@ namespace TextControlBox_TestApp
 
             //textbox.LoadLines(Enumerable.Range(0, 5_000_000).Select(x => "Line " + x + " is cool right?"));
 
-            textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.CSharp);
+            textbox.SelectSyntaxHighlightingById(SyntaxHighlightID.Log);
 
             textbox.NumberOfSpacesForTab = 8;
             textbox.UseSpacesInsteadTabs = false;
