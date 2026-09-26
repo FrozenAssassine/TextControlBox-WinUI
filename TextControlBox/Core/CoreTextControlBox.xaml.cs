@@ -150,6 +150,9 @@ internal sealed partial class CoreTextControlBox : UserControl
         linkHighlightManager.Init(textRenderer, this, eventsManager);
         linkRenderer.Init(textRenderer, linkHighlightManager);
 
+        inputHandler.CompositionStarted += InputHandler_CompositionStarted;
+        inputHandler.CompositionChanged += InputHandler_CompositionChanged;
+
         // Two-axis precision-touchpad panning: wire the composition InteractionTracker once the control
         // (and its selection canvas' visual) is in the tree. See CoreTextControlBox.DiagonalScroll.cs.
         Loaded += (_, _) => SetupDiagonalScroll();
@@ -175,6 +178,9 @@ internal sealed partial class CoreTextControlBox : UserControl
     //Handle keyinputs
     private void InputHandler_TextEntered(object sender, TextChangedEventArgs e)
     {
+        if (inputHandler.IsComposing)
+            return;
+
         if (IsReadOnly || inputHandler.Text.Equals("\t", StringComparison.OrdinalIgnoreCase))
         {
             inputHandler.Text = ""; //clear text, otherwise in readonly mode, the text is still added in the textbox.
@@ -189,9 +195,15 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         textActionManager.AddCharacter(inputHandler.Text);
         inputHandler.Text = "";
+        UpdateInputHandlerPosition();
     }
     private void InputHandler_KeyDown(object sender, KeyRoutedEventArgs e)
     {
+        UpdateInputHandlerPosition();
+
+        if (inputHandler.IsComposing || (int)e.Key == 229)
+            return;
+
         if (e.Key == VirtualKey.Tab)
         {
             undoRedo.EndBatch();
@@ -469,6 +481,7 @@ internal sealed partial class CoreTextControlBox : UserControl
                     break;
                 }
         }
+        UpdateInputHandlerPosition();
     }
 
     private void Canvas_Selection_PointerReleased(object sender, PointerRoutedEventArgs e)
@@ -617,17 +630,50 @@ internal sealed partial class CoreTextControlBox : UserControl
     private void InputManager_GotFocus(object sender, RoutedEventArgs e)
     {
         focusManager.SetFocus();
+        UpdateInputHandlerPosition();
     }
     private void InputManager_LostFocus(object sender, RoutedEventArgs e)
     {
         undoRedo.EndBatch();
         focusManager.RemoveFocus();
+        inputHandler.ResetComposition();
     }
 
     public new void Focus(FocusState state)
     {
+        UpdateInputHandlerPosition();
         inputHandler.Focus(state);
     }
+
+    internal void UpdateInputHandlerPosition()
+    {
+        if (inputHandler == null || textRenderer == null)
+            return;
+
+        var pos = GetCursorPosition();
+        var newMargin = new Thickness(pos.X, pos.Y, 0, 0);
+        if (inputHandler.Margin != newMargin)
+        {
+            inputHandler.Margin = newMargin;
+        }
+        float lineHeight = textRenderer.SingleLineHeight;
+        if (lineHeight > 0 && Math.Abs(inputHandler.Height - lineHeight) > 0.1)
+        {
+            inputHandler.Height = lineHeight;
+        }
+    }
+
+    private void InputHandler_CompositionStarted(object sender, TextCompositionStartedEventArgs e)
+    {
+        UpdateInputHandlerPosition();
+    }
+
+    private void InputHandler_CompositionChanged(object sender, TextCompositionChangedEventArgs e)
+    {
+        UpdateInputHandlerPosition();
+    }
+
+    internal TextControlBoxNS.Controls.InputHandlerControl InputHandler => inputHandler;
 
     //Cursor:
     private void Canvas_LineNumber_PointerEntered(object sender, PointerRoutedEventArgs e)
@@ -986,6 +1032,8 @@ internal sealed partial class CoreTextControlBox : UserControl
         //Unsubscribe from events:
         inputHandler.PreviewKeyDown -= InputHandler_KeyDown;
         inputHandler.TextEntered -= InputHandler_TextEntered;
+        inputHandler.CompositionStarted -= InputHandler_CompositionStarted;
+        inputHandler.CompositionChanged -= InputHandler_CompositionChanged;
 
         if (verticalScrollBar != null)
         {

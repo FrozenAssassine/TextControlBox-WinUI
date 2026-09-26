@@ -27,6 +27,7 @@ internal class CanvasUpdateManager
 
         //coreTextbox.canvasCursor.Invalidate();
         _batchRedrawer.RequestRedraw(coreTextbox.canvasCursor);
+        coreTextbox.UpdateInputHandlerPosition();
     }
 
     // Redraw the caret canvas for a blink-phase toggle WITHOUT resetting the blink
