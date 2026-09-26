@@ -233,7 +233,7 @@ internal class ScrollManager
                 {
                     if (update)
                     {
-                        if (coreTextbox.selectionManager.HasSelection)
+                        if (coreTextbox.selectionManager.HasSelection || coreTextbox.selectionRenderer.renderedSelectionLength > 0 || !coreTextbox.selectionManager.OldTextSelection.StartPosition.IsNull)
                             canvasHelper.UpdateSelection();
                         canvasHelper.UpdateCursor();
                     }

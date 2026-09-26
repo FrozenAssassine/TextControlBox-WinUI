@@ -164,4 +164,53 @@ public class ShiftPageSelectionAndSelectedTextTests
         Assert.IsFalse(core.selectionManager.HasSelection, "PageUp without shift should clear selection");
         Assert.AreEqual(50, core.CursorPosition.LineNumber);
     }
+
+    [UITestMethod]
+    public void ShiftArrowUp_ThenShiftArrowDown_CollapsesSelection()
+    {
+        var core = TestHelper.MakeCoreTextbox(10);
+        core.SetCursorPosition(5, 3);
+        core.ClearSelection();
+
+        Assert.IsFalse(core.selectionManager.HasSelection);
+
+        // Shift + Up selects line 4
+        core.HandleKeyDown(VirtualKey.Up, shift: true);
+        Assert.IsTrue(core.selectionManager.HasSelection);
+        Assert.AreEqual(4, core.CursorPosition.LineNumber);
+
+        // Shift + Down returns to start position, collapsing selection
+        core.HandleKeyDown(VirtualKey.Down, shift: true);
+        Assert.IsFalse(core.selectionManager.HasSelection, "Selection should collapse and HasSelection be false");
+        Assert.AreEqual(5, core.CursorPosition.LineNumber);
+        Assert.AreEqual(3, core.CursorPosition.CharacterPosition);
+    }
+
+    [UITestMethod]
+    public void PasteLine_DuplicatesLineBelow_WithoutSplittingLine()
+    {
+        var core = TestHelper.MakeCoreTextbox(0);
+        core.LoadLines(new[] { "Line 0", "Line 1: Hello World", "Line 2" });
+        core.SetCursorPosition(1, 5); // Right after "Hello" in line 1
+        core.ClearSelection();
+
+        core.textActionManager.PasteLine("Line 1: Hello World\r\n");
+
+        Assert.AreEqual(4, core.NumberOfLines);
+        Assert.AreEqual("Line 0", core.GetLineText(0));
+        Assert.AreEqual("Line 1: Hello World", core.GetLineText(1));
+        Assert.AreEqual("Line 1: Hello World", core.GetLineText(2));
+        Assert.AreEqual("Line 2", core.GetLineText(3));
+
+        // Cursor should now be on the duplicated line below at the same character column
+        Assert.AreEqual(2, core.CursorPosition.LineNumber);
+        Assert.AreEqual(5, core.CursorPosition.CharacterPosition);
+
+        // Undo should restore original lines and cursor
+        core.Undo();
+        Assert.AreEqual(3, core.NumberOfLines);
+        Assert.AreEqual("Line 1: Hello World", core.GetLineText(1));
+        Assert.AreEqual(1, core.CursorPosition.LineNumber);
+        Assert.AreEqual(5, core.CursorPosition.CharacterPosition);
+    }
 }

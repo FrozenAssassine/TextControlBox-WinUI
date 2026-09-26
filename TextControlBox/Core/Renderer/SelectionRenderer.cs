@@ -225,13 +225,32 @@ namespace TextControlBoxNS.Core.Renderer
                     designHelper._Design.SelectionColor
                 );
             }
-
-            if (selectionManager.HasSelection && !selectionManager.Equals(selectionManager.OldTextSelection, selectionManager.currentTextSelection))
+            else
             {
-                //Update the variables
-                selectionManager.OldTextSelection.EndPosition.SetChangeValues(selectionManager.currentTextSelection.EndPosition);
-                selectionManager.OldTextSelection.StartPosition.SetChangeValues(selectionManager.currentTextSelection.StartPosition);
-                eventsManager.CallSelectionChanged();
+                renderedSelectionLength = 0;
+                renderedSelectionStart = 0;
+                selectionManager.currentTextSelection.renderedIndex = 0;
+                selectionManager.currentTextSelection.renderedLength = 0;
+            }
+
+            if (selectionManager.HasSelection)
+            {
+                if (!selectionManager.Equals(selectionManager.OldTextSelection, selectionManager.currentTextSelection))
+                {
+                    //Update the variables
+                    selectionManager.OldTextSelection.EndPosition.SetChangeValues(selectionManager.currentTextSelection.EndPosition);
+                    selectionManager.OldTextSelection.StartPosition.SetChangeValues(selectionManager.currentTextSelection.StartPosition);
+                    eventsManager.CallSelectionChanged();
+                }
+            }
+            else
+            {
+                if (!selectionManager.OldTextSelection.StartPosition.IsNull || !selectionManager.OldTextSelection.EndPosition.IsNull)
+                {
+                    selectionManager.OldTextSelection.StartPosition.IsNull = true;
+                    selectionManager.OldTextSelection.EndPosition.IsNull = true;
+                    eventsManager.CallSelectionChanged();
+                }
             }
         }
 

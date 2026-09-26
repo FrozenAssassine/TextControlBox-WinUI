@@ -355,6 +355,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                         selectionManager.StartSelectionIfNeeded();
                         cursorManager.MoveLeft();
                         selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
+                        canvasUpdateManager.UpdateSelection();
                     }
                     else
                     {
@@ -378,6 +379,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                         selectionManager.StartSelectionIfNeeded();
                         cursorManager.MoveRight();
                         selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
+                        canvasUpdateManager.UpdateSelection();
                     }
                     else
                     {
@@ -404,6 +406,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                         else
                             cursorManager.MoveDown();
                         selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
+                        canvasUpdateManager.UpdateSelection();
                     }
                     else
                     {
@@ -428,6 +431,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                         else
                             cursorManager.MoveUp();
                         selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
+                        canvasUpdateManager.UpdateSelection();
                     }
                     else
                     {

@@ -34,6 +34,7 @@ namespace TextControlBoxNS.Core.Text
         private readonly DeleteTextAction deleteTextAction = new DeleteTextAction();
         private readonly AddNewLineTextAction addNewLineTextAction = new AddNewLineTextAction();
         private readonly RemoveTextAction removeTextAction = new RemoveTextAction();
+        private static bool _isLineCopy = false;
 
         public void Init(
             CoreTextControlBox coreTextbox,
@@ -159,7 +160,21 @@ namespace TextControlBoxNS.Core.Text
                         return;
                     }
 
-                    AddCharacter(stringManager.CleanUpString(text));
+                    if (text == null)
+                        return;
+
+                    string cleaned = stringManager.CleanUpString(text);
+                    bool isLineCopy = !selectionManager.HasSelection &&
+                        (_isLineCopy || (cleaned.EndsWith(textManager.NewLineCharacter, StringComparison.Ordinal) && !cleaned.StartsWith(textManager.NewLineCharacter)));
+
+                    if (isLineCopy)
+                    {
+                        PasteLine(cleaned);
+                    }
+                    else
+                    {
+                        AddCharacter(cleaned);
+                    }
                 }
             }
             catch (OutOfMemoryException)
@@ -172,6 +187,39 @@ namespace TextControlBoxNS.Core.Text
                 }
                 throw new OutOfMemoryException();
             }
+        }
+        public void PasteLine(string text)
+        {
+            if (textManager._IsReadOnly || textManager.LinesCount == 0)
+                return;
+
+            cursorManager.ResetPreferredPosition();
+
+            string cleaned = stringManager.CleanUpString(text);
+            if (cleaned.EndsWith(textManager.NewLineCharacter, StringComparison.Ordinal))
+            {
+                cleaned = cleaned.Substring(0, cleaned.Length - textManager.NewLineCharacter.Length);
+            }
+            string[] linesToInsert = cleaned.Split(textManager.NewLineCharacter);
+            if (linesToInsert.Length == 0)
+                return;
+
+            int insertAtLine = Math.Clamp(cursorManager.LineNumber, 0, textManager.LinesCount);
+            int cursorChar = cursorManager.CharacterPosition;
+
+            longestLineManager.needsRecalculation = true;
+
+            undoRedo.RecordUndoAction(() =>
+            {
+                textManager.InsertOrAddRange(linesToInsert, insertAtLine);
+                cursorManager.SetCursorPosition(insertAtLine + linesToInsert.Length, cursorChar);
+            }, insertAtLine, 0, linesToInsert.Length);
+
+            currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
+            eventsManager.CallTextChanged();
+            coreTextbox.textRenderer.MarkLineWrapDirty(cursorManager.LineNumber);
+            scrollManager.UpdateScrollToShowCursor(false);
+            canvasUpdateManager.UpdateAll();
         }
         public string Safe_Gettext(bool handleException = true)
         {
@@ -198,12 +246,14 @@ namespace TextControlBoxNS.Core.Text
             try
             {
                 DataPackage dataPackage = new DataPackage();
-                string textToCut = selectionManager.HasSelection
+                bool isLineCopy = !selectionManager.HasSelection;
+                string textToCut = !isLineCopy
                     ? coreTextbox.SelectedText
                     : (textManager.LinesCount > 0 && cursorManager.LineNumber >= 0 && cursorManager.LineNumber < textManager.LinesCount
                         ? textManager.GetLineText(cursorManager.LineNumber) + textManager.NewLineCharacter
                         : string.Empty);
                 dataPackage.SetText(textToCut);
+                _isLineCopy = isLineCopy && !string.IsNullOrEmpty(textToCut);
                 if (!selectionManager.HasSelection)
                     DeleteLine(cursorManager.LineNumber); //Delete the line
                 else
@@ -231,12 +281,14 @@ namespace TextControlBoxNS.Core.Text
             try
             {
                 DataPackage dataPackage = new DataPackage();
-                string textToCopy = selectionManager.HasSelection
+                bool isLineCopy = !selectionManager.HasSelection;
+                string textToCopy = !isLineCopy
                     ? coreTextbox.SelectedText
                     : (textManager.LinesCount > 0 && cursorManager.LineNumber >= 0 && cursorManager.LineNumber < textManager.LinesCount
                         ? textManager.GetLineText(cursorManager.LineNumber) + textManager.NewLineCharacter
                         : string.Empty);
                 dataPackage.SetText(textToCopy);
+                _isLineCopy = isLineCopy && !string.IsNullOrEmpty(textToCopy);
                 dataPackage.RequestedOperation = DataPackageOperation.Copy;
                 Clipboard.SetContent(dataPackage);
             }
