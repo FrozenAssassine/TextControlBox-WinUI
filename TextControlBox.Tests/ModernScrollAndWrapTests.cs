@@ -150,6 +150,26 @@ public class ModernScrollAndWrapTests
     }
 
     [UITestMethod]
+    public void CoreTextControlBox_Unload_Idempotent()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 10);
+        // Unload should be safely callable multiple times
+        core.Unload();
+        core.Unload();
+        core.Dispose();
+    }
+
+    [UITestMethod]
+    public void TextControlBox_Dispose_Idempotent()
+    {
+        using (var tb = TestHelper.MakeTextbox(10))
+        {
+            tb.Dispose();
+            tb.Unload();
+        }
+    }
+
+    [UITestMethod]
     public void WordWrap_LineNumbers_AlignWithWrappedRows()
     {
         var core = TestHelper.MakeCoreTextbox(addNewLines: 0);

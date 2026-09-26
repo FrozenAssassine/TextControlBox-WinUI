@@ -829,7 +829,14 @@ internal class PointerActionsManager
         selectionTimer?.Stop();
         _touchLongPressTimer?.Stop();
         _touchTapTimer?.Stop();
+        _zoomAnchorResetTimer?.Stop();
         StopSelectionAutoScroll();
+        _touchState = TouchInteractionState.None;
+        _touchTapCount = 0;
+        _primaryTouchId = 0;
+        _secondaryTouchId = null;
+        if (coreTextbox != null)
+            coreTextbox._isTouchScrolling = false;
     }
 
     internal void TriggerTouchLongPress()

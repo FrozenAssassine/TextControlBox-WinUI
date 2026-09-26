@@ -12,8 +12,9 @@ namespace TextControlBoxNS;
 /// <summary>
 /// A custom textbox control with a lot of features
 /// </summary>
-public partial class TextControlBox : UserControl
+public partial class TextControlBox : UserControl, IDisposable
 {
+    private bool _isDisposed = false;
     private readonly CoreTextControlBox coreTextBox;
     internal CoreTextControlBox CoreTextBox => coreTextBox;
 
@@ -555,11 +556,25 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Disposes the textbox and releases all resources.
+    /// </summary>
+    public void Dispose()
+    {
+        Unload();
+    }
+
+    /// <summary>
     /// Unloads the textbox and releases all resources.
     /// Do not use the textbox afterwards.
     /// </summary>
     public void Unload()
     {
+        if (_isDisposed)
+            return;
+        _isDisposed = true;
+
+        base.Loaded -= TextControlBox_Loaded;
+
         coreTextBox.eventsManager.Loaded -= EventsManager_Loaded;
         coreTextBox.eventsManager.ZoomChanged -= ZoomManager_ZoomChanged;
         coreTextBox.eventsManager.TextChanged -= EventsManager_TextChanged;

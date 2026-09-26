@@ -20,7 +20,7 @@ using Windows.System;
 
 namespace TextControlBoxNS.Core;
 
-internal sealed partial class CoreTextControlBox : UserControl
+internal sealed partial class CoreTextControlBox : UserControl, IDisposable
 {
     public readonly SelectionRenderer selectionRenderer;
     public readonly FlyoutHelper flyoutHelper;
@@ -157,10 +157,27 @@ internal sealed partial class CoreTextControlBox : UserControl
 
         // Two-axis precision-touchpad panning: wire the composition InteractionTracker once the control
         // (and its selection canvas' visual) is in the tree. See CoreTextControlBox.DiagonalScroll.cs.
-        Loaded += (_, _) => SetupDiagonalScroll();
-        Unloaded += (_, _) => TeardownDiagonalScroll();
+        Loaded += CoreTextControlBox_Loaded;
+        Unloaded += CoreTextControlBox_Unloaded;
 
         ActualThemeChanged += CoreTextControlBox_ActualThemeChanged;
+    }
+
+    private void CoreTextControlBox_Loaded(object sender, RoutedEventArgs e)
+    {
+        SetupDiagonalScroll();
+        if (focusManager.HasFocus)
+        {
+            caretBlinkManager?.Start();
+        }
+        canvasUpdateManager?.UpdateAll();
+    }
+
+    private void CoreTextControlBox_Unloaded(object sender, RoutedEventArgs e)
+    {
+        TeardownDiagonalScroll();
+        caretBlinkManager?.Stop();
+        pointerActionsManager?.CleanUp();
     }
 
     private void CoreTextControlBox_ActualThemeChanged(FrameworkElement sender, object args)
@@ -1349,13 +1366,30 @@ internal sealed partial class CoreTextControlBox : UserControl
         canvasUpdateManager.UpdateText();
     }
 
+    public void Dispose()
+    {
+        Unload();
+    }
+
+    private bool _isUnloaded = false;
+
     public void Unload()
     {
+        if (_isUnloaded)
+            return;
+        _isUnloaded = true;
+
+        Loaded -= CoreTextControlBox_Loaded;
+        Unloaded -= CoreTextControlBox_Unloaded;
+
         //Unsubscribe from events:
-        inputHandler.PreviewKeyDown -= InputHandler_KeyDown;
-        inputHandler.TextEntered -= InputHandler_TextEntered;
-        inputHandler.CompositionStarted -= InputHandler_CompositionStarted;
-        inputHandler.CompositionChanged -= InputHandler_CompositionChanged;
+        if (inputHandler != null)
+        {
+            inputHandler.PreviewKeyDown -= InputHandler_KeyDown;
+            inputHandler.TextEntered -= InputHandler_TextEntered;
+            inputHandler.CompositionStarted -= InputHandler_CompositionStarted;
+            inputHandler.CompositionChanged -= InputHandler_CompositionChanged;
+        }
 
         if (verticalScrollBar != null)
         {
@@ -1368,12 +1402,18 @@ internal sealed partial class CoreTextControlBox : UserControl
             horizontalScrollBar.Scroll -= scrollManager.HorizontalScrollBar_Scroll;
         }
 
-        caretBlinkManager.Stop();
+        caretBlinkManager?.Stop();
         pointerActionsManager?.CleanUp();
         TeardownDiagonalScroll();
 
         textRenderer.CheckDispose();
         lineNumberRenderer.CheckDispose();
+
+        // Release Win2D canvas resources cleanly
+        try { Canvas_LineNumber?.RemoveFromVisualTree(); } catch { }
+        try { Canvas_Cursor?.RemoveFromVisualTree(); } catch { }
+        try { Canvas_Text?.RemoveFromVisualTree(); } catch { }
+        try { Canvas_Selection?.RemoveFromVisualTree(); } catch { }
 
         //Dispose and null larger objects
         textManager.totalLines.Dispose();
