@@ -122,5 +122,89 @@ namespace TextControlBox.Tests.RegressionTests
             Assert.AreEqual(12, core.selectionManager.selectionStart.CharacterPosition, "FindNext after FindPrevious should immediately jump to next occurrence");
             Assert.AreEqual(17, core.selectionManager.selectionEnd.CharacterPosition);
         }
+
+        [UITestMethod]
+        public void MoveDown_OnLastLine_MovesCursorToEndOfLine()
+        {
+            var core = TestHelper.MakeCoreTextbox();
+            core.SetText("Line1\nLine2\nLastLineText");
+
+            int last = core.textManager.LinesCount - 1;
+            core.SetCursorPosition(last, 4);
+
+            // Pressing MoveDown on last line moves cursor to end of text/line
+            core.cursorManager.MoveDown();
+            Assert.AreEqual(last, core.cursorManager.LineNumber);
+            Assert.AreEqual("LastLineText".Length, core.cursorManager.CharacterPosition, "Should move to end of line");
+
+            // Pressing MoveDown again when already at end of line does nothing
+            core.cursorManager.MoveDown();
+            Assert.AreEqual(last, core.cursorManager.LineNumber);
+            Assert.AreEqual("LastLineText".Length, core.cursorManager.CharacterPosition, "Should remain at end of line");
+        }
+
+        [UITestMethod]
+        public void MoveUp_OnFirstLine_MovesCursorToStartOfLine()
+        {
+            var core = TestHelper.MakeCoreTextbox();
+            core.SetText("FirstLineText\nLine2\nLine3");
+
+            core.SetCursorPosition(0, 8);
+
+            // Pressing MoveUp on first line moves cursor to start of text/line
+            core.cursorManager.MoveUp();
+            Assert.AreEqual(0, core.cursorManager.LineNumber);
+            Assert.AreEqual(0, core.cursorManager.CharacterPosition, "Should move to start of line");
+
+            // Pressing MoveUp again when already at start of line does nothing
+            core.cursorManager.MoveUp();
+            Assert.AreEqual(0, core.cursorManager.LineNumber);
+            Assert.AreEqual(0, core.cursorManager.CharacterPosition, "Should remain at start of line");
+        }
+
+        [UITestMethod]
+        public void HandleKeyDown_DownAndUp_AtDocumentBoundaries_MovesToEndAndStart()
+        {
+            var core = TestHelper.MakeCoreTextbox();
+            core.SetText("Hello\nWorld");
+
+            // Move cursor to last line, middle
+            core.SetCursorPosition(1, 2);
+            core.HandleKeyDown(Windows.System.VirtualKey.Down);
+            Assert.AreEqual(1, core.cursorManager.LineNumber);
+            Assert.AreEqual(5, core.cursorManager.CharacterPosition, "Should move to end of document on last line");
+
+            // Now move cursor to first line, middle
+            core.SetCursorPosition(0, 3);
+            core.HandleKeyDown(Windows.System.VirtualKey.Up);
+            Assert.AreEqual(0, core.cursorManager.LineNumber);
+            Assert.AreEqual(0, core.cursorManager.CharacterPosition, "Should move to start of document on first line");
+        }
+
+        [UITestMethod]
+        public void HandleKeyDown_ShiftDownAndShiftUp_AtDocumentBoundaries_ExtendsSelection()
+        {
+            var core = TestHelper.MakeCoreTextbox();
+            core.SetText("Hello\nWorld");
+
+            // Shift+Down on last line should extend selection to the end
+            core.SetCursorPosition(1, 2);
+            core.HandleKeyDown(Windows.System.VirtualKey.Down, shift: true);
+            Assert.AreEqual(1, core.cursorManager.LineNumber);
+            Assert.AreEqual(5, core.cursorManager.CharacterPosition);
+            Assert.IsTrue(core.selectionManager.HasSelection);
+            Assert.AreEqual(2, core.selectionManager.selectionStart.CharacterPosition);
+            Assert.AreEqual(5, core.selectionManager.selectionEnd.CharacterPosition);
+
+            // Shift+Up on first line should extend selection to the start
+            core.ClearSelection();
+            core.SetCursorPosition(0, 3);
+            core.HandleKeyDown(Windows.System.VirtualKey.Up, shift: true);
+            Assert.AreEqual(0, core.cursorManager.LineNumber);
+            Assert.AreEqual(0, core.cursorManager.CharacterPosition);
+            Assert.IsTrue(core.selectionManager.HasSelection);
+            Assert.AreEqual(3, core.selectionManager.selectionStart.CharacterPosition);
+            Assert.AreEqual(0, core.selectionManager.selectionEnd.CharacterPosition);
+        }
     }
 }

@@ -257,6 +257,9 @@ internal class CursorManager
     public void MoveDown()
     {
         IsTrailing = false;
+        if (textManager.LinesCount == 0)
+            return;
+
         if (LineNumber < textManager.LinesCount - 1)
         {
             if (!PreferredCharacterPosition.HasValue)
@@ -268,10 +271,24 @@ internal class CursorManager
             string targetLine = textManager.GetLineText(LineNumber);
             CharacterPosition = TextElementHelper.SnapToTextElementStart(targetLine, targetPos);
         }
+        else
+        {
+            int lineIndex = Math.Clamp(LineNumber, 0, textManager.LinesCount - 1);
+            LineNumber = lineIndex;
+            int lineLength = textManager.GetLineLength(lineIndex);
+            if (CharacterPosition < lineLength)
+            {
+                CharacterPosition = lineLength;
+                ResetPreferredPosition();
+            }
+        }
     }
     public void MoveUp()
     {
         IsTrailing = false;
+        if (textManager.LinesCount == 0)
+            return;
+
         if (LineNumber > 0)
         {
             if (!PreferredCharacterPosition.HasValue)
@@ -282,6 +299,15 @@ internal class CursorManager
             int targetPos = Math.Clamp(PreferredCharacterPosition.Value, 0, targetLength);
             string targetLine = textManager.GetLineText(LineNumber);
             CharacterPosition = TextElementHelper.SnapToTextElementStart(targetLine, targetPos);
+        }
+        else
+        {
+            LineNumber = 0;
+            if (CharacterPosition > 0)
+            {
+                CharacterPosition = 0;
+                ResetPreferredPosition();
+            }
         }
     }
     public void MoveToLineEnd(CursorPosition cursorPosition)

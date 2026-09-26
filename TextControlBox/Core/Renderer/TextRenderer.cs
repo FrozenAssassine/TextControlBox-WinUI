@@ -1109,7 +1109,33 @@ internal class TextRenderer
             int virtualCurrentVisualRow = GetLineVisualStartRow(lineIndex) + characterPosition / charsPerRow;
             int virtualTargetVisualRow = Math.Clamp(virtualCurrentVisualRow + rowDelta, 0, Math.Max(0, wrapMetrics.TotalVisualRows - 1));
             if (virtualTargetVisualRow == virtualCurrentVisualRow)
+            {
+                if (rowDelta > 0)
+                {
+                    int lastLine = Math.Max(0, textManager.LinesCount - 1);
+                    int lastLength = textManager.GetLineLength(lastLine);
+                    if (cursorPosition.LineNumber != lastLine || cursorPosition.CharacterPosition < lastLength)
+                    {
+                        cursorPosition.LineNumber = lastLine;
+                        cursorPosition.CharacterPosition = lastLength;
+                        cursorPosition.IsTrailing = false;
+                        cursorManager.ResetPreferredPosition();
+                        return true;
+                    }
+                }
+                else if (rowDelta < 0)
+                {
+                    if (cursorPosition.LineNumber != 0 || cursorPosition.CharacterPosition > 0)
+                    {
+                        cursorPosition.LineNumber = 0;
+                        cursorPosition.CharacterPosition = 0;
+                        cursorPosition.IsTrailing = false;
+                        cursorManager.ResetPreferredPosition();
+                        return true;
+                    }
+                }
                 return false;
+            }
 
             int virtualTargetLine = GetDocumentLineFromVisualRow(virtualTargetVisualRow);
             int virtualTargetRowOffset = virtualTargetVisualRow - GetLineVisualStartRow(virtualTargetLine);
@@ -1132,7 +1158,33 @@ internal class TextRenderer
         int currentVisualRow = GetLineVisualStartRow(lineIndex) + withinLineRow;
         int targetVisualRow = Math.Clamp(currentVisualRow + rowDelta, 0, Math.Max(0, wrapMetrics.TotalVisualRows - 1));
         if (targetVisualRow == currentVisualRow)
+        {
+            if (rowDelta > 0)
+            {
+                int lastLine = Math.Max(0, textManager.LinesCount - 1);
+                int lastLength = textManager.GetLineLength(lastLine);
+                if (cursorPosition.LineNumber != lastLine || cursorPosition.CharacterPosition < lastLength)
+                {
+                    cursorPosition.LineNumber = lastLine;
+                    cursorPosition.CharacterPosition = lastLength;
+                    cursorPosition.IsTrailing = false;
+                    cursorManager.ResetPreferredPosition();
+                    return true;
+                }
+            }
+            else if (rowDelta < 0)
+            {
+                if (cursorPosition.LineNumber != 0 || cursorPosition.CharacterPosition > 0)
+                {
+                    cursorPosition.LineNumber = 0;
+                    cursorPosition.CharacterPosition = 0;
+                    cursorPosition.IsTrailing = false;
+                    cursorManager.ResetPreferredPosition();
+                    return true;
+                }
+            }
             return false;
+        }
 
         // Remember the preferred X position for vertical navigation
         if (!cursorManager.PreferredCaretX.HasValue)
