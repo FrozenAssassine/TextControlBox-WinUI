@@ -96,4 +96,55 @@ public class HelperTests
         int longestIndex = coreTextbox.longestLineManager.GetLongestLineIndex(list);
         Assert.AreEqual(longest, longestIndex);
     }
+
+    [UITestMethod]
+    public void Utils_ConvertTheme_ResolvesCorrectly()
+    {
+        Assert.AreEqual(Microsoft.UI.Xaml.ApplicationTheme.Light, TextControlBoxNS.Helper.Utils.ConvertTheme(Microsoft.UI.Xaml.ElementTheme.Light));
+        Assert.AreEqual(Microsoft.UI.Xaml.ApplicationTheme.Dark, TextControlBoxNS.Helper.Utils.ConvertTheme(Microsoft.UI.Xaml.ElementTheme.Dark));
+        Assert.AreEqual(Microsoft.UI.Xaml.ApplicationTheme.Dark, TextControlBoxNS.Helper.Utils.ConvertTheme(Microsoft.UI.Xaml.ElementTheme.Default, Microsoft.UI.Xaml.ElementTheme.Dark));
+        Assert.AreEqual(Microsoft.UI.Xaml.ApplicationTheme.Light, TextControlBoxNS.Helper.Utils.ConvertTheme(Microsoft.UI.Xaml.ElementTheme.Default, Microsoft.UI.Xaml.ElementTheme.Light));
+    }
+
+    [UITestMethod]
+    public void DesignHelper_ThemeAndDesignChanges_UpdateStateAndInvalidateLayout()
+    {
+        var coreTextbox = TestHelper.MakeCoreTextbox();
+
+        // Switching theme to Dark
+        coreTextbox.RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark;
+        Assert.AreEqual(Microsoft.UI.Xaml.ElementTheme.Dark, coreTextbox.RequestedTheme);
+        Assert.IsFalse(coreTextbox.designHelper.ColorResourcesCreated);
+        Assert.IsTrue(coreTextbox.textRenderer.NeedsUpdateTextLayout);
+
+        // Switching theme to Light
+        coreTextbox.RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Light;
+        Assert.AreEqual(Microsoft.UI.Xaml.ElementTheme.Light, coreTextbox.RequestedTheme);
+        Assert.IsFalse(coreTextbox.designHelper.ColorResourcesCreated);
+        Assert.IsTrue(coreTextbox.textRenderer.NeedsUpdateTextLayout);
+
+        // Setting a custom design
+        var customDesign = new TextControlBoxDesign(
+            coreTextbox.designHelper.DarkDesign.Background,
+            Windows.UI.Color.FromArgb(255, 12, 34, 56),
+            Windows.UI.Color.FromArgb(255, 0, 0, 255),
+            Windows.UI.Color.FromArgb(255, 255, 255, 255),
+            Windows.UI.Color.FromArgb(50, 100, 100, 100),
+            Windows.UI.Color.FromArgb(255, 100, 100, 100),
+            Windows.UI.Color.FromArgb(0, 0, 0, 0),
+            Windows.UI.Color.FromArgb(100, 160, 80, 0),
+            Windows.UI.Color.FromArgb(180, 100, 100, 100)
+        );
+
+        coreTextbox.Design = customDesign;
+        Assert.AreEqual(Windows.UI.Color.FromArgb(255, 12, 34, 56), coreTextbox.TextColor);
+        Assert.IsFalse(coreTextbox.designHelper.ColorResourcesCreated);
+        Assert.IsTrue(coreTextbox.textRenderer.NeedsUpdateTextLayout);
+
+        // Resetting design to null (uses default theme design)
+        coreTextbox.Design = null;
+        Assert.IsFalse(coreTextbox.designHelper.ColorResourcesCreated);
+        Assert.IsTrue(coreTextbox.textRenderer.NeedsUpdateTextLayout);
+        Assert.AreEqual(coreTextbox.designHelper.LightDesign.TextColor, coreTextbox.TextColor);
+    }
 }

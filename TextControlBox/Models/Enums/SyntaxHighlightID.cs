@@ -90,6 +90,11 @@ public enum SyntaxHighlightID
     Latex,
 
     /// <summary>
+    /// Identifier for Log files.
+    /// </summary>
+    Log,
+
+    /// <summary>
     /// Identifier for Lua programminglanguage.
     /// </summary>
     Lua,

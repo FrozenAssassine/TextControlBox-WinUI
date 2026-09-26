@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -12,9 +12,11 @@ namespace TextControlBoxNS;
 /// <summary>
 /// A custom textbox control with a lot of features
 /// </summary>
-public partial class TextControlBox : UserControl
+public partial class TextControlBox : UserControl, IDisposable
 {
+    private bool _isDisposed = false;
     private readonly CoreTextControlBox coreTextBox;
+    internal CoreTextControlBox CoreTextBox => coreTextBox;
 
     /// <summary>
     /// Initializes a new instance of the TextControlBox class.
@@ -35,6 +37,14 @@ public partial class TextControlBox : UserControl
         coreTextBox.eventsManager.TabsSpacesChanged += EventsManager_TabsSpacesChanged;
         coreTextBox.eventsManager.LineEndingChanged += EventsManager_LineEndingChanged;
         this.Content = coreTextBox;
+
+        this.ActualThemeChanged += (s, e) =>
+        {
+            if (base.RequestedTheme == ElementTheme.Default)
+            {
+                coreTextBox.RequestedTheme = ElementTheme.Default;
+            }
+        };
 
         this.RequestedTheme = ElementTheme.Default;
     }
@@ -233,6 +243,14 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Deletes the currently selected text, or the character in front of the cursor if no text is selected.
+    /// </summary>
+    public void Delete()
+    {
+        coreTextBox.Delete();
+    }
+
+    /// <summary>
     /// Clears the current text selection in the textbox.
     /// </summary>
     public void ClearSelection()
@@ -337,6 +355,14 @@ public partial class TextControlBox : UserControl
     public void ScrollIntoViewHorizontally()
     {
         coreTextBox.ScrollIntoViewHorizontally();
+    }
+
+    /// <summary>
+    /// Horizontally centers the current cursor column in the viewport (no-op in word-wrap mode).
+    /// </summary>
+    public void ScrollIntoViewHorizontallyCentered()
+    {
+        coreTextBox.ScrollIntoViewHorizontallyCentered();
     }
 
     /// <summary>
@@ -530,11 +556,25 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Disposes the textbox and releases all resources.
+    /// </summary>
+    public void Dispose()
+    {
+        Unload();
+    }
+
+    /// <summary>
     /// Unloads the textbox and releases all resources.
     /// Do not use the textbox afterwards.
     /// </summary>
     public void Unload()
     {
+        if (_isDisposed)
+            return;
+        _isDisposed = true;
+
+        base.Loaded -= TextControlBox_Loaded;
+
         coreTextBox.eventsManager.Loaded -= EventsManager_Loaded;
         coreTextBox.eventsManager.ZoomChanged -= ZoomManager_ZoomChanged;
         coreTextBox.eventsManager.TextChanged -= EventsManager_TextChanged;
@@ -568,6 +608,19 @@ public partial class TextControlBox : UserControl
     {
         return coreTextBox.GetCursorPosition();
     }
+
+    /// <summary>
+    /// Gets the line number at the specified coordinate point.
+    /// </summary>
+    public int GetLineFromPoint(Point point)
+    {
+        return coreTextBox.GetLineFromPoint(point);
+    }
+
+    /// <summary>
+    /// Gets the height in pixels of a single line.
+    /// </summary>
+    public float SingleLineHeight => coreTextBox.SingleLineHeight;
 
     /// <summary>
     /// Set the position of the cursor. 
@@ -656,6 +709,7 @@ public partial class TextControlBox : UserControl
     /// <remarks>
     /// This method modifies the text programmatically and is unaffected by
     /// <see cref="IsReadOnly"/>.
+    /// </remarks>
     /// <param name="start">The zero based index to start from</param>
     /// <param name="text">The array of lines to add</param>
     /// <returns>True if successfull</returns>
@@ -680,8 +734,6 @@ public partial class TextControlBox : UserControl
     /// <param name="spaces">The number of spaces to use when converting tabs to spaces. Must be greater than zero.</param>
     /// <param name="useSpacesInsteadTabs">Indicates whether tabs should be replaced with spaces.</param>
     /// <param name="ignoreIsReadOnly">Ignores the isReadOnly property of the textbox.</param>
-    /// </remarks>
-
     public void RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs, bool ignoreIsReadOnly = false)
     {
         coreTextBox.RewriteTabsSpaces(spaces, useSpacesInsteadTabs, ignoreIsReadOnly);
@@ -741,6 +793,14 @@ public partial class TextControlBox : UserControl
         set => coreTextBox.FontFamily = value;
     }
     /// <summary>
+    /// Gets or sets whether long lines wrap at the control width instead of scrolling horizontally.
+    /// </summary>
+    public bool WordWrap
+    {
+        get => coreTextBox.WordWrap;
+        set => coreTextBox.WordWrap = value;
+    }
+    /// <summary>
     /// Gets or sets the font size used for displaying text in the textbox.
     /// </summary>
 
@@ -773,7 +833,11 @@ public partial class TextControlBox : UserControl
     public new ElementTheme RequestedTheme
     {
         get => coreTextBox.RequestedTheme;
-        set => coreTextBox.RequestedTheme = value;
+        set
+        {
+            base.RequestedTheme = value;
+            coreTextBox.RequestedTheme = value;
+        }
     }
 
     /// <summary>
@@ -1041,6 +1105,11 @@ public partial class TextControlBox : UserControl
     /// since changes on the text while disabled break the system.
     /// </summary>
     public bool UndoRedoEnabled { get => coreTextBox.undoRedo.UndoRedoEnabled; set => coreTextBox.undoRedo.UndoRedoEnabled = value; }
+
+    /// <summary>
+    /// Gets or sets whether consecutive character typing within words is batched into a single undo/redo operation (like VS Code).
+    /// </summary>
+    public bool UndoBatching { get => coreTextBox.undoRedo.UndoBatching; set => coreTextBox.undoRedo.UndoBatching = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether whitespace characters (spaces and tabs)

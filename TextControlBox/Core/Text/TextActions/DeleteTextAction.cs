@@ -1,4 +1,4 @@
-﻿namespace TextControlBoxNS.Core.Text.TextActions;
+namespace TextControlBoxNS.Core.Text.TextActions;
 
 internal class DeleteTextAction
 {
@@ -54,8 +54,7 @@ internal class DeleteTextAction
 
         if (lineToAdd != null)
         {
-            if (cursorManager.LineNumber == longestLineManager.longestIndex)
-                longestLineManager.needsRecalculation = true;
+            longestLineManager.needsRecalculation = true;
 
             undoRedo.RecordUndoAction(() =>
             {
@@ -71,7 +70,7 @@ internal class DeleteTextAction
     public void RemoveTextInLine(bool controlIsPressed)
     {
         int characterPos = cursorManager.GetCurPosInLine();
-        int stepsToMove = controlIsPressed ? cursorManager.CalculateStepsToMoveRight(characterPos) : 1;
+        int stepsToMove = cursorManager.CalculateStepsToMoveRight(characterPos, controlIsPressed);
 
         if (cursorManager.LineNumber == longestLineManager.longestIndex)
             longestLineManager.needsRecalculation = true;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -21,6 +21,7 @@ internal class ReplaceManager
     private SelectionRenderer selectionRenderer;
     private SelectionManager selectionManager;
     private EventsManager eventsManager;
+    private LongestLineManager longestLineManager;
 
     public void Init(
         CanvasUpdateManager canvasUpdateManager,
@@ -31,7 +32,8 @@ internal class ReplaceManager
         TextActionManager textActionManager,
         SelectionRenderer selectionRenderer,
         SelectionManager selectionManager,
-        EventsManager eventsManager)
+        EventsManager eventsManager,
+        LongestLineManager longestLineManager)
     {
         this.canvasUpdateManager = canvasUpdateManager;
         this.undoRedo = undoRedo;
@@ -42,13 +44,15 @@ internal class ReplaceManager
         this.selectionRenderer = selectionRenderer;
         this.selectionManager = selectionManager;
         this.eventsManager = eventsManager;
+        this.longestLineManager = longestLineManager;
     }
 
     public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord)
     {
-        if (word.Length == 0)
+        if (string.IsNullOrEmpty(word))
             return SearchResult.InvalidInput;
 
+        replaceWord ??= "";
         selectionManager.ClearSelection();
 
         SearchParameter searchParameter = new SearchParameter(word, wholeWord, matchCase);
@@ -68,6 +72,9 @@ internal class ReplaceManager
 
         eventsManager.CallTextChanged();
 
+        if (isFound)
+            longestLineManager.needsRecalculation = true;
+
         canvasUpdateManager.UpdateText();
         return isFound ? SearchResult.Found : SearchResult.NotFound;
     }
@@ -77,21 +84,25 @@ internal class ReplaceManager
         if (!searchManager.IsSearchOpen)
             return new InternSearchResult(SearchResult.SearchNotOpened, null);
 
+        replaceWord ??= "";
         var res = searchManager.FindNext(cursorManager.currentCursorPosition);
         if (res.Selection != null)
         {
             selectionManager.SetSelection(res.Selection);
 
+            int splittedTextLength = replaceWord.Length > 1 && replaceWord.Contains(textManager.NewLineCharacter, StringComparison.Ordinal)
+                ? replaceWord.CountLines(textManager.NewLineCharacter)
+                : 1;
+
             undoRedo.RecordUndoAction(() =>
             {
                 selectionManager.Replace(replaceWord);
-            }, selectionManager.currentTextSelection, 1);
+            }, selectionManager.currentTextSelection, splittedTextLength);
 
             eventsManager.CallTextChanged();
+            longestLineManager.needsRecalculation = true;
 
-            var start = res.Selection.StartPosition;
             selectionManager.ClearSelection();
-            cursorManager.SetCursorPosition(start.LineNumber, start.CharacterPosition + replaceWord.Length);
         }
         return res;
     }

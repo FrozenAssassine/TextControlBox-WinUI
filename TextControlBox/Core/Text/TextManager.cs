@@ -1,4 +1,4 @@
-﻿using Collections.Pooled;
+using Collections.Pooled;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using System;
@@ -34,7 +34,12 @@ internal class TextManager
         this.eventsManager = eventsManager;
     }
 
-    public FontFamily _FontFamily = new FontFamily("Consolas");
+    private FontFamily _fontFamilyField = null;
+    public FontFamily _FontFamily
+    {
+        get => _fontFamilyField ??= new FontFamily("Consolas");
+        set => _fontFamilyField = value;
+    }
     public string NewLineCharacter = "\r\n";
     public SyntaxHighlightLanguage _SyntaxHighlighting = null;
     public int MaxFontsize = 125;

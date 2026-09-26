@@ -1,9 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using TextControlBoxNS;
 using TextControlBoxNS.Core;
+using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
+
+[assembly: WinUITestTarget(typeof(TextControlBox.Tests.UnitTestApp))]
 
 namespace TextControlBox.Tests
 {

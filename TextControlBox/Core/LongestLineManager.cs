@@ -1,4 +1,4 @@
-﻿using Collections.Pooled;
+using Collections.Pooled;
 using Microsoft.Graphics.Canvas;
 using System;
 using TextControlBoxNS.Core.Renderer;
@@ -82,20 +82,38 @@ internal class LongestLineManager
 
     public void MeasureActualLineLength()
     {
-        if (_longestIndex >= textManager.LinesCount || textManager.LinesCount == 0)
+        if (textManager.LinesCount == 0)
+        {
+            _longestIndex = 0;
+            longestLineLength = 0;
+            longestLineWidth = new Size(0, textRenderer?.SingleLineHeight ?? 0);
             return;
+        }
+
+        if (_longestIndex >= textManager.LinesCount)
+        {
+            _longestIndex = GetLongestLineIndex(textManager.totalLines);
+        }
 
         longestLineLength = textManager.totalLines[_longestIndex].Length;
         if (textRenderer.TextFormat != null)
         {
-            longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[longestIndex], textRenderer.TextFormat);
+            if (longestLineLength >= TextRenderer.HorizontalVirtualizationThreshold)
+            {
+                float charWidth = textRenderer.CachedCharWidth;
+                longestLineWidth = new Size(longestLineLength * charWidth, textRenderer.SingleLineHeight);
+            }
+            else
+            {
+                longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[_longestIndex], textRenderer.TextFormat);
+            }
         }
     }
 
     public void Recalculate(int index = -1)
     {
         needsRecalculation = false;
-        if (index == -1)
+        if (index == -1 || index >= textManager.LinesCount)
             _longestIndex = GetLongestLineIndex(textManager.totalLines);
         else
             _longestIndex = index;
@@ -115,14 +133,23 @@ internal class LongestLineManager
 
     public void CheckRecalculateLongestLine(bool force = false)
     {
-        if (needsRecalculation || force)
+        if (needsRecalculation || force || _longestIndex >= textManager.LinesCount)
         {
             Recalculate();
         }
     }
     public void CheckSelection()
     {
-        if (selManager.currentTextSelection.IsLineInSelection(_longestIndex))
+        if (!selManager.HasSelection)
+            return;
+
+        var sel = selManager.OrderTextSelectionSeparated();
+        if (sel.startLine != sel.endLine ||
+            selManager.currentTextSelection.IsLineInSelection(_longestIndex) ||
+            sel.startLine <= _longestIndex ||
+            _longestIndex >= textManager.LinesCount)
+        {
             needsRecalculation = true;
+        }
     }
 }
