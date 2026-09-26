@@ -157,10 +157,25 @@ internal sealed partial class CoreTextControlBox : UserControl
         // (and its selection canvas' visual) is in the tree. See CoreTextControlBox.DiagonalScroll.cs.
         Loaded += (_, _) => SetupDiagonalScroll();
         Unloaded += (_, _) => TeardownDiagonalScroll();
+
+        ActualThemeChanged += CoreTextControlBox_ActualThemeChanged;
+    }
+
+    private void CoreTextControlBox_ActualThemeChanged(FrameworkElement sender, object args)
+    {
+        if (designHelper.RequestedTheme == ElementTheme.Default)
+        {
+            designHelper.RequestedTheme = ElementTheme.Default;
+        }
     }
 
     public void InitialiseOnStart()
     {
+        if (designHelper.RequestedTheme == ElementTheme.Default)
+        {
+            designHelper.RequestedTheme = ElementTheme.Default;
+        }
+
         if (textManager.LinesCount == 0)
             textManager.AddLine();
 
@@ -1259,7 +1274,11 @@ internal sealed partial class CoreTextControlBox : UserControl
     public new ElementTheme RequestedTheme
     {
         get => designHelper.RequestedTheme;
-        set => designHelper.RequestedTheme = value;
+        set
+        {
+            base.RequestedTheme = value;
+            designHelper.RequestedTheme = value;
+        }
     }
 
     public TextControlBoxDesign Design

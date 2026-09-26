@@ -1,4 +1,4 @@
-﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
@@ -48,20 +48,42 @@ internal class DesignHelper
     private TextRenderer textRenderer;
     private CanvasUpdateManager canvasUpdateManager;
 
+    public DesignHelper()
+    {
+        _Design = LightDesign;
+    }
+
     public void Init(CoreTextControlBox coreTextbox, TextRenderer textRenderer, CanvasUpdateManager canvasUpdateManager)
     {
         this.coreTextbox = coreTextbox;
         this.textRenderer = textRenderer;
         this.canvasUpdateManager = canvasUpdateManager;
+
+        _AppTheme = Utils.ConvertTheme(_RequestedTheme, coreTextbox.ActualTheme);
+        if (UseDefaultDesign)
+            _Design = _AppTheme == ApplicationTheme.Light ? LightDesign : DarkDesign;
+
+        ApplyDesignBackgrounds();
+    }
+
+    public void ApplyDesignBackgrounds()
+    {
+        if (coreTextbox == null || _Design == null)
+            return;
+
+        coreTextbox.Background = _Design.Background;
+        if (coreTextbox.mainGrid != null)
+            coreTextbox.mainGrid.Background = _Design.Background;
+        if (coreTextbox.canvasLineNumber != null)
+            coreTextbox.canvasLineNumber.ClearColor = _Design.LineNumberBackground;
     }
 
     public void CreateColorResources(ICanvasResourceCreatorWithDpi resourceCreator)
     {
-        if (ColorResourcesCreated)
+        if (ColorResourcesCreated || _Design == null)
             return;
 
-        coreTextbox.canvasLineNumber.ClearColor = _Design.LineNumberBackground;
-        coreTextbox.mainGrid.Background = _Design.Background;
+        ApplyDesignBackgrounds();
 
         TextColorBrush?.Dispose();
         CursorColorBrush?.Dispose();
@@ -81,15 +103,16 @@ internal class DesignHelper
         set
         {
             _RequestedTheme = value;
-            _AppTheme = Utils.ConvertTheme(value);
+            _AppTheme = Utils.ConvertTheme(value, coreTextbox?.ActualTheme);
 
             if (UseDefaultDesign)
                 _Design = _AppTheme == ApplicationTheme.Light ? LightDesign : DarkDesign;
 
-            coreTextbox.Background = _Design.Background;
+            ApplyDesignBackgrounds();
             ColorResourcesCreated = false;
-            textRenderer.NeedsUpdateTextLayout = true;
-            canvasUpdateManager.UpdateAll();
+            if (textRenderer != null)
+                textRenderer.NeedsUpdateTextLayout = true;
+            canvasUpdateManager?.UpdateAll();
         }
     }
 
@@ -98,12 +121,14 @@ internal class DesignHelper
         get => UseDefaultDesign ? null : _Design;
         set
         {
-            _Design = value != null ? value : _AppTheme == ApplicationTheme.Dark ? DarkDesign : LightDesign;
             UseDefaultDesign = value == null;
+            _Design = value != null ? value : (_AppTheme == ApplicationTheme.Dark ? DarkDesign : LightDesign);
 
-            coreTextbox.Background = _Design.Background;
+            ApplyDesignBackgrounds();
             ColorResourcesCreated = false;
-            canvasUpdateManager.UpdateAll();
+            if (textRenderer != null)
+                textRenderer.NeedsUpdateTextLayout = true;
+            canvasUpdateManager?.UpdateAll();
         }
     }
 }

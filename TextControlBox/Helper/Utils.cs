@@ -1,4 +1,4 @@
-﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
 using System;
@@ -65,16 +65,29 @@ internal class Utils
         return Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(key).HasFlag(CoreVirtualKeyStates.Down);
     }
 
-    public static ApplicationTheme ConvertTheme(ElementTheme theme)
+    public static ApplicationTheme ConvertTheme(ElementTheme theme, ElementTheme? actualTheme = null)
     {
         switch (theme)
         {
             case ElementTheme.Light: return ApplicationTheme.Light;
             case ElementTheme.Dark: return ApplicationTheme.Dark;
             case ElementTheme.Default:
-                var defaultTheme = new Windows.UI.ViewManagement.UISettings();
-                return defaultTheme.GetColorValue(Windows.UI.ViewManagement.UIColorType.Background).ToString() == "#FF000000"
-                    ? ApplicationTheme.Dark : ApplicationTheme.Light;
+                if (actualTheme.HasValue && actualTheme.Value != ElementTheme.Default)
+                    return actualTheme.Value == ElementTheme.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
+
+                if (Application.Current != null)
+                    return Application.Current.RequestedTheme;
+
+                try
+                {
+                    var defaultTheme = new Windows.UI.ViewManagement.UISettings();
+                    return defaultTheme.GetColorValue(Windows.UI.ViewManagement.UIColorType.Background).ToString() == "#FF000000"
+                        ? ApplicationTheme.Dark : ApplicationTheme.Light;
+                }
+                catch
+                {
+                    return ApplicationTheme.Light;
+                }
 
             default: return ApplicationTheme.Light;
         }

@@ -37,6 +37,14 @@ public partial class TextControlBox : UserControl
         coreTextBox.eventsManager.LineEndingChanged += EventsManager_LineEndingChanged;
         this.Content = coreTextBox;
 
+        this.ActualThemeChanged += (s, e) =>
+        {
+            if (base.RequestedTheme == ElementTheme.Default)
+            {
+                coreTextBox.RequestedTheme = ElementTheme.Default;
+            }
+        };
+
         this.RequestedTheme = ElementTheme.Default;
     }
 
@@ -802,7 +810,11 @@ public partial class TextControlBox : UserControl
     public new ElementTheme RequestedTheme
     {
         get => coreTextBox.RequestedTheme;
-        set => coreTextBox.RequestedTheme = value;
+        set
+        {
+            base.RequestedTheme = value;
+            coreTextBox.RequestedTheme = value;
+        }
     }
 
     /// <summary>

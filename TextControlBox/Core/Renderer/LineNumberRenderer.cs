@@ -167,6 +167,8 @@ namespace TextControlBoxNS.Core.Renderer
             LineNumberTextLayout?.Dispose();
             LineNumberTextLayout = textLayoutManager.CreateTextLayout(canvas, LineNumberTextFormat, LineNumberTextToRender, posX, layoutHeight);
 
+            designHelper.CreateColorResources(args.DrawingSession);
+
             args.DrawingSession.DrawTextLayout(
                 LineNumberTextLayout,
                 10,

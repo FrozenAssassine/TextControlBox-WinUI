@@ -108,6 +108,8 @@ internal class CursorRenderer
         if (offscreen)
             return;
 
+        designHelper.CreateColorResources(args.DrawingSession);
+
         // Draw the current line highlighter background first so it does not overdraw/tint the caret
         if (lineHighlighterRenderer.CanRender(focusManager))
             lineHighlighterRenderer.Render((float)canvasCursor.ActualWidth, renderPosY, textRenderer.SingleLineHeight, args, designHelper.LineHighlighterBrush);

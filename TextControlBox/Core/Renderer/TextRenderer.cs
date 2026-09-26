@@ -1303,8 +1303,6 @@ internal class TextRenderer
 
             invisibleCharactersRenderer.UpdateTextFormat(canvasText, TextFormat);
 
-            designHelper.CreateColorResources(args.DrawingSession);
-
             // Measure the actual character width (monospace assumption) for the horizontal-virtualization
             // slice-to-pixel offset. Re-measured whenever the format is rebuilt (font/zoom change).
             using (var measureLayout = new CanvasTextLayout(args.DrawingSession, "M", TextFormat, 0, 0))
@@ -1313,6 +1311,8 @@ internal class TextRenderer
                 _cachedCharWidth = Math.Max(1, (float)(regions.Length > 0 ? regions[0].LayoutBounds.Width : measureLayout.LayoutBounds.Width));
             }
         }
+
+        designHelper.CreateColorResources(args.DrawingSession);
 
         (NumberOfStartLine, NumberOfRenderedLines) = CalculateLinesToRender();
         coreTextbox.SyncScrollTrackerToOffsetNow();
