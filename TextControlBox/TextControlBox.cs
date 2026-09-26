@@ -242,6 +242,14 @@ public partial class TextControlBox : UserControl
     }
 
     /// <summary>
+    /// Deletes the currently selected text, or the character in front of the cursor if no text is selected.
+    /// </summary>
+    public void Delete()
+    {
+        coreTextBox.Delete();
+    }
+
+    /// <summary>
     /// Clears the current text selection in the textbox.
     /// </summary>
     public void ClearSelection()

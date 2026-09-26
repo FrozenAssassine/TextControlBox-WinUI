@@ -66,7 +66,7 @@ internal class TextLayoutManager
         {
             try
             {
-                if (cc != null && cc.ReadyToDraw)
+                if (cc != null && cc.ReadyToDraw && cc.Device != null)
                     return cc;
 
                 return CanvasDevice.GetSharedDevice();
@@ -89,13 +89,14 @@ internal class TextLayoutManager
     }
     public CanvasTextFormat CreateLinenumberTextFormat()
     {
+        float fontSize = zoomManager?.ZoomedFontSize > 0 ? zoomManager.ZoomedFontSize : Math.Max(1, textManager._FontSize);
         CanvasTextFormat textFormat = new CanvasTextFormat()
         {
-            FontSize = zoomManager.ZoomedFontSize,
+            FontSize = fontSize,
             HorizontalAlignment = CanvasHorizontalAlignment.Right,
             VerticalAlignment = CanvasVerticalAlignment.Top,
             WordWrapping = CanvasWordWrapping.NoWrap,
-            LineSpacing = zoomManager.ZoomedFontSize + 2,
+            LineSpacing = fontSize + LineSpacingPadding,
         };
         textFormat.FontFamily = textManager._FontFamily.Source;
         textFormat.TrimmingGranularity = CanvasTextTrimmingGranularity.None;
@@ -105,10 +106,12 @@ internal class TextLayoutManager
 
     public (CanvasTextLayout spaceGlyph, CanvasTextLayout tabGlyph) CreateGlyphs(ICanvasResourceCreator resourceCreator, CanvasTextFormat textFormat)
     {
-        float width = zoomManager.ZoomedFontSize * 2;
-        float height = zoomManager.ZoomedFontSize * 2;
-        CanvasTextLayout spaceGlyph = new CanvasTextLayout(resourceCreator, "·", textFormat, width, height);
-        CanvasTextLayout tabGlyph = new CanvasTextLayout(resourceCreator, "→", textFormat, width, height);
+        float fontSize = textFormat?.FontSize ?? (zoomManager?.ZoomedFontSize > 0 ? zoomManager.ZoomedFontSize : Math.Max(1, textManager._FontSize));
+        float width = fontSize * 2;
+        float height = fontSize * 2;
+        var creator = ResolveResourceCreator(resourceCreator);
+        CanvasTextLayout spaceGlyph = new CanvasTextLayout(creator, "·", textFormat, width, height);
+        CanvasTextLayout tabGlyph = new CanvasTextLayout(creator, "→", textFormat, width, height);
 
         return (spaceGlyph, tabGlyph);
     }

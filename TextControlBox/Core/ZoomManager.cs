@@ -14,8 +14,26 @@ internal class ZoomManager
     private int OldZoomFactor = 0;
     public bool ZoomNeedsRecalculateLongestLine = false;
 
-    public int? ZoomAnchorLine { get; set; } = null;
+    private int? _zoomAnchorLine = null;
+    public int? ZoomAnchorLine
+    {
+        get => _zoomAnchorLine;
+        set
+        {
+            _zoomAnchorLine = value;
+            if (value == null)
+            {
+                ZoomAnchorHorizontalRatio = 0;
+            }
+        }
+    }
     public double ZoomAnchorHorizontalRatio { get; set; } = 0;
+
+    public void ResetZoomAnchors()
+    {
+        _zoomAnchorLine = null;
+        ZoomAnchorHorizontalRatio = 0;
+    }
 
     private TextManager textManager;
     private TextRenderer textRenderer;
@@ -66,6 +84,7 @@ internal class ZoomManager
             eventsManager.CallZoomChanged(_ZoomFactor);
             
             lineNumberRenderer.NeedsUpdateLineNumbers();
+            lineNumberRenderer.CreateLineNumberTextFormat();
 
             ZoomNeedsRecalculateLongestLine = true;
             textRenderer.NeedsTextFormatUpdate = true;

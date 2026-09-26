@@ -57,6 +57,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     private readonly WhitespaceCharactersManager whitespaceCharactersManager;
     private readonly LinkHighlightManager linkHighlightManager;
     private readonly LinkRenderer linkRenderer;
+    internal bool _isTouchScrolling = false;
 
     public CanvasControl canvasText;
     public CanvasControl canvasCursor;
@@ -131,13 +132,14 @@ internal sealed partial class CoreTextControlBox : UserControl
         textRenderer.Init(cursorManager, designHelper, textLayoutManager, textManager, scrollManager, lineNumberRenderer, longestLineManager, this, searchManager, canvasUpdateManager, zoomManager, invisibleCharactersRenderer, linkRenderer, linkHighlightManager);
         cursorRenderer.Init(cursorManager, currentLineManager, textRenderer, focusManager, textManager, scrollManager, zoomManager, designHelper, lineHighlighterRenderer, eventsManager, longestLineManager, caretBlinkManager);
         scrollManager.Init(this, canvasUpdateManager, textManager, textRenderer, cursorManager, zoomManager, VerticalScrollbar, HorizontalScrollbar);
+        HookScrollbarTouchHandlers();
         currentLineManager.Init(cursorManager, textManager);
         longestLineManager.Init(selectionManager, textManager, textRenderer);
         designHelper.Init(this, textRenderer, canvasUpdateManager);
         tabSpaceManager.Init(textManager, selectionManager, cursorManager, textActionManager, undoRedo, longestLineManager, eventsManager);
         searchManager.Init(textManager, selectionManager);
         eventsManager.Init(searchManager, cursorManager);
-        lineNumberRenderer.Init(textManager, textLayoutManager, textRenderer, designHelper, lineNumberManager);
+        lineNumberRenderer.Init(textManager, textLayoutManager, textRenderer, designHelper, lineNumberManager, zoomManager);
         zoomManager.Init(textManager, textRenderer, canvasUpdateManager, eventsManager, lineNumberRenderer, scrollManager);
         focusManager.Init(this, canvasUpdateManager, inputHandler, eventsManager);
         pointerActionsManager.Init(this, textRenderer, textManager, cursorManager, canvasUpdateManager, scrollManager, selectionRenderer, currentLineManager, selectionManager, linkHighlightManager);
@@ -503,19 +505,49 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         Canvas_Selection.ReleasePointerCapture(e.Pointer);
 
-        pointerActionsManager.PointerReleasedAction(e.GetCurrentPoint(Canvas_Selection).Position);
+        var point = e.GetCurrentPoint(Canvas_Selection);
+        if (point.PointerDeviceType == PointerDeviceType.Touch)
+        {
+            if (selectionManager.IsSelectingOverLinenumbers)
+            {
+                pointerActionsManager.PointerReleasedAction(point.Position);
+                return;
+            }
+
+            pointerActionsManager.HandleTouchReleased(point, e);
+            return;
+        }
+
+        pointerActionsManager.PointerReleasedAction(point.Position);
+    }
+    private void Canvas_Selection_PointerCanceled(object sender, PointerRoutedEventArgs e)
+    {
+        Canvas_Selection.ReleasePointerCapture(e.Pointer);
+        pointerActionsManager.HandleTouchCanceled();
+    }
+    private void Canvas_Selection_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
+    {
+        pointerActionsManager.HandleTouchCanceled();
     }
     private void Canvas_Selection_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
+        var point = e.GetCurrentPoint(Canvas_Selection);
+        if (point.PointerDeviceType == PointerDeviceType.Touch)
+        {
+            if (selectionManager.IsSelectingOverLinenumbers)
+            {
+                pointerActionsManager.PointerMovedAction(point.Position);
+                return;
+            }
+
+            pointerActionsManager.HandleTouchMoved(point, e);
+            return;
+        }
+
         if (!focusManager.HasFocus)
             return;
 
-        var point = e.GetCurrentPoint(Canvas_Selection);
-        if (pointerActionsManager.CheckTouchInput(point))
-            return;
-
         pointerActionsManager.PointerMovedAction(point.Position);
-
     }
     private void Canvas_Selection_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
@@ -523,8 +555,11 @@ internal sealed partial class CoreTextControlBox : UserControl
         selectionManager.IsSelectingOverLinenumbers = false;
 
         var point = e.GetCurrentPoint(Canvas_Selection);
-        if (pointerActionsManager.CheckTouchInput_Click(point))
+        if (point.PointerDeviceType == PointerDeviceType.Touch)
+        {
+            pointerActionsManager.HandleTouchPressed(sender, point, e);
             return;
+        }
 
         pointerActionsManager.PointerPressedAction(sender, point.Position, point.Properties);
     }
@@ -532,18 +567,274 @@ internal sealed partial class CoreTextControlBox : UserControl
     {
         pointerActionsManager.PointerWheelAction(zoomManager, e);
     }
+    private void Canvas_Selection_RightTapped(object sender, RightTappedRoutedEventArgs e)
+    {
+        if (e.PointerDeviceType == PointerDeviceType.Mouse)
+        {
+            var pos = e.GetPosition(Canvas_Selection);
+            pointerActionsManager.ShowContextFlyout(Canvas_Selection, pos);
+        }
+        e.Handled = true;
+    }
+
+    private void HookScrollbarTouchHandlers()
+    {
+        VerticalScrollbar.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(VerticalScrollbar_PointerPressed), true);
+        VerticalScrollbar.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(VerticalScrollbar_PointerMoved), true);
+        VerticalScrollbar.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(VerticalScrollbar_PointerReleased), true);
+        VerticalScrollbar.AddHandler(UIElement.PointerCanceledEvent, new PointerEventHandler(VerticalScrollbar_PointerCanceled), true);
+        VerticalScrollbar.AddHandler(UIElement.PointerCaptureLostEvent, new PointerEventHandler(VerticalScrollbar_PointerCaptureLost), true);
+
+        VerticalScrollbarContainer.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(VerticalScrollbar_PointerPressed), true);
+        VerticalScrollbarContainer.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(VerticalScrollbar_PointerMoved), true);
+        VerticalScrollbarContainer.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(VerticalScrollbar_PointerReleased), true);
+        VerticalScrollbarContainer.AddHandler(UIElement.PointerCanceledEvent, new PointerEventHandler(VerticalScrollbar_PointerCanceled), true);
+        VerticalScrollbarContainer.AddHandler(UIElement.PointerCaptureLostEvent, new PointerEventHandler(VerticalScrollbar_PointerCaptureLost), true);
+
+        HorizontalScrollbar.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(HorizontalScrollbar_PointerPressed), true);
+        HorizontalScrollbar.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(HorizontalScrollbar_PointerMoved), true);
+        HorizontalScrollbar.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(HorizontalScrollbar_PointerReleased), true);
+        HorizontalScrollbar.AddHandler(UIElement.PointerCanceledEvent, new PointerEventHandler(HorizontalScrollbar_PointerCanceled), true);
+        HorizontalScrollbar.AddHandler(UIElement.PointerCaptureLostEvent, new PointerEventHandler(HorizontalScrollbar_PointerCaptureLost), true);
+
+        HorizontalScrollbarContainer.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(HorizontalScrollbar_PointerPressed), true);
+        HorizontalScrollbarContainer.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(HorizontalScrollbar_PointerMoved), true);
+        HorizontalScrollbarContainer.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(HorizontalScrollbar_PointerReleased), true);
+        HorizontalScrollbarContainer.AddHandler(UIElement.PointerCanceledEvent, new PointerEventHandler(HorizontalScrollbar_PointerCanceled), true);
+        HorizontalScrollbarContainer.AddHandler(UIElement.PointerCaptureLostEvent, new PointerEventHandler(HorizontalScrollbar_PointerCaptureLost), true);
+    }
+
+    private bool _isVerticalScrollbarTouchDragging = false;
+    private double _initialTouchScrollbarPosY = 0;
+    private double _initialScrollOffsetY = 0;
+    private double _touchScrollbarTotalMovementY = 0;
+
+    private bool _isHorizontalScrollbarTouchDragging = false;
+    private double _initialTouchScrollbarPosX = 0;
+    private double _initialScrollOffsetX = 0;
+    private double _touchScrollbarTotalMovementX = 0;
+
+    private void VerticalScrollbar_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        zoomManager.ResetZoomAnchors();
+        var point = e.GetCurrentPoint(VerticalScrollbar);
+        if (point.PointerDeviceType == PointerDeviceType.Touch)
+        {
+            if (sender is UIElement el)
+            {
+                el.CapturePointer(e.Pointer);
+            }
+            _isVerticalScrollbarTouchDragging = true;
+            _isTouchScrolling = true;
+            _initialTouchScrollbarPosY = point.Position.Y;
+            _initialScrollOffsetY = scrollManager.VerticalScroll;
+            _touchScrollbarTotalMovementY = 0;
+            e.Handled = true;
+        }
+    }
+
+    private void VerticalScrollbar_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (_isVerticalScrollbarTouchDragging)
+        {
+            var point = e.GetCurrentPoint(VerticalScrollbar);
+            double deltaY = point.Position.Y - _initialTouchScrollbarPosY;
+            _touchScrollbarTotalMovementY += Math.Abs(deltaY);
+            UpdateVerticalScrollbarFromDelta(deltaY);
+            e.Handled = true;
+        }
+    }
+
+    private void VerticalScrollbar_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        if (_isVerticalScrollbarTouchDragging)
+        {
+            if (sender is UIElement el)
+            {
+                el.ReleasePointerCapture(e.Pointer);
+            }
+            _isVerticalScrollbarTouchDragging = false;
+            _isTouchScrolling = false;
+
+            var point = e.GetCurrentPoint(VerticalScrollbar);
+            double trackLength = VerticalScrollbar.ActualHeight;
+            const double buttonHeight = 16.0;
+
+            if (_touchScrollbarTotalMovementY < 8.0 && trackLength > 0)
+            {
+                if (point.Position.Y < buttonHeight)
+                {
+                    scrollManager.ScrollOneLineUp();
+                }
+                else if (point.Position.Y > trackLength - buttonHeight)
+                {
+                    scrollManager.ScrollOneLineDown();
+                }
+                else if (VerticalScrollbar.Maximum > 0)
+                {
+                    double effectiveLength = trackLength > buttonHeight * 2 ? trackLength - buttonHeight * 2 : trackLength;
+                    double effectiveY = Math.Clamp(point.Position.Y - buttonHeight, 0.0, effectiveLength);
+                    double fraction = effectiveLength > 0 ? effectiveY / effectiveLength : 0.0;
+                    scrollManager.VerticalScroll = fraction * VerticalScrollbar.Maximum;
+                }
+            }
+
+            SyncScrollTrackerToOffsetNow();
+            e.Handled = true;
+        }
+    }
+
+    private void VerticalScrollbar_PointerCanceled(object sender, PointerRoutedEventArgs e)
+    {
+        if (_isVerticalScrollbarTouchDragging)
+        {
+            if (sender is UIElement el)
+            {
+                el.ReleasePointerCapture(e.Pointer);
+            }
+            _isVerticalScrollbarTouchDragging = false;
+            _isTouchScrolling = false;
+            SyncScrollTrackerToOffsetNow();
+        }
+    }
+
+    private void VerticalScrollbar_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
+    {
+        _isVerticalScrollbarTouchDragging = false;
+        _isTouchScrolling = false;
+        SyncScrollTrackerToOffsetNow();
+    }
+
+    private void UpdateVerticalScrollbarFromDelta(double deltaY)
+    {
+        double trackLength = VerticalScrollbar.ActualHeight;
+        if (trackLength <= 0 || VerticalScrollbar.Maximum <= 0)
+            return;
+
+        const double buttonHeight = 16.0;
+        double effectiveLength = trackLength > buttonHeight * 2 ? trackLength - buttonHeight * 2 : trackLength;
+        if (effectiveLength <= 0)
+            return;
+
+        double scrollDelta = (deltaY / effectiveLength) * VerticalScrollbar.Maximum;
+        scrollManager.VerticalScroll = Math.Clamp(_initialScrollOffsetY + scrollDelta, 0, VerticalScrollbar.Maximum);
+    }
+
+    private void HorizontalScrollbar_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        zoomManager.ResetZoomAnchors();
+        var point = e.GetCurrentPoint(HorizontalScrollbar);
+        if (point.PointerDeviceType == PointerDeviceType.Touch)
+        {
+            if (sender is UIElement el)
+            {
+                el.CapturePointer(e.Pointer);
+            }
+            _isHorizontalScrollbarTouchDragging = true;
+            _isTouchScrolling = true;
+            _initialTouchScrollbarPosX = point.Position.X;
+            _initialScrollOffsetX = scrollManager.HorizontalScroll;
+            _touchScrollbarTotalMovementX = 0;
+            e.Handled = true;
+        }
+    }
+
+    private void HorizontalScrollbar_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (_isHorizontalScrollbarTouchDragging)
+        {
+            var point = e.GetCurrentPoint(HorizontalScrollbar);
+            double deltaX = point.Position.X - _initialTouchScrollbarPosX;
+            _touchScrollbarTotalMovementX += Math.Abs(deltaX);
+            UpdateHorizontalScrollbarFromDelta(deltaX);
+            e.Handled = true;
+        }
+    }
+
+    private void HorizontalScrollbar_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        if (_isHorizontalScrollbarTouchDragging)
+        {
+            if (sender is UIElement el)
+            {
+                el.ReleasePointerCapture(e.Pointer);
+            }
+            _isHorizontalScrollbarTouchDragging = false;
+            _isTouchScrolling = false;
+
+            var point = e.GetCurrentPoint(HorizontalScrollbar);
+            double trackLength = HorizontalScrollbar.ActualWidth;
+            const double buttonWidth = 16.0;
+
+            if (_touchScrollbarTotalMovementX < 8.0 && trackLength > 0)
+            {
+                if (point.Position.X < buttonWidth)
+                {
+                    scrollManager.HorizontalScroll = Math.Max(0, scrollManager.HorizontalScroll - 40);
+                }
+                else if (point.Position.X > trackLength - buttonWidth)
+                {
+                    scrollManager.HorizontalScroll = Math.Min(HorizontalScrollbar.Maximum, scrollManager.HorizontalScroll + 40);
+                }
+                else if (HorizontalScrollbar.Maximum > 0)
+                {
+                    double effectiveLength = trackLength > buttonWidth * 2 ? trackLength - buttonWidth * 2 : trackLength;
+                    double effectiveX = Math.Clamp(point.Position.X - buttonWidth, 0.0, effectiveLength);
+                    double fraction = effectiveLength > 0 ? effectiveX / effectiveLength : 0.0;
+                    scrollManager.HorizontalScroll = fraction * HorizontalScrollbar.Maximum;
+                }
+            }
+
+            SyncScrollTrackerToOffsetNow();
+            e.Handled = true;
+        }
+    }
+
+    private void HorizontalScrollbar_PointerCanceled(object sender, PointerRoutedEventArgs e)
+    {
+        if (_isHorizontalScrollbarTouchDragging)
+        {
+            if (sender is UIElement el)
+            {
+                el.ReleasePointerCapture(e.Pointer);
+            }
+            _isHorizontalScrollbarTouchDragging = false;
+            _isTouchScrolling = false;
+            SyncScrollTrackerToOffsetNow();
+        }
+    }
+
+    private void HorizontalScrollbar_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
+    {
+        _isHorizontalScrollbarTouchDragging = false;
+        _isTouchScrolling = false;
+        SyncScrollTrackerToOffsetNow();
+    }
+
+    private void UpdateHorizontalScrollbarFromDelta(double deltaX)
+    {
+        double trackLength = HorizontalScrollbar.ActualWidth;
+        if (trackLength <= 0 || HorizontalScrollbar.Maximum <= 0)
+            return;
+
+        const double buttonWidth = 16.0;
+        double effectiveLength = trackLength > buttonWidth * 2 ? trackLength - buttonWidth * 2 : trackLength;
+        if (effectiveLength <= 0)
+            return;
+
+        double scrollDelta = (deltaX / effectiveLength) * HorizontalScrollbar.Maximum;
+        scrollManager.HorizontalScroll = Math.Clamp(_initialScrollOffsetX + scrollDelta, 0, HorizontalScrollbar.Maximum);
+    }
     private void Canvas_LineNumber_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
         Canvas_Selection.CapturePointer(e.Pointer);
 
         var point = e.GetCurrentPoint(Canvas_Selection);
-        if (pointerActionsManager.CheckTouchInput_Click(point))
-            return;
 
         //Select the line where the cursor is over
         int line = CursorHelper.GetCursorLineFromPoint(textRenderer, point.Position);
         
-        if(textManager.LinesCount > 0)
+        if (textManager.LinesCount > 0)
         {
             line = Math.Clamp(line, 0, textManager.LinesCount - 1);
         }
@@ -844,6 +1135,22 @@ internal sealed partial class CoreTextControlBox : UserControl
         textActionManager.SelectAll();
     }
 
+    public void Delete()
+    {
+        if (IsReadOnly)
+            return;
+
+        if (selectionManager.HasSelection)
+        {
+            textActionManager.DeleteSelection();
+        }
+        else
+        {
+            textActionManager.DeleteText();
+        }
+        canvasUpdateManager.UpdateAll();
+    }
+
     public void ClearSelection()
     {
         selectionManager.ClearSelection();
@@ -1062,6 +1369,7 @@ internal sealed partial class CoreTextControlBox : UserControl
         }
 
         caretBlinkManager.Stop();
+        pointerActionsManager?.CleanUp();
         TeardownDiagonalScroll();
 
         textRenderer.CheckDispose();
@@ -1397,7 +1705,7 @@ internal sealed partial class CoreTextControlBox : UserControl
     public TextControlBoxSelection? CurrentSelectionOrdered => selectionManager.HasSelection ? new TextControlBoxSelection(selectionManager) : null;
     public new bool IsLoaded => initializationManager.initDone;
     public bool ShowWhitespaceCharacters { get => whitespaceCharactersManager.ShowWhitespaceCharacters; set { whitespaceCharactersManager.ShowWhitespaceCharacters = value; canvasUpdateManager.UpdateText(); } }
-    public Thickness SelectionScrollStartBorderDistance { get; set; } = new Thickness(0, 0, 0, 0);
+    public Thickness SelectionScrollStartBorderDistance { get; set; } = new Thickness(35, 35, 35, 35);
     public bool HighlightLinks { get => linkHighlightManager.HighlightLinks; set { linkHighlightManager.HighlightLinks = value; canvasUpdateManager.UpdateAll(); } }
     public bool HighlightLineWhenNotFocused { get => lineHighlighterManager._HighlightLineWhenNotFocused; set { lineHighlighterManager._HighlightLineWhenNotFocused = value; canvasUpdateManager.UpdateText(); } }
     public bool CanUndo => undoRedo.CanUndo;

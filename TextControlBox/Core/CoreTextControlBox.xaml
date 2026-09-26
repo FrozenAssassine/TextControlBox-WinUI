@@ -9,6 +9,7 @@
     xmlns:xaml="using:Microsoft.Graphics.Canvas.UI.Xaml" 
     mc:Ignorable="d"
     TabIndex="0" IsTabStop="True" AllowFocusOnInteraction="false"
+    ManipulationMode="None"
     PointerWheelChanged="Canvas_Selection_PointerWheelChanged"
     PointerEntered="UserControl_PointerEntered" 
     PointerExited="UserControl_PointerExited"
@@ -18,7 +19,7 @@
     DragOver="UserControl_DragOver"
     LosingFocus="UserControl_LosingFocus"
     >
-    <Grid x:Name="MainGrid">
+    <Grid x:Name="MainGrid" ManipulationMode="None">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto"/>
             <ColumnDefinition Width="*"/>
@@ -30,6 +31,7 @@
         <xaml:CanvasControl
                     Grid.Column="0"
                     x:Name="Canvas_LineNumber"
+                    ManipulationMode="None"
                     Draw="Canvas_LineNumber_Draw"
                     HorizontalAlignment="Left"
                     Width="100"
@@ -37,38 +39,47 @@
                     PointerExited="Canvas_LineNumber_PointerExited"
                     PointerPressed="Canvas_LineNumber_PointerPressed"
                     PointerReleased="Canvas_Selection_PointerReleased"
+                    PointerCanceled="Canvas_Selection_PointerCanceled"
+                    PointerCaptureLost="Canvas_Selection_PointerCaptureLost"
                     PointerWheelChanged="Canvas_Selection_PointerWheelChanged"
                     VerticalAlignment="Stretch"/>
 
-        <Grid Grid.Column="1" x:Name="ScrollGrid">
+        <Grid Grid.Column="1" x:Name="ScrollGrid" ManipulationMode="None">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="auto"/>
             </Grid.ColumnDefinitions>
             <xaml:CanvasControl Grid.Column="0" x:Name="Canvas_Cursor"
+                        ManipulationMode="None"
                         Draw="Canvas_Cursor_Draw"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"/>
 
             <xaml:CanvasControl Grid.Column="0" x:Name="Canvas_Text"
+                        ManipulationMode="None"
                         Draw="Canvas_Text_Draw"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"/>
 
             <xaml:CanvasControl Grid.Column="0" x:Name="Canvas_Selection"
+                        ManipulationMode="None"
                         Draw="Canvas_Selection_Draw"
                         PointerPressed="Canvas_Selection_PointerPressed"
                         PointerMoved="Canvas_Selection_PointerMoved"
                         PointerReleased="Canvas_Selection_PointerReleased"
+                        PointerCanceled="Canvas_Selection_PointerCanceled"
+                        PointerCaptureLost="Canvas_Selection_PointerCaptureLost"
+                        PointerWheelChanged="Canvas_Selection_PointerWheelChanged"
+                        RightTapped="Canvas_Selection_RightTapped"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"/>
 
-            <controls:CursorGrid Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Stretch">
+            <controls:CursorGrid Grid.Column="2" x:Name="VerticalScrollbarContainer" HorizontalAlignment="Right" VerticalAlignment="Stretch">
                 <ScrollBar Maximum="0" Minimum="0" x:Name="VerticalScrollbar" Value="0" IndicatorMode="MouseIndicator" Background="Transparent" HorizontalAlignment="Right" Orientation="Vertical" VerticalAlignment="Stretch"/>
             </controls:CursorGrid>
         </Grid>
-        <controls:CursorGrid Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
+        <controls:CursorGrid Grid.Row="1" Grid.ColumnSpan="2" x:Name="HorizontalScrollbarContainer" HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
             <ScrollBar Minimum="0" Maximum="0" x:Name="HorizontalScrollbar" Value="0" IndicatorMode="MouseIndicator" Background="Transparent" HorizontalAlignment="Stretch" Orientation="Horizontal" VerticalAlignment="Bottom"/>
         </controls:CursorGrid>
         <controls:InputHandlerControl x:Name="inputHandler" 

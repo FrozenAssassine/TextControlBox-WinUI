@@ -22,8 +22,8 @@ internal class ScrollManager
     // pixel API semantics for the public surface but store through the pixel offset source.
     public IScrollOffsetSource OffsetSource { get; private set; }
 
-    public double VerticalScroll { get => OffsetSource.VerticalOffset / DefaultVerticalScrollSensitivity; set { zoomManager.ZoomAnchorLine = null; OffsetSource.VerticalOffset = (value < 0 ? 0 : value) * DefaultVerticalScrollSensitivity; canvasHelper.UpdateAll(); } }
-    public double HorizontalScroll { get => OffsetSource.HorizontalOffset; set { OffsetSource.HorizontalOffset = value < 0 ? 0 : value; canvasHelper.UpdateAll(); } }
+    public double VerticalScroll { get => OffsetSource.VerticalOffset / DefaultVerticalScrollSensitivity; set { zoomManager.ResetZoomAnchors(); OffsetSource.VerticalOffset = (value < 0 ? 0 : value) * DefaultVerticalScrollSensitivity; canvasHelper.UpdateAll(); } }
+    public double HorizontalScroll { get => OffsetSource.HorizontalOffset; set { zoomManager.ResetZoomAnchors(); OffsetSource.HorizontalOffset = value < 0 ? 0 : value; canvasHelper.UpdateAll(); } }
 
     public ScrollBar verticalScrollBar;
     public ScrollBar horizontalScrollBar;
@@ -63,7 +63,7 @@ internal class ScrollManager
     }
     internal void VerticalScrollBar_Scroll(object sender, ScrollEventArgs e)
     {
-        zoomManager.ZoomAnchorLine = null;
+        zoomManager.ResetZoomAnchors();
         if (textRenderer.IsWordWrapEnabled)
         {
             canvasHelper.UpdateAll();
@@ -79,6 +79,7 @@ internal class ScrollManager
 
     internal void HorizontalScrollBar_Scroll(object sender, ScrollEventArgs e)
     {
+        zoomManager.ResetZoomAnchors();
         canvasHelper.UpdateAll();
     }
 

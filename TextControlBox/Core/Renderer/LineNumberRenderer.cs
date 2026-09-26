@@ -23,14 +23,16 @@ namespace TextControlBoxNS.Core.Renderer
         private DesignHelper designHelper;
         private LineNumberManager lineNumberManager;
         private TextLayoutManager textLayoutManager;
+        private ZoomManager zoomManager;
 
-        public void Init(TextManager textManager, TextLayoutManager textLayoutManager, TextRenderer textRenderer, DesignHelper designHelper, LineNumberManager lineNumberManager)
+        public void Init(TextManager textManager, TextLayoutManager textLayoutManager, TextRenderer textRenderer, DesignHelper designHelper, LineNumberManager lineNumberManager, ZoomManager zoomManager)
         {
             this.textManager = textManager;
             this.textRenderer = textRenderer;
             this.designHelper = designHelper;
             this.lineNumberManager = lineNumberManager;
             this.textLayoutManager = textLayoutManager;
+            this.zoomManager = zoomManager;
         }
 
         public void GenerateLineNumberText(int renderedLines, int startLine)
@@ -137,6 +139,12 @@ namespace TextControlBoxNS.Core.Renderer
             if (LineNumberTextToRender == null || LineNumberTextToRender.Length == 0)
                 return;
 
+            float expectedFontSize = zoomManager?.ZoomedFontSize > 0 ? zoomManager.ZoomedFontSize : Math.Max(1, textManager._FontSize);
+            if (LineNumberTextFormat == null || Math.Abs(LineNumberTextFormat.FontSize - expectedFontSize) > 0.01f || Math.Abs(LineNumberTextFormat.LineSpacing - textRenderer.SingleLineHeight) > 0.01f)
+            {
+                CreateLineNumberTextFormat();
+            }
+
             float lineNumberWidth = (float)Utils.MeasureTextSize(args.DrawingSession.Device, (textManager.LinesCount).ToString(), LineNumberTextFormat).Width;
             float targetCanvasWidth = lineNumberWidth + 10 + spaceBetweenCanvasAndText;
             if (Math.Abs(canvas.Width - targetCanvasWidth) > 0.5f)
@@ -174,6 +182,8 @@ namespace TextControlBoxNS.Core.Renderer
                 10,
                 drawLineNumberOffsetY,
                 designHelper.LineNumberColorBrush);
+
+            needsUpdate = false;
         }
 
         public void CreateLineNumberTextFormat()

@@ -21,6 +21,7 @@ internal class TextRenderer
 
     public bool NeedsUpdateTextLayout = true;
     public bool NeedsTextFormatUpdate = true;
+    private bool _needsCharWidthUpdate = true;
     private bool _isEnsuringTextFormat = false;
     public void EnsureTextFormat()
     {
@@ -35,8 +36,19 @@ internal class TextRenderer
                 TextFormat?.Dispose();
                 TextFormat = textLayoutManager.CreateCanvasTextFormat();
                 NeedsTextFormatUpdate = false;
+                _needsCharWidthUpdate = true;
                 ClearLineLayoutCache();
                 InvalidateCurrentLineLayout();
+
+                lineNumberRenderer?.CreateLineNumberTextFormat();
+                if (coreTextbox?.canvasText != null && coreTextbox.canvasText.ReadyToDraw)
+                {
+                    invisibleCharactersRenderer?.UpdateTextFormat(coreTextbox.canvasText, TextFormat);
+                }
+                else
+                {
+                    invisibleCharactersRenderer?.CheckDispose();
+                }
             }
             finally
             {
@@ -1212,7 +1224,7 @@ internal class TextRenderer
             startLine = Math.Min(startLine, textManager.LinesCount);
         }
 
-        if (zoomManager.ZoomAnchorHorizontalRatio > 0 && scrollManager.horizontalScrollBar != null)
+        if (zoomManager.ZoomAnchorLine.HasValue && zoomManager.ZoomAnchorHorizontalRatio > 0 && scrollManager.horizontalScrollBar != null)
         {
             scrollManager.horizontalScrollBar.Value = Math.Clamp(zoomManager.ZoomAnchorHorizontalRatio * zoomManager.ZoomedFontSize, scrollManager.horizontalScrollBar.Minimum, scrollManager.horizontalScrollBar.Maximum);
         }
@@ -1297,12 +1309,12 @@ internal class TextRenderer
         //Create resources and layouts:
         if (NeedsTextFormatUpdate || TextFormat == null || lineNumberRenderer.LineNumberTextFormat == null)
         {
-            lineNumberRenderer.CreateLineNumberTextFormat();
-
             EnsureTextFormat();
+        }
 
-            invisibleCharactersRenderer.UpdateTextFormat(canvasText, TextFormat);
-
+        if (_needsCharWidthUpdate || _cachedCharWidth <= 0)
+        {
+            _needsCharWidthUpdate = false;
             // Measure the actual character width (monospace assumption) for the horizontal-virtualization
             // slice-to-pixel offset. Re-measured whenever the format is rebuilt (font/zoom change).
             using (var measureLayout = new CanvasTextLayout(args.DrawingSession, "M", TextFormat, 0, 0))
@@ -1445,7 +1457,7 @@ internal class TextRenderer
 
             ccls.DrawTextLayout(DrawnTextLayout, drawTextOffsetX, drawTextOffsetY, designHelper.TextColorBrush);
 
-            invisibleCharactersRenderer.DrawTabsAndSpaces(args, ccls, RenderedText, DrawnTextLayout, drawTextOffsetY);
+            invisibleCharactersRenderer.DrawTabsAndSpaces(args, ccls, RenderedText, DrawnTextLayout, drawTextOffsetX, drawTextOffsetY, TextFormat);
         }
         args.DrawingSession.DrawImage(canvasCommandList);
 

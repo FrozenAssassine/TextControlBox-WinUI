@@ -30,6 +30,7 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
     private bool _applyingTrackerScroll;
     private float _lastTrackerX;
     private float _lastTrackerY;
+    private float _lastTrackerScale = 1.0f;
 
     /// <summary>Wires the tracker to the selection canvas' composition visual. Called from the control's
     /// <c>Loaded</c> event (the visual + size are available by then). Idempotent and best-effort — a
@@ -47,15 +48,24 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
             _scrollTracker = InteractionTracker.CreateWithOwner(compositor, this);
             _scrollTracker.MinPosition = Vector3.Zero;
             _scrollTracker.MaxPosition = Vector3.Zero; // updated from content extent by the sync timer
+            _scrollTracker.MinScale = 0.04f;
+            _scrollTracker.MaxScale = 4.0f;
+            _lastTrackerScale = (float)(zoomManager?._ZoomFactor ?? 100) / 100f;
+            if (Math.Abs(_lastTrackerScale - 1.0f) > 0.005f)
+            {
+                _scrollTracker.TryUpdateScale(_lastTrackerScale, Vector3.Zero);
+            }
 
             _scrollInteractionSource = VisualInteractionSource.Create(visual);
-            // Capture ONLY precision-touchpad manipulation (leave wheel + zoom to the existing handler).
+            // Capture precision-touchpad manipulation (diagonal pan and pinch-to-zoom).
             _scrollInteractionSource.ManipulationRedirectionMode = VisualInteractionSourceRedirectionMode.CapableTouchpadOnly;
             _scrollInteractionSource.PositionXSourceMode = InteractionSourceMode.EnabledWithoutInertia;
             _scrollInteractionSource.PositionYSourceMode = InteractionSourceMode.EnabledWithoutInertia;
+            _scrollInteractionSource.ScaleSourceMode = InteractionSourceMode.EnabledWithoutInertia;
             // Don't chain past the editor to an ancestor scroller.
             _scrollInteractionSource.PositionXChainingMode = InteractionChainingMode.Never;
             _scrollInteractionSource.PositionYChainingMode = InteractionChainingMode.Never;
+            _scrollInteractionSource.ScaleChainingMode = InteractionChainingMode.Never;
             _scrollTracker.InteractionSources.Add(_scrollInteractionSource);
 
             _scrollTrackerTimer = DispatcherQueue.CreateTimer();
@@ -82,7 +92,7 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
     /// page keys, wheel) so the next touchpad pan starts from the right place.</summary>
     private void SyncScrollTracker()
     {
-        if (!_scrollTrackerReady || scrollManager?.OffsetSource is not { } src)
+        if (!_scrollTrackerReady || scrollManager?.OffsetSource is not { } src || _isTouchScrolling)
             return;
 
         try
@@ -111,6 +121,13 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
                     _lastTrackerY = srcY;
                     _scrollTracker.TryUpdatePosition(new Vector3(srcX, srcY, 0));
                 }
+
+                float currentZoomScale = (float)(zoomManager?._ZoomFactor ?? 100) / 100f;
+                if (Math.Abs(currentZoomScale - _lastTrackerScale) > 0.005f)
+                {
+                    _lastTrackerScale = currentZoomScale;
+                    _scrollTracker.TryUpdateScale(currentZoomScale, Vector3.Zero);
+                }
             }
         }
         catch (Exception ex)
@@ -127,7 +144,7 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
     /// <see cref="ValuesChanged"/>) is ignored so it does not feed back into a redundant reposition.</summary>
     private void OnOffsetSourceViewChanged(object sender, EventArgs e)
     {
-        if (_applyingTrackerScroll)
+        if (_applyingTrackerScroll || _isTouchScrolling)
             return;
         SyncScrollTrackerToOffsetNow();
     }
@@ -186,9 +203,41 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
     // to touch the offset source + request a redraw directly.
     public void ValuesChanged(InteractionTracker sender, InteractionTrackerValuesChangedArgs args)
     {
-        if (!_scrollTrackerReady)
+        if (!_scrollTrackerReady || _isTouchScrolling)
             return;
 
+        // 1. Precision-touchpad pinch-to-zoom:
+        float currentScale = args.Scale;
+        if (Math.Abs(currentScale - _lastTrackerScale) > 0.002f && zoomManager != null)
+        {
+            _lastTrackerScale = currentScale;
+            _lastTrackerX = args.Position.X;
+            _lastTrackerY = args.Position.Y;
+
+            int newZoom = (int)Math.Clamp(Math.Round(currentScale * 100f), 4, 400);
+            if (newZoom != zoomManager._ZoomFactor)
+            {
+                zoomManager._ZoomFactor = newZoom;
+                zoomManager.UpdateZoom();
+            }
+            return;
+        }
+
+        // 2. Ctrl + 2-finger touchpad pan to zoom:
+        if (TextControlBoxNS.Helper.Utils.IsKeyPressed(Windows.System.VirtualKey.Control) && zoomManager != null)
+        {
+            float deltaY = args.Position.Y - _lastTrackerY;
+            _lastTrackerX = args.Position.X;
+            _lastTrackerY = args.Position.Y;
+
+            if (Math.Abs(deltaY) > 0.5f)
+            {
+                pointerActionsManager?.ApplyZoomDelta(zoomManager, -(int)(deltaY * 3));
+            }
+            return;
+        }
+
+        // 3. Normal 2-finger pan:
         _lastTrackerX = args.Position.X;
         _lastTrackerY = args.Position.Y;
 
@@ -219,10 +268,31 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
     }
 
     public void InteractingStateEntered(InteractionTracker sender, InteractionTrackerInteractingStateEnteredArgs args)
-        => _scrollTrackerInteracting = true;
+    {
+        _scrollTrackerInteracting = true;
+        if (zoomManager != null)
+        {
+            _lastTrackerScale = (float)zoomManager._ZoomFactor / 100f;
+        }
+    }
 
     public void IdleStateEntered(InteractionTracker sender, InteractionTrackerIdleStateEnteredArgs args)
-        => _scrollTrackerInteracting = false;
+    {
+        _scrollTrackerInteracting = false;
+        zoomManager?.ResetZoomAnchors();
+
+        if (scrollManager?.OffsetSource is { } src && _scrollTracker != null)
+        {
+            _lastTrackerX = (float)src.HorizontalOffset;
+            _lastTrackerY = (float)src.VerticalOffset;
+            _scrollTracker.TryUpdatePosition(new Vector3(_lastTrackerX, _lastTrackerY, 0));
+        }
+        if (zoomManager != null && _scrollTracker != null)
+        {
+            _lastTrackerScale = (float)zoomManager._ZoomFactor / 100f;
+            _scrollTracker.TryUpdateScale(_lastTrackerScale, Vector3.Zero);
+        }
+    }
 
     public void InertiaStateEntered(InteractionTracker sender, InteractionTrackerInertiaStateEnteredArgs args) { }
 
