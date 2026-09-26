@@ -393,11 +393,11 @@ internal class SelectionManager
         return returnValue;
     }
 
-    public string GetSelectedText(int currentLineIndex)
+    public string GetSelectedText(int currentLineIndex = 0)
     {
-        //return the current line, if no text is selected:
-        if (!currentTextSelection.HasSelection)
-            return textManager.GetLineText(currentLineIndex) + textManager.NewLineCharacter;
+        //return empty string, if no text is selected:
+        if (!HasSelection || !currentTextSelection.HasSelection)
+            return string.Empty;
 
         int startLine = currentTextSelection.GetMinLine();
         int endLine = currentTextSelection.GetMaxLine();

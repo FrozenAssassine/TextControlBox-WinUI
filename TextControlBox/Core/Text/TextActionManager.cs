@@ -198,7 +198,12 @@ namespace TextControlBoxNS.Core.Text
             try
             {
                 DataPackage dataPackage = new DataPackage();
-                dataPackage.SetText(coreTextbox.SelectedText);
+                string textToCut = selectionManager.HasSelection
+                    ? coreTextbox.SelectedText
+                    : (textManager.LinesCount > 0 && cursorManager.LineNumber >= 0 && cursorManager.LineNumber < textManager.LinesCount
+                        ? textManager.GetLineText(cursorManager.LineNumber) + textManager.NewLineCharacter
+                        : string.Empty);
+                dataPackage.SetText(textToCut);
                 if (!selectionManager.HasSelection)
                     DeleteLine(cursorManager.LineNumber); //Delete the line
                 else
@@ -226,7 +231,12 @@ namespace TextControlBoxNS.Core.Text
             try
             {
                 DataPackage dataPackage = new DataPackage();
-                dataPackage.SetText(coreTextbox.SelectedText);
+                string textToCopy = selectionManager.HasSelection
+                    ? coreTextbox.SelectedText
+                    : (textManager.LinesCount > 0 && cursorManager.LineNumber >= 0 && cursorManager.LineNumber < textManager.LinesCount
+                        ? textManager.GetLineText(cursorManager.LineNumber) + textManager.NewLineCharacter
+                        : string.Empty);
+                dataPackage.SetText(textToCopy);
                 dataPackage.RequestedOperation = DataPackageOperation.Copy;
                 Clipboard.SetContent(dataPackage);
             }
@@ -527,8 +537,11 @@ namespace TextControlBoxNS.Core.Text
             if (ignoreSelection)
                 selectionManager.ClearSelection();
 
-            int splittedTextLength = addCharacterTextAction.CalculateSplitTextLength(text);
             bool hasSelection = selectionManager.HasSelection;
+            if (!hasSelection && text.Length == 0)
+                return;
+
+            int splittedTextLength = addCharacterTextAction.CalculateSplitTextLength(text);
 
             if (!hasSelection && splittedTextLength == 1) //add single line text -> no selection
             {

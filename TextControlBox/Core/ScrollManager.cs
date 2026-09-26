@@ -139,12 +139,13 @@ internal class ScrollManager
         if (!cursorManager.PreferredCharacterPosition.HasValue)
             cursorManager.PreferredCharacterPosition = cursorManager.CharacterPosition;
 
-        cursorManager.LineNumber -= textRenderer.NumberOfRenderedLines;
+        int linesToScroll = Math.Max(1, textRenderer.NumberOfRenderedLines);
+        cursorManager.LineNumber -= linesToScroll;
         if (cursorManager.LineNumber < 0)
             cursorManager.LineNumber = 0;
 
         cursorManager.CharacterPosition = Math.Clamp(cursorManager.PreferredCharacterPosition.Value, 0, textManager.GetLineLength(cursorManager.LineNumber));
-        OffsetSource.VerticalOffset -= textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight;
+        OffsetSource.VerticalOffset -= linesToScroll * textRenderer.SingleLineHeight;
         canvasHelper.UpdateAll();
     }
 
@@ -155,12 +156,13 @@ internal class ScrollManager
         if (!cursorManager.PreferredCharacterPosition.HasValue)
             cursorManager.PreferredCharacterPosition = cursorManager.CharacterPosition;
 
-        cursorManager.LineNumber += textRenderer.NumberOfRenderedLines;
+        int linesToScroll = Math.Max(1, textRenderer.NumberOfRenderedLines);
+        cursorManager.LineNumber += linesToScroll;
         if (cursorManager.LineNumber > textManager.LinesCount - 1)
             cursorManager.LineNumber = textManager.LinesCount - 1;
 
         cursorManager.CharacterPosition = Math.Clamp(cursorManager.PreferredCharacterPosition.Value, 0, textManager.GetLineLength(cursorManager.LineNumber));
-        OffsetSource.VerticalOffset += textRenderer.NumberOfRenderedLines * textRenderer.SingleLineHeight;
+        OffsetSource.VerticalOffset += linesToScroll * textRenderer.SingleLineHeight;
         canvasHelper.UpdateAll();
     }
 

@@ -278,18 +278,22 @@ public class TouchInputTests
         core.textRenderer.EnsureTextFormat();
 
         var format100 = core.textRenderer.TextFormat;
+        float fontSize100 = format100.FontSize; // <-- Vor dem Re-Create zwischenspeichern
+
         var (space100, tab100) = core.textLayoutManager.CreateGlyphs(CanvasDevice.GetSharedDevice(), format100);
         space100.Dispose();
         tab100.Dispose();
 
         // Zoom to 200%
         core.ZoomFactor = 200;
-        core.textRenderer.EnsureTextFormat();
+        core.textRenderer.EnsureTextFormat(); // Hier wird die Instanz hinter format100 disposed
 
         var format200 = core.textRenderer.TextFormat;
         Assert.AreEqual(core.zoomManager.ZoomedFontSize, format200.FontSize);
         var (space200, tab200) = core.textLayoutManager.CreateGlyphs(CanvasDevice.GetSharedDevice(), format200);
-        Assert.IsTrue(format200.FontSize > format100.FontSize);
+
+        Assert.IsTrue(format200.FontSize > fontSize100); // <-- Sicherer Vergleich
+
         space200.Dispose();
         tab200.Dispose();
     }

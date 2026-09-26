@@ -256,6 +256,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
 
             //mark as handled to not change focus
             e.Handled = true;
+            return;
         }
 
         if (!focusManager.HasFocus)
@@ -264,90 +265,88 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
         var ctrl = Utils.IsKeyPressed(VirtualKey.Control);
         var shift = Utils.IsKeyPressed(VirtualKey.Shift);
         var menu = Utils.IsKeyPressed(VirtualKey.Menu);
+
+        if (HandleKeyDown(e.Key, shift, ctrl, menu))
+        {
+            e.Handled = true;
+        }
+        UpdateInputHandlerPosition();
+    }
+
+    internal bool HandleKeyDown(VirtualKey key, bool shift = false, bool ctrl = false, bool menu = false)
+    {
         if (ctrl && !shift && !menu)
         {
-            switch (e.Key)
+            switch (key)
             {
                 case VirtualKey.Up:
                     ScrollOneLineUp();
-                    e.Handled = true;
-                    break;
+                    return true;
                 case VirtualKey.Down:
                     ScrollOneLineDown();
-                    e.Handled = true;
-                    break;
+                    return true;
                 case VirtualKey.V:
                     Paste();
-                    e.Handled = true;
-                    break;
+                    return true;
                 case VirtualKey.Z:
                     Undo();
-                    e.Handled = true;
-                    break;
+                    return true;
                 case VirtualKey.Y:
                     Redo();
-                    e.Handled = true;
-                    break;
+                    return true;
                 case VirtualKey.C:
                     Copy();
-                    e.Handled = true;
-                    break;
+                    return true;
                 case VirtualKey.X:
                     Cut();
-                    e.Handled = true;
-                    break;
+                    return true;
                 case VirtualKey.A:
                     SelectAll();
-                    e.Handled = true;
-                    break;
+                    return true;
                 case VirtualKey.W:
                     if (ControlW_SelectWord)
                     {
                         selectionManager.SelectSingleWord(canvasUpdateManager);
-                        e.Handled = true;
+                        return true;
                     }
                     break;
             }
 
-            if (e.Key != VirtualKey.Home && e.Key != VirtualKey.End && e.Key != VirtualKey.Left && e.Key != VirtualKey.Right && e.Key != VirtualKey.Back && e.Key != VirtualKey.Delete)
-                return;
+            if (key != VirtualKey.Home && key != VirtualKey.End && key != VirtualKey.Left && key != VirtualKey.Right && key != VirtualKey.Back && key != VirtualKey.Delete)
+                return false;
         }
 
         if (menu)
         {
-            if (!IsReadOnly && (e.Key == VirtualKey.Down || e.Key == VirtualKey.Up ))
+            if (!IsReadOnly && (key == VirtualKey.Down || key == VirtualKey.Up))
             {
-                moveLineManager.Move(e.Key == VirtualKey.Down ? LineMoveDirection.Down : LineMoveDirection.Up);
+                moveLineManager.Move(key == VirtualKey.Down ? LineMoveDirection.Down : LineMoveDirection.Up);
 
                 if (textRenderer.OutOfRenderedArea(cursorManager.LineNumber))
                 {
-                    if (e.Key == VirtualKey.Down)
+                    if (key == VirtualKey.Down)
                         ScrollOneLineDown(false);
-                    else if (e.Key == VirtualKey.Up)
+                    else if (key == VirtualKey.Up)
                         ScrollOneLineUp(false);
                 }
 
                 selectionManager.ClearSelection();
                 canvasUpdateManager.UpdateAll();
-                e.Handled = true;
-                return;
+                return true;
             }
         }
 
-        switch (e.Key)
+        switch (key)
         {
             case VirtualKey.Enter:
                 textActionManager.AddNewLine();
-                e.Handled = true;
-                break;
+                return true;
             case VirtualKey.Back:
                 textActionManager.RemoveText(ctrl);
-                e.Handled = true;
-                break;
+                return true;
             case VirtualKey.Delete:
                 textActionManager.DeleteText(ctrl, shift);
-                e.Handled = true;
-                break;
+                return true;
             case VirtualKey.Left:
                 {
                     undoRedo.EndBatch();
@@ -369,8 +368,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                     }
 
                     scrollManager.UpdateScrollToShowCursor(true);
-                    e.Handled = true;
-                    break;
+                    return true;
                 }
             case VirtualKey.Right:
                 {
@@ -393,8 +391,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                     }
 
                     scrollManager.UpdateScrollToShowCursor(true);
-                    e.Handled = true;
-                    break;
+                    return true;
                 }
             case VirtualKey.Down:
                 {
@@ -418,8 +415,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                     }
 
                     scrollManager.UpdateScrollToShowCursor(true);
-                    e.Handled = true;
-                    break;
+                    return true;
                 }
             case VirtualKey.Up:
                 {
@@ -443,30 +439,56 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                     }
 
                     scrollManager.UpdateScrollToShowCursor(true);
-                    e.Handled = true;
-                    break;
+                    return true;
                 }
             case VirtualKey.Escape:
                 {
                     ClearSelection();
-                    e.Handled = true;
-                    break;
+                    return true;
                 }
             case VirtualKey.PageUp:
-                undoRedo.EndBatch();
-                ScrollPageUp();
-                e.Handled = true;
-                break;
+                {
+                    undoRedo.EndBatch();
+                    if (shift)
+                    {
+                        selectionManager.StartSelectionIfNeeded();
+                        ScrollPageUp();
+                        selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
+                        canvasUpdateManager.UpdateSelection();
+                    }
+                    else
+                    {
+                        selectionManager.ClearSelectionIfNeeded(this);
+                        ScrollPageUp();
+                    }
+
+                    scrollManager.UpdateScrollToShowCursor(true);
+                    return true;
+                }
             case VirtualKey.PageDown:
-                undoRedo.EndBatch();
-                ScrollPageDown();
-                e.Handled = true;
-                break;
+                {
+                    undoRedo.EndBatch();
+                    if (shift)
+                    {
+                        selectionManager.StartSelectionIfNeeded();
+                        ScrollPageDown();
+                        selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
+                        canvasUpdateManager.UpdateSelection();
+                    }
+                    else
+                    {
+                        selectionManager.ClearSelectionIfNeeded(this);
+                        ScrollPageDown();
+                    }
+
+                    scrollManager.UpdateScrollToShowCursor(true);
+                    return true;
+                }
             case VirtualKey.Home:
             case VirtualKey.End:
                 {
                     undoRedo.EndBatch();
-                    bool isHome = e.Key == VirtualKey.Home;
+                    bool isHome = key == VirtualKey.Home;
 
                     //start or clear selection
                     if (shift)
@@ -511,11 +533,11 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                     }
 
                     canvasUpdateManager.UpdateCursor();
-                    e.Handled = true;
-                    break;
+                    return true;
                 }
         }
-        UpdateInputHandlerPosition();
+
+        return false;
     }
 
     private void Canvas_Selection_PointerReleased(object sender, PointerRoutedEventArgs e)
@@ -1694,6 +1716,8 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
     {
         get
         {
+            if (!selectionManager.HasSelection)
+                return string.Empty;
             if (selectionManager.WholeTextSelected())
                 return GetText();
             return selectionManager.GetSelectedText(CursorPosition.LineNumber);
