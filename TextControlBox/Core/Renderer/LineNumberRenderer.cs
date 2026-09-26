@@ -158,11 +158,14 @@ namespace TextControlBoxNS.Core.Renderer
 
             OldLineNumberTextToRender = LineNumberTextToRender;
 
-            float drawLineNumberOffsetY = textRenderer.IsWordWrapEnabled
+            float zoomFactor = (zoomManager == null ? 100f : zoomManager._ZoomFactor) / 100f;
+            float textVerticalAdjustment = Math.Max(1f, (float)Math.Round(1.5f * zoomFactor));
+
+            float drawLineNumberOffsetY = (textRenderer.IsWordWrapEnabled
                 ? (textRenderer.IsVirtualizedWrappedLine
                     ? textRenderer.SingleLineHeight
                     : textRenderer.SingleLineHeight - (textRenderer.WrappedStartRowOffset * textRenderer.SingleLineHeight))
-                : textRenderer.SingleLineHeight;
+                : textRenderer.SingleLineHeight) - textVerticalAdjustment;
 
             int renderedVisualRows = textRenderer.IsWordWrapEnabled
                 ? (textRenderer.IsVirtualizedWrappedLine
