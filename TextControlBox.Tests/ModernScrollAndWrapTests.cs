@@ -51,6 +51,29 @@ public class ModernScrollAndWrapTests
     }
 
     [UITestMethod]
+    public void WordWrap_ToggleOff_ReenablesHorizontalScrollBar()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 0);
+        // Create a line of 200 characters with words that exceeds standard viewport width
+        core.SetText("The quick brown fox jumps over the lazy dog. " +
+                     "A long line of text that wraps into multiple visual rows when word wrap is enabled. " +
+                     "And continues even further so that it definitely exceeds any standard viewport width.");
+
+        // First enable WordWrap
+        core.WordWrap = true;
+        Assert.IsTrue(core.WordWrap);
+        Assert.AreEqual(0.0, core.horizontalScrollBar.Maximum, 0.001);
+
+        // Now toggle WordWrap off
+        core.WordWrap = false;
+        Assert.IsFalse(core.WordWrap);
+
+        // Horizontal scrollbar maximum must be re-enabled (> 0) because line exceeds viewport
+        Assert.IsTrue(core.horizontalScrollBar.Maximum > 0, "Horizontal scrollbar Maximum should be > 0 after disabling WordWrap on long line");
+        Assert.IsTrue(core.longestLineManager.longestLineWidth.Width > core.horizontalScrollBar.ViewportSize, "Longest line width should exceed viewport width");
+    }
+
+    [UITestMethod]
     public void WordWrap_MoveCursorByVisualRows_NavigatesCleanly()
     {
         var core = TestHelper.MakeCoreTextbox();
@@ -139,6 +162,44 @@ public class ModernScrollAndWrapTests
         core.ZoomFactor = 75;
 
         Assert.IsTrue(core.scrollManager.OffsetSource.VerticalOffset >= 0);
+    }
+
+    [UITestMethod]
+    public void ApplyZoomDelta_ZoomOutToMin_ClampsCleanlyWithoutJumping()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 10);
+        core.zoomManager._ZoomFactor = 10;
+
+        // Apply a massive negative delta to zoom past MinZoom
+        core.pointerActionsManager.ApplyZoomDelta(core.zoomManager, -1200);
+        Assert.AreEqual(TextControlBoxNS.Core.ZoomManager.MinZoom, core.zoomManager._ZoomFactor);
+
+        // Apply additional negative deltas: must stay at MinZoom, never jump to MaxZoom (400) or wrap around
+        core.pointerActionsManager.ApplyZoomDelta(core.zoomManager, -240);
+        Assert.AreEqual(TextControlBoxNS.Core.ZoomManager.MinZoom, core.zoomManager._ZoomFactor);
+
+        // Immediately zooming in must respond without stuck accumulator debt
+        core.pointerActionsManager.ApplyZoomDelta(core.zoomManager, 40);
+        Assert.AreEqual(TextControlBoxNS.Core.ZoomManager.MinZoom + 2, core.zoomManager._ZoomFactor);
+    }
+
+    [UITestMethod]
+    public void ApplyZoomDelta_ZoomInToMax_ClampsCleanlyWithoutJumping()
+    {
+        var core = TestHelper.MakeCoreTextbox(addNewLines: 10);
+        core.zoomManager._ZoomFactor = 390;
+
+        // Zoom past MaxZoom
+        core.pointerActionsManager.ApplyZoomDelta(core.zoomManager, 1200);
+        Assert.AreEqual(TextControlBoxNS.Core.ZoomManager.MaxZoom, core.zoomManager._ZoomFactor);
+
+        // Further positive delta: remains at MaxZoom
+        core.pointerActionsManager.ApplyZoomDelta(core.zoomManager, 240);
+        Assert.AreEqual(TextControlBoxNS.Core.ZoomManager.MaxZoom, core.zoomManager._ZoomFactor);
+
+        // Zooming out responds immediately
+        core.pointerActionsManager.ApplyZoomDelta(core.zoomManager, -40);
+        Assert.AreEqual(TextControlBoxNS.Core.ZoomManager.MaxZoom - 2, core.zoomManager._ZoomFactor);
     }
 
     [UITestMethod]

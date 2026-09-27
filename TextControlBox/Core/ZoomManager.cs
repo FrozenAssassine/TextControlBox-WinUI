@@ -6,8 +6,8 @@ namespace TextControlBoxNS.Core;
 
 internal class ZoomManager
 {
-    private const int MinZoom = 4;
-    private const int MaxZoom = 400;
+    public const int MinZoom = 4;
+    public const int MaxZoom = 400;
 
     public float ZoomedFontSize = 0;
     public int _ZoomFactor = 100; //%

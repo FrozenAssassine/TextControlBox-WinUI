@@ -96,7 +96,8 @@ internal class LongestLineManager
         }
 
         longestLineLength = textManager.totalLines[_longestIndex].Length;
-        if (textRenderer.TextFormat != null)
+        textRenderer?.EnsureTextFormat();
+        if (textRenderer?.TextFormat != null)
         {
             if (longestLineLength >= TextRenderer.HorizontalVirtualizationThreshold)
             {

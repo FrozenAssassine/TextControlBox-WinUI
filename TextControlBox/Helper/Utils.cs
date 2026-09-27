@@ -57,6 +57,7 @@ internal class Utils
         }
 
         using CanvasTextLayout layout = new CanvasTextLayout(device, text, textFormat, 0, 0);
+        layout.WordWrapping = CanvasWordWrapping.NoWrap;
         return new Size(layout.DrawBounds.Width - placeholderWidth, layout.DrawBounds.Height);
     }
 

@@ -411,9 +411,13 @@ internal class ScrollManager
 
     public void EnsureHorizontalScrollBounds(CanvasControl canvasText, LongestLineManager longestLineManager, bool triggeredByCursor, bool forceRecalculateLongestLine = false)
     {
+        float viewportWidth = canvasText != null && canvasText.ActualWidth > 10
+            ? (float)canvasText.ActualWidth
+            : (coreTextbox != null && coreTextbox.ActualWidth > 10 ? (float)coreTextbox.ActualWidth : 800f);
+
         if (textRenderer.IsWordWrapEnabled)
         {
-            horizontalScrollBar.ViewportSize = canvasText.ActualWidth;
+            horizontalScrollBar.ViewportSize = viewportWidth;
             horizontalScrollBar.Maximum = 0;
             horizontalScrollBar.Value = 0;
             return;
@@ -422,9 +426,6 @@ internal class ScrollManager
         longestLineManager.CheckRecalculateLongestLine(forceRecalculateLongestLine);
 
         //Apply longest width to scrollbar
-        float viewportWidth = canvasText != null && canvasText.ActualWidth > 10
-            ? (float)canvasText.ActualWidth
-            : (coreTextbox != null && coreTextbox.ActualWidth > 10 ? (float)coreTextbox.ActualWidth : 800f);
         horizontalScrollBar.ViewportSize = viewportWidth;
         double maxScroll = longestLineManager.longestLineWidth.Width <= viewportWidth ? 0 : longestLineManager.longestLineWidth.Width - viewportWidth + (zoomManager.ZoomedFontSize / 2);
         horizontalScrollBar.Maximum = maxScroll;

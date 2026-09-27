@@ -30,7 +30,6 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
     private bool _applyingTrackerScroll;
     private float _lastTrackerX;
     private float _lastTrackerY;
-    private float _lastTrackerScale = 1.0f;
 
     /// <summary>Wires the tracker to the selection canvas' composition visual. Called from the control's
     /// <c>Loaded</c> event (the visual + size are available by then). Idempotent and best-effort — a
@@ -48,20 +47,13 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
             _scrollTracker = InteractionTracker.CreateWithOwner(compositor, this);
             _scrollTracker.MinPosition = Vector3.Zero;
             _scrollTracker.MaxPosition = Vector3.Zero; // updated from content extent by the sync timer
-            _scrollTracker.MinScale = 0.04f;
-            _scrollTracker.MaxScale = 4.0f;
-            _lastTrackerScale = (float)(zoomManager?._ZoomFactor ?? 100) / 100f;
-            if (Math.Abs(_lastTrackerScale - 1.0f) > 0.005f)
-            {
-                _scrollTracker.TryUpdateScale(_lastTrackerScale, Vector3.Zero);
-            }
 
             _scrollInteractionSource = VisualInteractionSource.Create(visual);
-            // Capture precision-touchpad manipulation (diagonal pan and pinch-to-zoom).
+            // Capture precision-touchpad manipulation (diagonal pan).
             _scrollInteractionSource.ManipulationRedirectionMode = VisualInteractionSourceRedirectionMode.CapableTouchpadOnly;
             _scrollInteractionSource.PositionXSourceMode = InteractionSourceMode.EnabledWithoutInertia;
             _scrollInteractionSource.PositionYSourceMode = InteractionSourceMode.EnabledWithoutInertia;
-            _scrollInteractionSource.ScaleSourceMode = InteractionSourceMode.EnabledWithoutInertia;
+            _scrollInteractionSource.ScaleSourceMode = InteractionSourceMode.Disabled;
             // Don't chain past the editor to an ancestor scroller.
             _scrollInteractionSource.PositionXChainingMode = InteractionChainingMode.Never;
             _scrollInteractionSource.PositionYChainingMode = InteractionChainingMode.Never;
@@ -120,13 +112,6 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
                     _lastTrackerX = srcX;
                     _lastTrackerY = srcY;
                     _scrollTracker.TryUpdatePosition(new Vector3(srcX, srcY, 0));
-                }
-
-                float currentZoomScale = (float)(zoomManager?._ZoomFactor ?? 100) / 100f;
-                if (Math.Abs(currentZoomScale - _lastTrackerScale) > 0.005f)
-                {
-                    _lastTrackerScale = currentZoomScale;
-                    _scrollTracker.TryUpdateScale(currentZoomScale, Vector3.Zero);
                 }
             }
         }
@@ -206,38 +191,16 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
         if (!_scrollTrackerReady || _isTouchScrolling)
             return;
 
-        // 1. Precision-touchpad pinch-to-zoom:
-        float currentScale = args.Scale;
-        if (Math.Abs(currentScale - _lastTrackerScale) > 0.002f && zoomManager != null)
+        // If Ctrl is held, pointer wheel / pinch gestures handle zooming directly.
+        // Ignore tracker position changes during Ctrl modifier to prevent scrolling artifacts.
+        if (TextControlBoxNS.Helper.Utils.IsKeyPressed(Windows.System.VirtualKey.Control))
         {
-            _lastTrackerScale = currentScale;
             _lastTrackerX = args.Position.X;
             _lastTrackerY = args.Position.Y;
-
-            int newZoom = (int)Math.Clamp(Math.Round(currentScale * 100f), 4, 400);
-            if (newZoom != zoomManager._ZoomFactor)
-            {
-                zoomManager._ZoomFactor = newZoom;
-                zoomManager.UpdateZoom();
-            }
             return;
         }
 
-        // 2. Ctrl + 2-finger touchpad pan to zoom:
-        if (TextControlBoxNS.Helper.Utils.IsKeyPressed(Windows.System.VirtualKey.Control) && zoomManager != null)
-        {
-            float deltaY = args.Position.Y - _lastTrackerY;
-            _lastTrackerX = args.Position.X;
-            _lastTrackerY = args.Position.Y;
-
-            if (Math.Abs(deltaY) > 0.5f)
-            {
-                pointerActionsManager?.ApplyZoomDelta(zoomManager, -(int)(deltaY * 3));
-            }
-            return;
-        }
-
-        // 3. Normal 2-finger pan:
+        // Normal 2-finger pan:
         _lastTrackerX = args.Position.X;
         _lastTrackerY = args.Position.Y;
 
@@ -270,10 +233,6 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
     public void InteractingStateEntered(InteractionTracker sender, InteractionTrackerInteractingStateEnteredArgs args)
     {
         _scrollTrackerInteracting = true;
-        if (zoomManager != null)
-        {
-            _lastTrackerScale = (float)zoomManager._ZoomFactor / 100f;
-        }
     }
 
     public void IdleStateEntered(InteractionTracker sender, InteractionTrackerIdleStateEnteredArgs args)
@@ -286,11 +245,6 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
             _lastTrackerX = (float)src.HorizontalOffset;
             _lastTrackerY = (float)src.VerticalOffset;
             _scrollTracker.TryUpdatePosition(new Vector3(_lastTrackerX, _lastTrackerY, 0));
-        }
-        if (zoomManager != null && _scrollTracker != null)
-        {
-            _lastTrackerScale = (float)zoomManager._ZoomFactor / 100f;
-            _scrollTracker.TryUpdateScale(_lastTrackerScale, Vector3.Zero);
         }
     }
 

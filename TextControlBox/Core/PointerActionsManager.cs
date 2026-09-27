@@ -728,18 +728,18 @@ internal class PointerActionsManager
         _accumulatedZoomDelta += delta;
         const double divisor = 20.0;
         int zoomStep = (int)(_accumulatedZoomDelta / divisor);
-        if (zoomStep == 0 && Math.Abs(_accumulatedZoomDelta) >= 10.0)
-        {
-            zoomStep = Math.Sign(_accumulatedZoomDelta);
-        }
         if (zoomStep != 0)
         {
             _accumulatedZoomDelta -= zoomStep * divisor;
-            int newZoom = (int)Math.Clamp(zoomManager._ZoomFactor + zoomStep, 4, 400);
+            int newZoom = Math.Clamp(zoomManager._ZoomFactor + zoomStep, ZoomManager.MinZoom, ZoomManager.MaxZoom);
             if (newZoom != zoomManager._ZoomFactor)
             {
                 zoomManager._ZoomFactor = newZoom;
                 zoomManager.UpdateZoom();
+            }
+            else
+            {
+                _accumulatedZoomDelta = 0;
             }
         }
     }
@@ -770,6 +770,7 @@ internal class PointerActionsManager
             zoomManager.ResetZoomAnchors();
             double scrollDistance = -(delta / 120.0) * (3 * singleLine) * scrollManager._HorizontalScrollSensitivity;
             scrollManager.SmoothScrollHorizontalBy(scrollDistance);
+            e.Handled = true;
         }
         //Scroll horizontal using touchpad
         else if (properties.IsHorizontalMouseWheel)
@@ -777,6 +778,7 @@ internal class PointerActionsManager
             zoomManager.ResetZoomAnchors();
             double scrollDistance = (delta / 120.0) * (3 * singleLine) * scrollManager._HorizontalScrollSensitivity;
             scrollManager.SmoothScrollHorizontalBy(scrollDistance);
+            e.Handled = true;
         }
         //Scroll vertical using mousewheel
         else
@@ -784,6 +786,7 @@ internal class PointerActionsManager
             zoomManager.ResetZoomAnchors();
             double scrollDistance = -(delta / 120.0) * (3 * singleLine) * scrollManager._VerticalScrollSensitivity;
             scrollManager.SmoothScrollVerticalBy(scrollDistance);
+            e.Handled = true;
         }
 
         if (selectionManager.IsSelecting)
@@ -988,7 +991,7 @@ internal class PointerActionsManager
             {
                 double scale = currentDist / _initialPinchDistance;
                 int newZoom = (int)Math.Round(_initialPinchZoomFactor * scale);
-                coreTextbox.zoomManager._ZoomFactor = Math.Clamp(newZoom, 10, 400);
+                coreTextbox.zoomManager._ZoomFactor = Math.Clamp(newZoom, ZoomManager.MinZoom, ZoomManager.MaxZoom);
                 coreTextbox.zoomManager.UpdateZoom();
             }
             return;

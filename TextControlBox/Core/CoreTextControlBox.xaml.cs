@@ -1615,24 +1615,28 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
             if (value)
             {
                 textLayoutManager.WordWrap = true;
+                textRenderer.EnsureTextFormat();
                 textRenderer.EnsureWrapMetrics(canvasText);
                 int targetVisualRow = textRenderer.GetLineVisualStartRow(textRenderer.NumberOfStartLine);
                 scrollManager.VerticalScroll = (targetVisualRow * textRenderer.SingleLineHeight) / scrollManager.DefaultVerticalScrollSensitivity;
                 scrollManager.HorizontalScroll = 0;
+                scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false);
             }
             else
             {
                 int currentDocLine = textRenderer.GetDocumentLineFromVisualRow(textRenderer.StartVisualRow);
                 textLayoutManager.WordWrap = false;
+                textRenderer.EnsureTextFormat();
                 scrollManager.VerticalScroll = (currentDocLine * textRenderer.SingleLineHeight) / scrollManager.DefaultVerticalScrollSensitivity;
                 scrollManager.HorizontalScroll = 0;
                 longestLineManager.needsRecalculation = true;
                 longestLineManager.CheckRecalculateLongestLine(true);
+                scrollManager.EnsureHorizontalScrollBounds(canvasText, longestLineManager, false, true);
+                textRenderer.InvalidateWrapMetrics();
             }
 
             textRenderer.NeedsUpdateTextLayout = true;
             textRenderer.OldRenderedText = null;
-            textRenderer.InvalidateWrapMetrics();
             lineNumberRenderer.NeedsUpdateLineNumbers();
             canvasUpdateManager.UpdateLineNumbers();
             canvasUpdateManager.UpdateAll();
