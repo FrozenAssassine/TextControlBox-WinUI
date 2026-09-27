@@ -17,6 +17,7 @@ namespace TextControlBoxNS.Core.Renderer
 
         private readonly StringBuilder LineNumberContent = new StringBuilder();
         private bool needsUpdate = false;
+        private float _lastRenderedSubLineOffset = -1f;
 
         private TextManager textManager;
         private TextRenderer textRenderer;
@@ -121,7 +122,8 @@ namespace TextControlBoxNS.Core.Renderer
         {
             return needsUpdate || OldLineNumberTextToRender == null ||
                 LineNumberTextToRender == null ||
-                !OldLineNumberTextToRender.Equals(LineNumberTextToRender, StringComparison.OrdinalIgnoreCase);
+                !OldLineNumberTextToRender.Equals(LineNumberTextToRender, StringComparison.OrdinalIgnoreCase) ||
+                Math.Abs(_lastRenderedSubLineOffset - textRenderer.VerticalSubLineOffset) > 0.001f;
         }
 
         public void NeedsUpdateLineNumbers()
@@ -157,6 +159,7 @@ namespace TextControlBoxNS.Core.Renderer
                 posX = 0;
 
             OldLineNumberTextToRender = LineNumberTextToRender;
+            _lastRenderedSubLineOffset = textRenderer.VerticalSubLineOffset;
 
             float zoomFactor = (zoomManager == null ? 100f : zoomManager._ZoomFactor) / 100f;
             float textVerticalAdjustment = Math.Max(1f, (float)Math.Round(1.5f * zoomFactor));
@@ -165,7 +168,7 @@ namespace TextControlBoxNS.Core.Renderer
                 ? (textRenderer.IsVirtualizedWrappedLine
                     ? textRenderer.SingleLineHeight
                     : textRenderer.SingleLineHeight - (textRenderer.WrappedStartRowOffset * textRenderer.SingleLineHeight))
-                : textRenderer.SingleLineHeight) - textVerticalAdjustment;
+                : textRenderer.SingleLineHeight) - textVerticalAdjustment - textRenderer.VerticalSubLineOffset;
 
             int renderedVisualRows = textRenderer.IsWordWrapEnabled
                 ? (textRenderer.IsVirtualizedWrappedLine

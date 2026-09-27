@@ -12,10 +12,10 @@ internal static class WrapGeometry
     /// Visual row under pointer Y. <paramref name="startVisualRow"/> is the first visual row currently
     /// scrolled into view; the small top inset (a fraction of a row) matches the vertical draw offset.
     /// </summary>
-    public static int CalculateVisualRowFromPointY(double y, int startVisualRow, float singleLineHeight, int defaultVerticalScrollSensitivity, float topInset = 0)
+    public static int CalculateVisualRowFromPointY(double y, int startVisualRow, float singleLineHeight, int defaultVerticalScrollSensitivity, float topInset = 0, float subLineOffset = 0)
     {
         double rowHeight = Math.Max(1, singleLineHeight);
-        int relativeRow = (int)Math.Floor(Math.Max(0, y - topInset) / rowHeight);
+        int relativeRow = (int)Math.Floor(Math.Max(0, y - topInset + subLineOffset) / rowHeight);
         return startVisualRow + relativeRow;
     }
 

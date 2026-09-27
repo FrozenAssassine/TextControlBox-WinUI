@@ -1,3 +1,4 @@
+using Microsoft.UI.Dispatching;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -22,8 +23,8 @@ internal class ScrollManager
     // pixel API semantics for the public surface but store through the pixel offset source.
     public IScrollOffsetSource OffsetSource { get; private set; }
 
-    public double VerticalScroll { get => OffsetSource.VerticalOffset / DefaultVerticalScrollSensitivity; set { zoomManager.ResetZoomAnchors(); OffsetSource.VerticalOffset = (value < 0 ? 0 : value) * DefaultVerticalScrollSensitivity; canvasHelper.UpdateAll(); } }
-    public double HorizontalScroll { get => OffsetSource.HorizontalOffset; set { zoomManager.ResetZoomAnchors(); OffsetSource.HorizontalOffset = value < 0 ? 0 : value; canvasHelper.UpdateAll(); } }
+    public double VerticalScroll { get => OffsetSource.VerticalOffset / DefaultVerticalScrollSensitivity; set { CancelSmoothScroll(); zoomManager.ResetZoomAnchors(); OffsetSource.VerticalOffset = (value < 0 ? 0 : value) * DefaultVerticalScrollSensitivity; canvasHelper.UpdateAll(); } }
+    public double HorizontalScroll { get => OffsetSource.HorizontalOffset; set { CancelSmoothScroll(); zoomManager.ResetZoomAnchors(); OffsetSource.HorizontalOffset = value < 0 ? 0 : value; canvasHelper.UpdateAll(); } }
 
     public ScrollBar verticalScrollBar;
     public ScrollBar horizontalScrollBar;
@@ -64,22 +65,14 @@ internal class ScrollManager
     internal void VerticalScrollBar_Scroll(object sender, ScrollEventArgs e)
     {
         zoomManager.ResetZoomAnchors();
-        if (textRenderer.IsWordWrapEnabled)
-        {
-            canvasHelper.UpdateAll();
-            return;
-        }
-
-        //only update when a line was scrolled
-        if ((int)(OffsetSource.VerticalOffset / textRenderer.SingleLineHeight) != textRenderer.NumberOfStartLine)
-        {
-            canvasHelper.UpdateAll();
-        }
+        CancelSmoothScroll();
+        canvasHelper.UpdateAll();
     }
 
     internal void HorizontalScrollBar_Scroll(object sender, ScrollEventArgs e)
     {
         zoomManager.ResetZoomAnchors();
+        CancelSmoothScroll();
         canvasHelper.UpdateAll();
     }
 
@@ -96,6 +89,7 @@ internal class ScrollManager
 
     public void ScrollOneLineUp(bool update = true)
     {
+        CancelSmoothScroll();
         zoomManager.ZoomAnchorLine = null;
         OffsetSource.VerticalOffset -= textRenderer.SingleLineHeight;
         if(update)
@@ -103,6 +97,7 @@ internal class ScrollManager
     }
     public void ScrollOneLineDown(bool update = true)
     {
+        CancelSmoothScroll();
         zoomManager.ZoomAnchorLine = null;
         OffsetSource.VerticalOffset += textRenderer.SingleLineHeight;
         if(update)
@@ -111,6 +106,7 @@ internal class ScrollManager
 
     public void ScrollLineIntoView(int line, bool update = true)
     {
+        CancelSmoothScroll();
         zoomManager.ZoomAnchorLine = null;
         OffsetSource.VerticalOffset = (line - textRenderer.NumberOfRenderedLines / 2) * textRenderer.SingleLineHeight;
         
@@ -120,6 +116,7 @@ internal class ScrollManager
 
     public void ScrollTopIntoView(bool update = true)
     {
+        CancelSmoothScroll();
         zoomManager.ZoomAnchorLine = null;
         OffsetSource.VerticalOffset = (cursorManager.LineNumber - 1) * textRenderer.SingleLineHeight;
         if(update)
@@ -127,6 +124,7 @@ internal class ScrollManager
     }
     public void ScrollBottomIntoView(bool update = true)
     {
+        CancelSmoothScroll();
         zoomManager.ZoomAnchorLine = null;
         OffsetSource.VerticalOffset = (cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 1) * textRenderer.SingleLineHeight;
         if(update)
@@ -135,6 +133,7 @@ internal class ScrollManager
 
     public void ScrollPageUp()
     {
+        CancelSmoothScroll();
         zoomManager.ZoomAnchorLine = null;
         if (!cursorManager.PreferredCharacterPosition.HasValue)
             cursorManager.PreferredCharacterPosition = cursorManager.CharacterPosition;
@@ -152,6 +151,7 @@ internal class ScrollManager
 
     public void ScrollPageDown()
     {
+        CancelSmoothScroll();
         zoomManager.ZoomAnchorLine = null;
         if (!cursorManager.PreferredCharacterPosition.HasValue)
             cursorManager.PreferredCharacterPosition = cursorManager.CharacterPosition;
@@ -168,6 +168,7 @@ internal class ScrollManager
 
     public void UpdateScrollToShowCursor(bool update = true)
     {
+        CancelSmoothScroll();
         zoomManager.ZoomAnchorLine = null;
         if (textRenderer.IsWordWrapEnabled)
         {
@@ -181,7 +182,8 @@ internal class ScrollManager
                 (cursorManager.LineNumber - textRenderer.NumberOfRenderedLines + 2) *
                 textRenderer.SingleLineHeight;
         }
-        else if (textRenderer.NumberOfStartLine > cursorManager.LineNumber)
+        else if (textRenderer.NumberOfStartLine > cursorManager.LineNumber ||
+                 (textRenderer.NumberOfStartLine == cursorManager.LineNumber && textRenderer.VerticalSubLineOffset > 0))
         {
             OffsetSource.VerticalOffset =
                 cursorManager.LineNumber *
@@ -439,5 +441,140 @@ internal class ScrollManager
             else
                 canvasHelper.UpdateCursor();
         }
+    }
+
+    public bool SmoothScrolling { get; set; } = true;
+
+    private DispatcherQueueTimer _smoothScrollTimer;
+    private double _targetVerticalOffset;
+    private double _targetHorizontalOffset;
+    private bool _isSmoothScrollingVertical = false;
+    private bool _isSmoothScrollingHorizontal = false;
+
+    private void EnsureSmoothScrollTimer()
+    {
+        if (_smoothScrollTimer == null && coreTextbox?.DispatcherQueue != null)
+        {
+            _smoothScrollTimer = coreTextbox.DispatcherQueue.CreateTimer();
+            _smoothScrollTimer.Interval = TimeSpan.FromMilliseconds(16);
+            _smoothScrollTimer.Tick += OnSmoothScrollTimerTick;
+        }
+
+        if (_smoothScrollTimer != null && !_smoothScrollTimer.IsRunning)
+        {
+            _smoothScrollTimer.Start();
+        }
+    }
+
+    private void OnSmoothScrollTimerTick(DispatcherQueueTimer sender, object args)
+    {
+        bool stillScrolling = false;
+
+        if (_isSmoothScrollingVertical)
+        {
+            double currentV = OffsetSource.VerticalOffset;
+            double diffV = _targetVerticalOffset - currentV;
+            if (Math.Abs(diffV) <= 1.0)
+            {
+                OffsetSource.VerticalOffset = _targetVerticalOffset;
+                _isSmoothScrollingVertical = false;
+            }
+            else
+            {
+                double stepV = diffV * 0.6;
+                if (Math.Abs(stepV) < 1.0)
+                    stepV = Math.Sign(diffV) * 1.0;
+
+                OffsetSource.VerticalOffset = currentV + stepV;
+                stillScrolling = true;
+            }
+        }
+
+        if (_isSmoothScrollingHorizontal)
+        {
+            double currentH = OffsetSource.HorizontalOffset;
+            double diffH = _targetHorizontalOffset - currentH;
+            if (Math.Abs(diffH) <= 1.0)
+            {
+                OffsetSource.HorizontalOffset = _targetHorizontalOffset;
+                _isSmoothScrollingHorizontal = false;
+            }
+            else
+            {
+                double stepH = diffH * 0.6;
+                if (Math.Abs(stepH) < 1.0)
+                    stepH = Math.Sign(diffH) * 1.0;
+
+                OffsetSource.HorizontalOffset = currentH + stepH;
+                stillScrolling = true;
+            }
+        }
+
+        canvasHelper.UpdateAll();
+
+        if (!stillScrolling)
+        {
+            _smoothScrollTimer?.Stop();
+        }
+    }
+
+    public void CancelSmoothScroll()
+    {
+        _isSmoothScrollingVertical = false;
+        _isSmoothScrollingHorizontal = false;
+        if (_smoothScrollTimer != null && _smoothScrollTimer.IsRunning)
+        {
+            _smoothScrollTimer.Stop();
+        }
+    }
+
+    public void SmoothScrollVerticalBy(double deltaPixels)
+    {
+        if (verticalScrollBar == null)
+            return;
+
+        double maxOffset = Math.Max(0, verticalScrollBar.Maximum * DefaultVerticalScrollSensitivity);
+
+        if (!SmoothScrolling)
+        {
+            CancelSmoothScroll();
+            OffsetSource.VerticalOffset = Math.Clamp(OffsetSource.VerticalOffset + deltaPixels, 0, maxOffset);
+            canvasHelper.UpdateAll();
+            return;
+        }
+
+        if (!_isSmoothScrollingVertical)
+        {
+            _targetVerticalOffset = OffsetSource.VerticalOffset;
+            _isSmoothScrollingVertical = true;
+        }
+
+        _targetVerticalOffset = Math.Clamp(_targetVerticalOffset + deltaPixels, 0, maxOffset);
+        EnsureSmoothScrollTimer();
+    }
+
+    public void SmoothScrollHorizontalBy(double deltaPixels)
+    {
+        if (horizontalScrollBar == null)
+            return;
+
+        double maxOffset = Math.Max(0, horizontalScrollBar.Maximum);
+
+        if (!SmoothScrolling)
+        {
+            CancelSmoothScroll();
+            OffsetSource.HorizontalOffset = Math.Clamp(OffsetSource.HorizontalOffset + deltaPixels, 0, maxOffset);
+            canvasHelper.UpdateAll();
+            return;
+        }
+
+        if (!_isSmoothScrollingHorizontal)
+        {
+            _targetHorizontalOffset = OffsetSource.HorizontalOffset;
+            _isSmoothScrollingHorizontal = true;
+        }
+
+        _targetHorizontalOffset = Math.Clamp(_targetHorizontalOffset + deltaPixels, 0, maxOffset);
+        EnsureSmoothScrollTimer();
     }
 }

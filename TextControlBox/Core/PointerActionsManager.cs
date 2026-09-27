@@ -762,33 +762,28 @@ internal class PointerActionsManager
 
         _accumulatedZoomDelta = 0;
 
+        float singleLine = Math.Max(1, textRenderer.SingleLineHeight);
+
         //Scroll horizontal using mousewheel
         if (Utils.IsKeyPressed(VirtualKey.Shift))
         {
             zoomManager.ResetZoomAnchors();
-            scrollManager.horizontalScrollBar.Value -= delta * scrollManager._HorizontalScrollSensitivity;
-            needsUpdate = true;
+            double scrollDistance = -(delta / 120.0) * (3 * singleLine) * scrollManager._HorizontalScrollSensitivity;
+            scrollManager.SmoothScrollHorizontalBy(scrollDistance);
         }
         //Scroll horizontal using touchpad
         else if (properties.IsHorizontalMouseWheel)
         {
             zoomManager.ResetZoomAnchors();
-            scrollManager.horizontalScrollBar.Value += delta * scrollManager._HorizontalScrollSensitivity;
-            needsUpdate = true;
+            double scrollDistance = (delta / 120.0) * (3 * singleLine) * scrollManager._HorizontalScrollSensitivity;
+            scrollManager.SmoothScrollHorizontalBy(scrollDistance);
         }
         //Scroll vertical using mousewheel
         else
         {
             zoomManager.ResetZoomAnchors();
-            scrollManager.verticalScrollBar.Value -= (delta * scrollManager._VerticalScrollSensitivity) / scrollManager.DefaultVerticalScrollSensitivity;
-            if (textRenderer.IsWordWrapEnabled)
-            {
-                needsUpdate = true;
-            }
-            else if ((int)(scrollManager.verticalScrollBar.Value / textRenderer.SingleLineHeight * scrollManager.DefaultVerticalScrollSensitivity) != textRenderer.NumberOfStartLine)
-            {
-                needsUpdate = true;
-            }
+            double scrollDistance = -(delta / 120.0) * (3 * singleLine) * scrollManager._VerticalScrollSensitivity;
+            scrollManager.SmoothScrollVerticalBy(scrollDistance);
         }
 
         if (selectionManager.IsSelecting)
@@ -835,6 +830,7 @@ internal class PointerActionsManager
         _touchTapCount = 0;
         _primaryTouchId = 0;
         _secondaryTouchId = null;
+        scrollManager?.CancelSmoothScroll();
         if (coreTextbox != null)
             coreTextbox._isTouchScrolling = false;
     }

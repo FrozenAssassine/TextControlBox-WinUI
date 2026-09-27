@@ -67,11 +67,24 @@ internal class TextRenderer
         }
     }
     public float TopInset => (float)Math.Round(2f * ((zoomManager == null ? 100f : zoomManager._ZoomFactor) / 100f));
+    public float VerticalSubLineOffset
+    {
+        get
+        {
+            if (scrollManager == null || SingleLineHeight <= 0)
+                return 0;
+
+            double pixelOffset = scrollManager.OffsetSource?.VerticalOffset ?? (scrollManager.VerticalScroll * scrollManager.DefaultVerticalScrollSensitivity);
+            int topRow = IsWordWrapEnabled ? StartVisualRow : NumberOfStartLine;
+            float subLine = (float)(pixelOffset - (topRow * SingleLineHeight));
+            return (float)Math.Clamp(subLine, 0, Math.Max(0, SingleLineHeight - 0.001f));
+        }
+    }
     public float GetSelectionTopMargin()
     {
         if (!IsWordWrapEnabled || IsVirtualizedWrappedLine)
-            return TopInset;
-        return TopInset - (WrappedStartRowOffset * SingleLineHeight);
+            return TopInset - VerticalSubLineOffset;
+        return TopInset - (WrappedStartRowOffset * SingleLineHeight) - VerticalSubLineOffset;
     }
     public float HorizontalOffset => (float)-scrollManager.HorizontalScroll + HorizontalSlicePixelOffset;
     public int NumberOfStartLine = 0;
@@ -1041,7 +1054,7 @@ internal class TextRenderer
     }
 
     public int GetVisualRowFromPointY(double y)
-        => WrapGeometry.CalculateVisualRowFromPointY(y, StartVisualRow, SingleLineHeight, scrollManager.DefaultVerticalScrollSensitivity, TopInset);
+        => WrapGeometry.CalculateVisualRowFromPointY(y, StartVisualRow, SingleLineHeight, scrollManager.DefaultVerticalScrollSensitivity, TopInset, VerticalSubLineOffset);
 
     public float GetWrappedLineHitTestYFromPointY(int lineIndex, double y)
     {
@@ -1067,7 +1080,7 @@ internal class TextRenderer
         int vLine = VirtualizedLineIndex >= 0 ? VirtualizedLineIndex : NumberOfStartLine;
         if (IsWordWrapEnabled && IsVirtualizedWrappedLine && lineIndex == vLine)
         {
-            return lineIndex == NumberOfStartLine ? 0 : GetLineTopY(lineIndex);
+            return (lineIndex == NumberOfStartLine ? -VerticalSubLineOffset : GetLineTopY(lineIndex));
         }
         return GetLineTopY(lineIndex);
     }
@@ -1076,9 +1089,9 @@ internal class TextRenderer
     public float GetLineTopY(int lineIndex)
     {
         if (!IsWordWrapEnabled)
-            return (lineIndex - NumberOfStartLine) * SingleLineHeight;
+            return (lineIndex - NumberOfStartLine) * SingleLineHeight - VerticalSubLineOffset;
 
-        return (GetLineVisualStartRow(lineIndex) - StartVisualRow) * SingleLineHeight;
+        return (GetLineVisualStartRow(lineIndex) - StartVisualRow) * SingleLineHeight - VerticalSubLineOffset;
     }
 
 
@@ -1258,7 +1271,7 @@ internal class TextRenderer
         scrollManager.verticalScrollBar.ViewportSize = viewportHeight;
 
         //Calculate number of lines that need to be rendered
-        int linesToRenderCount = (int)(viewportHeight / singleLineHeight);
+        int linesToRenderCount = (int)Math.Ceiling(viewportHeight / singleLineHeight) + 2;
         linesToRenderCount = Math.Min(linesToRenderCount, textManager.LinesCount);
 
         int startLine;
@@ -1445,7 +1458,7 @@ internal class TextRenderer
         float drawTextOffsetX = IsWordWrapEnabled ? 0 : HorizontalOffset;
         float drawTextOffsetY = (IsWordWrapEnabled
             ? (IsVirtualizedWrappedLine ? SingleLineHeight : SingleLineHeight - (WrappedStartRowOffset * SingleLineHeight))
-            : SingleLineHeight) - textVerticalAdjustment;
+            : SingleLineHeight) - textVerticalAdjustment - VerticalSubLineOffset;
         float searchHighlightOffsetY = GetSelectionTopMargin();
 
         int renderedVisualRows = IsVirtualizedWrappedLine

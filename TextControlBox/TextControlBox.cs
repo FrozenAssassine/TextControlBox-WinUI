@@ -981,6 +981,15 @@ public partial class TextControlBox : UserControl, IDisposable
         get => coreTextBox.HorizontalScrollSensitivity;
         set => coreTextBox.HorizontalScrollSensitivity = value;
     }
+
+    /// <summary>
+    /// Gets or sets whether smooth scrolling is enabled when scrolling via mouse wheel or touchpad.
+    /// </summary>
+    public bool SmoothScrolling
+    {
+        get => coreTextBox.SmoothScrolling;
+        set => coreTextBox.SmoothScrolling = value;
+    }
     /// <summary>
     /// Gets or sets the vertical scroll position in the textbox.
     /// </summary>
