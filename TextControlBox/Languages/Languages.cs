@@ -816,4 +816,101 @@ namespace TextControlBoxNS.Languages
             };
         }
     }
+    internal class LogHighlighter : SyntaxHighlightLanguage
+    {
+        public LogHighlighter()
+        {
+            this.Name = "Log";
+            this.Filter = new[] { ".log", ".out", ".err" };
+            this.Description = "Generic syntax highlighting for log files";
+            this.AutoPairingPair = new AutoPairingPair[]
+            {
+            new AutoPairingPair("[", "]"),
+            new AutoPairingPair("(", ")"),
+            new AutoPairingPair("{", "}"),
+            new AutoPairingPair("\"", "\""),
+            new AutoPairingPair("'", "'")
+            };
+            this.Highlights = new SyntaxHighlights[]
+            {
+            // ==========================================
+            // 1. BASE CONTAINERS & PUNCTUATION (Lowest Precedence)
+            // ==========================================
+
+            // Generic bracket contents [Thread-1] (overridden by specific rules below)
+            new SyntaxHighlights(@"(?<=\[)[^\]\r\n]+(?=\])", "#546E7A", "#B0BEC5"),
+            new SyntaxHighlights(@"\[|\]", "#78909C", "#90A4AE"),
+
+            // Delimiters (only standalone operators, not colons inside timestamps/protocols)
+            new SyntaxHighlights(@"(=>|->|[|=]|(?<=\s)[:](?=\s))", "#757575", "#9E9E9E"),
+
+            // Quoted strings ("..." or '...')
+            new SyntaxHighlights(@"([""'])((?:\\.|(?!\1).)*?)\1", "#558B2F", "#AED581"),
+
+            // ==========================================
+            // 2. STRUCTURAL DATA & PATHS
+            // ==========================================
+
+            // File paths and URLs
+            new SyntaxHighlights(@"(https?:\/\/[^\s""'<>]+|\b[a-zA-Z]:\\[^\s""':;]+|\/(?:[a-zA-Z0-9_\.-]+\/)+[a-zA-Z0-9_\.-]*)", "#3949AB", "#7986CB"),
+
+            // IPv4 and IPv6 addresses
+            new SyntaxHighlights(@"\b(?:\d{1,3}\.){3}\d{1,3}(:\d+)?\b|\b([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b", "#00796B", "#80CBC4"),
+
+            // UUID / GUID
+            new SyntaxHighlights(@"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b", "#5E35B1", "#B39DDB"),
+
+            // Hex values, memory addresses, and units/timings (0x7ffd, 12ms, 64MB)
+            new SyntaxHighlights(@"\b0x[0-9a-fA-F]+\b|\b\d+(\.\d+)?(ms|ns|µs|s|m|MB|GB|KB|B)\b", "#E65100", "#FFB74D"),
+
+            // ==========================================
+            // 3. TIMESTAMPS (Overrides brackets and delimiters)
+            // ==========================================
+
+            // ISO 8601, standard YYYY-MM-DD HH:MM:SS.fff, or standalone time
+            new SyntaxHighlights(@"\b\d{4}[-/.]\d{2}[-/.]\d{2}([T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?)?\b|\b\d{2}:\d{2}:\d{2}(\.\d+)?\b", "#00838F", "#4DD0E1"),
+
+            // Syslog month timestamps (e.g. Sep 25 14:02:11)
+            new SyntaxHighlights(@"(?i)\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\b", "#00838F", "#4DD0E1"),
+
+            // ==========================================
+            // 4. HTTP PROTOCOL & STATUS CODES
+            // ==========================================
+
+            // HTTP Verbs
+            new SyntaxHighlights(@"\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS|CONNECT)\b", "#0288D1", "#4FC3F7"),
+
+            // HTTP Status Codes
+            new SyntaxHighlights(@"(?<=HTTP/\d(?:\.\d)?[""\s]+)5\d{2}\b", "#C62828", "#EF5350"), // 5xx Server Error
+            new SyntaxHighlights(@"(?<=HTTP/\d(?:\.\d)?[""\s]+)4\d{2}\b", "#F57C00", "#FFB74D"), // 4xx Client Error
+            new SyntaxHighlights(@"(?<=HTTP/\d(?:\.\d)?[""\s]+)3\d{2}\b", "#1976D2", "#64B5F6"), // 3xx Redirection
+            new SyntaxHighlights(@"(?<=HTTP/\d(?:\.\d)?[""\s]+)2\d{2}\b", "#388E3C", "#81C784"), // 2xx Success
+
+            // ==========================================
+            // 5. STACKTRACES & LOG LEVELS (Highest Precedence)
+            // ==========================================
+
+            // Debug / Verbose / Trace
+            new SyntaxHighlights(@"(?i)\b(DEBUG|TRACE|VERBOSE|FINE(R|ST)?)\b", "#7B1FA2", "#BA68C8"),
+
+            // Information / Notice
+            new SyntaxHighlights(@"(?i)\b(INFO(RMATION)?|NOTICE)\b", "#1976D2", "#42A5F5"),
+
+            // Success / OK / Pass
+            new SyntaxHighlights(@"(?i)\b(SUCCESS|OK|PASSED|DONE)\b", "#2E7D32", "#66BB6A"),
+
+            // Warnings
+            new SyntaxHighlights(@"(?i)\b(WARN(ING)?)\b", "#F57C00", "#FFB74D"),
+
+            // Errors / Failures / Exceptions
+            new SyntaxHighlights(@"(?i)\b(ERR(OR)?|FAILURE|FAIL|EXCEPTION|FAULT)\b", "#D32F2F", "#EF5350"),
+
+            // Critical / Fatal / Emergency
+            new SyntaxHighlights(@"(?i)\b(FATAL|CRITICAL|EMERGENCY|EMERG|PANIC|ALERT)\b", "#B71C1C", "#FF5252"),
+
+            // Stacktrace lines (e.g. at ... in ...:line 42)
+            new SyntaxHighlights(@"(?m)^\s*(at|caused by:)\s+.*", "#C62828", "#E57373")
+            };
+        }
+    }
 }

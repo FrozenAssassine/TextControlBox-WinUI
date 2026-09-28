@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Extensions;
@@ -48,7 +48,7 @@ internal class AddCharacterTextAction
         var res = AutoPairing.AutoPair(coreTextbox, text);
         text = res.text;
 
-        undoRedo.RecordUndoAction(() =>
+        undoRedo.RecordTypingAction(() =>
         {
             var characterPos = cursorManager.GetCurPosInLine();
 
@@ -58,7 +58,7 @@ internal class AddCharacterTextAction
                 currentLineManager.AddText(text, characterPos);
 
             cursorManager.CharacterPosition = res.length + characterPos;
-        }, cursorManager.LineNumber, 1, 1);
+        }, cursorManager.LineNumber, text, isAutoPaired: res.length < text.Length);
 
         if (currentLineManager.Length > longestLineManager.longestLineLength)
         {
@@ -74,7 +74,7 @@ internal class AddCharacterTextAction
             selectionManager.InsertText(text);
         }, cursorManager.LineNumber, 1, splittedTextLength);
         
-        longestLineManager.CheckRecalculateLongestLine(text);
+        longestLineManager.Recalculate();
     }
 
     public void HandleTextWithSelection(string text, int splittedTextLength)
@@ -87,7 +87,7 @@ internal class AddCharacterTextAction
         {
             selectionManager.Replace(text);
             selectionManager.ClearSelection();
-        }, selectionManager.currentTextSelection, splittedTextLength, selectionManager.WholeLineSelected() ? 1 : -1);
+        }, selectionManager.currentTextSelection, splittedTextLength);
         
         longestLineManager.Recalculate();
 

@@ -1,9 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Extensions;
+using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
 
 namespace TextControlBoxNS.Core;
@@ -14,10 +16,12 @@ internal class SearchManager
     public bool IsSearchOpen = false;
     public SearchParameter searchParameter = null;
     private TextManager textManager;
+    private SelectionManager selectionManager;
 
-    public void Init(TextManager textManager)
+    public void Init(TextManager textManager, SelectionManager selectionManager = null)
     {
         this.textManager = textManager;
+        this.selectionManager = selectionManager;
     }
 
     public InternSearchResult FindNext(CursorPosition cursorPosition)
@@ -27,6 +31,13 @@ internal class SearchManager
 
         int startLine = cursorPosition.LineNumber;
         int startIndex = cursorPosition.CharacterPosition;
+
+        if (selectionManager != null && selectionManager.HasSelection)
+        {
+            var ordered = selectionManager.OrderTextSelectionSeparated();
+            startLine = ordered.endLine;
+            startIndex = ordered.endChar;
+        }
 
         for (int i = 0; i < MatchingSearchLines.Length; i++)
         {
@@ -55,6 +66,13 @@ internal class SearchManager
         int startLine = cursorPosition.LineNumber;
         int startIndex = cursorPosition.CharacterPosition;
 
+        if (selectionManager != null && selectionManager.HasSelection)
+        {
+            var ordered = selectionManager.OrderTextSelectionSeparated();
+            startLine = ordered.startLine;
+            startIndex = ordered.startChar;
+        }
+
         for (int i = MatchingSearchLines.Length - 1; i >= 0; i--)
         {
             int lineNumber = MatchingSearchLines[i];
@@ -82,14 +100,14 @@ internal class SearchManager
 
     public SearchResult BeginSearch(string word, bool wholeWord, bool matchCase)
     {
-        searchParameter = new SearchParameter(word, wholeWord, matchCase);
-        UpdateSearchLines();
-
-        if (word == null || word.Length == 0)
+        if (string.IsNullOrEmpty(word))
         {
-            IsSearchOpen = false;
+            EndSearch();
             return SearchResult.InvalidInput;
         }
+
+        searchParameter = new SearchParameter(word, wholeWord, matchCase);
+        UpdateSearchLines();
 
         if (MatchingSearchLines.Length > 0)
             IsSearchOpen = true;

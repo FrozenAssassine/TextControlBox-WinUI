@@ -1,4 +1,4 @@
-﻿using TextControlBoxNS.Core.Text;
+using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Extensions;
 
 namespace TextControlBoxNS.Core.Selection;
@@ -22,7 +22,14 @@ internal class RemoveSelectionManager
         //Whole line selected triple click
         if (startPosition == 0 && endPosition == lineText.Length + 1)
         {
-            textManager.DeleteAt(line);
+            if (textManager.LinesCount == 1)
+            {
+                textManager.SetLineText(line, "");
+            }
+            else
+            {
+                textManager.DeleteAt(line);
+            }
         }
         else
         {
@@ -48,30 +55,19 @@ internal class RemoveSelectionManager
         string startLineText = textManager.GetLineText(startLine);
         string endLineText = textManager.GetLineText(endLine);
 
-        if (startPosition == 0 && endPosition == endLineText.Length)
+        // Special case: full lines selected including trailing newline:
+        // (startLine, 0) to (endLine, 0) means all lines from startLine to endLine - 1 are completely deleted.
+        // endLine is untouched and shifts up to become startLine.
+        if (startPosition == 0 && endPosition == 0)
         {
-            //all lines selected
-            textManager.SetLineText(startLine, "");
-            textManager.RemoveRange(startLine + 1, endLine - startLine);
-        }
-        else if (startPosition == 0 && endPosition != endLineText.Length)
-        {
-            //only start line fully selected
-            textManager.SetLineText(endLine, endLineText.Safe_Substring(endPosition));
             textManager.RemoveRange(startLine, endLine - startLine);
+            return;
         }
-        else if (startPosition != 0 && endPosition == endLineText.Length)
-        {
-            //only end line fully selected
-            textManager.SetLineText(startLine, startLineText.SafeRemove(startPosition));
-            textManager.RemoveRange(startLine + 1, endLine - startLine);
-        }
-        else
-        {
-            //neither start nor end line fully selected
-            string mergedText = startLineText.SafeRemove(startPosition) + endLineText.Safe_Substring(endPosition);
-            textManager.SetLineText(startLine, mergedText);
-            textManager.RemoveRange(startLine + 1, endLine - startLine);
-        }
+
+        string prefix = startPosition > 0 ? startLineText.SafeRemove(startPosition) : "";
+        string suffix = endPosition < endLineText.Length ? endLineText.Safe_Substring(endPosition) : "";
+
+        textManager.SetLineText(startLine, prefix + suffix);
+        textManager.RemoveRange(startLine + 1, endLine - startLine);
     }
 }

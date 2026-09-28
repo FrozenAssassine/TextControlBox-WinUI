@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Extensions;
 using TextControlBoxNS.Helper;
@@ -32,8 +32,16 @@ internal class ReplaceSelectionManager
         string suffix = originalLine.Safe_Substring(end);
 
         textManager.SetLineText(line, prefix + lines[0]);
-        textManager.InsertOrAddRange(ListHelper.CreateLines(lines, 1, suffix, ""), line + 1);
-        cursorManager.SetCursorPosition(line + lines.Length - 1, suffix.Length + lines[^1].Length);
+
+        string[] remainingLines = new string[lines.Length - 1];
+        for (int i = 1; i < lines.Length - 1; i++)
+        {
+            remainingLines[i - 1] = lines[i];
+        }
+        remainingLines[^1] = lines[^1] + suffix;
+
+        textManager.InsertOrAddRange(remainingLines, line + 1);
+        cursorManager.SetCursorPosition(line + lines.Length - 1, lines[^1].Length);
     }
 
     public void ReplaceWholeText(string[] lines)
