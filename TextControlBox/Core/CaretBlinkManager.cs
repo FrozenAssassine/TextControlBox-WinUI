@@ -1,4 +1,4 @@
-using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 using System;
 
 namespace TextControlBoxNS.Core;
@@ -15,7 +15,9 @@ internal class CaretBlinkManager
     private const int BlinkIntervalMs = 530;
 
     private CanvasUpdateManager canvasUpdateManager;
-    private DispatcherQueueTimer timer;
+    // A XAML DispatcherTimer on purpose: a DispatcherQueueTimer keeps the target of its Tick handler (and
+    // with it the whole textbox) alive forever, because the GC can not see that reference cycle.
+    private DispatcherTimer timer;
 
     /// <summary>True while the caret should be painted for the current blink phase.</summary>
     public bool IsCaretVisible { get; private set; } = true;
@@ -24,8 +26,7 @@ internal class CaretBlinkManager
     {
         this.canvasUpdateManager = canvasUpdateManager;
 
-        timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
-        timer.Interval = TimeSpan.FromMilliseconds(BlinkIntervalMs);
+        timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(BlinkIntervalMs) };
         timer.Tick += (s, e) =>
         {
             IsCaretVisible = !IsCaretVisible;
@@ -37,7 +38,7 @@ internal class CaretBlinkManager
     public void Start()
     {
         IsCaretVisible = true;
-        if (timer != null && !timer.IsRunning)
+        if (timer != null && !timer.IsEnabled)
             timer.Start();
     }
 
@@ -55,7 +56,7 @@ internal class CaretBlinkManager
     public void NotifyCaretActivity()
     {
         IsCaretVisible = true;
-        if (timer != null && timer.IsRunning)
+        if (timer != null && timer.IsEnabled)
         {
             timer.Stop();
             timer.Start();

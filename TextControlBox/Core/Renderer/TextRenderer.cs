@@ -37,6 +37,7 @@ internal class TextRenderer
                 TextFormat = textLayoutManager.CreateCanvasTextFormat();
                 NeedsTextFormatUpdate = false;
                 _needsCharWidthUpdate = true;
+                _topInset = -1;
                 ClearLineLayoutCache();
                 InvalidateCurrentLineLayout();
 
@@ -66,7 +67,53 @@ internal class TextRenderer
             return TextFormat == null ? 0 : TextFormat.LineSpacing;
         }
     }
-    public float TopInset => (float)Math.Round(2f * ((zoomManager == null ? 100f : zoomManager._ZoomFactor) / 100f));
+    private float ZoomScale => (zoomManager == null ? 100f : zoomManager._ZoomFactor) / 100f;
+    /// <summary>Pixels the text layout is pulled up from <see cref="SingleLineHeight"/> when it is drawn.</summary>
+    internal float TextVerticalAdjustment => Math.Max(1f, (float)Math.Round(1.5f * ZoomScale));
+
+    // Glyphs with characters that reach the top and the bottom of the font, used to measure where the ink sits.
+    private const string InkReferenceText = "Xj_gÅ|";
+    private float _topInset = -1;
+
+    /// <summary>Y of the first line's box (selection, search highlight, line highlighter, caret and
+    /// hit-testing). The text layout places its baseline at the layout origin, so the box is centered on the
+    /// measured ink of the current font. A fixed inset sat too high and cut off descenders like "_" or "j".</summary>
+    public float TopInset
+    {
+        get
+        {
+            if (NeedsTextFormatUpdate && !_isEnsuringTextFormat)
+                EnsureTextFormat();
+            if (_topInset < 0)
+                _topInset = MeasureTopInset();
+            return Math.Max(0, _topInset);
+        }
+    }
+
+    private float MeasureTopInset()
+    {
+        float fallback = (float)Math.Round(2f * ZoomScale);
+        float lineHeight = SingleLineHeight;
+        if (TextFormat == null || lineHeight <= 0)
+            return fallback;
+
+        try
+        {
+            using var inkLayout = new CanvasTextLayout(CanvasDevice.GetSharedDevice(), InkReferenceText, TextFormat, 10000, 10000);
+            Rect ink = inkLayout.DrawBounds;
+            if (ink.Height <= 0)
+                return fallback;
+
+            float inkCenter = (float)(ink.Y + ink.Height / 2);
+            float textOffsetY = lineHeight - TextVerticalAdjustment;
+            float inset = (float)Math.Round(textOffsetY + inkCenter - lineHeight / 2);
+            return Math.Clamp(inset, 0, lineHeight / 2);
+        }
+        catch
+        {
+            return fallback;
+        }
+    }
     public float VerticalSubLineOffset
     {
         get
@@ -849,7 +896,76 @@ internal class TextRenderer
         int rowCountFromCaret = 1 + (int)Math.Round(Math.Max(0, endRowY - baseRowY) / singleLineHeight);
         int rowCountFromBounds = Math.Max(1, (int)Math.Round(lineLayout.LayoutBounds.Height / singleLineHeight));
         int rowCount = Math.Max(rowCountFromCaret, rowCountFromBounds);
-        return Math.Max(1, rowCount);
+
+        // Trailing whitespace hangs past the wrap width instead of wrapping, so the spaces that overflow the last
+        // row still need their own visual rows for the caret to step through.
+        int hangingRows = WrapGeometry.CalculateHangingRows(lineLayout.GetCaretPosition(lineText.Length, false).X, wrapWidth);
+        return Math.Max(1, rowCount) + hangingRows;
+    }
+
+    /// <summary>Wrap width the current-line layouts are built with, or 0 when word wrap is off.</summary>
+    public float WrapLayoutWidth => IsWordWrapEnabled && cachedWrapWidth > 1 ? cachedWrapWidth : 0;
+
+    /// <summary>
+    /// Caret of a character in a wrapped layout, with hanging trailing whitespace folded onto its visual row
+    /// (see <see cref="WrapGeometry.MapHangingCaret"/>). Identical to <c>layout.GetCaretPosition</c> when word wrap is off.
+    /// </summary>
+    public System.Numerics.Vector2 GetWrappedCaretPosition(CanvasTextLayout layout, int index, bool trailing)
+    {
+        var caret = layout.GetCaretPosition(index, trailing);
+        float wrapWidth = WrapLayoutWidth;
+        if (wrapWidth <= 0)
+            return caret;
+        var mapped = WrapGeometry.MapHangingCaret(caret.X, caret.Y, wrapWidth, Math.Max(1, SingleLineHeight));
+        return new System.Numerics.Vector2(mapped.X, mapped.Y);
+    }
+
+    /// <summary>
+    /// Character index to place the caret at when a vertical move or click lands on a visual row made only of hanging
+    /// trailing whitespace (rows that DirectWrite's hit test cannot address). Returns false for every other row, so the
+    /// caller keeps its normal hit test. The character whose mapped caret is nearest <paramref name="x"/> on that row wins.
+    /// </summary>
+    public bool TryFindHangingIndexOnRow(CanvasTextLayout layout, int lineLength, int row, float x, out int index)
+    {
+        index = 0;
+        float wrapWidth = WrapLayoutWidth;
+        if (wrapWidth <= 0 || layout == null || lineLength <= 0 || row <= 0)
+            return false;
+        if (layout.GetCaretPosition(lineLength, false).X <= wrapWidth)
+            return false;
+
+        float singleLineHeight = Math.Max(1, SingleLineHeight);
+        float rawTopY = layout.GetCaretPosition(0, false).Y;
+
+        // First caret position past the wrap width; the character before it may straddle the edge and is the hang's anchor.
+        int first = lineLength;
+        while (first > 0 && layout.GetCaretPosition(first - 1, false).X > wrapWidth)
+            first--;
+        int anchor = Math.Max(0, first - 1);
+
+        // Rows up to and including the anchor's row are real text rows that DirectWrite hit-tests correctly.
+        int anchorRow = (int)Math.Round((layout.GetCaretPosition(anchor, false).Y - rawTopY) / singleLineHeight);
+        if (row <= anchorRow)
+            return false;
+
+        bool found = false;
+        float bestDistance = float.MaxValue;
+        for (int p = anchor; p <= lineLength; p++)
+        {
+            var raw = layout.GetCaretPosition(p, false);
+            var mapped = WrapGeometry.MapHangingCaret(raw.X, raw.Y, wrapWidth, singleLineHeight);
+            if ((int)Math.Round((mapped.Y - rawTopY) / singleLineHeight) != row)
+                continue;
+
+            float distance = Math.Abs(mapped.X - x);
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                index = p;
+                found = true;
+            }
+        }
+        return found;
     }
 
     // ── Wrapped-line virtualization helpers ──────────────────────────────────────────────
@@ -1165,7 +1281,7 @@ internal class TextRenderer
             return false;
 
         float baseRowY = currentLayout.GetCaretPosition(0, false).Y;
-        var currentCaret = currentLayout.GetCaretPosition(characterPosition, false);
+        var currentCaret = GetWrappedCaretPosition(currentLayout, characterPosition, false);
         int withinLineRow = (int)Math.Round((currentCaret.Y - baseRowY) / Math.Max(1, SingleLineHeight));
         withinLineRow = Math.Clamp(withinLineRow, 0, Math.Max(0, GetWrappedRowCount(lineIndex) - 1));
         int currentVisualRow = GetLineVisualStartRow(lineIndex) + withinLineRow;
@@ -1226,19 +1342,27 @@ internal class TextRenderer
         if (targetLayout == null)
             return false;
 
-        float targetHitY = (targetRowOffset + 0.5f) * Math.Max(1, SingleLineHeight);
-        targetLayout.HitTest(targetCaretX, targetHitY, out var targetRegion, out bool isTrailingHit);
-
-        int targetCharIndex = targetRegion.CharacterIndex + (isTrailingHit ? targetRegion.CharacterCount : 0);
-        if (targetCharIndex > targetRegion.CharacterIndex)
+        int targetCharIndex;
+        if (TryFindHangingIndexOnRow(targetLayout, textManager.GetLineLength(targetLine), targetRowOffset, targetCaretX, out int hangingIndex))
         {
-            float baseRowYTarget = targetLayout.GetCaretPosition(0, false).Y;
-            var caretPos = targetLayout.GetCaretPosition(Math.Min(targetCharIndex, textManager.GetLineLength(targetLine)), false);
-            int resolvedRow = (int)Math.Round((caretPos.Y - baseRowYTarget) / Math.Max(1, SingleLineHeight));
-            if (resolvedRow > targetRowOffset)
+            targetCharIndex = hangingIndex;
+        }
+        else
+        {
+            float targetHitY = (targetRowOffset + 0.5f) * Math.Max(1, SingleLineHeight);
+            targetLayout.HitTest(targetCaretX, targetHitY, out var targetRegion, out bool isTrailingHit);
+
+            targetCharIndex = targetRegion.CharacterIndex + (isTrailingHit ? targetRegion.CharacterCount : 0);
+            if (targetCharIndex > targetRegion.CharacterIndex)
             {
-                // Trailing hit crossed to the next visual row; keep cursor on targetRowOffset
-                targetCharIndex = targetRegion.CharacterIndex;
+                float baseRowYTarget = targetLayout.GetCaretPosition(0, false).Y;
+                var caretPos = targetLayout.GetCaretPosition(Math.Min(targetCharIndex, textManager.GetLineLength(targetLine)), false);
+                int resolvedRow = (int)Math.Round((caretPos.Y - baseRowYTarget) / Math.Max(1, SingleLineHeight));
+                if (resolvedRow > targetRowOffset)
+                {
+                    // Trailing hit crossed to the next visual row; keep cursor on targetRowOffset
+                    targetCharIndex = targetRegion.CharacterIndex;
+                }
             }
         }
 
@@ -1452,8 +1576,7 @@ internal class TextRenderer
         // the first visible line that are scrolled above the viewport top; a virtualized single line already
         // renders from its own row slice so it sits at the top. Both reduce to the non-wrap values when wrap
         // is off, so the normal render path is unchanged.
-        float zoomFactor = (zoomManager == null ? 100f : zoomManager._ZoomFactor) / 100f;
-        float textVerticalAdjustment = Math.Max(1f, (float)Math.Round(1.5f * zoomFactor));
+        float textVerticalAdjustment = TextVerticalAdjustment;
 
         float drawTextOffsetX = IsWordWrapEnabled ? 0 : HorizontalOffset;
         float drawTextOffsetY = (IsWordWrapEnabled

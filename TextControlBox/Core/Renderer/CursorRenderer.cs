@@ -59,7 +59,7 @@ internal class CursorRenderer
         if (textLayout == null)
             return;
 
-        Vector2 vector = textLayout.GetCaretPosition(characterPosition < 0 ? 0 : characterPosition, isTrailing);
+        Vector2 vector = textRenderer.GetWrappedCaretPosition(textLayout, characterPosition < 0 ? 0 : characterPosition, isTrailing);
         if (customSize == null)
             args.DrawingSession.FillRectangle(vector.X + xOffset, y, 2, fontSize, cursorColorBrush);
         else
@@ -97,7 +97,7 @@ internal class CursorRenderer
         if (textRenderer.IsWordWrapEnabled && textRenderer.CurrentLineTextLayout != null && renderedCharacterPos >= 0)
         {
             float baseRowY = textRenderer.CurrentLineTextLayout.GetCaretPosition(0, false).Y;
-            var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedCharacterPos, isTrailing);
+            var vector = textRenderer.GetWrappedCaretPosition(textRenderer.CurrentLineTextLayout, renderedCharacterPos, isTrailing);
             int visualRow = (int)Math.Round((vector.Y - baseRowY) / Math.Max(1, textRenderer.SingleLineHeight));
             withinLineRowOffset = visualRow * textRenderer.SingleLineHeight;
         }

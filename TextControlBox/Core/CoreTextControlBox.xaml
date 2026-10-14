@@ -32,16 +32,8 @@
                     Grid.Column="0"
                     x:Name="Canvas_LineNumber"
                     ManipulationMode="None"
-                    Draw="Canvas_LineNumber_Draw"
                     HorizontalAlignment="Left"
                     Width="100"
-                    PointerEntered="Canvas_LineNumber_PointerEntered"
-                    PointerExited="Canvas_LineNumber_PointerExited"
-                    PointerPressed="Canvas_LineNumber_PointerPressed"
-                    PointerReleased="Canvas_Selection_PointerReleased"
-                    PointerCanceled="Canvas_Selection_PointerCanceled"
-                    PointerCaptureLost="Canvas_Selection_PointerCaptureLost"
-                    PointerWheelChanged="Canvas_Selection_PointerWheelChanged"
                     VerticalAlignment="Stretch"/>
 
         <Grid Grid.Column="1" x:Name="ScrollGrid" ManipulationMode="None">
@@ -52,26 +44,16 @@
             </Grid.ColumnDefinitions>
             <xaml:CanvasControl Grid.Column="0" x:Name="Canvas_Cursor"
                         ManipulationMode="None"
-                        Draw="Canvas_Cursor_Draw"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"/>
 
             <xaml:CanvasControl Grid.Column="0" x:Name="Canvas_Text"
                         ManipulationMode="None"
-                        Draw="Canvas_Text_Draw"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"/>
 
             <xaml:CanvasControl Grid.Column="0" x:Name="Canvas_Selection"
                         ManipulationMode="None"
-                        Draw="Canvas_Selection_Draw"
-                        PointerPressed="Canvas_Selection_PointerPressed"
-                        PointerMoved="Canvas_Selection_PointerMoved"
-                        PointerReleased="Canvas_Selection_PointerReleased"
-                        PointerCanceled="Canvas_Selection_PointerCanceled"
-                        PointerCaptureLost="Canvas_Selection_PointerCaptureLost"
-                        PointerWheelChanged="Canvas_Selection_PointerWheelChanged"
-                        RightTapped="Canvas_Selection_RightTapped"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"/>
 

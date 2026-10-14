@@ -226,7 +226,7 @@ internal class ScrollManager
             if (renderedPos >= 0)
             {
                 float baseRowY = textRenderer.CurrentLineTextLayout.GetCaretPosition(0, false).Y;
-                var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedPos, false);
+                var vector = textRenderer.GetWrappedCaretPosition(textRenderer.CurrentLineTextLayout, renderedPos, false);
                 int visualRow = (int)Math.Round((vector.Y - baseRowY) / Math.Max(1, singleLine));
                 float caretY = textRenderer.GetCurrentLineLayoutTopY(lineIndex) + visualRow * singleLine + textRenderer.TopInset;
 
@@ -446,7 +446,8 @@ internal class ScrollManager
 
     public bool SmoothScrolling { get; set; } = true;
 
-    private DispatcherQueueTimer _smoothScrollTimer;
+    // A XAML DispatcherTimer on purpose, see CaretBlinkManager.
+    private DispatcherTimer _smoothScrollTimer;
     private double _targetVerticalOffset;
     private double _targetHorizontalOffset;
     private bool _isSmoothScrollingVertical = false;
@@ -454,20 +455,19 @@ internal class ScrollManager
 
     private void EnsureSmoothScrollTimer()
     {
-        if (_smoothScrollTimer == null && coreTextbox?.DispatcherQueue != null)
+        if (_smoothScrollTimer == null)
         {
-            _smoothScrollTimer = coreTextbox.DispatcherQueue.CreateTimer();
-            _smoothScrollTimer.Interval = TimeSpan.FromMilliseconds(16);
+            _smoothScrollTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
             _smoothScrollTimer.Tick += OnSmoothScrollTimerTick;
         }
 
-        if (_smoothScrollTimer != null && !_smoothScrollTimer.IsRunning)
+        if (!_smoothScrollTimer.IsEnabled)
         {
             _smoothScrollTimer.Start();
         }
     }
 
-    private void OnSmoothScrollTimerTick(DispatcherQueueTimer sender, object args)
+    private void OnSmoothScrollTimerTick(object sender, object args)
     {
         bool stillScrolling = false;
 
@@ -523,7 +523,7 @@ internal class ScrollManager
     {
         _isSmoothScrollingVertical = false;
         _isSmoothScrollingHorizontal = false;
-        if (_smoothScrollTimer != null && _smoothScrollTimer.IsRunning)
+        if (_smoothScrollTimer != null && _smoothScrollTimer.IsEnabled)
         {
             _smoothScrollTimer.Stop();
         }

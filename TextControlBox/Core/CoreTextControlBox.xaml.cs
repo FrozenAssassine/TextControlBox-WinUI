@@ -76,6 +76,8 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
         canvasCursor = Canvas_Cursor;
         canvasSelection = Canvas_Selection;
         canvasLineNumber = Canvas_LineNumber;
+
+        HookCanvasEvents();
         mainGrid = MainGrid;
         scrollGrid = ScrollGrid;
         horizontalScrollBar = HorizontalScrollbar;
@@ -163,6 +165,43 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
         ActualThemeChanged += CoreTextControlBox_ActualThemeChanged;
     }
 
+    // A Win2D CanvasControl is a native control. ANY handler attached to it that points back to this control
+    // (Draw, but also the normal pointer events) creates a reference cycle the garbage collector can not
+    // see: control -> canvas -> handler -> control. Every textbox ever created would stay in memory, even
+    // after Dispose. So the canvases only get handlers that hold a weak reference to this control, and
+    // that is why these events are not wired up in the XAML file.
+    private void HookCanvasEvents()
+    {
+        var weakOwner = new WeakReference<CoreTextControlBox>(this);
+
+        TypedEventHandler<CanvasControl, CanvasDrawEventArgs> Draw(Action<CoreTextControlBox, CanvasControl, CanvasDrawEventArgs> handler)
+            => (sender, args) => { if (weakOwner.TryGetTarget(out var owner)) handler(owner, sender, args); };
+
+        PointerEventHandler Pointer(Action<CoreTextControlBox, object, PointerRoutedEventArgs> handler)
+            => (sender, args) => { if (weakOwner.TryGetTarget(out var owner)) handler(owner, sender, args); };
+
+        Canvas_Text.Draw += Draw(static (owner, sender, args) => owner.Canvas_Text_Draw(sender, args));
+        Canvas_Cursor.Draw += Draw(static (owner, sender, args) => owner.Canvas_Cursor_Draw(sender, args));
+        Canvas_Selection.Draw += Draw(static (owner, sender, args) => owner.Canvas_Selection_Draw(sender, args));
+        Canvas_LineNumber.Draw += Draw(static (owner, sender, args) => owner.Canvas_LineNumber_Draw(sender, args));
+
+        Canvas_Selection.PointerPressed += Pointer(static (owner, sender, args) => owner.Canvas_Selection_PointerPressed(sender, args));
+        Canvas_Selection.PointerMoved += Pointer(static (owner, sender, args) => owner.Canvas_Selection_PointerMoved(sender, args));
+        Canvas_Selection.PointerReleased += Pointer(static (owner, sender, args) => owner.Canvas_Selection_PointerReleased(sender, args));
+        Canvas_Selection.PointerCanceled += Pointer(static (owner, sender, args) => owner.Canvas_Selection_PointerCanceled(sender, args));
+        Canvas_Selection.PointerCaptureLost += Pointer(static (owner, sender, args) => owner.Canvas_Selection_PointerCaptureLost(sender, args));
+        Canvas_Selection.PointerWheelChanged += Pointer(static (owner, sender, args) => owner.Canvas_Selection_PointerWheelChanged(sender, args));
+        Canvas_Selection.RightTapped += (sender, args) => { if (weakOwner.TryGetTarget(out var owner)) owner.Canvas_Selection_RightTapped(sender, args); };
+
+        Canvas_LineNumber.PointerEntered += Pointer(static (owner, sender, args) => owner.Canvas_LineNumber_PointerEntered(sender, args));
+        Canvas_LineNumber.PointerExited += Pointer(static (owner, sender, args) => owner.Canvas_LineNumber_PointerExited(sender, args));
+        Canvas_LineNumber.PointerPressed += Pointer(static (owner, sender, args) => owner.Canvas_LineNumber_PointerPressed(sender, args));
+        Canvas_LineNumber.PointerReleased += Pointer(static (owner, sender, args) => owner.Canvas_Selection_PointerReleased(sender, args));
+        Canvas_LineNumber.PointerCanceled += Pointer(static (owner, sender, args) => owner.Canvas_Selection_PointerCanceled(sender, args));
+        Canvas_LineNumber.PointerCaptureLost += Pointer(static (owner, sender, args) => owner.Canvas_Selection_PointerCaptureLost(sender, args));
+        Canvas_LineNumber.PointerWheelChanged += Pointer(static (owner, sender, args) => owner.Canvas_Selection_PointerWheelChanged(sender, args));
+    }
+
     private void CoreTextControlBox_Loaded(object sender, RoutedEventArgs e)
     {
         SetupDiagonalScroll();
@@ -210,7 +249,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
 
 
     //Handle keyinputs
-    private void InputHandler_TextEntered(object sender, TextChangedEventArgs e)
+    private void InputHandler_TextEnteredCore(object sender, TextChangedEventArgs e)
     {
         if (inputHandler.IsComposing)
             return;
@@ -231,7 +270,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
         inputHandler.Text = "";
         UpdateInputHandlerPosition();
     }
-    private void InputHandler_KeyDown(object sender, KeyRoutedEventArgs e)
+    private void InputHandler_KeyDownCore(object sender, KeyRoutedEventArgs e)
     {
         UpdateInputHandlerPosition();
 
@@ -247,12 +286,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                 return;
             }
 
-            if (Utils.IsKeyPressed(VirtualKey.Shift))
-                tabSpaceManager.MoveTabBack();
-            else
-                tabSpaceManager.MoveTab();
-
-            canvasUpdateManager.UpdateAll();
+            HandleTabKey(Utils.IsKeyPressed(VirtualKey.Shift));
 
             //mark as handled to not change focus
             e.Handled = true;
@@ -271,6 +305,40 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
             e.Handled = true;
         }
         UpdateInputHandlerPosition();
+    }
+
+    internal void HandleTabKey(bool shift)
+    {
+        if (shift)
+            tabSpaceManager.MoveTabBack();
+        else
+            tabSpaceManager.MoveTab();
+
+        MarkSelectedLinesWrapDirty();
+        canvasUpdateManager.UpdateAll();
+    }
+
+    // Edits that change other lines than the cursor line (indenting a selection, moving a line) have to
+    // tell the wrap metrics, otherwise the row counts of those lines stay outdated in word wrap mode.
+    private void MarkSelectedLinesWrapDirty()
+    {
+        int startLine = cursorManager.LineNumber;
+        int endLine = cursorManager.LineNumber;
+        if (selectionManager.HasSelection)
+        {
+            var selection = selectionManager.OrderTextSelectionSeparated();
+            startLine = Math.Min(startLine, selection.startLine);
+            endLine = Math.Max(endLine, selection.endLine);
+        }
+
+        if (endLine - startLine > 64)
+        {
+            textRenderer.InvalidateWrapMetrics();
+            return;
+        }
+
+        for (int line = startLine; line <= endLine; line++)
+            textRenderer.MarkLineWrapDirty(line);
     }
 
     internal bool HandleKeyDown(VirtualKey key, bool shift = false, bool ctrl = false, bool menu = false)
@@ -321,6 +389,10 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
             if (!IsReadOnly && (key == VirtualKey.Down || key == VirtualKey.Up))
             {
                 moveLineManager.Move(key == VirtualKey.Down ? LineMoveDirection.Down : LineMoveDirection.Up);
+                //the two lines swapped their content and with it their wrapped row counts
+                textRenderer.MarkLineWrapDirty(cursorManager.LineNumber - 1);
+                textRenderer.MarkLineWrapDirty(cursorManager.LineNumber);
+                textRenderer.MarkLineWrapDirty(cursorManager.LineNumber + 1);
 
                 if (textRenderer.OutOfRenderedArea(cursorManager.LineNumber))
                 {
@@ -544,7 +616,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
         return false;
     }
 
-    private void Canvas_Selection_PointerReleased(object sender, PointerRoutedEventArgs e)
+    private void Canvas_Selection_PointerReleasedCore(object sender, PointerRoutedEventArgs e)
     {
         Canvas_Selection.ReleasePointerCapture(e.Pointer);
 
@@ -572,7 +644,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
     {
         pointerActionsManager.HandleTouchCanceled();
     }
-    private void Canvas_Selection_PointerMoved(object sender, PointerRoutedEventArgs e)
+    private void Canvas_Selection_PointerMovedCore(object sender, PointerRoutedEventArgs e)
     {
         var point = e.GetCurrentPoint(Canvas_Selection);
         if (point.PointerDeviceType == PointerDeviceType.Touch)
@@ -592,7 +664,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
 
         pointerActionsManager.PointerMovedAction(point.Position);
     }
-    private void Canvas_Selection_PointerPressed(object sender, PointerRoutedEventArgs e)
+    private void Canvas_Selection_PointerPressedCore(object sender, PointerRoutedEventArgs e)
     {
         Canvas_Selection.CapturePointer(e.Pointer);
         selectionManager.IsSelectingOverLinenumbers = false;
@@ -606,11 +678,11 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
 
         pointerActionsManager.PointerPressedAction(sender, point.Position, point.Properties);
     }
-    private void Canvas_Selection_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+    private void Canvas_Selection_PointerWheelChangedCore(object sender, PointerRoutedEventArgs e)
     {
         pointerActionsManager.PointerWheelAction(zoomManager, e);
     }
-    private void Canvas_Selection_RightTapped(object sender, RightTappedRoutedEventArgs e)
+    private void Canvas_Selection_RightTappedCore(object sender, RightTappedRoutedEventArgs e)
     {
         if (e.PointerDeviceType == PointerDeviceType.Mouse)
         {
@@ -868,7 +940,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
         double scrollDelta = (deltaX / effectiveLength) * HorizontalScrollbar.Maximum;
         scrollManager.HorizontalScroll = Math.Clamp(_initialScrollOffsetX + scrollDelta, 0, HorizontalScrollbar.Maximum);
     }
-    private void Canvas_LineNumber_PointerPressed(object sender, PointerRoutedEventArgs e)
+    private void Canvas_LineNumber_PointerPressedCore(object sender, PointerRoutedEventArgs e)
     {
         Canvas_Selection.CapturePointer(e.Pointer);
 
@@ -896,6 +968,96 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
     private void UserControl_PointerExited(object sender, PointerRoutedEventArgs e)
     {
         ChangeCursor(InputSystemCursorShape.Arrow);
+    }
+
+    // ── Safety net ──────────────────────────────────────────────────────────────────────
+    // An exception in an input handler is not catchable by the hosting app in a useful way and ends the
+    // process, including the unsaved text. The handlers below forward to their *Core implementation and
+    // turn an unexpected exception into one lost action: the state is repaired and everything redrawn.
+    // With a debugger attached nothing is swallowed, so bugs stay visible during development.
+    internal bool HandleInternalError(Exception ex, [System.Runtime.CompilerServices.CallerMemberName] string source = null)
+    {
+        if (ex is OutOfMemoryException || System.Diagnostics.Debugger.IsAttached)
+            return false;
+
+        System.Diagnostics.Debug.WriteLine($"TextControlBox: {source} failed: {ex}");
+        if (_isUnloaded)
+            return true;
+
+        try
+        {
+            if (textManager.LinesCount == 0)
+                textManager.AddLine();
+
+            //the text can be changed partly without a matching undo item, older items would then replace wrong lines
+            undoRedo.ClearAll();
+
+            selectionManager.IsSelecting = false;
+            selectionManager.ClampToDocument();
+            longestLineManager.needsRecalculation = true;
+            textRenderer.InvalidateWrapMetrics();
+            textRenderer.NeedsUpdateTextLayout = true;
+            canvasUpdateManager.UpdateAll();
+        }
+        catch (Exception recoverException)
+        {
+            System.Diagnostics.Debug.WriteLine($"TextControlBox: recovering after {source} failed: {recoverException}");
+        }
+        return true;
+    }
+
+    private void InputHandler_TextEntered(object sender, TextChangedEventArgs e)
+    {
+        try { InputHandler_TextEnteredCore(sender, e); }
+        catch (Exception ex) when (HandleInternalError(ex)) { }
+    }
+
+    private void InputHandler_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        try { InputHandler_KeyDownCore(sender, e); }
+        catch (Exception ex) when (HandleInternalError(ex)) { }
+    }
+
+    private void Canvas_Selection_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        try { Canvas_Selection_PointerReleasedCore(sender, e); }
+        catch (Exception ex) when (HandleInternalError(ex)) { }
+    }
+
+    private void Canvas_Selection_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        try { Canvas_Selection_PointerMovedCore(sender, e); }
+        catch (Exception ex) when (HandleInternalError(ex)) { }
+    }
+
+    private void Canvas_Selection_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        try { Canvas_Selection_PointerPressedCore(sender, e); }
+        catch (Exception ex) when (HandleInternalError(ex)) { }
+    }
+
+    private void Canvas_Selection_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+    {
+        try { Canvas_Selection_PointerWheelChangedCore(sender, e); }
+        catch (Exception ex) when (HandleInternalError(ex)) { }
+    }
+
+    private void Canvas_Selection_RightTapped(object sender, RightTappedRoutedEventArgs e)
+    {
+        try { Canvas_Selection_RightTappedCore(sender, e); }
+        catch (Exception ex) when (HandleInternalError(ex)) { }
+    }
+
+    private void Canvas_LineNumber_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        try { Canvas_LineNumber_PointerPressedCore(sender, e); }
+        catch (Exception ex) when (HandleInternalError(ex)) { }
+    }
+
+    private void UserControl_DragOver(object sender, DragEventArgs e)
+    {
+        try { UserControl_DragOverCore(sender, e); }
+        catch (Exception ex) when (HandleInternalError(ex)) { }
     }
 
     //Canvas event
@@ -1040,12 +1202,21 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
         if (textManager._IsReadOnly)
             return;
 
-        if (e.DataView.Contains(StandardDataFormats.Text))
+        try
         {
-            textActionManager.AddCharacter(stringManager.CleanUpString(await e.DataView.GetTextAsync()), true);
+            if (e.DataView.Contains(StandardDataFormats.Text))
+            {
+                string text = await e.DataView.GetTextAsync();
+                if (!textManager._IsReadOnly && !_isUnloaded)
+                    textActionManager.AddCharacter(stringManager.CleanUpString(text), true);
+            }
+        }
+        catch (Exception ex) when (HandleInternalError(ex))
+        {
+            //an exception after the await of an async void method would end the process
         }
     }
-    private void UserControl_DragOver(object sender, DragEventArgs e)
+    private void UserControl_DragOverCore(object sender, DragEventArgs e)
     {
         if (selectionManager.IsSelecting || textManager._IsReadOnly || !e.DataView.Contains(StandardDataFormats.Text))
             return;
@@ -1335,7 +1506,10 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
         if (!ignoreIsReadOnly && IsReadOnly)
             return SearchResult.ReplaceNotAllowedInReadonly;
 
-        return replaceManager.ReplaceAll(word, replaceWord, matchCase, wholeWord);
+        var result = replaceManager.ReplaceAll(word, replaceWord, matchCase, wholeWord);
+        //any line can have changed its length
+        textRenderer.InvalidateWrapMetrics();
+        return result;
     }
 
     public SearchResult ReplaceNext(string replaceWord, bool ignoreIsReadOnly = false)
@@ -1466,7 +1640,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
             if (renderedPos >= 0)
             {
                 float baseRowY = textRenderer.CurrentLineTextLayout.GetCaretPosition(0, false).Y;
-                var vector = textRenderer.CurrentLineTextLayout.GetCaretPosition(renderedPos, CursorPosition.IsTrailing);
+                var vector = textRenderer.GetWrappedCaretPosition(textRenderer.CurrentLineTextLayout, renderedPos, CursorPosition.IsTrailing);
                 int visualRow = (int)Math.Round((vector.Y - baseRowY) / Math.Max(1, textRenderer.SingleLineHeight));
                 withinLineRowOffset = visualRow * textRenderer.SingleLineHeight;
                 cursorX = vector.X;
@@ -1742,6 +1916,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
             return;
 
         tabSpaceManager.RewriteTabsSpaces(useSpacesInsteadTabs ? spaces : -1);
+        textRenderer.InvalidateWrapMetrics();
 
         canvasUpdateManager.UpdateAll();
     }

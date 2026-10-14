@@ -1,3 +1,4 @@
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 
@@ -16,6 +17,8 @@ internal class InputHandlerControl : TextBox
 
     private bool _isProgrammaticChange;
     private bool _isComposing;
+    // A composition ended, but its text was not handed over yet. See InputHandlerControl_TextCompositionEnded.
+    private bool _commitPending;
 
     public bool IsComposing => _isComposing;
 
@@ -30,6 +33,10 @@ internal class InputHandlerControl : TextBox
 
     private void InputHandlerControl_TextCompositionStarted(TextBox sender, TextCompositionStartedEventArgs args)
     {
+        //the previous composition is finished for sure, when the next one starts
+        if (_commitPending)
+            CommitPendingText();
+
         _isComposing = true;
         CompositionStarted?.Invoke(this, args);
     }
@@ -39,23 +46,41 @@ internal class InputHandlerControl : TextBox
         CompositionChanged?.Invoke(this, args);
     }
 
+    // The text can not be taken (and cleared) right here: when a candidate gets picked from the IME window,
+    // the composition ends first and the IME replaces the typed characters with the candidate afterwards.
+    // Reading the text at this point returned the raw input ("あｓｄ") and clearing it threw the candidate away.
+    // So the text is handed over by whatever comes next: the text change of the candidate, the start of the
+    // next composition or, when nothing else happens, the queued callback.
     private void InputHandlerControl_TextCompositionEnded(TextBox sender, TextCompositionEndedEventArgs args)
     {
         _isComposing = false;
+        _commitPending = true;
 
-        if (isReadOnly || base.Text.Length == 0)
+        if (DispatcherQueue == null || !DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, CommitPendingTextIfIdle))
+            CommitPendingText();
+    }
+
+    private void CommitPendingTextIfIdle()
+    {
+        if (_commitPending && !_isComposing)
+            CommitPendingText();
+    }
+
+    private void CommitPendingText()
+    {
+        _commitPending = false;
+
+        if (base.Text.Length == 0)
+            return;
+
+        if (isReadOnly)
         {
-            if (base.Text.Length > 0)
-            {
-                Text = "";
-            }
+            Text = "";
             return;
         }
 
         if (!_isProgrammaticChange)
-        {
             TextEntered?.Invoke(this, null);
-        }
     }
 
     private void InputHandlerControl_TextChanged(object sender, TextChangedEventArgs e)
@@ -65,6 +90,7 @@ internal class InputHandlerControl : TextBox
 
         if (!_isProgrammaticChange && !_isComposing)
         {
+            _commitPending = false;
             TextEntered?.Invoke(this, e);
         }
     }

@@ -24,7 +24,7 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
 {
     private InteractionTracker _scrollTracker;
     private VisualInteractionSource _scrollInteractionSource;
-    private Microsoft.UI.Dispatching.DispatcherQueueTimer _scrollTrackerTimer;
+    private Microsoft.UI.Xaml.DispatcherTimer _scrollTrackerTimer;
     private bool _scrollTrackerReady;
     private bool _scrollTrackerInteracting;
     private bool _applyingTrackerScroll;
@@ -60,8 +60,7 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
             _scrollInteractionSource.ScaleChainingMode = InteractionChainingMode.Never;
             _scrollTracker.InteractionSources.Add(_scrollInteractionSource);
 
-            _scrollTrackerTimer = DispatcherQueue.CreateTimer();
-            _scrollTrackerTimer.Interval = TimeSpan.FromMilliseconds(50);
+            _scrollTrackerTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
             _scrollTrackerTimer.Tick += (_, _) => SyncScrollTracker();
             _scrollTrackerTimer.Start();
 

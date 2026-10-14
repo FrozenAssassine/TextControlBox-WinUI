@@ -108,7 +108,11 @@ internal class CursorHelper
             ? textRenderer.GetWrappedLineHitTestYFromPointY(cursorPos.LineNumber, point.Y)
             : 0;
         float marginLeft = textRenderer.IsWordWrapEnabled ? 0 : textRenderer.HorizontalOffset;
-        var (renderedCharacterPosition, isTrailing) = GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, marginLeft, hitTestY, isSelecting);
+        (int renderedCharacterPosition, bool isTrailing) = textRenderer.IsWordWrapEnabled
+            && !textRenderer.IsVirtualizedWrappedLine
+            && textRenderer.TryFindHangingIndexOnRow(textRenderer.CurrentLineTextLayout, currentLineManager.GetCurrentLineText()?.Length ?? 0, (int)Math.Floor(hitTestY / Math.Max(1, textRenderer.SingleLineHeight)), marginLeft, out int hangingIndex)
+                ? (hangingIndex, false)
+                : GetCharacterPositionFromPoint(currentLineManager, textRenderer.CurrentLineTextLayout, point, marginLeft, hitTestY, isSelecting);
         int docIndex = textRenderer.GetDocumentCharacterIndexFromRenderedIndex(cursorPos.LineNumber, renderedCharacterPosition, isSelecting);
         string currentLine = currentLineManager.GetCurrentLineText();
         if (!string.IsNullOrEmpty(currentLine))

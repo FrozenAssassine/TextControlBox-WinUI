@@ -92,9 +92,12 @@ public class TouchInputTests
         Point movedPoint = new Point(100, 120); // Finger moved UP by 80px -> scroll down
 
         core.pointerActionsManager.HandleTouchPressed(core, pointerId: 1, startPoint);
+        // A real finger sends many small moves: the one that crosses the tap threshold only switches to
+        // scrolling, the following ones move the document.
+        core.pointerActionsManager.HandleTouchMoved(pointerId: 1, new Point(100, 170));
         core.pointerActionsManager.HandleTouchMoved(pointerId: 1, movedPoint);
 
-        // Document should have scrolled down (VerticalOffset increased by 80px)
+        // Document should have scrolled down
         double scrolledOffset = core.scrollManager.OffsetSource.VerticalOffset;
         Assert.IsTrue(scrolledOffset > 0, "VerticalOffset should have increased after dragging up");
 
@@ -220,6 +223,8 @@ public class TouchInputTests
         core.SetText("A very very very very long text line that extends far beyond the default window viewport width to allow horizontal scrolling");
         core.textRenderer.EnsureTextFormat();
         core.textRenderer.CalculateLinesToRender();
+        // The horizontal scroll range is calculated while drawing, which never happens in a unit test
+        core.scrollManager.EnsureHorizontalScrollBounds(core.canvasText, core.longestLineManager, false, true);
 
         // 1. Initial horizontal scroll
         core.scrollManager.HorizontalScroll = 50;

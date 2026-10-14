@@ -456,6 +456,12 @@ internal class PointerActionsManager
 
     private void OnSelectionAutoScrollTimerTick(object sender, object e)
     {
+        try { OnSelectionAutoScrollTimerTickCore(); }
+        catch (Exception ex) when (coreTextbox.HandleInternalError(ex)) { StopSelectionAutoScroll(); }
+    }
+
+    private void OnSelectionAutoScrollTimerTickCore()
+    {
         bool isSelecting = selectionManager.IsSelecting || _touchState == TouchInteractionState.Selecting;
         if (!isSelecting || (_autoScrollSpeedY == 0 && _autoScrollSpeedX == 0))
         {
@@ -844,6 +850,12 @@ internal class PointerActionsManager
     }
 
     private void OnTouchLongPressTimerTick(object sender, object e)
+    {
+        try { OnTouchLongPressTimerTickCore(); }
+        catch (Exception ex) when (coreTextbox.HandleInternalError(ex)) { }
+    }
+
+    private void OnTouchLongPressTimerTickCore()
     {
         _touchLongPressTimer?.Stop();
         if (_touchState == TouchInteractionState.PendingTapOrScroll)

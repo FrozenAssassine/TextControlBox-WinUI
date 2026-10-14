@@ -538,7 +538,13 @@ public class ModernScrollAndWrapTests
         Assert.IsTrue(moved);
         Assert.AreEqual(2, core.cursorManager.LineNumber);
 
-        // Move down past the end should return false and clamp
+        // Arrow down on the last row jumps to the end of the text (like in the non-wrap mode)
+        moved = core.textRenderer.MoveCursorByVisualRows(core.canvasText, core.cursorManager.currentCursorPosition, 1);
+        Assert.IsTrue(moved);
+        Assert.AreEqual(2, core.cursorManager.LineNumber);
+        Assert.AreEqual("Third line.".Length, core.cursorManager.CharacterPosition);
+
+        // At the end of the text there is nothing left to move to
         moved = core.textRenderer.MoveCursorByVisualRows(core.canvasText, core.cursorManager.currentCursorPosition, 1);
         Assert.IsFalse(moved);
         Assert.AreEqual(2, core.cursorManager.LineNumber);
