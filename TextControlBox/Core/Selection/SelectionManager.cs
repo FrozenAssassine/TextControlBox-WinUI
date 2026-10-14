@@ -125,6 +125,73 @@ internal class SelectionManager
         eventsManager.CallSelectionChanged();
     }
 
+    /// <summary>
+    /// Forces the cursor and the selection back into the document. Edits through the API, undo/redo or a
+    /// deleted line can leave them pointing to lines or columns that do not exist anymore, and every
+    /// following edit would then read out of range.
+    /// </summary>
+    public void ClampToDocument()
+    {
+        int lastLine = textManager.LinesCount - 1;
+        if (lastLine < 0)
+            return;
+
+        var cursor = cursorManager.currentCursorPosition;
+        if (cursor.LineNumber < 0 || cursor.LineNumber > lastLine)
+        {
+            cursor.LineNumber = Math.Clamp(cursor.LineNumber, 0, lastLine);
+            cursor.IsTrailing = false;
+        }
+        int cursorLineLength = textManager.GetLineLength(cursor.LineNumber);
+        if (cursor.CharacterPosition < 0 || cursor.CharacterPosition > cursorLineLength)
+        {
+            cursor.CharacterPosition = Math.Clamp(cursor.CharacterPosition, 0, cursorLineLength);
+            cursor.IsTrailing = false;
+        }
+
+        if (selectionStart.IsNull || selectionEnd.IsNull)
+        {
+            ClampSelectionPosition(selectionStart, lastLine);
+            ClampSelectionPosition(selectionEnd, lastLine);
+            return;
+        }
+
+        //a whole line selection is (line, 0) to (line, length + 1), keep that form when it is still valid
+        bool endIsMax = GetMax(selectionStart, selectionEnd) == selectionEnd;
+        CursorPosition min = endIsMax ? selectionStart : selectionEnd;
+        CursorPosition max = endIsMax ? selectionEnd : selectionStart;
+
+        ClampSelectionPosition(min, lastLine);
+
+        max.LineNumber = Math.Clamp(max.LineNumber, 0, lastLine);
+        int maxLineLength = textManager.GetLineLength(max.LineNumber);
+        bool wholeLineForm = min.LineNumber == max.LineNumber && min.CharacterPosition == 0 && max.CharacterPosition == maxLineLength + 1;
+        if (!wholeLineForm && max.CharacterPosition > maxLineLength)
+        {
+            //behind the line end means "including the line break"
+            if (max.LineNumber != min.LineNumber && max.LineNumber < lastLine)
+            {
+                max.LineNumber += 1;
+                max.CharacterPosition = 0;
+            }
+            else
+                max.CharacterPosition = maxLineLength;
+        }
+        else if (max.CharacterPosition < 0)
+            max.CharacterPosition = 0;
+
+        HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
+    }
+
+    private void ClampSelectionPosition(CursorPosition position, int lastLine)
+    {
+        if (position.IsNull)
+            return;
+
+        position.LineNumber = Math.Clamp(position.LineNumber, 0, lastLine);
+        position.CharacterPosition = Math.Clamp(position.CharacterPosition, 0, textManager.GetLineLength(position.LineNumber));
+    }
+
     public void StartSelectionIfNeeded()
     {
         if (!HasSelection)
@@ -248,6 +315,13 @@ internal class SelectionManager
         if (textManager.LinesCount == 0)
         {
             textManager.AddLine();
+        }
+
+        //removing a whole line at the end of the document leaves startLine behind the last line
+        if (startLine >= textManager.LinesCount)
+        {
+            startLine = textManager.LinesCount - 1;
+            startPosition = 0;
         }
 
         cursorManager.SetCursorPosition(startLine, startPosition);
@@ -398,10 +472,8 @@ internal class SelectionManager
         if (!HasSelection || !currentTextSelection.HasSelection)
             return string.Empty;
 
-        int startLine = currentTextSelection.GetMinLine();
-        int endLine = currentTextSelection.GetMaxLine();
-        int endIndex = currentTextSelection.GetMaxChar();
-        int startIndex = currentTextSelection.GetMinChar();
+        //the start/end characters belong to their lines, min/max of both would mix them up on multiline selections
+        var (_, _, startLine, startIndex, endLine, endIndex) = OrderTextSelectionSeparated();
 
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -432,7 +504,7 @@ internal class SelectionManager
         else //Multiline
         {
             //StartLine
-            stringBuilder.Append(textManager.GetLineText(startLine).Substring(startIndex) + textManager.NewLineCharacter);
+            stringBuilder.Append(textManager.GetLineText(startLine).Safe_Substring(startIndex) + textManager.NewLineCharacter);
 
             //Other lines
             if (endLine - startLine > 1)

@@ -42,7 +42,7 @@ internal class SearchManager
         for (int i = 0; i < MatchingSearchLines.Length; i++)
         {
             int lineNumber = MatchingSearchLines[i];
-            if (lineNumber < startLine) continue;
+            if (lineNumber < startLine || lineNumber >= textManager.totalLines.Count) continue;
             string line = textManager.totalLines[lineNumber];
             MatchCollection matches = Regex.Matches(line, searchParameter.SearchExpression);
 
@@ -76,7 +76,7 @@ internal class SearchManager
         for (int i = MatchingSearchLines.Length - 1; i >= 0; i--)
         {
             int lineNumber = MatchingSearchLines[i];
-            if (lineNumber > startLine) continue;
+            if (lineNumber > startLine || lineNumber >= textManager.totalLines.Count) continue;
             string line = textManager.totalLines[lineNumber];
             MatchCollection matches = Regex.Matches(line, searchParameter.SearchExpression);
 

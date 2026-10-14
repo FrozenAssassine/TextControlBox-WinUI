@@ -38,7 +38,7 @@ internal class AddCharacterTextAction
 
     public int CalculateSplitTextLength(string text)
     {
-        return text.Length > 1 && text.Contains(textManager.NewLineCharacter, StringComparison.Ordinal)
+        return text.Contains(textManager.NewLineCharacter, StringComparison.Ordinal)
             ? text.CountLines(textManager.NewLineCharacter)
             : 1;
     }

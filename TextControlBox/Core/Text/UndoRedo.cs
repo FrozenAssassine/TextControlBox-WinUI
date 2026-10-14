@@ -291,7 +291,8 @@ namespace TextControlBoxNS.Core.Text
             var linesAfter = textManager.GetLinesAsString(startline, redoCount);
             var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
 
-            if (BeforeAndAfterAreEqual(linesBefore, linesAfter))
+            //an empty line and no line at all both produce "", so the line counts have to match too
+            if (undocount == redoCount && BeforeAndAfterAreEqual(linesBefore, linesAfter))
                 return;
 
             AddUndoItem(
@@ -375,7 +376,8 @@ namespace TextControlBoxNS.Core.Text
             var selectionAfter = new TextSelection(selection);
             var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
 
-            if (BeforeAndAfterAreEqual(linesBefore, linesAfter))
+            //an empty line and no line at all both produce "", so the line counts have to match too
+            if (numberOfRemovedLines == numberOfAddedLines && BeforeAndAfterAreEqual(linesBefore, linesAfter))
                 return;
 
             AddUndoItem(
@@ -391,6 +393,18 @@ namespace TextControlBoxNS.Core.Text
                 );
         }
 
+        private void ApplyTabSpaceData(TabSpaceUndoData tsud, bool undo)
+        {
+            int spacesTabs = undo ? tsud.SpacesTabsBefore : tsud.SpacesTabsAfter;
+            int documentSpacesTabs = undo ? tsud.DocumentSpacesTabsBefore : tsud.DocumentSpacesTabsAfter;
+
+            tabSpaceManager.UseSpacesInsteadTabs = spacesTabs > 0;
+            tabSpaceManager.NumberOfSpaces = tabSpaceManager.UseSpacesInsteadTabs ? spacesTabs : 4;
+
+            tabSpaceManager.SetDocumentVariables(documentSpacesTabs > 0 ? documentSpacesTabs : 4, documentSpacesTabs > 0);
+        }
+
+        //Grouped items are handled in a loop, a recursion overflows the stack on large action groups
         public (CursorPosition cursor, TextSelection selection) Undo(StringManager stringManager)
         {
             EndBatch();
@@ -401,74 +415,72 @@ namespace TextControlBoxNS.Core.Text
             if (UndoStack == null || UndoStack.Count < 1)
                 return (null, null);
 
-            var item = UndoStack.Pop();
-            item.CanBatch = false;
-            //calculate actual lines that can be removed
-            int actualLinesToRemove = Math.Min(item.RedoCount, textManager.LinesCount - item.StartLine);
+            CursorPosition finalCursor = null;
+            TextSelection finalSelection = null;
+            List<TabSpaceUndoData> tabSpaceData = null;
 
-            //record an adjusted redo item if needed
-            if (actualLinesToRemove < item.RedoCount)
+            bool isFirstItem = true;
+            while (UndoStack.Count > 0 && (isFirstItem || UndoStack.Peek().HandleNextItemToo))
             {
-                string currentText = "";
-                if (actualLinesToRemove > 0)
-                    currentText = textManager.GetLinesAsString(item.StartLine, actualLinesToRemove);
+                var item = UndoStack.Pop();
+                item.CanBatch = false;
+                //calculate actual lines that can be removed
+                int actualLinesToRemove = Math.Min(item.RedoCount, textManager.LinesCount - item.StartLine);
 
-                item.RedoText = currentText;
-                item.RedoCount = actualLinesToRemove;
-            }
-
-            RecordRedo(item);
-
-            //faster for singleline
-            if (item.UndoCount == 1 && item.RedoCount == 1)
-            {
-                textManager.SetLineText(item.StartLine, stringManager.CleanUpString(item.UndoText));
-            }
-            else
-            {
-                if (actualLinesToRemove > 0)
+                //record an adjusted redo item if needed
+                if (actualLinesToRemove < item.RedoCount)
                 {
-                    textManager.RemoveRange(item.StartLine, actualLinesToRemove);
+                    string currentText = "";
+                    if (actualLinesToRemove > 0)
+                        currentText = textManager.GetLinesAsString(item.StartLine, actualLinesToRemove);
+
+                    item.RedoText = currentText;
+                    item.RedoCount = actualLinesToRemove;
                 }
 
-                if (item.UndoCount > 0)
+                RecordRedo(item);
+
+                //faster for singleline
+                if (item.UndoCount == 1 && item.RedoCount == 1)
                 {
-                    var cleanedLines = ListHelper.GetLinesFromString(
-                        stringManager.CleanUpString(item.UndoText),
-                        textManager.NewLineCharacter
-                    );
-
-                    //prevent over inserting
-                    if (item.StartLine <= textManager.LinesCount)
-                        textManager.InsertOrAddRange(cleanedLines, item.StartLine);
+                    textManager.SetLineText(item.StartLine, stringManager.CleanUpString(item.UndoText));
                 }
-            }
-
-            CursorPosition finalCursor = item.CursorBefore;
-            TextSelection finalSelection = item.SelectionBefore;
-
-            if (UndoStack.Count > 0)
-            {
-                var nextItem = UndoStack.Peek();
-                if (nextItem.HandleNextItemToo)
+                else
                 {
-                    var (recursedCursor, recursedSelection) = Undo(stringManager);
-                    if (recursedCursor != null)
-                        finalCursor = recursedCursor;
-                    if (recursedSelection != null)
-                        finalSelection = recursedSelection;
-                }
-            }
+                    if (actualLinesToRemove > 0)
+                    {
+                        textManager.RemoveRange(item.StartLine, actualLinesToRemove);
+                    }
 
-            if(item.AdditionalData != null)
-            {
+                    if (item.UndoCount > 0)
+                    {
+                        var cleanedLines = ListHelper.GetLinesFromString(
+                            stringManager.CleanUpString(item.UndoText),
+                            textManager.NewLineCharacter
+                        );
+
+                        //prevent over inserting
+                        if (item.StartLine <= textManager.LinesCount)
+                            textManager.InsertOrAddRange(cleanedLines, item.StartLine);
+                    }
+                }
+
+                //the oldest item of a group defines the cursor and selection
+                if (isFirstItem || item.CursorBefore != null)
+                    finalCursor = item.CursorBefore;
+                if (isFirstItem || item.SelectionBefore != null)
+                    finalSelection = item.SelectionBefore;
+
                 if (item.AdditionalData is TabSpaceUndoData tsud)
-                {
-                    tabSpaceManager.UseSpacesInsteadTabs = tsud.SpacesTabsBefore > 0;
-                    tabSpaceManager.NumberOfSpaces = tabSpaceManager.UseSpacesInsteadTabs ? tsud.SpacesTabsBefore : 4;
+                    (tabSpaceData ??= new List<TabSpaceUndoData>()).Add(tsud);
 
-                    tabSpaceManager.SetDocumentVariables(tsud.DocumentSpacesTabsBefore > 0 ? tsud.DocumentSpacesTabsBefore : 4, tsud.DocumentSpacesTabsBefore > 0);
-                }
+                isFirstItem = false;
+            }
+
+            if (tabSpaceData != null)
+            {
+                for (int i = tabSpaceData.Count - 1; i >= 0; i--)
+                    ApplyTabSpaceData(tabSpaceData[i], undo: true);
             }
 
             return (finalCursor, finalSelection);
@@ -483,66 +495,70 @@ namespace TextControlBoxNS.Core.Text
             if (RedoStack == null || RedoStack.Count < 1)
                 return (null, null);
 
-            UndoRedoItem item = RedoStack.Pop();
-            item.CanBatch = false;
+            CursorPosition finalCursor = null;
+            TextSelection finalSelection = null;
+            List<TabSpaceUndoData> tabSpaceData = null;
 
-            //calculate how many lines can actually be removed
-            int actualLinesToRemove = Math.Min(item.UndoCount, textManager.LinesCount - item.StartLine);
-
-            if (actualLinesToRemove < item.UndoCount)
+            bool isFirstItem = true;
+            bool handleNextItem = true;
+            while (handleNextItem && RedoStack.Count > 0)
             {
-                string currentText = "";
-                if (actualLinesToRemove > 0)
-                    currentText = textManager.GetLinesAsString(item.StartLine, actualLinesToRemove);
+                UndoRedoItem item = RedoStack.Pop();
+                item.CanBatch = false;
 
-                item.UndoText = currentText;
-                item.UndoCount = actualLinesToRemove;
-            }
-            RecordUndo(item);
+                //calculate how many lines can actually be removed
+                int actualLinesToRemove = Math.Min(item.UndoCount, textManager.LinesCount - item.StartLine);
 
-            if (item.UndoCount == 1 && item.RedoCount == 1)
-            {
-                textManager.SetLineText(item.StartLine, stringManager.CleanUpString(item.RedoText));
-            }
-            else
-            {
-                //remove only what exists
-                if (actualLinesToRemove > 0)
+                if (actualLinesToRemove < item.UndoCount)
                 {
-                    textManager.RemoveRange(item.StartLine, actualLinesToRemove);
+                    string currentText = "";
+                    if (actualLinesToRemove > 0)
+                        currentText = textManager.GetLinesAsString(item.StartLine, actualLinesToRemove);
+
+                    item.UndoText = currentText;
+                    item.UndoCount = actualLinesToRemove;
+                }
+                RecordUndo(item);
+
+                if (item.UndoCount == 1 && item.RedoCount == 1)
+                {
+                    textManager.SetLineText(item.StartLine, stringManager.CleanUpString(item.RedoText));
+                }
+                else
+                {
+                    //remove only what exists
+                    if (actualLinesToRemove > 0)
+                    {
+                        textManager.RemoveRange(item.StartLine, actualLinesToRemove);
+                    }
+
+                    if (item.RedoCount > 0)
+                    {
+                        var cleanedLines = ListHelper.GetLinesFromString(
+                            stringManager.CleanUpString(item.RedoText),
+                            textManager.NewLineCharacter
+                        );
+                        textManager.InsertOrAddRange(cleanedLines, item.StartLine);
+                    }
                 }
 
-                if (item.RedoCount > 0)
-                {
-                    var cleanedLines = ListHelper.GetLinesFromString(
-                        stringManager.CleanUpString(item.RedoText),
-                        textManager.NewLineCharacter
-                    );
-                    textManager.InsertOrAddRange(cleanedLines, item.StartLine);
-                }
-            }
+                //the newest item of a group defines the cursor and selection
+                if (isFirstItem || item.CursorAfter != null)
+                    finalCursor = item.CursorAfter;
+                if (isFirstItem || item.SelectionAfter != null)
+                    finalSelection = item.SelectionAfter;
 
-            CursorPosition finalCursor = item.CursorAfter;
-            TextSelection finalSelection = item.SelectionAfter;
-
-            if (item.HandleNextItemToo)
-            {
-                var (recursedCursor, recursedSelection) = Redo(stringManager);
-                if (recursedCursor != null)
-                    finalCursor = recursedCursor;
-                if (recursedSelection != null)
-                    finalSelection = recursedSelection;
-            }
-           
-            if (item.AdditionalData != null)
-            {
                 if (item.AdditionalData is TabSpaceUndoData tsud)
-                {
-                    tabSpaceManager.UseSpacesInsteadTabs = tsud.SpacesTabsAfter > 0;
-                    tabSpaceManager.NumberOfSpaces = tabSpaceManager.UseSpacesInsteadTabs ? tsud.SpacesTabsAfter : 4;
+                    (tabSpaceData ??= new List<TabSpaceUndoData>()).Add(tsud);
 
-                    tabSpaceManager.SetDocumentVariables(tsud.DocumentSpacesTabsAfter > 0 ? tsud.DocumentSpacesTabsAfter : 4, tsud.DocumentSpacesTabsAfter > 0);
-                }
+                handleNextItem = item.HandleNextItemToo;
+                isFirstItem = false;
+            }
+
+            if (tabSpaceData != null)
+            {
+                for (int i = tabSpaceData.Count - 1; i >= 0; i--)
+                    ApplyTabSpaceData(tabSpaceData[i], undo: false);
             }
 
             return (finalCursor, finalSelection);

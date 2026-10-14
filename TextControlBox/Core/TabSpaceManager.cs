@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Core.Text;
 using TextControlBoxNS.Extensions;
+using TextControlBoxNS.Helper;
 using TextControlBoxNS.Models;
 
 namespace TextControlBoxNS.Core;
@@ -98,6 +99,8 @@ internal class TabSpaceManager
         undoRedo.RecordUndoAction(() =>
         {
             action.Invoke();
+            //the indentation and with it the line lengths changed
+            selectionManager.ClampToDocument();
         }, 0, textManager.LinesCount, textManager.LinesCount, data);
     }
 
@@ -335,7 +338,8 @@ internal class TabSpaceManager
         };
 
         if (textSelection.HasSelection)
-            undoRedo.RecordUndoAction(action, textSelection, 1);
+            //exactly one line changes, also when the selection ends at the start of the next line (triple click)
+            undoRedo.RecordUndoAction(action, textSelection, 1, 1);
         else
             undoRedo.RecordUndoAction(action, lineIndex, 1, 1);
 
@@ -343,41 +347,78 @@ internal class TabSpaceManager
             eventsManager.CallTextChanged();
         longestLineManager.needsRecalculation = true;
     }
-    private void MoveTabBackSelection(string tabCharacter, CursorPosition cursorPosition, TextSelection textSelection)
+    /// <summary>
+    /// The lines a Tab / Shift+Tab with selection works on. A selection that ends at the start of a line
+    /// (triple click, line number drag: "line 3 including its line break" = (3, 0) to (4, 0)) does not
+    /// contain any character of that last line, so that line must not be indented.
+    /// Returns false when the selection is a part of a single line, which Tab replaces instead.
+    /// </summary>
+    private bool TryGetSelectedLines(out int firstLine, out int lastLine)
     {
         var selection = selectionManager.OrderTextSelectionSeparated();
-        int selectedLinesCount = selection.endLine - selection.startLine + 1;
+        firstLine = selection.startLine;
+        lastLine = selection.endLine;
+
+        if (lastLine > firstLine && selection.endChar == 0)
+            lastLine--;
+
+        if (firstLine != lastLine)
+            return true;
+
+        //single line: only a whole line selection counts as "lines": the triple click form handled above,
+        //the line number click (line, 0) to (line, length + 1) and a triple click on the last line (line, 0) to (line, length)
+        int lineLength = textManager.GetLineLength(firstLine);
+        bool wholeLine = selection.startChar == 0 &&
+            (selection.endLine > selection.startLine || (lineLength > 0 && selection.endChar >= lineLength));
+        return wholeLine;
+    }
+
+    //positions on an indented line move with the text, column 0 stays at the line start so a whole line
+    //selection keeps containing the indentation
+    private static int ShiftColumn(int line, int column, int firstLine, int lastLine, int delta)
+    {
+        if (line < firstLine || line > lastLine || column == 0)
+            return column;
+        return Math.Max(0, column + delta);
+    }
+
+    private void ShiftSelectionAndCursor(int firstLine, int lastLine, Func<int, int> deltaOfLine)
+    {
+        var start = selectionManager.selectionStart;
+        var end = selectionManager.selectionEnd;
+        var cursor = cursorManager.currentCursorPosition;
+
+        start.CharacterPosition = ShiftColumn(start.LineNumber, start.CharacterPosition, firstLine, lastLine, deltaOfLine(start.LineNumber));
+        end.CharacterPosition = ShiftColumn(end.LineNumber, end.CharacterPosition, firstLine, lastLine, deltaOfLine(end.LineNumber));
+        cursor.CharacterPosition = ShiftColumn(cursor.LineNumber, cursor.CharacterPosition, firstLine, lastLine, deltaOfLine(cursor.LineNumber));
+        selectionManager.HasSelection = SelectionHelper.TextIsSelected(start, end);
+    }
+
+    private void MoveTabBackSelection(string tabCharacter, int firstLine, int lastLine)
+    {
+        int selectedLinesCount = lastLine - firstLine + 1;
+        var removedPerLine = new int[selectedLinesCount];
 
         bool textChanged = false;
-        undoRedo.RecordUndoActionTab(() =>
+        undoRedo.RecordUndoAction(() =>
         {
-            for (int i = 0; i < selectedLinesCount; i++) 
+            for (int i = 0; i < selectedLinesCount; i++)
             {
-                int lineIndex = selection.startLine + i;
+                int lineIndex = firstLine + i;
                 string currentLine = textManager.GetLineText(lineIndex);
 
                 if (!currentLine.StartsWith(tabCharacter, StringComparison.Ordinal))
                     continue;
 
-                string textRemovedTab = currentLine.Substring(tabCharacter.Length);
-
-                if (!textChanged)
-                    textChanged = !textRemovedTab.Equals(currentLine);
-                textManager.SetLineText(lineIndex, textRemovedTab);
+                textManager.SetLineText(lineIndex, currentLine.Substring(tabCharacter.Length));
+                removedPerLine[i] = tabCharacter.Length;
+                textChanged = true;
             }
 
             if (textChanged)
-            {
-                longestLineManager.needsRecalculation = true;
+                ShiftSelectionAndCursor(firstLine, lastLine, line => line >= firstLine && line <= lastLine ? -removedPerLine[line - firstLine] : 0);
 
-                //move the orderedSelection
-                selectionManager.SetSelectionStart(selection.startLine, selection.startChar >= tabCharacter.Length ? selection.startChar - tabCharacter.Length : 0);
-                selectionManager.SetSelectionEnd(selection.endLine, selection.endChar >= tabCharacter.Length ? selection.endChar - tabCharacter.Length : 0);
-
-                cursorManager.CharacterPosition = Math.Max(cursorManager.CharacterPosition - tabCharacter.Length, 0);
-            }
-
-        }, textSelection, selectedLinesCount);
+        }, selectionManager.currentTextSelection, selectedLinesCount, selectedLinesCount);
 
         if (textChanged)
             eventsManager.CallTextChanged();
@@ -385,13 +426,14 @@ internal class TabSpaceManager
     }
     public void MoveTabBack()
     {
+        selectionManager.ClampToDocument();
         var cursorPosition = cursorManager.currentCursorPosition;
         var textSelection = selectionManager.currentTextSelection;
         string tabCharacter = TabCharacter;
 
-        if (selectionManager.HasSelection && selectionManager.selectionStart.LineNumber != selectionManager.selectionEnd.LineNumber)
+        if (selectionManager.HasSelection && TryGetSelectedLines(out int firstLine, out int lastLine) && lastLine > firstLine)
         {
-            MoveTabBackSelection(tabCharacter, cursorPosition, textSelection);
+            MoveTabBackSelection(tabCharacter, firstLine, lastLine);
             return;
         }
 
@@ -404,34 +446,29 @@ internal class TabSpaceManager
     }
     private void MoveTabSelection(string tabCharacter, CursorPosition cursorPosition, TextSelection textSelection)
     {
-        var selection = selectionManager.OrderTextSelectionSeparated();
-        int selectedLinesCount = selection.endLine - selection.startLine;
-        
-        //Singleline just replace the selected with a tab character
-        if (selection.startLine == selection.endLine) 
+        //part of a single line: replace the selected text with a tab character
+        if (!TryGetSelectedLines(out int firstLine, out int lastLine))
         {
             textActionsManager.AddCharacter(tabCharacter);
             return;
         }
 
-        //multiline
+        int selectedLinesCount = lastLine - firstLine + 1;
         undoRedo.RecordUndoAction(() =>
         {
-            selectionManager.SetSelectionStart(selection.startLine, selection.startChar + tabCharacter.Length);
-            selectionManager.SetSelectionEnd(selection.endLine, selection.endChar + tabCharacter.Length);
-            cursorManager.currentCursorPosition.CharacterPosition += tabCharacter.Length;
-
-            for (int i = selection.startLine; i < selectedLinesCount + selection.startLine + 1; i++)
+            for (int i = firstLine; i <= lastLine; i++)
             {
                 textManager.SetLineText(i, textManager.GetLineText(i).AddToStart(tabCharacter));
             }
-        }, textSelection, selectedLinesCount + 1);
+            ShiftSelectionAndCursor(firstLine, lastLine, _ => tabCharacter.Length);
+        }, textSelection, selectedLinesCount, selectedLinesCount);
 
         eventsManager.CallTextChanged();
         longestLineManager.needsRecalculation = true;
     }
     public void MoveTab()
     {
+        selectionManager.ClampToDocument();
         var cursorPosition = cursorManager.currentCursorPosition;
         var textSelection = selectionManager.currentTextSelection;
         string tabCharacter = TabCharacter;

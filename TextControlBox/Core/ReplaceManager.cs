@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -57,18 +58,51 @@ internal class ReplaceManager
 
         SearchParameter searchParameter = new SearchParameter(word, wholeWord, matchCase);
 
+        //use the replacement literally, "$1" or "$&" must not be treated as regex substitutions
+        replaceWord = LineEndings.CleanLineEndings(replaceWord, textManager.LineEnding);
+        MatchEvaluator replacement = _ => replaceWord;
+        bool multilineReplacement = replaceWord.Contains(textManager.NewLineCharacter, StringComparison.Ordinal);
+
         bool isFound = false;
         undoRedo.RecordUndoAction(() =>
         {
+            if (!multilineReplacement)
+            {
+                for (int i = 0; i < textManager.LinesCount; i++)
+                {
+                    if (textManager.totalLines[i].Contains(searchParameter))
+                    {
+                        isFound = true;
+                        textManager.SetLineText(i, Regex.Replace(textManager.totalLines[i], searchParameter.SearchExpression, replacement));
+                    }
+                }
+                //the cursor line can be shorter now
+                selectionManager.ClampToDocument();
+                return;
+            }
+
+            //the replacement adds lines, so every replaced line has to be split again
+            var newLines = new List<string>(textManager.LinesCount);
             for (int i = 0; i < textManager.LinesCount; i++)
             {
-                if (textManager.totalLines[i].Contains(searchParameter))
+                string line = textManager.totalLines[i];
+                if (line.Contains(searchParameter))
                 {
                     isFound = true;
-                    textManager.SetLineText(i, Regex.Replace(textManager.totalLines[i], searchParameter.SearchExpression, replaceWord));
+                    newLines.AddRange(Regex.Replace(line, searchParameter.SearchExpression, replacement).Split(textManager.NewLineCharacter));
                 }
+                else
+                    newLines.Add(line);
             }
-        }, 0, textManager.LinesCount, textManager.LinesCount);
+
+            if (isFound)
+            {
+                textManager.totalLines.Clear();
+                textManager.InsertOrAddRange(newLines, 0);
+            }
+            selectionManager.ClampToDocument();
+            //the redo count gets clamped to the actual number of lines after the action
+        }, 0, textManager.LinesCount, multilineReplacement ? int.MaxValue : textManager.LinesCount);
 
         eventsManager.CallTextChanged();
 
@@ -90,7 +124,7 @@ internal class ReplaceManager
         {
             selectionManager.SetSelection(res.Selection);
 
-            int splittedTextLength = replaceWord.Length > 1 && replaceWord.Contains(textManager.NewLineCharacter, StringComparison.Ordinal)
+            int splittedTextLength = replaceWord.Contains(textManager.NewLineCharacter, StringComparison.Ordinal)
                 ? replaceWord.CountLines(textManager.NewLineCharacter)
                 : 1;
 
