@@ -104,4 +104,37 @@ internal class Utils
                 Math.Ceiling(rect.Right + marginLeft), //Width
                 Math.Ceiling(rect.Bottom + marginTop))); //Height
     }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = false)]
+    private static extern bool SystemParametersInfo(uint uiAction, uint uiParam, ref uint pvParam, uint fWinIni);
+
+    private const uint SPI_GETWHEELSCROLLLINES = 0x0068;
+    private static uint _cachedWheelScrollLines = 3;
+    private static long _lastWheelScrollLinesQueryTicks = 0;
+
+    /// <summary>
+    /// Gets the number of lines to scroll per mouse wheel notch, configured by the user in Windows settings.
+    /// Defaults to 3 if unable to query. Caches the value for 2 seconds to avoid excessive native calls.
+    /// </summary>
+    public static uint GetSystemWheelScrollLines()
+    {
+        long now = Environment.TickCount64;
+        if (now - _lastWheelScrollLinesQueryTicks > 2000)
+        {
+            _lastWheelScrollLinesQueryTicks = now;
+            try
+            {
+                uint lines = 0;
+                if (SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, ref lines, 0) && lines > 0)
+                {
+                    _cachedWheelScrollLines = Math.Min(lines, 100); // safety cap
+                }
+            }
+            catch
+            {
+                _cachedWheelScrollLines = 3;
+            }
+        }
+        return _cachedWheelScrollLines;
+    }
 }

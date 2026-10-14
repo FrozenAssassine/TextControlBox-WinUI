@@ -64,6 +64,10 @@ internal class PointerActionsManager
     private double _autoScrollSpeedY = 0;
     private double _autoScrollSpeedX = 0;
 
+    private long _lastVerticalWheelTicks = 0;
+    private int _verticalWheelConsecutiveCount = 0;
+    private int _lastVerticalWheelDirection = 0;
+
     private double _initialPinchDistance = 0;
     private int _initialPinchZoomFactor = 100;
 
@@ -790,7 +794,32 @@ internal class PointerActionsManager
         else
         {
             zoomManager.ResetZoomAnchors();
-            double scrollDistance = -(delta / 120.0) * (3 * singleLine) * scrollManager._VerticalScrollSensitivity;
+
+            int direction = Math.Sign(-delta);
+            long now = Environment.TickCount64;
+            long elapsed = now - _lastVerticalWheelTicks;
+            _lastVerticalWheelTicks = now;
+
+            if (direction == _lastVerticalWheelDirection && elapsed < 180)
+            {
+                // Rapid wheel spinning in the same direction: ramp up velocity multiplier (up to 3.5x like in VS Code)
+                _verticalWheelConsecutiveCount++;
+            }
+            else
+            {
+                _verticalWheelConsecutiveCount = 0;
+                _lastVerticalWheelDirection = direction;
+            }
+
+            double velocityMultiplier = 1.0;
+            if (_verticalWheelConsecutiveCount > 0)
+            {
+                // Smooth acceleration curve: +25% per consecutive notch at high frequency
+                velocityMultiplier = Math.Min(3.5, 1.0 + (_verticalWheelConsecutiveCount * 0.25));
+            }
+
+            double linesToScroll = Utils.GetSystemWheelScrollLines();
+            double scrollDistance = -(delta / 120.0) * (linesToScroll * singleLine) * scrollManager._VerticalScrollSensitivity * velocityMultiplier;
             scrollManager.SmoothScrollVerticalBy(scrollDistance);
             e.Handled = true;
         }
