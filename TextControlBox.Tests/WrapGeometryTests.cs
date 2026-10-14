@@ -53,4 +53,46 @@ public class WrapGeometryTests
         float hit = WrapGeometry.CalculateWrappedLineHitTestYFromPointY(0, 100, LineHeight, Sensitivity, wrappedRowCount: 2);
         Assert.AreEqual(0f, hit);
     }
+
+    [TestMethod]
+    public void CalculateHangingRows_FitsFirstRow_ReturnsZero()
+    {
+        Assert.AreEqual(0, WrapGeometry.CalculateHangingRows(x: 150, wrapWidth: 200));
+        Assert.AreEqual(0, WrapGeometry.CalculateHangingRows(x: 200, wrapWidth: 200), "A position exactly at the edge stays on the row.");
+    }
+
+    [TestMethod]
+    public void CalculateHangingRows_PastWidth_CountsRowsBeyondFirst()
+    {
+        Assert.AreEqual(1, WrapGeometry.CalculateHangingRows(x: 208, wrapWidth: 200));
+        Assert.AreEqual(1, WrapGeometry.CalculateHangingRows(x: 400, wrapWidth: 200), "Exact multiple of the width ends the previous row.");
+        Assert.AreEqual(2, WrapGeometry.CalculateHangingRows(x: 401, wrapWidth: 200));
+    }
+
+    [TestMethod]
+    public void MapHangingCaret_FitsFirstRow_IsUnchanged()
+    {
+        var mapped = WrapGeometry.MapHangingCaret(150, 20, 200, LineHeight);
+        Assert.AreEqual(150f, mapped.X);
+        Assert.AreEqual(20f, mapped.Y);
+    }
+
+    [TestMethod]
+    public void MapHangingCaret_HangingSpace_MovesToNextRow()
+    {
+        // Hanging space whose caret ran 8px past the 200px wrap width: row 1, 8px in.
+        var mapped = WrapGeometry.MapHangingCaret(208, 0, 200, LineHeight);
+        Assert.AreEqual(8f, mapped.X, 0.001f);
+        Assert.AreEqual(LineHeight, mapped.Y, 0.001f);
+    }
+
+    [TestMethod]
+    public void MapHangingCaret_WidthIsNotExceeded_OnAnyMappedRow()
+    {
+        for (int x = 201; x <= 1000; x++)
+        {
+            var mapped = WrapGeometry.MapHangingCaret(x, 0, 200, LineHeight);
+            Assert.IsTrue(mapped.X > 0 && mapped.X <= 200, $"x={x} mapped to {mapped.X}");
+        }
+    }
 }

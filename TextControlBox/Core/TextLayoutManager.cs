@@ -81,11 +81,16 @@ internal class TextLayoutManager
 
     public CanvasTextLayout CreateTextLayout(ICanvasResourceCreator resourceCreator, CanvasTextFormat textFormat, string text, Size canvasSize)
     {
-        return new CanvasTextLayout(ResolveResourceCreator(resourceCreator), text, textFormat, (float)canvasSize.Width, (float)canvasSize.Height);
+        return CreateTextLayout(resourceCreator, textFormat, text, (float)canvasSize.Width, (float)canvasSize.Height);
     }
     public CanvasTextLayout CreateTextLayout(ICanvasResourceCreator resourceCreator, CanvasTextFormat textFormat, string text, float width, float height)
     {
-        return new CanvasTextLayout(ResolveResourceCreator(resourceCreator), text, textFormat, width, height);
+        var creator = ResolveResourceCreator(resourceCreator);
+        // DirectWrite lets whitespace hang past the wrap width instead of wrapping it (a long indent in front of
+        // text would otherwise stretch its row endlessly). Make such whitespace wrap like normal content.
+        if (WordWrap && textFormat != null && textFormat.WordWrapping != CanvasWordWrapping.NoWrap)
+            return WrappedWhitespaceFixer.CreateLayout(t => new CanvasTextLayout(creator, t, textFormat, width, height), text, textFormat);
+        return new CanvasTextLayout(creator, text, textFormat, width, height);
     }
     public CanvasTextFormat CreateLinenumberTextFormat()
     {
