@@ -18,16 +18,26 @@ internal sealed class RegexHighlightRule : IHighlightRule
     {
         var highlights = new List<HighlightSpan>();
 
-        foreach (Match match in _highlight.PrecompiledRegex.Matches(text))
+        if (_highlight.PrecompiledRegex == null)
+            return highlights;
+
+        try
         {
-            highlights.Add(new HighlightSpan
+            foreach (Match match in _highlight.PrecompiledRegex.Matches(text))
             {
-                Start = match.Index,
-                Length = match.Length,
-                ColorLight = _highlight.ColorLight_Clr,
-                ColorDark = _highlight.ColorDark_Clr,
-                Style = _highlight.CodeStyle
-            });
+                highlights.Add(new HighlightSpan
+                {
+                    Start = match.Index,
+                    Length = match.Length,
+                    ColorLight = _highlight.ColorLight_Clr,
+                    ColorDark = _highlight.ColorDark_Clr,
+                    Style = _highlight.CodeStyle
+                });
+            }
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            //keep the highlights found so far, the rest of this rule is skipped for this frame
         }
         return highlights;
     }

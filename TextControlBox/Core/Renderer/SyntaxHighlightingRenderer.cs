@@ -15,6 +15,9 @@ internal class SyntaxHighlightingRenderer
 
     public const int MaxHighlightTextLength = 20_000;
     public const int MaxHighlightsPerFrame = 1_500;
+    // Highlighting runs on the UI thread on every rebuild of the visible text. When the rules together need
+    // longer than this, the remaining rules are skipped for the frame instead of freezing the editor.
+    public const int MaxHighlightMillisecondsPerFrame = 150;
 
     public static void UpdateSyntaxHighlighting(LineSliceResult lineSliceResult, string newLineCharacter, CanvasTextLayout drawnTextLayout, ApplicationTheme theme, SyntaxHighlightLanguage syntaxHighlightingLanguage, bool syntaxHighlighting)
     {
@@ -30,12 +33,15 @@ internal class SyntaxHighlightingRenderer
         bool isLightTheme = theme == ApplicationTheme.Light;
         int appliedSpansCount = 0;
         int textLength = lineSliceResult.Text.Length;
+        long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
 
         if (syntaxHighlightingLanguage?.HighlightRules != null && syntaxHighlightingLanguage.HighlightRules.Length > 0)
         {
             foreach (var rule in syntaxHighlightingLanguage.HighlightRules)
             {
                 if (appliedSpansCount >= MaxHighlightsPerFrame)
+                    break;
+                if (System.Diagnostics.Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds > MaxHighlightMillisecondsPerFrame)
                     break;
 
                 var highlights = rule.GetHighlights(lineSliceResult.Lines, lineSliceResult.Text, newLineCharacter);
@@ -61,43 +67,57 @@ internal class SyntaxHighlightingRenderer
             {
                 if (appliedSpansCount >= MaxHighlightsPerFrame)
                     break;
+                if (System.Diagnostics.Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds > MaxHighlightMillisecondsPerFrame)
+                    break;
 
                 if (highlight.PrecompiledRegex == null) return;
 
                 var color = isLightTheme ? highlight.ColorLight_Clr : highlight.ColorDark_Clr;
 
-                foreach (var match in highlight.PrecompiledRegex.EnumerateMatches(lineSliceResult.Text))
+                try
                 {
-                    if (appliedSpansCount >= MaxHighlightsPerFrame)
-                        break;
-
-                    int index = match.Index;
-                    int length = match.Length;
-
-                    if (index < 0 || length <= 0 || index + length > textLength)
-                        continue;
-
-                    try
-                    {
-                        drawnTextLayout.SetColor(index, length, color);
-
-                        if (highlight.CodeStyle != null)
-                        {
-                            if (highlight.CodeStyle.Italic)
-                                drawnTextLayout.SetFontStyle(index, length, ItalicFont);
-                            if (highlight.CodeStyle.Bold)
-                                drawnTextLayout.SetFontWeight(index, length, BoldFont);
-                            if (highlight.CodeStyle.Underlined)
-                                drawnTextLayout.SetUnderline(index, length, true);
-                        }
-                        appliedSpansCount++;
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"UpdateSyntaxHighlighting: DirectWrite formatting failed: {ex.Message}");
-                        break;
-                    }
+                    ApplyRegexHighlight(drawnTextLayout, highlight, lineSliceResult.Text, color, textLength, ref appliedSpansCount);
                 }
+                catch (System.Text.RegularExpressions.RegexMatchTimeoutException)
+                {
+                    //the rest of this rule is skipped for this frame
+                }
+            }
+        }
+    }
+
+    private static void ApplyRegexHighlight(CanvasTextLayout drawnTextLayout, SyntaxHighlights highlight, string text, Windows.UI.Color color, int textLength, ref int appliedSpansCount)
+    {
+        foreach (var match in highlight.PrecompiledRegex.EnumerateMatches(text))
+        {
+            if (appliedSpansCount >= MaxHighlightsPerFrame)
+                break;
+
+            int index = match.Index;
+            int length = match.Length;
+
+            if (index < 0 || length <= 0 || index + length > textLength)
+                continue;
+
+            try
+            {
+                drawnTextLayout.SetColor(index, length, color);
+
+                if (highlight.CodeStyle != null)
+                {
+                    if (highlight.CodeStyle.Italic)
+                        drawnTextLayout.SetFontStyle(index, length, ItalicFont);
+                    if (highlight.CodeStyle.Bold)
+                        drawnTextLayout.SetFontWeight(index, length, BoldFont);
+                    if (highlight.CodeStyle.Underlined)
+                        drawnTextLayout.SetUnderline(index, length, true);
+                }
+                appliedSpansCount++;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateSyntaxHighlighting: DirectWrite formatting failed: {ex.Message}");
+                break;
             }
         }
     }

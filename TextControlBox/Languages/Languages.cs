@@ -42,7 +42,7 @@ namespace TextControlBoxNS.Languages
             new SyntaxHighlights(@"\[|\]", "#5C6BC0", "#9FA8DA"),
             
             // Keys before = (supports spaces in keys)
-            new SyntaxHighlights(@"(?m)^\s*([^=;\[\]#]+?)(?=\s*=)", "#E65100", "#FFB74D"),
+            new SyntaxHighlights(@"(?m)^(?>[ \t]*)([^=;\[\]#\r\n]+?)(?=[ \t]*=)", "#E65100", "#FFB74D"),
             
             // String values (quoted)
             new SyntaxHighlights(@"(?<=[:=]\s*)([""'])(.*?)(\1)", "#00796B", "#80CBC4"),
@@ -360,7 +360,7 @@ namespace TextControlBoxNS.Languages
             {
                 new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#dd00dd", "#ff00ff"),
                 new SyntaxHighlights("[-A-Za-z_]+\\=", "#00CA00", "#Ff0000"),
-                new SyntaxHighlights("<([^ >!\\/]+)[^>]*>", "#969696", "#0099ff"),
+                new SyntaxHighlights("<([^ >!\\/<]+)[^><]*>", "#969696", "#0099ff"),
                 new SyntaxHighlights("<+[/]+[a-zA-Z0-9:?\\-_]+>", "#969696", "#0099ff"),
                 new SyntaxHighlights("<[a-zA-Z0-9:?\\-]+?.*\\/>", "#969696", "#0099ff"),
                 new SyntaxHighlights("\"[^\\n]*?\"", "#00CA00", "#00FF00"),
@@ -454,7 +454,8 @@ namespace TextControlBoxNS.Languages
                 new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#dd00dd", "#ff00ff"),
                 new SyntaxHighlights("(null|true|false)", "#00AADD", "#0099ff"),
                 new SyntaxHighlights("(,|{|}|\\[|\\])", "#969696", "#646464"),
-                new SyntaxHighlights("(\".+\")\\:", "#00CA00", "#dddd00"),
+                //one string directly in front of a colon (the greedy "(\".+\")\\:" was quadratic on long lines)
+                new SyntaxHighlights("(?<!\\\\)\"(?:[^\"\\\\\\r\\n]|\\\\.)*\"\\s*\\:", "#00CA00", "#dddd00"),
                 new SyntaxHighlights("/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/", "#888888", "#646464"),
                 new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
                 new SyntaxHighlights("'[^\\n]*?'", "#00CA00", "#00FF00"),
@@ -706,7 +707,8 @@ namespace TextControlBoxNS.Languages
                 new SyntaxHighlights("[a-zA-Z-]+.*;", "#ff5500", "#00ffff"),//properties
                 new SyntaxHighlights("\\b([a-zA-Z_-][a-zA-Z0-9_-]*)(?=\\()", "#bb00bb", "#00ff99"),//functions
                 new SyntaxHighlights(":[a-z].*(?={)", "#0033ff", "#fffd00"),//pseudo classes/elements
-                new SyntaxHighlights("(.|#|^).*\\s*{", "#227700", "#44ff00"),//classname
+                //only starts at a line start or behind "}" and never rescans the same text, so long lines stay linear
+                new SyntaxHighlights("(?:^|(?<=\\}))(?>[^{}\\r\\n]*)\\s*{", "#227700", "#44ff00"),//classname
                 new SyntaxHighlights("(?<=\\d)(?:px|%|em|rem|in|cm|mm|pt|pc|ex|ch|vw|vh|vmin|vmax|ms|s)", "#cc0000", "#ff0000"),//units
                 new SyntaxHighlights("\\b-?\\d+(?:\\.\\d+)?", "#0000ff", "#cc00ff"),//numbers
                 new SyntaxHighlights("@([^ ]+)", "#8800ff", "#ff0000"),//first word after the @
