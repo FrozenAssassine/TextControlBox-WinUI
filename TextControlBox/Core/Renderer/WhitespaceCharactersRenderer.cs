@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas;
+using System;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using TextControlBoxNS.Helper;
@@ -15,6 +16,7 @@ internal class WhitespaceCharactersRenderer
 
     private CanvasTextLayout SpaceGlyph = null;
     private CanvasTextLayout TabGlyph = null;
+    private float _lastGlyphFontSize = 0;
 
     public void Init(DesignHelper designHelper, 
         ScrollManager scrollManager, 
@@ -30,17 +32,42 @@ internal class WhitespaceCharactersRenderer
         this.whitespaceCharactersManager = whitespaceCharactersManager;
     }
 
-    public void UpdateTextFormat(CanvasControl canvasText, CanvasTextFormat canvasTextFormat)
+    public void UpdateTextFormat(ICanvasResourceCreator resourceCreator, CanvasTextFormat canvasTextFormat)
     {
+        if (canvasTextFormat == null)
+            return;
+
         SpaceGlyph?.Dispose();
         TabGlyph?.Dispose();
-        (SpaceGlyph, TabGlyph) = textLayoutManager.CreateGlyphs(canvasText, canvasTextFormat);
+        SpaceGlyph = null;
+        TabGlyph = null;
+        _lastGlyphFontSize = 0;
+
+        if (resourceCreator is CanvasControl cc && !cc.ReadyToDraw)
+            return;
+
+        try
+        {
+            (SpaceGlyph, TabGlyph) = textLayoutManager.CreateGlyphs(resourceCreator, canvasTextFormat);
+            _lastGlyphFontSize = canvasTextFormat.FontSize;
+        }
+        catch
+        {
+            // CanvasControl or device is not ready yet during early layout/scrollbar load;
+            // glyphs will be lazily created on draw using drawingSession.
+            SpaceGlyph = null;
+            TabGlyph = null;
+            _lastGlyphFontSize = 0;
+        }
     }
     
     public void CheckDispose()
     {
         SpaceGlyph?.Dispose();
         TabGlyph?.Dispose();
+        SpaceGlyph = null;
+        TabGlyph = null;
+        _lastGlyphFontSize = 0;
     }
 
     public void DrawTabsAndSpaces(
@@ -48,7 +75,9 @@ internal class WhitespaceCharactersRenderer
         CanvasDrawingSession drawingSession,
         string renderedText, 
         CanvasTextLayout drawnTextLayout, 
-        float topRenderingOffset
+        float drawTextOffsetX,
+        float topRenderingOffset,
+        CanvasTextFormat canvasTextFormat
         )
     {
         if (!whitespaceCharactersManager.ShowWhitespaceCharacters)
@@ -56,6 +85,19 @@ internal class WhitespaceCharactersRenderer
 
         //do not render the images directly, add all of them to the
         //drawingSession which consists out of a CanvasCommandList 
+
+        float currentFontSize = zoomManager?.ZoomedFontSize > 0 ? zoomManager.ZoomedFontSize : (canvasTextFormat?.FontSize ?? 14f);
+        if (SpaceGlyph == null || TabGlyph == null || Math.Abs(_lastGlyphFontSize - currentFontSize) > 0.01f)
+        {
+            if (canvasTextFormat != null)
+            {
+                UpdateTextFormat(drawingSession, canvasTextFormat);
+            }
+            else
+            {
+                return;
+            }
+        }
 
         var color = designHelper._Design.InvisibleCharacterColor;
 
@@ -67,8 +109,8 @@ internal class WhitespaceCharactersRenderer
             if (c == ' ' || c == '\t')
             {
                 var caretPos = drawnTextLayout.GetCaretPosition(i, false);
-                x = caretPos.X - (float)scrollManager.HorizontalScroll;
-                y = caretPos.Y + (topRenderingOffset + zoomManager.ZoomedFontSize - zoomManager.ZoomedFontSize / 8);
+                x = caretPos.X + drawTextOffsetX;
+                y = caretPos.Y + (topRenderingOffset + currentFontSize - currentFontSize / 8);
 
                 if (c == ' ')
                 {
@@ -76,7 +118,7 @@ internal class WhitespaceCharactersRenderer
                 }
                 else if (c == '\t')
                 {
-                    drawingSession.DrawTextLayout(TabGlyph, x + (zoomManager._ZoomFactor / 50), y, color);
+                    drawingSession.DrawTextLayout(TabGlyph, x + ((zoomManager?._ZoomFactor ?? 100) / 50f), y, color);
                 }
             }
         }

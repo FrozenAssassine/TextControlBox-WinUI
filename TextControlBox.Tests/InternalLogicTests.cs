@@ -426,4 +426,43 @@ public class InternalLogicTests
         Assert.AreEqual("af", core.GetText());
         Assert.IsFalse(core.HasSelection);
     }
+
+    [TestMethod]
+    public void TextSelection_IsLineInSelection_SingleLine()
+    {
+        var sel = new TextControlBoxNS.Models.TextSelection(
+            new CursorPosition(5, 2),
+            new CursorPosition(15, 2)
+        );
+
+        Assert.IsTrue(sel.IsLineInSelection(2));
+        Assert.IsFalse(sel.IsLineInSelection(1));
+        Assert.IsFalse(sel.IsLineInSelection(3));
+    }
+
+    [TestMethod]
+    public void TextSelection_IsLineInSelection_MultiLine()
+    {
+        var selForward = new TextControlBoxNS.Models.TextSelection(
+            new CursorPosition(0, 1),
+            new CursorPosition(10, 5)
+        );
+
+        Assert.IsFalse(selForward.IsLineInSelection(0));
+        Assert.IsTrue(selForward.IsLineInSelection(1));
+        Assert.IsTrue(selForward.IsLineInSelection(3));
+        Assert.IsTrue(selForward.IsLineInSelection(5));
+        Assert.IsFalse(selForward.IsLineInSelection(6));
+
+        var selBackward = new TextControlBoxNS.Models.TextSelection(
+            new CursorPosition(10, 5),
+            new CursorPosition(0, 1)
+        );
+
+        Assert.IsFalse(selBackward.IsLineInSelection(0));
+        Assert.IsTrue(selBackward.IsLineInSelection(1));
+        Assert.IsTrue(selBackward.IsLineInSelection(3));
+        Assert.IsTrue(selBackward.IsLineInSelection(5));
+        Assert.IsFalse(selBackward.IsLineInSelection(6));
+    }
 }

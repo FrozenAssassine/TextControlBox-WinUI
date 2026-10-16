@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using TextControlBoxNS.Helper;
 
 namespace TextControlBoxNS.Models;
@@ -65,15 +65,12 @@ internal class TextSelection
 
     public bool IsLineInSelection(int line)
     {
-        if (!this.StartPosition.IsNull && !this.EndPosition.IsNull)
-        {
-            if (this.StartPosition.LineNumber > this.EndPosition.LineNumber)
-                return this.StartPosition.LineNumber < line && this.EndPosition.LineNumber > line;
-            else if (this.StartPosition.LineNumber == this.EndPosition.LineNumber)
-                return this.StartPosition.LineNumber != line;
-            else
-                return this.StartPosition.LineNumber > line && this.EndPosition.LineNumber < line;
-        }
-        return false;
+        if (this.StartPosition.IsNull || this.EndPosition.IsNull)
+            return false;
+
+        int minLine = Math.Min(this.StartPosition.LineNumber, this.EndPosition.LineNumber);
+        int maxLine = Math.Max(this.StartPosition.LineNumber, this.EndPosition.LineNumber);
+
+        return line >= minLine && line <= maxLine;
     }
 }

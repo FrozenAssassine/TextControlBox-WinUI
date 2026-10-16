@@ -125,13 +125,79 @@ internal class SelectionManager
         eventsManager.CallSelectionChanged();
     }
 
+    /// <summary>
+    /// Forces the cursor and the selection back into the document. Edits through the API, undo/redo or a
+    /// deleted line can leave them pointing to lines or columns that do not exist anymore, and every
+    /// following edit would then read out of range.
+    /// </summary>
+    public void ClampToDocument()
+    {
+        int lastLine = textManager.LinesCount - 1;
+        if (lastLine < 0)
+            return;
+
+        var cursor = cursorManager.currentCursorPosition;
+        if (cursor.LineNumber < 0 || cursor.LineNumber > lastLine)
+        {
+            cursor.LineNumber = Math.Clamp(cursor.LineNumber, 0, lastLine);
+            cursor.IsTrailing = false;
+        }
+        int cursorLineLength = textManager.GetLineLength(cursor.LineNumber);
+        if (cursor.CharacterPosition < 0 || cursor.CharacterPosition > cursorLineLength)
+        {
+            cursor.CharacterPosition = Math.Clamp(cursor.CharacterPosition, 0, cursorLineLength);
+            cursor.IsTrailing = false;
+        }
+
+        if (selectionStart.IsNull || selectionEnd.IsNull)
+        {
+            ClampSelectionPosition(selectionStart, lastLine);
+            ClampSelectionPosition(selectionEnd, lastLine);
+            return;
+        }
+
+        //a whole line selection is (line, 0) to (line, length + 1), keep that form when it is still valid
+        bool endIsMax = GetMax(selectionStart, selectionEnd) == selectionEnd;
+        CursorPosition min = endIsMax ? selectionStart : selectionEnd;
+        CursorPosition max = endIsMax ? selectionEnd : selectionStart;
+
+        ClampSelectionPosition(min, lastLine);
+
+        max.LineNumber = Math.Clamp(max.LineNumber, 0, lastLine);
+        int maxLineLength = textManager.GetLineLength(max.LineNumber);
+        bool wholeLineForm = min.LineNumber == max.LineNumber && min.CharacterPosition == 0 && max.CharacterPosition == maxLineLength + 1;
+        if (!wholeLineForm && max.CharacterPosition > maxLineLength)
+        {
+            //behind the line end means "including the line break"
+            if (max.LineNumber != min.LineNumber && max.LineNumber < lastLine)
+            {
+                max.LineNumber += 1;
+                max.CharacterPosition = 0;
+            }
+            else
+                max.CharacterPosition = maxLineLength;
+        }
+        else if (max.CharacterPosition < 0)
+            max.CharacterPosition = 0;
+
+        HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
+    }
+
+    private void ClampSelectionPosition(CursorPosition position, int lastLine)
+    {
+        if (position.IsNull)
+            return;
+
+        position.LineNumber = Math.Clamp(position.LineNumber, 0, lastLine);
+        position.CharacterPosition = Math.Clamp(position.CharacterPosition, 0, textManager.GetLineLength(position.LineNumber));
+    }
+
     public void StartSelectionIfNeeded()
     {
         if (!HasSelection)
         {
-            //TODO! 
-            SetSelectionEnd(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
             SetSelectionStart(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
+            SetSelectionEnd(cursorManager.currentCursorPosition.LineNumber, cursorManager.currentCursorPosition.CharacterPosition);
         }
     }
 
@@ -146,14 +212,22 @@ internal class SelectionManager
     {
         return SelectionHelper.OrderTextSelectionSeparated(currentTextSelection, HasSelection);
     }
-    //line was triple clicked, so completely selected
+    //line was triple clicked, or completely selected including newline
     public bool WholeLineSelected()
     {
         var sel = OrderTextSelectionSeparated();
-        if (sel.startNull && sel.endNull)
+        if (sel.startNull || sel.endNull)
             return false;
 
-        return sel.startLine == sel.endLine && sel.startChar == 0 && sel.endChar == textManager.GetLineLength(sel.endLine) + 1;
+        // Form 1: (line, 0) to (line, lineLength + 1)
+        if (sel.startLine == sel.endLine && sel.startChar == 0 && sel.endChar == textManager.GetLineLength(sel.endLine) + 1)
+            return true;
+
+        // Form 2: (line, 0) to (line + 1, 0)
+        if (sel.endLine == sel.startLine + 1 && sel.startChar == 0 && sel.endChar == 0)
+            return true;
+
+        return false;
     }
     public bool WholeTextSelected()
     {
@@ -243,6 +317,13 @@ internal class SelectionManager
             textManager.AddLine();
         }
 
+        //removing a whole line at the end of the document leaves startLine behind the last line
+        if (startLine >= textManager.LinesCount)
+        {
+            startLine = textManager.LinesCount - 1;
+            startPosition = 0;
+        }
+
         cursorManager.SetCursorPosition(startLine, startPosition);
     }
     public void Replace(string text)
@@ -302,9 +383,11 @@ internal class SelectionManager
                 length = numberOfCharacters - startPosition;
         }
 
+        int lineEndingLength = LineEndings.LineEndingToString(textManager.LineEnding).Length;
+
         void GetIndexInLine(int currentIndex, int currentTotalLength)
         {
-            int position = Math.Abs(currentTotalLength - startPosition);
+            int position = Math.Max(0, startPosition - currentTotalLength);
 
             returnValue.StartPosition.SetChangeValues(currentIndex, position);
 
@@ -312,16 +395,56 @@ internal class SelectionManager
                 returnValue.EndPosition.SetChangeValues(returnValue.StartPosition);
             else
             {
-                int lengthCount = 0;
-                for (int i = currentIndex; i < textManager.LinesCount; i++)
+                int remainingLength = length;
+                int currentLineLength = textManager.GetLineLength(currentIndex);
+                int availableInFirstLine = Math.Max(0, currentLineLength - position);
+
+                if (remainingLength <= availableInFirstLine)
                 {
-                    int lineLength = textManager.GetLineLength(i) + 1;
-                    if (lengthCount + lineLength > length)
+                    returnValue.EndPosition.SetChangeValues(currentIndex, position + remainingLength);
+                }
+                else
+                {
+                    remainingLength -= availableInFirstLine;
+                    int endLine = currentIndex;
+                    int endChar = currentLineLength;
+
+                    for (int i = currentIndex; i < textManager.LinesCount; i++)
                     {
-                        returnValue.EndPosition.SetChangeValues(i, Math.Abs(lengthCount - length) + position);
-                        break;
+                        int lineEnding = (i < textManager.LinesCount - 1) ? lineEndingLength : 0;
+                        if (i == currentIndex)
+                        {
+                            if (remainingLength <= lineEnding)
+                            {
+                                endLine = currentIndex + 1;
+                                endChar = 0;
+                                break;
+                            }
+                            remainingLength -= lineEnding;
+                            continue;
+                        }
+
+                        int curLineLen = textManager.GetLineLength(i);
+                        if (remainingLength <= curLineLen)
+                        {
+                            endLine = i;
+                            endChar = remainingLength;
+                            break;
+                        }
+
+                        remainingLength -= curLineLen;
+                        if (remainingLength <= lineEnding)
+                        {
+                            endLine = i + 1;
+                            endChar = 0;
+                            break;
+                        }
+                        remainingLength -= lineEnding;
                     }
-                    lengthCount += lineLength;
+
+                    endLine = Math.Clamp(endLine, 0, Math.Max(0, textManager.LinesCount - 1));
+                    endChar = Math.Clamp(endChar, 0, textManager.GetLineLength(endLine));
+                    returnValue.EndPosition.SetChangeValues(endLine, endChar);
                 }
             }
         }
@@ -330,8 +453,9 @@ internal class SelectionManager
         int totalLength = 0;
         for (int i = 0; i < textManager.LinesCount; i++)
         {
-            int lineLength = textManager.GetLineLength(i) + 1;
-            if (totalLength + lineLength > startPosition)
+            int lineEnding = (i < textManager.LinesCount - 1) ? lineEndingLength : 0;
+            int lineLength = textManager.GetLineLength(i) + lineEnding;
+            if (totalLength + lineLength > startPosition || i == textManager.LinesCount - 1)
             {
                 GetIndexInLine(i, totalLength);
                 break;
@@ -342,16 +466,14 @@ internal class SelectionManager
         return returnValue;
     }
 
-    public string GetSelectedText(int currentLineIndex)
+    public string GetSelectedText(int currentLineIndex = 0)
     {
-        //return the current line, if no text is selected:
-        if (!currentTextSelection.HasSelection)
-            return textManager.GetLineText(currentLineIndex) + textManager.NewLineCharacter;
+        //return empty string, if no text is selected:
+        if (!HasSelection || !currentTextSelection.HasSelection)
+            return string.Empty;
 
-        int startLine = currentTextSelection.GetMinLine();
-        int endLine = currentTextSelection.GetMaxLine();
-        int endIndex = currentTextSelection.GetMaxChar();
-        int startIndex = currentTextSelection.GetMinChar();
+        //the start/end characters belong to their lines, min/max of both would mix them up on multiline selections
+        var (_, _, startLine, startIndex, endLine, endIndex) = OrderTextSelectionSeparated();
 
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -382,7 +504,7 @@ internal class SelectionManager
         else //Multiline
         {
             //StartLine
-            stringBuilder.Append(textManager.GetLineText(startLine).Substring(startIndex) + textManager.NewLineCharacter);
+            stringBuilder.Append(textManager.GetLineText(startLine).Safe_Substring(startIndex) + textManager.NewLineCharacter);
 
             //Other lines
             if (endLine - startLine > 1)
@@ -462,13 +584,18 @@ internal class SelectionManager
 
     public void SelectSingleWord(CanvasUpdateManager canvashelper)
     {
-        int characterpos = cursorManager.CharacterPosition;
+        if (textManager.LinesCount == 0)
+            return;
 
-        SetSelectionStart(cursorManager.LineNumber, characterpos - cursorManager.CalculateStepsToMoveLeftNoControl(characterpos));
-        SetSelectionEnd(cursorManager.LineNumber, characterpos + cursorManager.CalculateStepsToMoveRightNoControl(characterpos));
+        int line = cursorManager.LineNumber;
+        string lineText = textManager.GetLineText(line);
+        var (start, end) = SelectionHelper.GetWordBoundaries(lineText, cursorManager.CharacterPosition);
+
+        SetSelectionStart(line, start);
+        SetSelectionEnd(line, end);
 
         cursorManager.CharacterPosition = selectionEnd.CharacterPosition;
-        HasSelection = true;
+        HasSelection = SelectionHelper.TextIsSelected(selectionStart, selectionEnd);
 
         canvashelper.UpdateSelection();
         canvashelper.UpdateCursor();

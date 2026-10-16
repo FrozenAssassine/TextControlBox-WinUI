@@ -1,4 +1,4 @@
-﻿
+
 namespace TextControlBoxNS.Core.Text.TextActions;
 
 internal class RemoveTextAction
@@ -27,7 +27,7 @@ internal class RemoveTextAction
     {
         string curLine = currentLineManager.CurrentLine;
         var charPos = cursorManager.GetCurPosInLine();
-        var stepsToMove = controlIsPressed ? cursorManager.CalculateStepsToMoveLeft(charPos, controlIsPressed) : 1;
+        var stepsToMove = cursorManager.CalculateStepsToMoveLeft(charPos, controlIsPressed);
 
         if (charPos - stepsToMove >= 0)
         {
@@ -57,8 +57,7 @@ internal class RemoveTextAction
         if (cursorManager.LineNumber <= 0)
             return;
 
-        if (cursorManager.LineNumber == longestLineManager.longestIndex)
-            longestLineManager.needsRecalculation = true;
+        longestLineManager.needsRecalculation = true;
 
         undoRedo.RecordUndoAction(() =>
         {
@@ -72,6 +71,6 @@ internal class RemoveTextAction
             cursorManager.LineNumber -= 1;
             cursorManager.CharacterPosition = curpos;
 
-        }, cursorManager.LineNumber - 1, 3, 2);
+        }, cursorManager.LineNumber - 1, 2, 1);
     }
 }

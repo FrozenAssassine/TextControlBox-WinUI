@@ -1,4 +1,4 @@
-﻿using Collections.Pooled;
+using Collections.Pooled;
 using Microsoft.UI.Xaml.Shapes;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,6 +49,9 @@ internal class TabsSpacesHelper
 
     public static (bool spacesInsteadTabs, int spaces) DetectTabsSpaces(string text)
     {
+        if (text == null)
+            return (DefaultUseSpacesInsteadTabs, DefaultSpaces);
+
         List<int> spaceIndents = new();
         List<int> tabIndents = new();
 

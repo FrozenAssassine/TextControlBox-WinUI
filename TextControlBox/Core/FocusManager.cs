@@ -22,8 +22,8 @@ internal class FocusManager
 
     public void SetFocus()
     {
-        if (!HasFocus)
-            eventsManager.CallGotFocus();
+        if (HasFocus)
+            return;
 
         HasFocus = true;
         eventsManager.CallGotFocus();

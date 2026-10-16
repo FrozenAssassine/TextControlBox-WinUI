@@ -1,4 +1,4 @@
-﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
 using System;
@@ -57,6 +57,7 @@ internal class Utils
         }
 
         using CanvasTextLayout layout = new CanvasTextLayout(device, text, textFormat, 0, 0);
+        layout.WordWrapping = CanvasWordWrapping.NoWrap;
         return new Size(layout.DrawBounds.Width - placeholderWidth, layout.DrawBounds.Height);
     }
 
@@ -65,16 +66,29 @@ internal class Utils
         return Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(key).HasFlag(CoreVirtualKeyStates.Down);
     }
 
-    public static ApplicationTheme ConvertTheme(ElementTheme theme)
+    public static ApplicationTheme ConvertTheme(ElementTheme theme, ElementTheme? actualTheme = null)
     {
         switch (theme)
         {
             case ElementTheme.Light: return ApplicationTheme.Light;
             case ElementTheme.Dark: return ApplicationTheme.Dark;
             case ElementTheme.Default:
-                var defaultTheme = new Windows.UI.ViewManagement.UISettings();
-                return defaultTheme.GetColorValue(Windows.UI.ViewManagement.UIColorType.Background).ToString() == "#FF000000"
-                    ? ApplicationTheme.Dark : ApplicationTheme.Light;
+                if (actualTheme.HasValue && actualTheme.Value != ElementTheme.Default)
+                    return actualTheme.Value == ElementTheme.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
+
+                if (Application.Current != null)
+                    return Application.Current.RequestedTheme;
+
+                try
+                {
+                    var defaultTheme = new Windows.UI.ViewManagement.UISettings();
+                    return defaultTheme.GetColorValue(Windows.UI.ViewManagement.UIColorType.Background).ToString() == "#FF000000"
+                        ? ApplicationTheme.Dark : ApplicationTheme.Light;
+                }
+                catch
+                {
+                    return ApplicationTheme.Light;
+                }
 
             default: return ApplicationTheme.Light;
         }
@@ -89,5 +103,38 @@ internal class Utils
             new Point(
                 Math.Ceiling(rect.Right + marginLeft), //Width
                 Math.Ceiling(rect.Bottom + marginTop))); //Height
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = false)]
+    private static extern bool SystemParametersInfo(uint uiAction, uint uiParam, ref uint pvParam, uint fWinIni);
+
+    private const uint SPI_GETWHEELSCROLLLINES = 0x0068;
+    private static uint _cachedWheelScrollLines = 3;
+    private static long _lastWheelScrollLinesQueryTicks = 0;
+
+    /// <summary>
+    /// Gets the number of lines to scroll per mouse wheel notch, configured by the user in Windows settings.
+    /// Defaults to 3 if unable to query. Caches the value for 2 seconds to avoid excessive native calls.
+    /// </summary>
+    public static uint GetSystemWheelScrollLines()
+    {
+        long now = Environment.TickCount64;
+        if (now - _lastWheelScrollLinesQueryTicks > 2000)
+        {
+            _lastWheelScrollLinesQueryTicks = now;
+            try
+            {
+                uint lines = 0;
+                if (SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, ref lines, 0) && lines > 0)
+                {
+                    _cachedWheelScrollLines = Math.Min(lines, 100); // safety cap
+                }
+            }
+            catch
+            {
+                _cachedWheelScrollLines = 3;
+            }
+        }
+        return _cachedWheelScrollLines;
     }
 }

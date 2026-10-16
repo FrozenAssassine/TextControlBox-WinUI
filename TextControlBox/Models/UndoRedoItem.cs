@@ -1,4 +1,4 @@
-﻿
+
 using TextControlBoxNS.Core.Text;
 
 namespace TextControlBoxNS.Models;
@@ -16,4 +16,6 @@ internal class UndoRedoItem
     public CursorPosition CursorAfter { get; set; }
     public bool HandleNextItemToo { get; set; }
     public object AdditionalData { get; set; } = null;
+    public bool CanBatch { get; set; } = false;
+    public CharClass BatchCategory { get; set; } = CharClass.Word;
 }

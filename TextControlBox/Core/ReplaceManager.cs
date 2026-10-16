@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -21,6 +22,7 @@ internal class ReplaceManager
     private SelectionRenderer selectionRenderer;
     private SelectionManager selectionManager;
     private EventsManager eventsManager;
+    private LongestLineManager longestLineManager;
 
     public void Init(
         CanvasUpdateManager canvasUpdateManager,
@@ -31,7 +33,8 @@ internal class ReplaceManager
         TextActionManager textActionManager,
         SelectionRenderer selectionRenderer,
         SelectionManager selectionManager,
-        EventsManager eventsManager)
+        EventsManager eventsManager,
+        LongestLineManager longestLineManager)
     {
         this.canvasUpdateManager = canvasUpdateManager;
         this.undoRedo = undoRedo;
@@ -42,31 +45,69 @@ internal class ReplaceManager
         this.selectionRenderer = selectionRenderer;
         this.selectionManager = selectionManager;
         this.eventsManager = eventsManager;
+        this.longestLineManager = longestLineManager;
     }
 
     public SearchResult ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord)
     {
-        if (word.Length == 0)
+        if (string.IsNullOrEmpty(word))
             return SearchResult.InvalidInput;
 
+        replaceWord ??= "";
         selectionManager.ClearSelection();
 
         SearchParameter searchParameter = new SearchParameter(word, wholeWord, matchCase);
 
+        //use the replacement literally, "$1" or "$&" must not be treated as regex substitutions
+        replaceWord = LineEndings.CleanLineEndings(replaceWord, textManager.LineEnding);
+        MatchEvaluator replacement = _ => replaceWord;
+        bool multilineReplacement = replaceWord.Contains(textManager.NewLineCharacter, StringComparison.Ordinal);
+
         bool isFound = false;
         undoRedo.RecordUndoAction(() =>
         {
+            if (!multilineReplacement)
+            {
+                for (int i = 0; i < textManager.LinesCount; i++)
+                {
+                    if (textManager.totalLines[i].Contains(searchParameter))
+                    {
+                        isFound = true;
+                        textManager.SetLineText(i, Regex.Replace(textManager.totalLines[i], searchParameter.SearchExpression, replacement));
+                    }
+                }
+                //the cursor line can be shorter now
+                selectionManager.ClampToDocument();
+                return;
+            }
+
+            //the replacement adds lines, so every replaced line has to be split again
+            var newLines = new List<string>(textManager.LinesCount);
             for (int i = 0; i < textManager.LinesCount; i++)
             {
-                if (textManager.totalLines[i].Contains(searchParameter))
+                string line = textManager.totalLines[i];
+                if (line.Contains(searchParameter))
                 {
                     isFound = true;
-                    textManager.SetLineText(i, Regex.Replace(textManager.totalLines[i], searchParameter.SearchExpression, replaceWord));
+                    newLines.AddRange(Regex.Replace(line, searchParameter.SearchExpression, replacement).Split(textManager.NewLineCharacter));
                 }
+                else
+                    newLines.Add(line);
             }
-        }, 0, textManager.LinesCount, textManager.LinesCount);
+
+            if (isFound)
+            {
+                textManager.totalLines.Clear();
+                textManager.InsertOrAddRange(newLines, 0);
+            }
+            selectionManager.ClampToDocument();
+            //the redo count gets clamped to the actual number of lines after the action
+        }, 0, textManager.LinesCount, multilineReplacement ? int.MaxValue : textManager.LinesCount);
 
         eventsManager.CallTextChanged();
+
+        if (isFound)
+            longestLineManager.needsRecalculation = true;
 
         canvasUpdateManager.UpdateText();
         return isFound ? SearchResult.Found : SearchResult.NotFound;
@@ -77,21 +118,25 @@ internal class ReplaceManager
         if (!searchManager.IsSearchOpen)
             return new InternSearchResult(SearchResult.SearchNotOpened, null);
 
+        replaceWord ??= "";
         var res = searchManager.FindNext(cursorManager.currentCursorPosition);
         if (res.Selection != null)
         {
             selectionManager.SetSelection(res.Selection);
 
+            int splittedTextLength = replaceWord.Contains(textManager.NewLineCharacter, StringComparison.Ordinal)
+                ? replaceWord.CountLines(textManager.NewLineCharacter)
+                : 1;
+
             undoRedo.RecordUndoAction(() =>
             {
                 selectionManager.Replace(replaceWord);
-            }, selectionManager.currentTextSelection, 1);
+            }, selectionManager.currentTextSelection, splittedTextLength);
 
             eventsManager.CallTextChanged();
+            longestLineManager.needsRecalculation = true;
 
-            var start = res.Selection.StartPosition;
             selectionManager.ClearSelection();
-            cursorManager.SetCursorPosition(start.LineNumber, start.CharacterPosition + replaceWord.Length);
         }
         return res;
     }
