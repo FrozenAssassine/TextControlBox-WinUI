@@ -253,8 +253,7 @@ internal class PointerActionsManager
                 canvasUpdateManager.UpdateCursor();
             }
         }
-
-        ShowContextFlyout(sender as FrameworkElement, pointerPosition);
+        //The context flyout is shown by the RightTapped handler (on release) to avoid opening it twice
     }
 
     private void HandleSingleLeftClick(Point pointerPosition)
