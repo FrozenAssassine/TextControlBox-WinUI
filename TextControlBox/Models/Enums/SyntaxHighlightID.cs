@@ -90,11 +90,6 @@ public enum SyntaxHighlightID
     Latex,
 
     /// <summary>
-    /// Identifier for Log files.
-    /// </summary>
-    Log,
-
-    /// <summary>
     /// Identifier for Lua programminglanguage.
     /// </summary>
     Lua,
@@ -137,4 +132,11 @@ public enum SyntaxHighlightID
     /// Identifier for no code language.
     /// </summary>
     None,
+
+    // New languages are added behind None, so the numbers of the existing ones (often stored in app settings) stay the same.
+
+    /// <summary>
+    /// Identifier for Log files.
+    /// </summary>
+    Log,
 }
