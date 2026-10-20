@@ -1,9 +1,10 @@
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
-using Newtonsoft.Json;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using TextControlBoxNS.Models;
 using Windows.UI.Text;
 using static TextControlBoxNS.Core.Text.TextManager;
@@ -169,25 +170,38 @@ internal class SyntaxHighlightingRenderer
     {
         try
         {
-            var jsonHighlight = JsonConvert.DeserializeObject<JsonSyntaxHighlighting>(json);
-            //Apply the filter as an array
+            var jsonHighlight = JsonSerializer.Deserialize(json, SyntaxHighlightingJsonContext.Default.JsonSyntaxHighlighting);
+            if (jsonHighlight == null)
+                return new JsonLoadResult(false, null);
+
             var highlightLanguage = new SyntaxHighlightLanguage
             {
                 Author = jsonHighlight.Author,
                 Description = jsonHighlight.Description,
-                Highlights = jsonHighlight.Highlights,
+                Highlights = jsonHighlight.Highlights?.Select(ToSyntaxHighlights).ToArray(),
                 Name = jsonHighlight.Name,
-                Filter = jsonHighlight.Filter.Split("|", StringSplitOptions.RemoveEmptyEntries),
+                //Apply the filter as an array
+                Filter = jsonHighlight.Filter?.Split("|", StringSplitOptions.RemoveEmptyEntries) ?? [],
             };
             return new JsonLoadResult(true, highlightLanguage);
         }
-        catch (JsonReaderException)
+        catch (JsonException)
         {
             return new JsonLoadResult(false, null);
         }
-        catch (JsonSerializationException)
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
+            //an invalid or missing color, the color converter throws different exception types for that
             return new JsonLoadResult(false, null);
         }
+    }
+
+    // Same order as Newtonsoft.Json used: the constructor with the flags first, a "CodeStyle" object replaces them.
+    private static SyntaxHighlights ToSyntaxHighlights(JsonHighlight highlight)
+    {
+        var result = new SyntaxHighlights(highlight.Pattern, highlight.ColorLight, highlight.ColorDark, highlight.Bold, highlight.Italic, highlight.Underlined);
+        if (highlight.CodeStyle != null)
+            result.CodeStyle = new CodeFontStyle(highlight.CodeStyle.Underlined, highlight.CodeStyle.Italic, highlight.CodeStyle.Bold);
+        return result;
     }
 }

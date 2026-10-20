@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml.Input;
 
 namespace TextControlBoxNS.Controls;
 
-internal class InputHandlerControl : TextBox
+internal partial class InputHandlerControl : TextBox
 {
     public delegate void TextEnteredEvent(object sender, TextChangedEventArgs e);
     public event TextEnteredEvent TextEntered;

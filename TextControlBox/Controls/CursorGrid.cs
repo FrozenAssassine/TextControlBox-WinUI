@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace TextControlBoxNS.Controls;
 
-internal class CursorGrid : Grid
+internal partial class CursorGrid : Grid
 {
     public CursorGrid()
     {

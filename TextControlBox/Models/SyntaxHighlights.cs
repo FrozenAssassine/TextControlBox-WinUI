@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 using System.Drawing;
 using System.Text.RegularExpressions;
 using TextControlBoxNS.Extensions;
