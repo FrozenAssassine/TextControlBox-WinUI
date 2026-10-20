@@ -1,4 +1,4 @@
-using Collections.Pooled;
+﻿using Collections.Pooled;
 using Microsoft.Graphics.Canvas;
 using System;
 using TextControlBoxNS.Core.Renderer;
@@ -106,7 +106,12 @@ internal class LongestLineManager
             }
             else
             {
-                longestLineWidth = Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), textManager.totalLines[_longestIndex], textRenderer.TextFormat);
+                //typing at the end of the longest line measures it on every key, a layout of a long line takes milliseconds
+                string line = textManager.totalLines[_longestIndex];
+                float monospaceWidth = textRenderer.GetMonospaceLineWidth(line);
+                longestLineWidth = monospaceWidth >= 0
+                    ? new Size(monospaceWidth, textRenderer.SingleLineHeight)
+                    : Utils.MeasureLineLenght(CanvasDevice.GetSharedDevice(), line, textRenderer.TextFormat);
             }
         }
     }

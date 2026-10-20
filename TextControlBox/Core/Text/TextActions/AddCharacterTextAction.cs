@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using TextControlBoxNS.Core.Selection;
 using TextControlBoxNS.Extensions;
@@ -62,8 +62,8 @@ internal class AddCharacterTextAction
 
         if (currentLineManager.Length > longestLineManager.longestLineLength)
         {
+            //the setter measures the line already
             longestLineManager.longestIndex = cursorManager.LineNumber;
-            longestLineManager.MeasureActualLineLength();
         }
     }
 

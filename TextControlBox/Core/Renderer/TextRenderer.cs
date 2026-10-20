@@ -1,4 +1,4 @@
-using Microsoft.Graphics.Canvas;
+﻿using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -37,6 +37,7 @@ internal class TextRenderer
                 TextFormat = textLayoutManager.CreateCanvasTextFormat();
                 NeedsTextFormatUpdate = false;
                 _needsCharWidthUpdate = true;
+                _monospaceCharWidth = -1;
                 _topInset = -1;
                 ClearLineLayoutCache();
                 InvalidateCurrentLineLayout();
@@ -182,6 +183,54 @@ internal class TextRenderer
     /// estimate until measured.</summary>
     private float _cachedCharWidth;
     internal float CachedCharWidth => _cachedCharWidth > 0 ? _cachedCharWidth : Math.Max(1, zoomManager.ZoomedFontSize * 0.6f);
+
+    // Advance of one character when the font is monospace, measured once per text format; 0 for a proportional
+    // font. It lets plain lines be measured by arithmetic instead of building a DirectWrite layout for each.
+    private float _monospaceCharWidth = -1;
+
+    internal float MonospaceCharWidth
+    {
+        get
+        {
+            EnsureTextFormat();
+            if (_monospaceCharWidth < 0 && TextFormat != null)
+            {
+                float wide = MeasureAdvance("MMMMMMMMMM") / 10;
+                float narrow = MeasureAdvance("iiiiiiiiii") / 10;
+                _monospaceCharWidth = wide > 0 && Math.Abs(wide - narrow) < 0.01f ? wide : 0;
+            }
+            return Math.Max(0, _monospaceCharWidth);
+        }
+    }
+
+    private float MeasureAdvance(string text)
+    {
+        using var layout = new CanvasTextLayout(CanvasDevice.GetSharedDevice(), text, TextFormat, 0, 0);
+        layout.WordWrapping = CanvasWordWrapping.NoWrap;
+        return layout.GetCaretPosition(text.Length, false).X;
+    }
+
+    /// <summary>Width of <paramref name="line"/> in a monospace font, computed without DirectWrite: printable ASCII
+    /// characters and tabs (to the next tab stop). -1 when it can not be computed (proportional font, other characters).</summary>
+    internal float GetMonospaceLineWidth(string line)
+    {
+        float charWidth = MonospaceCharWidth;
+        if (charWidth <= 0)
+            return -1;
+
+        float tabStop = TextFormat.IncrementalTabStop;
+        float x = 0;
+        foreach (char c in line)
+        {
+            if (c == '\t' && tabStop > 0)
+                x = (MathF.Floor(x / tabStop + 0.001f) + 1) * tabStop;
+            else if (c >= ' ' && c <= '~')
+                x += charWidth;
+            else
+                return -1;
+        }
+        return x;
+    }
     /// <summary>Visible char range covered by the current window's buffered safe zone [start, end); while the
     /// viewport stays inside it the window is reused so small horizontal scrolls don't re-slice.</summary>
     private int _hSliceVisibleStart;
@@ -874,6 +923,20 @@ internal class TextRenderer
         if (lineLength >= LongLineRowEstimateThreshold || isLargeDoc)
             return EstimateWrappedRowCount(canvasText, lineLength, charsPerRow);
 
+        // Indentation tabs are the usual reason a short line gets here. In a monospace font a line of plain characters
+        // and tabs is measured by arithmetic, only lines that really wrap need a layout. One character of margin keeps
+        // lines right at the edge on the measured path.
+        float fitWidth = (cachedWrapWidth > 1 ? cachedWrapWidth : GetWrapWidth(canvasText)) - MonospaceCharWidth;
+        float monospaceWidth = GetMonospaceLineWidth(lineText);
+        if (monospaceWidth >= 0 && monospaceWidth <= fitWidth)
+            return 1;
+
+        return MeasureWrappedRowCountWithLayout(canvasText, lineText);
+    }
+
+    /// <summary>Visual rows of a line measured with a DirectWrite layout at the current wrap width.</summary>
+    internal int MeasureWrappedRowCountWithLayout(CanvasControl canvasText, string lineText)
+    {
         float singleLineHeight = Math.Max(1, SingleLineHeight);
         float wrapWidth = cachedWrapWidth > 1 ? cachedWrapWidth : GetWrapWidth(canvasText);
         float layoutHeight = Math.Max(singleLineHeight, (lineText.Length + 1) * singleLineHeight);

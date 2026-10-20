@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using TextControlBoxNS.Core.Selection;
@@ -118,7 +118,7 @@ namespace TextControlBoxNS.Core.Text
             EndBatch();
             RedoStack.Clear();
 
-            UndoStack.Push(new UndoRedoItem
+            var item = new UndoRedoItem
             {
                 RedoText = redoText,
                 UndoText = undoText,
@@ -132,7 +132,11 @@ namespace TextControlBoxNS.Core.Text
                 HandleNextItemToo = _isGroupingActions || EnableCombineNextUndoItems,
                 AdditionalData = additionalData,
                 CanBatch = false
-            });
+            };
+            if (undoCount == 1 && redoCount == 1)
+                item.SetLineDiff(undoText, redoText);
+
+            UndoStack.Push(item);
         }
 
         public void RecordTypingAction(Action action, int startline, string typedText, bool isAutoPaired = false)
@@ -161,6 +165,7 @@ namespace TextControlBoxNS.Core.Text
 
             bool canMerge = false;
             UndoRedoItem topItem = null;
+            string currentLineText = null;
 
             if (UndoStack.Count > 0)
             {
@@ -176,8 +181,8 @@ namespace TextControlBoxNS.Core.Text
                     _lastTypingTimestamp != 0 &&
                     Stopwatch.GetElapsedTime(_lastTypingTimestamp) <= BatchTimeout)
                 {
-                    string currentLineText = textManager.GetLineText(startline);
-                    if (string.Equals(currentLineText, topItem.RedoText, StringComparison.Ordinal))
+                    currentLineText = textManager.GetLineText(startline);
+                    if (topItem.IsLineDiff ? topItem.MatchesLineAfterChange(currentLineText) : string.Equals(currentLineText, topItem.RedoText, StringComparison.Ordinal))
                     {
                         canMerge = true;
                     }
@@ -194,7 +199,9 @@ namespace TextControlBoxNS.Core.Text
                 var lineAfter = textManager.GetLineText(startline);
                 var cursorAfter = new CursorPosition(cursorManager.currentCursorPosition);
 
-                topItem.RedoText = lineAfter;
+                //the item now spans from its original line to the line after this key
+                string lineBeforeItem = topItem.IsLineDiff ? topItem.GetUndoLine(currentLineText) : topItem.UndoText;
+                topItem.SetLineDiff(lineBeforeItem, lineAfter);
                 topItem.CursorAfter = cursorAfter;
                 _lastTypingTimestamp = Stopwatch.GetTimestamp();
 
@@ -220,11 +227,9 @@ namespace TextControlBoxNS.Core.Text
                 if (BeforeAndAfterAreEqual(lineBefore, lineAfter))
                     return;
 
-                UndoStack.Push(new UndoRedoItem
+                var item = new UndoRedoItem
                 {
                     StartLine = startline,
-                    UndoText = lineBefore,
-                    RedoText = lineAfter,
                     UndoCount = 1,
                     RedoCount = 1,
                     CursorBefore = cursorBefore,
@@ -232,7 +237,9 @@ namespace TextControlBoxNS.Core.Text
                     HandleNextItemToo = false,
                     CanBatch = !isAutoPaired,
                     BatchCategory = category
-                });
+                };
+                item.SetLineDiff(lineBefore, lineAfter);
+                UndoStack.Push(item);
 
                 _lastTypingTimestamp = Stopwatch.GetTimestamp();
             }
@@ -430,6 +437,10 @@ namespace TextControlBoxNS.Core.Text
                 //record an adjusted redo item if needed
                 if (actualLinesToRemove < item.RedoCount)
                 {
+                    //the line of a single line item is gone, it can only be inserted again as a whole
+                    if (item.IsLineDiff)
+                        item.ToFullText(item.GetUndoLine(""), "");
+
                     string currentText = "";
                     if (actualLinesToRemove > 0)
                         currentText = textManager.GetLinesAsString(item.StartLine, actualLinesToRemove);
@@ -443,7 +454,8 @@ namespace TextControlBoxNS.Core.Text
                 //faster for singleline
                 if (item.UndoCount == 1 && item.RedoCount == 1)
                 {
-                    textManager.SetLineText(item.StartLine, stringManager.CleanUpString(item.UndoText));
+                    string undoLine = item.IsLineDiff ? item.GetUndoLine(textManager.GetLineText(item.StartLine)) : item.UndoText;
+                    textManager.SetLineText(item.StartLine, stringManager.CleanUpString(undoLine));
                 }
                 else
                 {
@@ -511,6 +523,9 @@ namespace TextControlBoxNS.Core.Text
 
                 if (actualLinesToRemove < item.UndoCount)
                 {
+                    if (item.IsLineDiff)
+                        item.ToFullText("", item.GetRedoLine(""));
+
                     string currentText = "";
                     if (actualLinesToRemove > 0)
                         currentText = textManager.GetLinesAsString(item.StartLine, actualLinesToRemove);
@@ -522,7 +537,8 @@ namespace TextControlBoxNS.Core.Text
 
                 if (item.UndoCount == 1 && item.RedoCount == 1)
                 {
-                    textManager.SetLineText(item.StartLine, stringManager.CleanUpString(item.RedoText));
+                    string redoLine = item.IsLineDiff ? item.GetRedoLine(textManager.GetLineText(item.StartLine)) : item.RedoText;
+                    textManager.SetLineText(item.StartLine, stringManager.CleanUpString(redoLine));
                 }
                 else
                 {
