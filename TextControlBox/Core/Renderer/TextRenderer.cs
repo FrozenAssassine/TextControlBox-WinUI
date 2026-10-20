@@ -385,6 +385,9 @@ internal class TextRenderer
     // Above this line count, whole-document measurement delegates to row-count estimation
     // to avoid UI freezes during window resizing on huge files (e.g. 2 million lines).
     private const int LargeDocumentWrapEstimateThreshold = 10_000;
+    // Lines whose row count is only estimated (large documents). They are measured exactly once they get visible,
+    // see EnsureExactWrapRows, because line numbers, caret and selection are placed with these counts.
+    private bool[] _estimatedWrapRows = Array.Empty<bool>();
 
     // ── Wrapped-line virtualization (a single line so long it wraps to more rows than fit) ──────────
     // At/above LongLineRowEstimateThreshold a single wrapped line can span tens of thousands of rows, so
@@ -860,6 +863,7 @@ internal class TextRenderer
             int charsPerRow = EstimateWrappedCharsPerRow(canvasText);
             bool isLargeDoc = textManager.LinesCount >= LargeDocumentWrapEstimateThreshold;
 
+            _estimatedWrapRows = new bool[textManager.LinesCount];
             wrapMetrics.Rebuild(textManager.LinesCount, i => MeasureWrappedRowCount(canvasText, i, charsPerRow, isLargeDoc));
             wrapMetricsDirty = false;
             dirtyWrapLines.Clear();
@@ -878,6 +882,7 @@ internal class TextRenderer
                 i => MeasureWrappedRowCount(canvasText, i, charsPerRow, isLargeDoc));
             if (!patched)
             {
+                _estimatedWrapRows = new bool[textManager.LinesCount];
                 wrapMetrics.Rebuild(textManager.LinesCount, i => MeasureWrappedRowCount(canvasText, i, charsPerRow, isLargeDoc));
                 wrapMetricsDirty = false;
                 ClearLineLayoutCache();
@@ -913,6 +918,7 @@ internal class TextRenderer
             charsPerRow = EstimateWrappedCharsPerRow(canvasText);
 
         string lineText = textManager.GetLineText(lineIndex);
+        SetWrapRowsEstimated(lineIndex, false);
 
         // Fast path: for pure ASCII text without tabs in monospace fonts, if the line length is
         // <= charsPerRow, it is mathematically impossible for the line to wrap.
@@ -920,7 +926,9 @@ internal class TextRenderer
         if (lineLength <= charsPerRow && !MayContainWideOrSpecialCharacters(lineText))
             return 1;
 
-        if (lineLength >= LongLineRowEstimateThreshold || isLargeDoc)
+        // Very long lines are rendered on an estimated char-per-row grid (wrapped-line virtualization), so the
+        // estimate is what is drawn.
+        if (lineLength >= LongLineRowEstimateThreshold)
             return EstimateWrappedRowCount(canvasText, lineLength, charsPerRow);
 
         // Indentation tabs are the usual reason a short line gets here. In a monospace font a line of plain characters
@@ -931,7 +939,39 @@ internal class TextRenderer
         if (monospaceWidth >= 0 && monospaceWidth <= fitWidth)
             return 1;
 
+        // Measuring every wrapping line of a huge document would freeze resizing, so they start as an estimate
+        if (isLargeDoc)
+        {
+            SetWrapRowsEstimated(lineIndex, true);
+            return EstimateWrappedRowCount(canvasText, lineLength, charsPerRow);
+        }
+
         return MeasureWrappedRowCountWithLayout(canvasText, lineText);
+    }
+
+    private void SetWrapRowsEstimated(int lineIndex, bool estimated)
+    {
+        if (lineIndex >= 0 && lineIndex < _estimatedWrapRows.Length)
+            _estimatedWrapRows[lineIndex] = estimated;
+    }
+
+    /// <summary>Measures the estimated lines from <paramref name="startLine"/> on exactly, until they cover
+    /// <paramref name="rowsToCover"/> visual rows. Returns true when a row count changed.</summary>
+    internal bool EnsureExactWrapRows(CanvasControl canvasText, int startLine, int rowsToCover)
+    {
+        bool changed = false;
+        int lineCount = textManager.LinesCount;
+        for (int i = Math.Max(0, startLine); i < lineCount && rowsToCover > 0; i++)
+        {
+            if (i < _estimatedWrapRows.Length && _estimatedWrapRows[i])
+            {
+                _estimatedWrapRows[i] = false;
+                int rows = MeasureWrappedRowCountWithLayout(canvasText, textManager.GetLineText(i));
+                changed |= wrapMetrics.SetRowCount(i, rows, lineCount) != 0;
+            }
+            rowsToCover -= GetWrappedRowCount(i);
+        }
+        return changed;
     }
 
     /// <summary>Visual rows of a line measured with a DirectWrite layout at the current wrap width.</summary>
@@ -1510,6 +1550,24 @@ internal class TextRenderer
             int targetVisualRow = GetLineVisualStartRow(anchorDocLine);
             double targetScrollValue = (targetVisualRow * singleLineHeight) / scrollManager.DefaultVerticalScrollSensitivity;
             scrollManager.verticalScrollBar.Value = Math.Clamp(targetScrollValue, 0, scrollManager.verticalScrollBar.Maximum);
+        }
+
+        // Large documents start with estimated row counts. Measure the lines on screen exactly before anything is
+        // placed, otherwise line numbers, caret and selection drift away from the drawn text. Only lines from the
+        // first visible one on change, so the top of the view stays where it is.
+        int rowsToMeasure = GetVisibleVisualRowCount(canvasText, 2);
+        for (int pass = 0; pass < 3; pass++)
+        {
+            int row = GetStartVisualRowFromScroll();
+            int line = GetDocumentLineFromVisualRow(row);
+            int rowsIntoLine = Math.Max(0, row - GetLineVisualStartRow(line));
+            if (!EnsureExactWrapRows(canvasText, line, rowsToMeasure + rowsIntoLine))
+                break;
+        }
+        if (wrapMetrics.TotalVisualRows != totalVisualRows)
+        {
+            totalVisualRows = wrapMetrics.TotalVisualRows;
+            scrollManager.verticalScrollBar.Maximum = Math.Max(0, ((totalVisualRows + WrappedBottomBufferRows) * singleLineHeight - viewportHeight) / scrollManager.DefaultVerticalScrollSensitivity);
         }
 
         StartVisualRow = GetStartVisualRowFromScroll();

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace TextControlBoxNS.Core;
@@ -86,6 +86,23 @@ internal sealed class WrapRowMetrics
             _totalVisualRows = Math.Max(1, _startRow[^1]);
 
         return true;
+    }
+
+    /// <summary>Replaces the row count of one line and shifts the start rows of the lines below it. Returns the change
+    /// in rows (0 when nothing changed or the cache is not valid for <paramref name="lineCount"/>).</summary>
+    public int SetRowCount(int lineIndex, int rows, int lineCount)
+    {
+        if (!IsValidFor(lineCount) || lineIndex < 0 || lineIndex >= lineCount)
+            return 0;
+
+        int delta = Math.Max(1, rows) - GetRowCount(lineIndex);
+        if (delta == 0)
+            return 0;
+
+        for (int i = lineIndex + 1; i < _startRow.Count; i++)
+            _startRow[i] += delta;
+        _totalVisualRows = Math.Max(1, _startRow[^1]);
+        return delta;
     }
 
     /// <summary>Visual rows document line <paramref name="lineIndex"/> occupies (1 when unknown/out of range).</summary>
