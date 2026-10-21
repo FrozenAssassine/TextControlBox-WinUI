@@ -746,14 +746,22 @@ namespace TextControlBoxNS.Core.Text
         public bool AddLines(int atLine, string[] lines)
         {
             undoRedo.EndBatch();
-            if (atLine > textManager.LinesCount || atLine < 0)
+            if (lines == null || atLine > textManager.LinesCount || atLine < 0)
                 return false;
+
+            //same rules as AddLine: a line break inside a line or a null line breaks the line model
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (stringManager.HasMultilineCharacters(lines[i]))
+                    throw new ArgumentException("The text contains multiline characters, which are not allowed.");
+            }
+            string[] linesToAdd = Array.ConvertAll(lines, line => line ?? string.Empty);
 
             longestLineManager.needsRecalculation = true;
 
             undoRedo.RecordUndoAction(() =>
             {
-                textManager.InsertOrAddRange(lines, atLine);
+                textManager.InsertOrAddRange(linesToAdd, atLine);
                 selectionManager.ClampToDocument();
 
             }, atLine, 0, lines.Length);

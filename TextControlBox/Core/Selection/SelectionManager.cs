@@ -262,7 +262,10 @@ internal class SelectionManager
     public void InsertText(string text)
     {
         if (currentTextSelection.HasSelection)
+        {
             Replace(text);
+            return;
+        }
 
         string curLine = textManager.GetLineText(cursorManager.LineNumber);
         string[] lines = text.Split(textManager.NewLineCharacter);
@@ -270,7 +273,7 @@ internal class SelectionManager
         //handle single line
         if (lines.Length == 1 && text != string.Empty)
         {
-            textManager.SetLineText(-1, textManager.GetLineText(-1).AddText(text, cursorManager.CharacterPosition));
+            textManager.SetLineText(cursorManager.LineNumber, curLine.AddText(text, cursorManager.CharacterPosition));
             cursorManager.CharacterPosition += text.Length;
             return;
         }
@@ -372,7 +375,23 @@ internal class SelectionManager
     {
         TextSelection returnValue = new TextSelection();
 
-        if (startPosition + length > numberOfCharacters)
+        //a negative length selects backwards from start; nothing may end up in front of the text.
+        //long, so int.MaxValue / int.MinValue arguments can not overflow
+        long start = startPosition, len = length;
+        if (len < 0)
+        {
+            start += len;
+            len = -len;
+        }
+        if (start < 0)
+        {
+            len = Math.Max(0, len + start);
+            start = 0;
+        }
+        startPosition = (int)Math.Min(start, int.MaxValue);
+        length = (int)Math.Min(len, int.MaxValue);
+
+        if ((long)startPosition + length > numberOfCharacters)
         {
             if (startPosition > numberOfCharacters)
             {
@@ -531,7 +550,7 @@ internal class SelectionManager
         {
             for (int i = 0; i < count; i++)
             {
-                if (!textManager.GetLineText(i).Equals(splittedText[i], StringComparison.Ordinal))
+                if (!textManager.GetLineText(start + i).Equals(splittedText[i], StringComparison.Ordinal))
                 {
                     textManager.SetLineText(start + i, splittedText[i]);
                 }
@@ -565,7 +584,7 @@ internal class SelectionManager
                 }
                 else //Add new lines
                 {
-                    textManager.InsertOrAddRange(splittedText.Skip(start + i), start + i);
+                    textManager.InsertOrAddRange(splittedText.Skip(i), start + i);
                     break;
                 }
             }

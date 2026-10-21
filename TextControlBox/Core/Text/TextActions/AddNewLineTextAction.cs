@@ -76,10 +76,20 @@ internal class AddNewLineTextAction
         int charPosition = cursorManager.GetCurPosInLine();
 
         string currentLineText = textManager.GetLineText(lineNumber);
-        int indentationLevel = autoIndentionManager.OnEnterPressed(lineNumber);
-        string indentation = indentationLevel > 0
-            ? autoIndentionManager.RepeatIndentionString(indentationLevel)
-            : string.Empty;
+        string indentation;
+        //inside the leading whitespace the rest of the line still holds its own indentation,
+        //adding the calculated one on top doubled it. Only repeat what is in front of the cursor.
+        if (IsInLeadingWhitespace(currentLineText, charPosition))
+        {
+            indentation = currentLineText.Substring(0, charPosition);
+        }
+        else
+        {
+            int indentationLevel = autoIndentionManager.OnEnterPressed(lineNumber);
+            indentation = indentationLevel > 0
+                ? autoIndentionManager.RepeatIndentionString(indentationLevel)
+                : string.Empty;
+        }
 
         undoRedo.RecordUndoAction(() =>
         {
@@ -90,6 +100,16 @@ internal class AddNewLineTextAction
         }, lineNumber, 1, 2);
 
         longestLineManager.needsRecalculation = true;
+    }
+
+    private static bool IsInLeadingWhitespace(string line, int position)
+    {
+        for (int i = 0; i < position && i < line.Length; i++)
+        {
+            if (line[i] != ' ' && line[i] != '\t')
+                return false;
+        }
+        return true;
     }
 
     public void ReplaceSelectionWithNewLine()

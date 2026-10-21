@@ -108,6 +108,25 @@ internal class Utils
     [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = false)]
     private static extern bool SystemParametersInfo(uint uiAction, uint uiParam, ref uint pvParam, uint fWinIni);
 
+    [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = false)]
+    private static extern uint GetDoubleClickTime();
+
+    /// <summary>
+    /// The double click time the user configured in Windows (default 500 ms). Falls back to 500 ms.
+    /// </summary>
+    public static TimeSpan GetSystemDoubleClickTime()
+    {
+        try
+        {
+            uint ms = GetDoubleClickTime();
+            return TimeSpan.FromMilliseconds(ms == 0 ? 500 : Math.Clamp(ms, 200u, 1000u));
+        }
+        catch
+        {
+            return TimeSpan.FromMilliseconds(500);
+        }
+    }
+
     private const uint SPI_GETWHEELSCROLLLINES = 0x0068;
     private static uint _cachedWheelScrollLines = 3;
     private static long _lastWheelScrollLinesQueryTicks = 0;

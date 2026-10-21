@@ -132,7 +132,8 @@ internal class PointerActionsManager
             }
         };
 
-        PointerClickTimer.Interval = TimeSpan.FromMilliseconds(250);
+        //250 ms was shorter than the Windows default of 500 ms, slower double clicks never selected a word
+        PointerClickTimer.Interval = Utils.GetSystemDoubleClickTime();
         PointerClickTimer.Tick += (s, e) =>
         {
             PointerClickTimer.Stop();
@@ -302,16 +303,18 @@ internal class PointerActionsManager
         }
     }
 
-    private void HandleSingleClick(Point pointerPosition, bool rightButtonPressed, bool leftButtonPressed, object sender)
+    private void HandleSingleClick(Point pointerPosition, bool rightButtonPressed, bool leftButtonPressed, bool shiftPressed, object sender)
     {
         //show the rightclick menu or clear selection
         if (rightButtonPressed)
             HandleSingleRightClick(sender, pointerPosition);
 
         //Shift + click = set selection
-        if (Utils.IsKeyPressed(VirtualKey.Shift) && leftButtonPressed)
+        if (shiftPressed && leftButtonPressed)
         {
-            if (selectionManager.selectionStart.IsNull)
+            //without a selection the anchor is the cursor. The start of the last click is outdated when the
+            //cursor was moved with the keyboard since then.
+            if (!selectionManager.HasSelection)
                 selectionManager.SetSelectionStart(cursorManager.currentCursorPosition);
 
             CursorHelper.UpdateCursorPosFromPoint(coreTextbox.canvasText,
@@ -342,13 +345,14 @@ internal class PointerActionsManager
         PointerPressedAction(sender, pointerPosition, properties.IsLeftButtonPressed, properties.IsRightButtonPressed);
     }
 
-    public void PointerPressedAction(object sender, Point pointerPosition, bool leftButtonPressed, bool rightButtonPressed)
+    public void PointerPressedAction(object sender, Point pointerPosition, bool leftButtonPressed, bool rightButtonPressed, bool? shiftPressed = null)
     {
+        bool shift = shiftPressed ?? Utils.IsKeyPressed(VirtualKey.Shift);
         coreTextbox.Focus(FocusState.Programmatic);
         cursorManager.ResetPreferredPosition();
         coreTextbox.undoRedo.EndBatch();
 
-        if (leftButtonPressed && !Utils.IsKeyPressed(VirtualKey.Shift))
+        if (leftButtonPressed && !shift)
             PointerClickCount++;
 
         if (PointerClickTimer.IsEnabled)
@@ -363,7 +367,7 @@ internal class PointerActionsManager
         else if (PointerClickCount == 2)
             HandleDoubleClicked(pointerPosition);
         else
-            HandleSingleClick(pointerPosition, rightButtonPressed, leftButtonPressed, sender);
+            HandleSingleClick(pointerPosition, rightButtonPressed, leftButtonPressed, shift, sender);
     }
 
     public void PointerReleasedAction(Point point)
@@ -668,8 +672,12 @@ internal class PointerActionsManager
         PointerMovedLineSelection(point);
     }
 
-    public void PointerMovedAction(Point point)
+    public void PointerMovedAction(Point point, bool leftButtonPressed = true)
     {
+        //the release got lost (capture lost, released outside the window): the button is up, so the drag is over
+        if (!leftButtonPressed && (selectionManager.IsSelecting || isPendingCursorPlacement))
+            PointerReleasedAction(point);
+
         //if the user moves the pointer before the delay expires, it is a selection
         if (selectionManager.IsSelecting)
         {
@@ -996,6 +1004,11 @@ internal class PointerActionsManager
             _touchState = TouchInteractionState.Pinching;
             _touchLongPressTimer?.Stop();
 
+            //a touch selection ends here, the release of the pinch does not end it anymore
+            selectionManager.IsSelecting = false;
+            _selectionMode = PointerSelectionMode.Character;
+            StopSelectionAutoScroll();
+
             double dx = _secondaryTouchPoint.X - _lastTouchPoint.X;
             double dy = _secondaryTouchPoint.Y - _lastTouchPoint.Y;
             _initialPinchDistance = Math.Sqrt(dx * dx + dy * dy);
@@ -1160,8 +1173,12 @@ internal class PointerActionsManager
             selectionManager.IsSelecting = false;
             _selectionMode = PointerSelectionMode.Character;
             StopSelectionAutoScroll();
-            _touchTapCount = 0;
-            _touchTapTimer?.Stop();
+            //a double tap keeps counting, so the next tap can be the triple tap. After dragging the selection it starts over.
+            if (totalDist > TouchSlopThreshold)
+            {
+                _touchTapCount = 0;
+                _touchTapTimer?.Stop();
+            }
         }
 
         if (coreTextbox != null)
@@ -1182,6 +1199,9 @@ internal class PointerActionsManager
     {
         _touchLongPressTimer?.Stop();
         StopSelectionAutoScroll();
+        //a pending mouse click would otherwise turn the next hover without a pressed button into a selection
+        isPendingCursorPlacement = false;
+        selectionTimer?.Stop();
         coreTextbox?.zoomManager?.ResetZoomAnchors();
         if (coreTextbox != null)
         {

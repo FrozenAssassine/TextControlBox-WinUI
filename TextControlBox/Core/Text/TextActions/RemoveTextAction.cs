@@ -47,7 +47,8 @@ internal class RemoveTextAction
         undoRedo.RecordUndoAction(() =>
         {
             currentLineManager.SafeRemove(charPos - stepsToMove, stepsToMove);
-            cursorManager.CharacterPosition -= stepsToMove;
+            //charPos includes the trailing offset, CharacterPosition does not
+            cursorManager.CharacterPosition = charPos - stepsToMove;
 
         }, cursorManager.LineNumber, 1, 1);
     }

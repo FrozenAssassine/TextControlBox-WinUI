@@ -118,7 +118,8 @@ internal class ReplaceManager
         if (!searchManager.IsSearchOpen)
             return new InternSearchResult(SearchResult.SearchNotOpened, null);
 
-        replaceWord ??= "";
+        //like ReplaceAll: a "\n" in a CRLF document would otherwise end up inside a single line
+        replaceWord = LineEndings.CleanLineEndings(replaceWord ?? "", textManager.LineEnding);
         var res = searchManager.FindNext(cursorManager.currentCursorPosition);
         if (res.Selection != null)
         {

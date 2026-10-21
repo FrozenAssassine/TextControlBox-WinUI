@@ -203,7 +203,7 @@ internal class CursorManager
     }
 
     //Move cursor:
-    public void MoveLeft()
+    public void MoveLeft(bool? controlIsPressed = null)
     {
         ResetPreferredPosition();
 
@@ -225,16 +225,16 @@ internal class CursorManager
         else if (CharacterPosition > currentLineLength)
             CharacterPosition = currentLineLength;
         else if (CharacterPosition > 0)
-            CharacterPosition -= CalculateStepsToMoveLeft(CharacterPosition);
+            CharacterPosition -= CalculateStepsToMoveLeft(CharacterPosition, controlIsPressed);
     }
-    public void MoveRight()
+    public void MoveRight(bool? controlIsPressed = null)
     {
         ResetPreferredPosition();
 
         if (IsTrailing)
         {
             IsTrailing = false;
-            CharacterPosition += CalculateStepsToMoveRight(CharacterPosition);
+            CharacterPosition += CalculateStepsToMoveRight(CharacterPosition, controlIsPressed);
             return;
         }
 
@@ -249,7 +249,7 @@ internal class CursorManager
             LineNumber += 1;
         }
         else if (CharacterPosition < lineLength)
-            CharacterPosition += CalculateStepsToMoveRight(CharacterPosition);
+            CharacterPosition += CalculateStepsToMoveRight(CharacterPosition, controlIsPressed);
 
         if (CharacterPosition > lineLength)
             CharacterPosition = lineLength;

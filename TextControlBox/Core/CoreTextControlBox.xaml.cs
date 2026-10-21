@@ -264,7 +264,11 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
         var ctrl = Utils.IsKeyPressed(VirtualKey.Control);
         var menu = Utils.IsKeyPressed(VirtualKey.Menu);
         if (ctrl && !menu || menu && !ctrl)
+        {
+            //the text stays in the input box otherwise and is inserted together with the next typed character
+            inputHandler.Text = "";
             return;
+        }
 
         textActionManager.AddCharacter(inputHandler.Text);
         inputHandler.Text = "";
@@ -425,7 +429,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
-                        cursorManager.MoveLeft();
+                        cursorManager.MoveLeft(ctrl);
                         selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
                         canvasUpdateManager.UpdateSelection();
                     }
@@ -435,7 +439,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                         if (selectionManager.HasSelection && selectionManager.HasSelection)
                             cursorManager.SetCursorPositionCopyValues(selectionManager.GetMin(selectionManager.currentTextSelection));
                         else
-                            cursorManager.MoveLeft();
+                            cursorManager.MoveLeft(ctrl);
 
                         selectionManager.ClearSelectionIfNeeded(this);
                     }
@@ -449,7 +453,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                     if (shift)
                     {
                         selectionManager.StartSelectionIfNeeded();
-                        cursorManager.MoveRight();
+                        cursorManager.MoveRight(ctrl);
                         selectionManager.SetSelectionEnd(cursorManager.currentCursorPosition);
                         canvasUpdateManager.UpdateSelection();
                     }
@@ -459,7 +463,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                         if (selectionManager.HasSelection && selectionManager.HasSelection)
                             cursorManager.SetCursorPositionCopyValues(selectionManager.GetMax(selectionManager.currentTextSelection));
                         else
-                            cursorManager.MoveRight();
+                            cursorManager.MoveRight(ctrl);
 
                         selectionManager.ClearSelectionIfNeeded(this);
                     }
@@ -519,8 +523,10 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
                 }
             case VirtualKey.Escape:
                 {
+                    //without a selection there is nothing to do, the host should get the key (close a search box, a dialog)
+                    bool hadSelection = selectionManager.HasSelection;
                     ClearSelection();
-                    return true;
+                    return hadSelection;
                 }
             case VirtualKey.PageUp:
                 {
@@ -618,22 +624,29 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
 
     private void Canvas_Selection_PointerReleasedCore(object sender, PointerRoutedEventArgs e)
     {
-        Canvas_Selection.ReleasePointerCapture(e.Pointer);
-
-        var point = e.GetCurrentPoint(Canvas_Selection);
-        if (point.PointerDeviceType == PointerDeviceType.Touch)
+        //release the capture after the release is handled: losing the capture cancels the touch gesture,
+        //which must not happen before the tap or the selection end is processed
+        try
         {
-            if (selectionManager.IsSelectingOverLinenumbers)
+            var point = e.GetCurrentPoint(Canvas_Selection);
+            if (point.PointerDeviceType == PointerDeviceType.Touch)
             {
-                pointerActionsManager.PointerReleasedAction(point.Position);
+                if (selectionManager.IsSelectingOverLinenumbers)
+                {
+                    pointerActionsManager.PointerReleasedAction(point.Position);
+                    return;
+                }
+
+                pointerActionsManager.HandleTouchReleased(point, e);
                 return;
             }
 
-            pointerActionsManager.HandleTouchReleased(point, e);
-            return;
+            pointerActionsManager.PointerReleasedAction(point.Position);
         }
-
-        pointerActionsManager.PointerReleasedAction(point.Position);
+        finally
+        {
+            Canvas_Selection.ReleasePointerCapture(e.Pointer);
+        }
     }
     private void Canvas_Selection_PointerCanceled(object sender, PointerRoutedEventArgs e)
     {
@@ -662,7 +675,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
         if (!focusManager.HasFocus)
             return;
 
-        pointerActionsManager.PointerMovedAction(point.Position);
+        pointerActionsManager.PointerMovedAction(point.Position, point.Properties.IsLeftButtonPressed);
     }
     private void Canvas_Selection_PointerPressedCore(object sender, PointerRoutedEventArgs e)
     {
@@ -943,6 +956,10 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
     private void Canvas_LineNumber_PointerPressedCore(object sender, PointerRoutedEventArgs e)
     {
         Canvas_Selection.CapturePointer(e.Pointer);
+        //without focus the moves of the drag are ignored, so the line selection could not be extended
+        Focus(FocusState.Programmatic);
+        cursorManager.ResetPreferredPosition();
+        undoRedo.EndBatch();
 
         var point = e.GetCurrentPoint(Canvas_Selection);
 

@@ -143,7 +143,7 @@ internal class ScrollManager
         if (cursorManager.LineNumber < 0)
             cursorManager.LineNumber = 0;
 
-        cursorManager.CharacterPosition = Math.Clamp(cursorManager.PreferredCharacterPosition.Value, 0, textManager.GetLineLength(cursorManager.LineNumber));
+        SetCursorCharacterToPreferred();
         OffsetSource.VerticalOffset -= linesToScroll * textRenderer.SingleLineHeight;
         canvasHelper.UpdateAll();
     }
@@ -161,9 +161,17 @@ internal class ScrollManager
         if (cursorManager.LineNumber > textManager.LinesCount - 1)
             cursorManager.LineNumber = textManager.LinesCount - 1;
 
-        cursorManager.CharacterPosition = Math.Clamp(cursorManager.PreferredCharacterPosition.Value, 0, textManager.GetLineLength(cursorManager.LineNumber));
+        SetCursorCharacterToPreferred();
         OffsetSource.VerticalOffset += linesToScroll * textRenderer.SingleLineHeight;
         canvasHelper.UpdateAll();
+    }
+
+    //like MoveUp / MoveDown: the column must not end up between the two halves of a surrogate pair (emoji)
+    private void SetCursorCharacterToPreferred()
+    {
+        string line = textManager.GetLineText(cursorManager.LineNumber);
+        int column = Math.Clamp(cursorManager.PreferredCharacterPosition.Value, 0, line.Length);
+        cursorManager.CharacterPosition = TextElementHelper.SnapToTextElementStart(line, column);
     }
 
     public void UpdateScrollToShowCursor(bool update = true)
