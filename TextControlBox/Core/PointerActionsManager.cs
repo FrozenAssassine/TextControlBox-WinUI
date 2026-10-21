@@ -353,7 +353,15 @@ internal class PointerActionsManager
         coreTextbox.undoRedo.EndBatch();
 
         if (leftButtonPressed && !shift)
+        {
+            //like Windows: a click only continues a double or triple click when it is close to the previous one,
+            //a quick click on another word must just place the cursor
+            if (PointerClickCount > 0 && !IsNearLastClick(pointerPosition))
+                PointerClickCount = 0;
+
             PointerClickCount++;
+            _lastClickPoint = pointerPosition;
+        }
 
         if (PointerClickTimer.IsEnabled)
         {
@@ -368,6 +376,21 @@ internal class PointerActionsManager
             HandleDoubleClicked(pointerPosition);
         else
             HandleSingleClick(pointerPosition, rightButtonPressed, leftButtonPressed, shift, sender);
+    }
+
+    private Point _lastClickPoint;
+
+    private bool IsNearLastClick(Point point)
+    {
+        //the Windows rectangle is in physical pixels, the pointer position in DIPs. At least 3 DIPs so a shaky hand still double clicks.
+        double scale = coreTextbox?.XamlRoot?.RasterizationScale ?? 1.0;
+        if (scale <= 0)
+            scale = 1.0;
+
+        var (width, height) = Utils.GetSystemDoubleClickSize();
+        double toleranceX = Math.Max(3, width / 2.0 / scale);
+        double toleranceY = Math.Max(3, height / 2.0 / scale);
+        return Math.Abs(point.X - _lastClickPoint.X) <= toleranceX && Math.Abs(point.Y - _lastClickPoint.Y) <= toleranceY;
     }
 
     public void PointerReleasedAction(Point point)

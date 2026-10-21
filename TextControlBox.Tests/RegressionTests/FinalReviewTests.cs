@@ -291,4 +291,36 @@ public class FinalReviewTests
         Assert.AreEqual(3, sel.startChar);
         Assert.AreEqual(2, sel.endLine);
     }
+
+    //A quick click on another word counted as double click and selected the whole word.
+    [UITestMethod]
+    public void QuickClickOnAnotherWord_PlacesTheCursor()
+    {
+        var core = MakeCore("hello world test");
+        var first = PointAtCharacter(core, 0, 2);
+        var second = PointAtCharacter(core, 0, 13);
+
+        core.pointerActionsManager.PointerPressedAction(core, first, leftButtonPressed: true, rightButtonPressed: false, shiftPressed: false);
+        core.pointerActionsManager.PointerReleasedAction(first);
+        core.pointerActionsManager.PointerPressedAction(core, second, leftButtonPressed: true, rightButtonPressed: false, shiftPressed: false);
+        core.pointerActionsManager.PointerReleasedAction(second);
+
+        Assert.IsFalse(core.selectionManager.HasSelection);
+        Assert.AreEqual(13, core.CursorPosition.CharacterPosition);
+    }
+
+    [UITestMethod]
+    public void DoubleClickOnTheSameSpot_SelectsTheWord()
+    {
+        var core = MakeCore("hello world test");
+        var point = PointAtCharacter(core, 0, 8);
+
+        for (int i = 0; i < 2; i++)
+        {
+            core.pointerActionsManager.PointerPressedAction(core, point, leftButtonPressed: true, rightButtonPressed: false, shiftPressed: false);
+            core.pointerActionsManager.PointerReleasedAction(point);
+        }
+
+        Assert.AreEqual("world", core.SelectedText);
+    }
 }

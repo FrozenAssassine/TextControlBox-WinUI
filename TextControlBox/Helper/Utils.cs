@@ -127,6 +127,29 @@ internal class Utils
         }
     }
 
+    [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = false)]
+    private static extern int GetSystemMetrics(int nIndex);
+
+    private const int SM_CXDOUBLECLK = 36;
+    private const int SM_CYDOUBLECLK = 37;
+
+    /// <summary>
+    /// The size of the rectangle (in physical pixels) the second click of a double click has to be in, configured in Windows (default 4 x 4).
+    /// </summary>
+    public static (int width, int height) GetSystemDoubleClickSize()
+    {
+        try
+        {
+            int width = GetSystemMetrics(SM_CXDOUBLECLK);
+            int height = GetSystemMetrics(SM_CYDOUBLECLK);
+            return (width > 0 ? width : 4, height > 0 ? height : 4);
+        }
+        catch
+        {
+            return (4, 4);
+        }
+    }
+
     private const uint SPI_GETWHEELSCROLLLINES = 0x0068;
     private static uint _cachedWheelScrollLines = 3;
     private static long _lastWheelScrollLinesQueryTicks = 0;
