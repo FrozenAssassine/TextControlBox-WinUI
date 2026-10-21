@@ -38,7 +38,7 @@ public class SyntaxHighlightingGeneralTests
             SyntaxHighlightID.Gitignore, SyntaxHighlightID.HexFile, SyntaxHighlightID.Html, SyntaxHighlightID.Java, SyntaxHighlightID.Javascript,
             SyntaxHighlightID.Json, SyntaxHighlightID.Latex, SyntaxHighlightID.Lua, SyntaxHighlightID.Markdown, SyntaxHighlightID.PHP,
             SyntaxHighlightID.Python, SyntaxHighlightID.QSharp, SyntaxHighlightID.SQL, SyntaxHighlightID.TOML, SyntaxHighlightID.XML,
-            SyntaxHighlightID.None, SyntaxHighlightID.Log,
+            SyntaxHighlightID.None, SyntaxHighlightID.Log, SyntaxHighlightID.Generic,
         ];
 
         for (int i = 0; i < releasedOrder.Length; i++)

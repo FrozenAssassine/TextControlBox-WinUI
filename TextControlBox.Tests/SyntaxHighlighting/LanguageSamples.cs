@@ -136,6 +136,14 @@ internal static class LanguageSamples
             "GET /api/users HTTP/1.1" 404 512 "WARN" retry=0x1F
                at App.Service.Run() in C:\src\Service.cs:line 42
             """),
+        (SyntaxHighlightID.Generic, new GenericHighlighter(), """
+            # server settings
+            host = "example.com"
+            port: 8080
+            timeout = 2.5s // TODO lower
+            enabled = true; color = #ff8800 (fallback 0x1F)
+            started 2024-01-15 10:23:45 from 192.168.1.10 id 550e8400-e29b-41d4-a716-446655440000 /* note */
+            """),
         (SyntaxHighlightID.Lua, new Lua(), """
             local function add(a, b)
               -- add two numbers

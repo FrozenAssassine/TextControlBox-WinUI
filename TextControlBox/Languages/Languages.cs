@@ -829,6 +829,63 @@ namespace TextControlBoxNS.Languages
             };
         }
     }
+    // Language independent highlighting for files without a matching language: only patterns that mean the
+    // same in almost every format (numbers, strings, comments at the line start, operators, dates, ...).
+    // Keywords are left out on purpose, in plain text every "if" or "for" would be colored.
+    internal class GenericHighlighter : SyntaxHighlightLanguage
+    {
+        public GenericHighlighter()
+        {
+            this.Name = "Generic";
+            this.Filter = new[] { ".txt", ".conf", ".cfg", ".env" };
+            this.Description = "Language independent highlighting for numbers, strings, comments, operators and common values";
+            this.AutoPairingPair = new AutoPairingPair[]
+            {
+            new AutoPairingPair("[", "]"),
+            new AutoPairingPair("(", ")"),
+            new AutoPairingPair("{", "}"),
+            new AutoPairingPair("\"", "\""),
+            new AutoPairingPair("'", "'")
+            };
+            //later rules win over earlier ones
+            this.Highlights = new SyntaxHighlights[]
+            {
+            // Operators and brackets
+            new SyntaxHighlights(@"[=+\-*/<>!&|^%~?]+", "#AF00DB", "#C586C0"),
+            new SyntaxHighlights(@"[(){}\[\]]", "#A16900", "#FFD700"),
+
+            // Numbers: hex, decimal, exponent, with an optional unit (10px, 5ms, 50%). Digits inside words (file2) are not numbers.
+            new SyntaxHighlights(@"\b(?:0[xX][0-9A-Fa-f]+\b|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(?:[a-zA-Z]{1,3}\b|%|\b))", "#098658", "#B5CEA8"),
+
+            // Keys at the line start: key = value, key: value (not a protocol like https://)
+            new SyntaxHighlights(@"(?m)^[ \t]*[\w.\-]+(?=[ \t]*(?:=|:(?!//|:)))", "#001080", "#9CDCFE"),
+
+            // Constants
+            new SyntaxHighlights(@"\b(?:true|false|null|nil|undefined|True|False|None|TRUE|FALSE|NULL)\b", "#0000FF", "#569CD6"),
+
+            // Values: dates and times, IPv4 addresses, GUIDs, hex colors
+            new SyntaxHighlights(@"\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:[.,]\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?\b|\b\d{1,2}:\d{2}(?::\d{2})?\b", "#267F99", "#4EC9B0"),
+            new SyntaxHighlights(@"\b(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?\b", "#267F99", "#4EC9B0"),
+            new SyntaxHighlights(@"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b", "#267F99", "#4EC9B0"),
+            new SyntaxHighlights(@"#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b", "#267F99", "#4EC9B0"),
+
+            // URLs and email addresses
+            new SyntaxHighlights(@"\b[\w.+\-]+@[\w\-]+(?:\.[\w\-]+)+\b|https?://[^\s""'<>]+", "#3949AB", "#7986CB"),
+
+            // Block comments within a line
+            new SyntaxHighlights(@"/\*.*?\*/", "#008000", "#6A9955"),
+
+            // Strings, an apostrophe inside a word (can't) does not start one
+            new SyntaxHighlights(@"""(?:\\.|[^""\\\r\n])*""|(?<!\w)'(?:\\.|[^'\\\r\n])*'(?!\w)", "#A31515", "#CE9178"),
+
+            // Line comments, only at the line start: a # or ; in the middle of a line is usually a value (#fff, a;b)
+            new SyntaxHighlights(@"(?m)^[ \t]*(?://|#|;).*", "#008000", "#6A9955"),
+
+            // Markers, also inside comments
+            new SyntaxHighlights(@"\b(?:TODO|FIXME|HACK|XXX|BUG|NOTE|ERROR|WARNING|WARN|INFO|DEBUG)\b", "#CD3131", "#F44747"),
+            };
+        }
+    }
     internal class LogHighlighter : SyntaxHighlightLanguage
     {
         public LogHighlighter()

@@ -22,10 +22,19 @@
 		<RepositoryUrl>https://github.com/FrozenAssassine/TextControlBox-WinUI</RepositoryUrl>
 		<PackageTags>TextControlBox; Textbox; WinUI; C#; SyntaxHighlighting; LineNumbers</PackageTags>
 		<PackageReleaseNotes>
-			Fixed index out of range exception when clicking outside the linenumbers
-			Fixed sometimes occuring divided by zero exception when reformatting tabs and spaces
-			Fixed focus issues when clicking outside the textbox
-			Fixed key pressed like up and down arrow are send to parent controls as well
+			New: Word wrap (WordWrap), also for very large documents and very long lines
+			New: Touch and pen support (tap, double/triple tap, long press selection, pinch zoom)
+			New: IME input (Japanese, Chinese, Korean) and full emoji support
+			New: Smooth scrolling, wheel acceleration, diagonal touchpad scrolling, touchpad pinch zoom
+			New: Batched undo (UndoBatching), Dispose(), Delete(), GetLineFromPoint(), ScrollIntoViewHorizontallyCentered()
+			New: Native AOT compatible, log file and generic language independent syntax highlighting
+			Improved: Much faster editing of long lines and lower undo memory usage
+			Improved: Syntax highlighting accuracy and performance for all languages
+			Changed: JSON languages load via System.Text.Json, Newtonsoft.Json dependency removed
+			Changed: AddLines throws for lines containing line breaks
+			Fixed: Many undo/redo, selection, cursor, word wrap, zoom and scrolling bugs
+			Fixed: Memory leaks after closing tabs, theme changes, double right click menu
+			Full changelog: https://github.com/FrozenAssassine/TextControlBox-WinUI/blob/master/CHANGELOG.md
 		</PackageReleaseNotes>
 		<PackageIcon>Icon1.png</PackageIcon>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>

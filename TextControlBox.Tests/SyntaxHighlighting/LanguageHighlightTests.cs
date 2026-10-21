@@ -428,6 +428,45 @@ public class LogHighlightTests
 }
 
 [TestClass]
+public class GenericHighlightTests
+{
+    private static readonly SyntaxHighlightLanguage Lang = new GenericHighlighter();
+    private const string Operator = "#C586C0", Bracket = "#FFD700", Number = "#B5CEA8", Key = "#9CDCFE", Constant = "#569CD6",
+        Value = "#4EC9B0", Link = "#7986CB", Comment = "#6A9955", String = "#CE9178", Marker = "#F44747";
+
+    [TestMethod] public void Integer() => AssertColor(Lang, "count 42 items", "42", Number);
+    [TestMethod] public void Decimal_() => AssertColor(Lang, "pi is 3.14", "3.14", Number);
+    [TestMethod] public void Hex() => AssertColor(Lang, "mask 0x1F", "0x1F", Number);
+    [TestMethod] public void Exponent() => AssertColor(Lang, "value 1.5e-3", "1.5e-3", Number);
+    [TestMethod] public void NumberWithUnit() { AssertColor(Lang, "width 10px", "10px", Number); AssertColor(Lang, "load 50%", "50%", Number); }
+    [TestMethod] public void DigitsInsideAWord_AreNotANumber() => AssertColor(Lang, "open file2 now", "file2", null);
+    [TestMethod] public void Operators() { AssertColor(Lang, "a <= b", "<=", Operator); AssertColor(Lang, "x != y", "!=", Operator); }
+    [TestMethod] public void Brackets() { AssertColor(Lang, "f(x)", "(", Bracket); AssertColor(Lang, "a[0]", "]", Bracket); }
+    [TestMethod] public void DoubleQuotedString() => AssertColor(Lang, "say \"hello world\" now", "\"hello world\"", String);
+    [TestMethod] public void SingleQuotedString() => AssertColor(Lang, "say 'hi' now", "'hi'", String);
+    [TestMethod] public void ApostropheInText_IsNotAString() => AssertColor(Lang, "can't stop won't stop", "t stop won", null);
+    [TestMethod] public void NumberInsideString_IsString() => AssertColor(Lang, "\"port 80\"", "80", String);
+    [TestMethod] public void LineComments() { AssertColor(Lang, "# comment 42", "comment 42", Comment); AssertColor(Lang, "  // comment", "comment", Comment); AssertColor(Lang, "; comment", "comment", Comment); }
+    [TestMethod] public void HashInsideLine_IsNotAComment() => AssertColor(Lang, "issue #12 open", "open", null);
+    [TestMethod] public void BlockComment() => AssertColor(Lang, "a /* note 1 */ b", "note 1", Comment);
+    [TestMethod] public void MarkerInsideComment() => AssertColor(Lang, "// TODO fix", "TODO", Marker);
+    [TestMethod] public void LowercaseMarkerWord_IsNotHighlighted() => AssertColor(Lang, "a todo list", "todo", null);
+    [TestMethod] public void Constants() { AssertColor(Lang, "x = true", "true", Constant); AssertColor(Lang, "y = None", "None", Constant); }
+    [TestMethod] public void ProseNone_IsNotAConstant() => AssertColor(Lang, "there is none left", "none", null);
+    [TestMethod] public void KeyWithEquals() => AssertColor(Lang, "max_size = 10", "max_size", Key);
+    [TestMethod] public void KeyWithColon() => AssertColor(Lang, "  name: test", "name", Key);
+    [TestMethod] public void UrlAtLineStart_IsNotAKey() { AssertColor(Lang, "https://example.com/a", "https", Link); }
+    [TestMethod] public void Url() => AssertColor(Lang, "see https://example.com/a?b=1 now", "https://example.com/a?b=1", Link);
+    [TestMethod] public void Email() => AssertColor(Lang, "mail me@example.com now", "me@example.com", Link);
+    [TestMethod] public void DateTime() => AssertColor(Lang, "at 2024-01-15 10:23:45 ok", "2024-01-15 10:23:45", Value);
+    [TestMethod] public void IsoDateTime() => AssertColor(Lang, "at 2024-01-15T10:23:45Z ok", "2024-01-15T10:23:45Z", Value);
+    [TestMethod] public void Ip() => AssertColor(Lang, "host 192.168.1.10:8080 up", "192.168.1.10:8080", Value);
+    [TestMethod] public void Guid_() => AssertColor(Lang, "id 550e8400-e29b-41d4-a716-446655440000", "550e8400-e29b-41d4-a716-446655440000", Value);
+    [TestMethod] public void HexColor() => AssertColor(Lang, "color = #ff8800", "#ff8800", Value);
+    [TestMethod] public void PlainProse_IsMostlyUncolored() => AssertColor(Lang, "The quick brown fox jumps over the lazy dog", "quick brown fox jumps over the lazy dog", null);
+}
+
+[TestClass]
 public class CsvHighlightTests
 {
     [TestMethod]

@@ -2008,6 +2008,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
             { SyntaxHighlightID.QSharp, new QSharp() },
             { SyntaxHighlightID.XML, new XML() },
             { SyntaxHighlightID.SQL, new SQL() },
+            { SyntaxHighlightID.Generic, new GenericHighlighter() },
         };
 
     public static SyntaxHighlightLanguage GetSyntaxHighlightingFromID(SyntaxHighlightID languageId)

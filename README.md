@@ -230,7 +230,7 @@ TextControlBox provides several events to handle user interactions:
 
 TextControlBox includes built-in support for multiple languages:
 
-- C#, C++, Java, Python, JavaScript, JSON, x86Assembly, HTML, CSS, SQL, Markdown, Batch, Config (Ini, Klipper -Styles), CSV, CSV Improved (colored columns), Log files, .gitignore, LaTex, PHP, QSharp, TOML, XML, G-Code, Lua, Hex
+- C#, C++, Java, Python, JavaScript, JSON, x86Assembly, HTML, CSS, SQL, Markdown, Batch, Config (Ini, Klipper -Styles), CSV, CSV Improved (colored columns), Log files, .gitignore, LaTex, PHP, QSharp, TOML, XML, G-Code, Lua, Hex, Generic (language independent: numbers, strings, comments, operators, dates, IPs, URLs, ...)
 
 Enable syntax highlighting:
 

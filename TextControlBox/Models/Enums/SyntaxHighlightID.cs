@@ -139,4 +139,6 @@ public enum SyntaxHighlightID
     /// Identifier for Log files.
     /// </summary>
     Log,
+
+    Generic,
 }
