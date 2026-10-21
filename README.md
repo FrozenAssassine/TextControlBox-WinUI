@@ -17,7 +17,7 @@ TextControlBox is a powerful and highly customizable textbox control for WinUI 3
 
 ## 📦 Download
 NuGet Package:
-[TextControlBox.WinUI.JuliusKirsch](https://www.nuget.org/packages/TextControlBox.WinUI.JuliusKirsch/1.1.0-alpha)
+[TextControlBox.WinUI.JuliusKirsch](https://www.nuget.org/packages/TextControlBox.WinUI.JuliusKirsch)
 
 ## ❤️ Support my work
 If you find TextControlBox useful and want to support its development:
@@ -32,7 +32,18 @@ If you find TextControlBox useful and want to support its development:
   - Select specific lines or the entire text.
 - **Scrolling & Zooming**:
   - Scroll to specific lines or pages.
-  - Zoom in and out for better readability.
+  - Smooth scrolling with mouse wheel acceleration, respects the Windows wheel settings.
+  - Diagonal scrolling on precision touchpads.
+  - Zoom in and out for better readability (Ctrl + wheel, touchpad pinch).
+- **Word Wrap**:
+  - Long lines wrap at the control width instead of scrolling horizontally (`WordWrap`).
+  - Works with very large documents and very long lines.
+- **Touch & Pen**:
+  - Tap to place the cursor, double tap selects a word, triple tap selects the line.
+  - Long press selects a word and drags the selection, a normal drag scrolls, two fingers pinch to zoom.
+- **Input**:
+  - IME composition (Japanese, Chinese, Korean), dead keys and the Windows emoji panel.
+  - Emojis and surrogate pairs are handled as one character for cursor movement and deletion.
 - **Syntax Highlighting**:
   - Built-in support for multiple programming languages.
   - Easily toggle syntax highlighting on and off.
@@ -47,9 +58,9 @@ If you find TextControlBox useful and want to support its development:
   - Drag & drop text support.
   - Surround selected text with custom characters.
   - Get cursor position and manage selections programmatically.
+  - Native AOT compatible.
 
 ## Limits & Missing features
-- No textwrapping (I have no idea how to implement this properly atm.)
 - 200 million lines of text (20 characters per line) and it started to consume around 20GB of ram, scrolling worked, but random freezes appeared (too much overhead).
 - Syntaxhighlighting for multi line comments or similar only works, if both start and end characters are in the visible view. (Due to performance I only do such actions on the visible rendered text)
 
@@ -101,6 +112,8 @@ textBox.EnableSyntaxHighlighting = true;
 - `NumberOfLines`: Total number of lines in the editor.
 - `FontFamily`: Gets or sets the font family.
 - `FontSize`: Gets or sets the base font size.
+- `TextColor`: Gets or sets the base text color (syntax highlighting colors take precedence).
+- `WordWrap`: Gets or sets whether long lines wrap at the control width instead of scrolling horizontally.
 - `RenderedFontSize`: Gets the final rendered font size.
 - `CornerRadius`: Gets or sets the control's corner radius.
 - `RequestedTheme`: Gets or sets the UI theme.
@@ -113,25 +126,29 @@ textBox.EnableSyntaxHighlighting = true;
 - `SpaceBetweenLineNumberAndText`: Spacing between line numbers and text.
 - `ZoomFactor`: Gets or sets the zoom factor.
 - `VerticalScroll`, `HorizontalScroll`: Gets or sets scroll offsets.
+- `ScrollBarPosition`: Gets or sets the position of both scrollbars.
 - `VerticalScrollSensitivity`, `HorizontalScrollSensitivity`: Adjust scroll speed.
+- `SmoothScrolling`: Enables or disables smooth scrolling for mouse wheel and touchpad.
 - `UseSpacesInsteadTabs`: Enables space-based tabulation.
 - `NumberOfSpacesForTab`: Sets number of spaces per tab.
 - `SearchIsOpen`: Indicates whether the search panel is open.
 - `Lines`: Gets all lines as strings.
 - `DoAutoPairing`: Enables auto-pairing of brackets/quotes.
+- `AutoPairOnlyOnSelection`: When enabled, auto-pairing only surrounds selected text instead of also completing typed brackets/quotes.
 - `ControlW_SelectWord`: Enables Ctrl+W to select the current word.
-- `CanDragDropText`: Enables drag-and-drop support.
 - `ContextFlyout`: Gets or sets the context menu flyout.
 - `ContextFlyoutDisabled`: Disables the context menu.
-- `IsReadonly`: Determines if the control is read-only.
+- `IsReadOnly`: Determines if the control is read-only.
 - `CursorSize`: Gets or sets the cursor size.
 - `UndoRedoEnabled`: Enables/disables undo/redo functionality
+- `UndoBatching`: Groups consecutive typing within a word into one undo step (like VS Code)
 - `IsGroupingActions`: Gets whether grouping of undo redo is enabled or disabled
 - `BeginActionGroup`: Starts the grouping of undo redo items
 - `EndActionGroup`: Ends the grouping of undo redo items
+- `ExecuteActionGroup(Action actionGroup)`: Runs all operations in the delegate as a single undo/redo step
 - `SelectionScrollStartBorderDistance`: Gets or sets the mouse distance from the text box edge that triggers auto-scroll during selection
 - `ShowWhitespaceCharacters`: Gets or sets whether spaces and tabs are visually shown in the text box (e.g. as dots or arrows)
-- `ActualLineHeight`: Returns the rendered height of a single line in pixel
+- `ActualLineHeight`, `SingleLineHeight`: Return the rendered height of a single line in pixel
 - `HighlightLineWhenNotFocused`: Controls, whether the line is still highlighted when control is not focused
 - `CanUndo`: Gets whether undo could be executed.
 - `CanRedo`: Gets whether redo could be executed.
@@ -140,15 +157,16 @@ textBox.EnableSyntaxHighlighting = true;
 - `SelectLine(int line)`: Selects a specific line.
 - `SelectLines(int start, int count)`: Selects a range of lines.
 - `GoToLine(int line)`: Moves the cursor to a specific line.
-- `LoadText(string text)`: Loads text into the control.
+- `LoadText(string text, bool autodetectTabsSpaces = true)`: Loads text into the control without an undo step.
 - `SetText(string text)`: Sets the text content.
-- `LoadLines(IEnumerable<string> lines, LineEnding lineEnding = LineEnding.CRLF)`: Loads multiple lines.
+- `LoadLines(IEnumerable<string> lines, bool autodetectTabsSpaces = true, LineEnding lineEnding = LineEnding.CRLF)`: Loads multiple lines without an undo step.
 - `Paste()`: Pastes clipboard content.
 - `Copy()`: Copies the selection to clipboard.
 - `Cut()`: Cuts the selected text.
 - `GetText()`: Returns the current content.
 - `SetSelection(int start, int length)`: Selects a specific text range.
 - `SelectAll()`: Selects all text.
+- `Delete()`: Deletes the selected text, or the character after the cursor if nothing is selected.
 - `ClearSelection()`: Clears any text selection.
 - `Undo()`: Undoes the last action.
 - `Redo()`: Redoes the last undone action.
@@ -158,24 +176,26 @@ textBox.EnableSyntaxHighlighting = true;
 - `ScrollTopIntoView()`, `ScrollBottomIntoView()`: Scrolls to top/bottom.
 - `ScrollPageUp()`, `ScrollPageDown()`: Scrolls a full page.
 - `ScrollIntoViewHorizontally()`: Scrolls horizontally into view.
+- `ScrollIntoViewHorizontallyCentered()`: Centers the cursor column horizontally (useful for search matches, no-op in word wrap mode).
 - `GetLineText(int line)`: Returns the text of a line.
 - `GetLinesText(int startLine, int length)`: Returns a range of lines.
 - `SetLineText(int line, string text)`: Replaces the text of a line.
 - `DeleteLine(int line)`: Deletes a specific line.
 - `AddLine(int line, string text)`: Adds a new line at a position.
-- `AddLines(int start, string[] lines)`: Adds the array of lines at the given position.
+- `AddLines(int start, string[] lines)`: Adds the array of lines at the given position (lines must not contain line breaks).
 - `SurroundSelectionWith(string text)`: Surrounds selection with a string.
 - `SurroundSelectionWith(string text1, string text2)`: Surrounds with prefix/suffix.
-- `DuplicateLine(int line)`: Duplicates the specified line.
-- `DuplicateCurrentLine()`: Duplicates the current line.
-- `ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord)`: Replaces all matches.
-- `ReplaceNext(string replaceWord)`: Replaces the next match.
+- `DuplicateLine(int line, bool ignoreIsReadOnly = false)`: Duplicates the specified line.
+- `DuplicateCurrentLine(bool ignoreIsReadOnly = false)`: Duplicates the current line.
+- `ReplaceAll(string word, string replaceWord, bool matchCase, bool wholeWord, bool ignoreIsReadOnly = false)`: Replaces all matches.
+- `ReplaceNext(string replaceWord, bool ignoreIsReadOnly = false)`: Replaces the next match.
 - `FindNext()`, `FindPrevious()`: Navigates search results.
 - `BeginSearch(string word, bool wholeWord, bool matchCase)`: Starts a search.
 - `EndSearch()`: Ends the search.
-- `Unload()`: Unloads the control.
+- `Unload()`, `Dispose()`: Releases all resources when the control is closed for good (e.g. a closed tab). Calling it more than once is safe.
 - `ClearUndoRedoHistory()`: Clears undo/redo history.
 - `GetCursorPosition()`: Returns the cursor's screen position.
+- `GetLineFromPoint(Point point)`: Returns the line at the given point.
 - `SetCursorPosition(int lineNumber, int characterPos, bool scrollIntoView = true, bool autoClamp = true)`: Sets the cursor position.
 - `SelectSyntaxHighlightingById(SyntaxHighlightID languageId)`: Sets highlighting by ID.
 - `CalculateSelectionPosition()`: Gets position info for selection.
@@ -188,7 +208,7 @@ textBox.EnableSyntaxHighlighting = true;
 - `SyntaxHighlightings`: Static dictionary of syntax languages.
 - `GetSyntaxHighlightingFromID(SyntaxHighlightID languageId)`: Gets highlighting language.
 - `GetSyntaxHighlightingFromJson(string json)`: Loads highlighting from JSON.
-- `RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs)`: Changes the current indentation of the text to a new indentation.
+- `RewriteTabsSpaces(int spaces, bool useSpacesInsteadTabs, bool ignoreIsReadOnly = false)`: Changes the current indentation of the text to a new indentation.
 - `DetectTabsSpaces()`: Detects and returns the current indentation of the text as tuple
 </details>
 
@@ -200,7 +220,7 @@ TextControlBox provides several events to handle user interactions:
 - `SelectionChanged`: Fires when the user changes the selected text.
 - `ZoomChanged`: Called when the zoom factor is adjusted.
 - `GotFocus` / `LostFocus`: Handle focus changes.
-- `TextLoadedEvent`: Occurs when the TextControlBox finished loading the text.
+- `TextLoaded`: Occurs when the TextControlBox finished loading the text.
 - `Loaded`: Occurs when the TextControlBox finished loading and all components initialized
 - `TabsSpacesChanged`: Occurs when the tabs or spaces change, from LoadLines/LoadText or from properties
 - `LineEndingChanged`: Occurs when the line ending changes, from LoadLines/LoadText or from property
@@ -210,7 +230,7 @@ TextControlBox provides several events to handle user interactions:
 
 TextControlBox includes built-in support for multiple languages:
 
-- C#, C++, Java, Python, JavaScript, JSON, x86Assembly, HTML, CSS, SQL, Markdown, Batch, Config (Ini, Klipper -Styles), CSV, LaTex, PHP, QSharp, TOML, XML, G-Code, Lua, Hex
+- C#, C++, Java, Python, JavaScript, JSON, x86Assembly, HTML, CSS, SQL, Markdown, Batch, Config (Ini, Klipper -Styles), CSV, CSV Improved (colored columns), Log files, .gitignore, LaTex, PHP, QSharp, TOML, XML, G-Code, Lua, Hex
 
 Enable syntax highlighting:
 
