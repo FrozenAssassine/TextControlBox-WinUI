@@ -203,6 +203,13 @@ internal sealed partial class CoreTextControlBox : IInteractionTrackerOwner
         _lastTrackerX = args.Position.X;
         _lastTrackerY = args.Position.Y;
 
+        // Only a touchpad pan (interacting state) may move the view. Outside of it the position changes are the
+        // answers to our own TryUpdatePosition calls. They arrive a frame or more later, when caret-follow has
+        // already scrolled further, so writing them back threw the view back to an older position: holding a
+        // key on a line wider than the view (or holding Enter) jittered and the text came in bursts.
+        if (!_scrollTrackerInteracting)
+            return;
+
         try
         {
             if (scrollManager?.OffsetSource is { } src)

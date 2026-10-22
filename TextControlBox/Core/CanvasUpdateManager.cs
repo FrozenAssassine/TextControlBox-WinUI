@@ -10,7 +10,7 @@ internal class CanvasUpdateManager
 
     public CanvasUpdateManager()
     {
-        _batchRedrawer = new CanvasBatchRedrawer(16); //16ms = 60FPS
+        _batchRedrawer = new CanvasBatchRedrawer();
     }
 
     public void Init(CoreTextControlBox coreTextbox)
