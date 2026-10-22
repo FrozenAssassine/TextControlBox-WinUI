@@ -1,3 +1,4 @@
+using System;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -103,7 +104,63 @@ internal partial class InputHandlerControl : TextBox
             _isProgrammaticChange = true;
             base.Text = value;
             _isProgrammaticChange = false;
+            _takenText = "";
         }
+    }
+
+    // The box must not be cleared after every character. Each reset of its text makes the Windows text services
+    // (TSF) resync their text store, and while a key is held the resulting message traffic starves the XAML
+    // render loop: frames came exponentially less often and the text appeared in ever growing blocks. So the
+    // typed text just stays in the box, only the part behind what was already taken is new, and the box is
+    // cleared once typing pauses.
+    private const int ClearAfterLength = 4096;
+    private static readonly TimeSpan ClearWhenIdleAfter = TimeSpan.FromMilliseconds(500);
+    // A XAML DispatcherTimer on purpose, see CaretBlinkManager.
+    private Microsoft.UI.Xaml.DispatcherTimer _clearTimer;
+    private string _takenText = "";
+
+    /// <summary>Returns the text typed since the last call and schedules the box to be cleared when typing pauses.</summary>
+    public string TakeNewText()
+    {
+        string text = base.Text;
+        //normally the text was only extended. When something replaced a part of it (an IME reconversion),
+        //everything behind the unchanged start is new.
+        int unchanged = text.AsSpan().CommonPrefixLength(_takenText);
+        string newText = text.Substring(unchanged);
+        _takenText = text;
+
+        if (text.Length > ClearAfterLength)
+            Text = "";
+        else
+            ScheduleClearWhenIdle();
+
+        return newText;
+    }
+
+    private void ScheduleClearWhenIdle()
+    {
+        if (_clearTimer == null)
+        {
+            _clearTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = ClearWhenIdleAfter };
+            _clearTimer.Tick += (s, e) => ClearIfIdle();
+        }
+        //restart: the box is cleared ClearWhenIdleAfter after the last typed text
+        _clearTimer.Stop();
+        _clearTimer.Start();
+    }
+
+    private void ClearIfIdle()
+    {
+        _clearTimer?.Stop();
+        //never touch the text during a composition or while its result was not taken yet
+        if (_isComposing || _commitPending || base.Text.Length == 0 || !string.Equals(_takenText, base.Text, StringComparison.Ordinal))
+            return;
+        Text = "";
+    }
+
+    internal void StopClearTimer()
+    {
+        _clearTimer?.Stop();
     }
 
     public bool isReadOnly { get; set; } = false;
@@ -125,7 +182,8 @@ internal partial class InputHandlerControl : TextBox
         if (isReadOnly || string.IsNullOrEmpty(text))
             return;
 
-        base.Text = text;
+        //a real TextBox inserts at its caret, which stays at the end
+        base.Text += text;
         if (!_isProgrammaticChange && !_isComposing)
         {
             TextEntered?.Invoke(this, null);
@@ -142,7 +200,7 @@ internal partial class InputHandlerControl : TextBox
         _isComposing = false;
         if (!string.IsNullOrEmpty(committedText))
         {
-            base.Text = committedText;
+            base.Text += committedText;
             if (!isReadOnly && !_isProgrammaticChange)
             {
                 TextEntered?.Invoke(this, null);

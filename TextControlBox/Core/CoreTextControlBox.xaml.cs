@@ -217,6 +217,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
         TeardownDiagonalScroll();
         caretBlinkManager?.Stop();
         pointerActionsManager?.CleanUp();
+        inputHandler?.StopClearTimer();
     }
 
     private void CoreTextControlBox_ActualThemeChanged(FrameworkElement sender, object args)
@@ -254,24 +255,18 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
         if (inputHandler.IsComposing)
             return;
 
-        if (IsReadOnly || inputHandler.Text.Equals("\t", StringComparison.OrdinalIgnoreCase))
-        {
-            inputHandler.Text = ""; //clear text, otherwise in readonly mode, the text is still added in the textbox.
+        //only the part typed since the last call, the box is not cleared after every character (see InputHandlerControl)
+        string newText = inputHandler.TakeNewText();
+        if (newText.Length == 0 || IsReadOnly || newText.Equals("\t", StringComparison.OrdinalIgnoreCase))
             return;
-        }
 
-        //Prevent key-entering if control key is pressed 
+        //Prevent key-entering if control key is pressed
         var ctrl = Utils.IsKeyPressed(VirtualKey.Control);
         var menu = Utils.IsKeyPressed(VirtualKey.Menu);
         if (ctrl && !menu || menu && !ctrl)
-        {
-            //the text stays in the input box otherwise and is inserted together with the next typed character
-            inputHandler.Text = "";
             return;
-        }
 
-        textActionManager.AddCharacter(inputHandler.Text);
-        inputHandler.Text = "";
+        textActionManager.AddCharacter(newText);
         UpdateInputHandlerPosition();
     }
     private void InputHandler_KeyDownCore(object sender, KeyRoutedEventArgs e)
@@ -1606,6 +1601,7 @@ internal sealed partial class CoreTextControlBox : UserControl, IDisposable
             inputHandler.TextEntered -= InputHandler_TextEntered;
             inputHandler.CompositionStarted -= InputHandler_CompositionStarted;
             inputHandler.CompositionChanged -= InputHandler_CompositionChanged;
+            inputHandler.StopClearTimer();
         }
 
         if (verticalScrollBar != null)

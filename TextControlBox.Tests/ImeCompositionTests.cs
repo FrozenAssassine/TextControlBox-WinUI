@@ -87,6 +87,50 @@ public class ImeCompositionTests
         Assert.IsFalse(textEnteredCalled);
     }
 
+    //Clearing the box after every character made the text services resync each time, which starved the
+    //rendering while a key was held. The text stays in the box and only the new part is taken.
+    [UITestMethod]
+    public void Typing_DoesNotClearTheInputBoxPerCharacter_AndInsertsEveryCharacterOnce()
+    {
+        var core = TestHelper.MakeCoreTextbox(0);
+        core.SetText("");
+
+        foreach (char c in "hello")
+            core.InputHandler.SimulateUserInput(c.ToString());
+
+        Assert.AreEqual("hello", core.GetText());
+        Assert.AreEqual("hello", core.InputHandler.Text);
+    }
+
+    [UITestMethod]
+    public void TakeNewText_ReturnsOnlyTheNewPart_AndEverythingAfterAReplacedPart()
+    {
+        var input = new InputHandlerControl();
+        input.SimulateUserInput("ab");
+        Assert.AreEqual("ab", input.TakeNewText());
+        Assert.AreEqual("", input.TakeNewText());
+
+        input.SimulateUserInput("c");
+        Assert.AreEqual("c", input.TakeNewText());
+
+        input.Text = "";
+        input.SimulateUserInput("x");
+        Assert.AreEqual("x", input.TakeNewText());
+    }
+
+    [UITestMethod]
+    public void Composition_AfterTypedText_InsertsOnlyTheCommittedText()
+    {
+        var core = TestHelper.MakeCoreTextbox(0);
+        core.SetText("");
+
+        core.InputHandler.SimulateUserInput("a");
+        core.InputHandler.SimulateCompositionStart();
+        core.InputHandler.SimulateCompositionEnd("東京");
+
+        Assert.AreEqual("a東京", core.GetText());
+    }
+
     [UITestMethod]
     public void CoreTextControlBox_UpdateInputHandlerPosition_TracksCursorCoordinates()
     {
