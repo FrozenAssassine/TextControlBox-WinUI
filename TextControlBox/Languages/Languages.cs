@@ -359,17 +359,32 @@ namespace TextControlBoxNS.Languages
 
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#dd00dd", "#ff00ff"),
-                new SyntaxHighlights("<([^ >!\\/<]+)[^><]*>", "#969696", "#0099ff"),
-                new SyntaxHighlights("<+[/]+[a-zA-Z0-9:?\\-_]+>", "#969696", "#0099ff"),
-                new SyntaxHighlights(@"<[a-zA-Z0-9:?\-]+[^<>]*/>", "#969696", "#0099ff"),
-                //attributes after the tags, which would otherwise paint over them
-                new SyntaxHighlights(@"(?<![-A-Za-z_])[-A-Za-z_]+=", "#00CA00", "#Ff0000"),
-                //only attribute values, quotes and apostrophes in the text are no strings
-                new SyntaxHighlights(@"(?<==\s*)""[^""\r\n]*""", "#00CA00", "#00FF00"),
-                new SyntaxHighlights(@"(?<==\s*)'[^'\r\n]*'", "#00CA00", "#00FF00"),
-                new SyntaxHighlights("[0-9]+(px|rem|em|vh|vw|px|pt|pc|in|mm|cm|deg|%)", "#ff00ff", "#dd00dd"),
-                new SyntaxHighlights("<!--[\\s\\S]*?-->", "#888888", "#888888"),
+                // Numbers
+                new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#098658", "#B5CEA8"),
+                
+                // Opening tags
+                new SyntaxHighlights("<([^ >!\\/<]+)[^><]*>", "#800000", "#569CD6"),
+                
+                // Closing tags
+                new SyntaxHighlights("<+[/]+[a-zA-Z0-9:?\\-_]+>", "#800000", "#569CD6"),
+                
+                // Self-closing tags
+                new SyntaxHighlights(@"<[a-zA-Z0-9:?\-]+[^<>]*/>", "#800000", "#569CD6"),
+                
+                // Attributes
+                new SyntaxHighlights(@"(?<![-A-Za-z_])[-A-Za-z_]+=", "#E50000", "#9CDCFE"),
+                
+                // Double-quoted attribute values
+                new SyntaxHighlights(@"(?<==\s*)""[^""\r\n]*""", "#A31515", "#CE9178"),
+                
+                // Single-quoted attribute values
+                new SyntaxHighlights(@"(?<==\s*)'[^'\r\n]*'", "#A31515", "#CE9178"),
+                
+                // CSS Units
+                new SyntaxHighlights("[0-9]+(px|rem|em|vh|vw|px|pt|pc|in|mm|cm|deg|%)", "#811F3F", "#C586C0"),
+                
+                // Comments
+                new SyntaxHighlights("<!--[\\s\\S]*?-->", "#6E7781", "#6A9955"),
             };
         }
     }
@@ -536,30 +551,30 @@ namespace TextControlBoxNS.Languages
             this.Description = "Syntax highlighting for Xml language";
             this.Highlights = new SyntaxHighlights[]
             {
-                //numeric values (handles floating point and scientific notation)
-                new SyntaxHighlights("[+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?", "#dd00dd", "#ff00ff"),
+            //numeric values (handles floating point and scientific notation)
+            new SyntaxHighlights("[+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?", "#098658", "#B5CEA8"),
             
-                //opening tags
-                new SyntaxHighlights("<([a-zA-Z_:][\\w:.-]*)[^>]*>", "#969696", "#0099ff"),
+            //opening tags
+            new SyntaxHighlights("<([a-zA-Z_:][\\w:.-]*)[^>]*>", "#800000", "#4EC9B0"),
             
-                //Closing tags
-                new SyntaxHighlights("</([a-zA-Z_:][\\w:.-]*)>", "#969696", "#0099ff"),
+            //Closing tags
+            new SyntaxHighlights("</([a-zA-Z_:][\\w:.-]*)>", "#800000", "#4EC9B0"),
             
-                //Self-closing tags
-                new SyntaxHighlights("<([a-zA-Z_:][\\w:.-]*)[^>]*/>", "#969696", "#0099ff"),
+            //Self-closing tags
+            new SyntaxHighlights("<([a-zA-Z_:][\\w:.-]*)[^>]*/>", "#800000", "#4EC9B0"),
             
-                //Attributes
-                //only starts at the beginning of a name, otherwise a long word is scanned again from every character
-                new SyntaxHighlights(@"(?<![\w:.-])[a-zA-Z_:][\w:.-]*=", "#00CA00", "#ff0000"),
+            //Attributes
+            //only starts at the beginning of a name, otherwise a long word is scanned again from every character
+            new SyntaxHighlights(@"(?<![\w:.-])[a-zA-Z_:][\w:.-]*=", "#E50000", "#9CDCFE"),
             
-                //Double-quoted attribute values
-                new SyntaxHighlights("\"[^\n]*?\"", "#00CA00", "#00FF00"),
+            //Double-quoted attribute values
+            new SyntaxHighlights("\"[^\n]*?\"", "#A31515", "#CE9178"),
             
-                //Single-quoted attribute values
-                new SyntaxHighlights("'[^\n]*?'", "#00CA00", "#00FF00"),
+            //Single-quoted attribute values
+            new SyntaxHighlights("'[^\n]*?'", "#A31515", "#CE9178"),
             
-                //Comments
-                new SyntaxHighlights("<!--[\\s\\S]*?-->", "#888888", "#888888"),
+            //Comments
+            new SyntaxHighlights("<!--[\\s\\S]*?-->", "#6E7781", "#6A9955"),
             };
         }
     }
