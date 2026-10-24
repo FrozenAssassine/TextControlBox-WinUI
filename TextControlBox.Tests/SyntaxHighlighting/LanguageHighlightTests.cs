@@ -165,7 +165,7 @@ public class CssHighlightTests
 public class HtmlHighlightTests
 {
     private static readonly SyntaxHighlightLanguage Lang = new Html();
-    private const string Attribute = "#Ff0000", Tag = "#0099ff", String = "#00FF00", Comment = "#888888";
+    private const string Attribute = "#9CDCFE", Tag = "#569CD6", String = "#CE9178", Comment = "#6A9955";
 
     [TestMethod] public void OpeningTag() { const string t = "<div class=\"box\">"; AssertColor(Lang, t, "<div", Tag); AssertColor(Lang, t, "\"box\"", String); }
     [TestMethod] public void AttributeName() => AssertColor(Lang, "<div class=\"box\">", "class=", Attribute);
@@ -179,7 +179,7 @@ public class HtmlHighlightTests
 public class XmlHighlightTests
 {
     private static readonly SyntaxHighlightLanguage Lang = new XML();
-    private const string Tag = "#0099ff", Attribute = "#ff0000", String = "#00FF00", Comment = "#888888";
+    private const string Tag = "#4EC9B0", Attribute = "#9CDCFE", String = "#CE9178", Comment = "#6A9955";
 
     [TestMethod] public void TagWithAttribute() { const string t = "<root attr=\"1\">"; AssertColor(Lang, t, "<root", Tag); AssertColor(Lang, t, "attr=", Attribute); AssertColor(Lang, t, "\"1\"", String); }
     [TestMethod] public void ClosingAndSelfClosing() { AssertColor(Lang, "</root>", "</root>", Tag); AssertColor(Lang, "<item/>", "<item/>", Tag); }
