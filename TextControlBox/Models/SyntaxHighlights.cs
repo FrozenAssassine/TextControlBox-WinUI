@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 using System.Drawing;
 using System.Text.RegularExpressions;
 using TextControlBoxNS.Extensions;
@@ -70,15 +70,35 @@ public class SyntaxHighlights
         set => ColorLight_Clr = ((Color)ColorConverter.ConvertFromString(value)).ToMediaColor();
     }
 
+    // A pattern with heavy backtracking would otherwise block the UI thread on every redraw of a long line.
+    // The limit has to leave room for a slow machine, it only exists to stop runaway patterns.
+    internal static readonly System.TimeSpan MatchTimeout = System.TimeSpan.FromMilliseconds(100);
+    private string compiledPattern;
+
     [JsonIgnore]
     internal Regex PrecompiledRegex { get; private set; }
 
     // Initialize regex when setting the pattern
     internal void CompileRegex()
     {
-        if (!string.IsNullOrEmpty(Pattern))
+        if (string.IsNullOrEmpty(Pattern))
+            return;
+
+        //the languages are shared, do not compile the same pattern again for every textbox
+        if (PrecompiledRegex != null && compiledPattern == Pattern)
+            return;
+
+        PrecompiledRegex = new Regex(Pattern, RegexOptions.Compiled | RegexOptions.Multiline, MatchTimeout);
+        compiledPattern = Pattern;
+
+        // The first match of a compiled regex includes generating its code, which takes longer than the
+        // match timeout for big patterns. Do that here, so the first drawn frame is not cut off by it.
+        try
         {
-            PrecompiledRegex = new Regex(Pattern, RegexOptions.Compiled |RegexOptions.Multiline);
+            PrecompiledRegex.IsMatch("warm up");
+        }
+        catch (RegexMatchTimeoutException)
+        {
         }
     }
 }

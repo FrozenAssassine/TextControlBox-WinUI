@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Input;
+using Microsoft.UI.Input;
 using TextControlBoxNS.Core.Renderer;
 
 namespace TextControlBoxNS.Core;
@@ -10,7 +10,7 @@ internal class CanvasUpdateManager
 
     public CanvasUpdateManager()
     {
-        _batchRedrawer = new CanvasBatchRedrawer(16); //16ms = 60FPS
+        _batchRedrawer = new CanvasBatchRedrawer();
     }
 
     public void Init(CoreTextControlBox coreTextbox)
@@ -27,6 +27,7 @@ internal class CanvasUpdateManager
 
         //coreTextbox.canvasCursor.Invalidate();
         _batchRedrawer.RequestRedraw(coreTextbox.canvasCursor);
+        coreTextbox.UpdateInputHandlerPosition();
     }
 
     // Redraw the caret canvas for a blink-phase toggle WITHOUT resetting the blink
@@ -68,6 +69,7 @@ internal class CanvasUpdateManager
 
     public void UpdateAll()
     {
+        UpdateLineNumbers();
         UpdateText();
         UpdateSelection();
         UpdateCursor();

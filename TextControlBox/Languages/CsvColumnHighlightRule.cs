@@ -69,10 +69,15 @@ internal sealed class CsvColumnHighlightRule : IHighlightRule
             int lineStart = globalIndex;
             int columnIndex = 0;
             int tokenStart = lineStart;
+            bool inQuotes = false;
 
             for (int i = 0; i <= line.Length; i++)
             {
-                if (i != line.Length && line[i] != ',')
+                //a comma inside a quoted field ("a,b") belongs to the field, an escaped quote ("") toggles twice
+                if (i != line.Length && line[i] == '"')
+                    inQuotes = !inQuotes;
+
+                if (i != line.Length && (line[i] != ',' || inQuotes))
                     continue;
 
                 int tokenLength = (lineStart + i) - tokenStart;

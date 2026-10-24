@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 
 namespace TextControlBoxNS.Core.Text;
 
@@ -6,8 +6,8 @@ internal class AutoPairing
 {
     public static (string text, int length) AutoPair(CoreTextControlBox textbox, string inputtext)
     {
-        if (!textbox.DoAutoPairing || textbox.AutoPairOnlyOnSelection || inputtext.Length != 1 || textbox.SyntaxHighlighting == null || textbox.SyntaxHighlighting.AutoPairingPair == null)
-            return (inputtext, inputtext.Length);
+        if (string.IsNullOrEmpty(inputtext) || !textbox.DoAutoPairing || textbox.AutoPairOnlyOnSelection || inputtext.Length != 1 || textbox.SyntaxHighlighting == null || textbox.SyntaxHighlighting.AutoPairingPair == null)
+            return (inputtext, inputtext?.Length ?? 0);
 
         var res = textbox.SyntaxHighlighting.AutoPairingPair.Where(x => x.Matches(inputtext));
         if (res.Count() == 0)
@@ -20,7 +20,7 @@ internal class AutoPairing
 
     public static string AutoPairSelection(CoreTextControlBox textbox, string inputtext)
     {
-        if (!textbox.DoAutoPairing || inputtext.Length != 1 || textbox.SyntaxHighlighting == null || textbox.SyntaxHighlighting.AutoPairingPair == null)
+        if (string.IsNullOrEmpty(inputtext) || !textbox.DoAutoPairing || inputtext.Length != 1 || textbox.SyntaxHighlighting == null || textbox.SyntaxHighlighting.AutoPairingPair == null)
             return inputtext;
 
         var res = textbox.SyntaxHighlighting.AutoPairingPair.Where(x => x.Value.Equals(inputtext));

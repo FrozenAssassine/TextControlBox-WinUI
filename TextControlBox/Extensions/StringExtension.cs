@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text.RegularExpressions;
 using TextControlBoxNS.Models;
 
@@ -35,12 +35,10 @@ namespace TextControlBoxNS.Extensions
             if (start >= text.Length || start < 0)
                 return text;
 
-            if (count <= -1)
+            if (count <= -1 || start + count >= text.Length)
                 return text.Remove(start);
             else
             {
-                if (count == text.Length)
-                    return text.Remove(start);
                 return text.Remove(start, count);
             }
         }

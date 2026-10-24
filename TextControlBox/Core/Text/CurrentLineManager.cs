@@ -1,4 +1,5 @@
-﻿using TextControlBoxNS.Extensions;
+using TextControlBoxNS.Extensions;
+using TextControlBoxNS.Helper;
 
 namespace TextControlBoxNS.Core.Text;
 
@@ -44,14 +45,27 @@ internal class CurrentLineManager
         if (position < 0)
             position = 0;
 
-        if (position >= CurrentLine.Length || CurrentLine.Length <= 0)
-            CurrentLine = CurrentLine + add;
+        string current = CurrentLine;
+        if (position >= current.Length || current.Length <= 0)
+            CurrentLine = current + add;
         else
-            CurrentLine = CurrentLine.Insert(position, add);
+        {
+            position = TextElementHelper.SnapToTextElementStart(current, position);
+            CurrentLine = current.Insert(position, add);
+        }
     }
 
     public void SafeRemove(int start, int count = -1)
     {
-        CurrentLine = CurrentLine.SafeRemove(start, count);
+        string current = CurrentLine;
+        if (count > 0 && current != null)
+        {
+            int snappedStart = TextElementHelper.SnapToTextElementStart(current, start);
+            int end = start + count;
+            int snappedEnd = TextElementHelper.SnapToTextElementEnd(current, end);
+            start = snappedStart;
+            count = snappedEnd - snappedStart;
+        }
+        CurrentLine = current.SafeRemove(start, count);
     }
 }

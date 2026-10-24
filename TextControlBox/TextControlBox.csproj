@@ -1,8 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
 		<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
 		<RootNamespace>TextControlBoxNS</RootNamespace>
+		<!-- Enables the trimming and Native AOT analyzers, apps that publish with AOT can use the control -->
+		<IsAotCompatible>true</IsAotCompatible>
 		<RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
 		<UseWinUI>true</UseWinUI>
 		<WindowsSdkPackageVersion>10.0.19041.38</WindowsSdkPackageVersion>
@@ -11,7 +13,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageId>TextControlBox.WinUI.JuliusKirsch</PackageId>
 		<Title>TextControlBox WinUI</Title>
-		<Version>1.6.2</Version>
+		<Version>1.7.0</Version>
 		<Authors>Julius Kirsch</Authors>
 		<Product>TextControlBox WinUI</Product>
 		<Description>A powerful and highly customizable textbox control for WinUI 3 applications. It provides an advanced text editing experience with features like syntax highlighting for multiple programming languages, intuitive search and replace functionality, zooming, line numbering, and smooth scrolling. With support for undo/redo, customizable themes, and efficient performance.</Description>
@@ -20,10 +22,19 @@
 		<RepositoryUrl>https://github.com/FrozenAssassine/TextControlBox-WinUI</RepositoryUrl>
 		<PackageTags>TextControlBox; Textbox; WinUI; C#; SyntaxHighlighting; LineNumbers</PackageTags>
 		<PackageReleaseNotes>
-			Fixed index out of range exception when clicking outside the linenumbers
-			Fixed sometimes occuring divided by zero exception when reformatting tabs and spaces
-			Fixed focus issues when clicking outside the textbox
-			Fixed key pressed like up and down arrow are send to parent controls as well
+			New: Word wrap (WordWrap), also for very large documents and very long lines
+			New: Touch and pen support (tap, double/triple tap, long press selection, pinch zoom)
+			New: IME input (Japanese, Chinese, Korean) and full emoji support
+			New: Smooth scrolling, wheel acceleration, diagonal touchpad scrolling, touchpad pinch zoom
+			New: Batched undo (UndoBatching), Dispose(), Delete(), GetLineFromPoint(), ScrollIntoViewHorizontallyCentered()
+			New: Native AOT compatible, log file and generic language independent syntax highlighting
+			Improved: Much faster editing of long lines and lower undo memory usage
+			Improved: Syntax highlighting accuracy and performance for all languages
+			Changed: JSON languages load via System.Text.Json, Newtonsoft.Json dependency removed
+			Changed: AddLines throws for lines containing line breaks
+			Fixed: Many undo/redo, selection, cursor, word wrap, zoom and scrolling bugs
+			Fixed: Memory leaks after closing tabs, theme changes, double right click menu
+			Full changelog: https://github.com/FrozenAssassine/TextControlBox-WinUI/blob/master/CHANGELOG.md
 		</PackageReleaseNotes>
 		<PackageIcon>Icon1.png</PackageIcon>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
@@ -31,6 +42,7 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="TextControlBox-TestApp" />
     <None Remove="Core\CoreTextControlBox.xaml" />
   </ItemGroup>
 	<ItemGroup>
@@ -46,10 +58,9 @@
 
   <ItemGroup>
       <PackageReference Include="Collections.Pooled" Version="1.0.82" />
-      <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.3.2" />
-	  <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260101001" />
-	  <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7463" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+      <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
+	  <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+	  <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
   </ItemGroup>
 
   <ItemGroup>

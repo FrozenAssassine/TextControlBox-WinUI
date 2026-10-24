@@ -13,12 +13,12 @@ namespace TextControlBoxNS.Languages
             this.Highlights = new SyntaxHighlights[]
             {
                 new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#dd00dd", "#ff00ff"),
-                new SyntaxHighlights("(?i)(set|echo|for|pushd|popd|pause|exit|cd|if|else|goto|del)\\s", "#dd00dd", "#dd00dd"),
-                new SyntaxHighlights("(:.*)", "#00C000", "#ffff00"),
+                new SyntaxHighlights(@"(?i)\b(set|echo|for|pushd|popd|pause|exit|cd|if|else|goto|del)\b", "#dd00dd", "#dd00dd"),
+                new SyntaxHighlights(@"^[ \t@]*:.*", "#00C000", "#ffff00"),
                 new SyntaxHighlights("(\\\".+?\\\"|\\'.+?\\')", "#00C000", "#ffff00"),
                 new SyntaxHighlights("(@|%)", "#dd0077", "#dd0077"),
                 new SyntaxHighlights("(\\*)", "#dd0077", "#dd0077"),
-                new SyntaxHighlights("((?i)rem.*)", "#888888", "#888888"),
+                new SyntaxHighlights(@"(?i)^[ \t@]*rem\b.*", "#888888", "#888888"),
             };
         }
     }
@@ -42,7 +42,7 @@ namespace TextControlBoxNS.Languages
             new SyntaxHighlights(@"\[|\]", "#5C6BC0", "#9FA8DA"),
             
             // Keys before = (supports spaces in keys)
-            new SyntaxHighlights(@"(?m)^\s*([^=;\[\]#]+?)(?=\s*=)", "#E65100", "#FFB74D"),
+            new SyntaxHighlights(@"(?m)^(?>[ \t]*)([^=;\[\]#\r\n]+?)(?=[ \t]*=)", "#E65100", "#FFB74D"),
             
             // String values (quoted)
             new SyntaxHighlights(@"(?<=[:=]\s*)([""'])(.*?)(\1)", "#00796B", "#80CBC4"),
@@ -74,11 +74,11 @@ namespace TextControlBoxNS.Languages
             };
             this.Highlights = new SyntaxHighlights[]
             {
+            // Section headers [table.name], only at the start of a line so an array is not taken for one
+            new SyntaxHighlights(@"(?<=^[ \t]*\[)[^\[\]\r\n]+(?=\])", "#7C4DFF", "#B890FF"),
+
             // Table headers [[array.of.tables]]
-            new SyntaxHighlights(@"(?<=\[\[)[^\]]+(?=\]\])", "#9C27B0", "#CE93D8"),
-            
-            // Section headers [table.name]
-            new SyntaxHighlights(@"(?<=\[)[^\]]+(?=\])", "#7C4DFF", "#B890FF"),
+            new SyntaxHighlights(@"(?<=^[ \t]*\[\[)[^\[\]\r\n]+(?=\]\])", "#9C27B0", "#CE93D8"),
             
             // Double brackets for arrays of tables
             new SyntaxHighlights(@"\[\[|\]\]", "#5C6BC0", "#9FA8DA"),
@@ -90,7 +90,7 @@ namespace TextControlBoxNS.Languages
             new SyntaxHighlights(@"\{|\}", "#5C6BC0", "#9FA8DA"),
             
             // Keys before = (dotted keys supported)
-            new SyntaxHighlights(@"(?m)^\s*([\w\.-]+)(?=\s*=)", "#E65100", "#FFB74D"),
+            new SyntaxHighlights(@"(?m)^[ \t]*([\w\.-]+)(?=[ \t]*=)", "#E65100", "#FFB74D"),
             
             // Keys in inline tables
             new SyntaxHighlights(@"(?<=[\{,]\s*)([\w\.-]+)(?=\s*=)", "#E65100", "#FFB74D"),
@@ -117,7 +117,7 @@ namespace TextControlBoxNS.Languages
             new SyntaxHighlights(@",", "#5C6BC0", "#9FA8DA"),
             
             // Comments starting with #
-            new SyntaxHighlights(@"#.*", "#9E9E9E", "#BDBDBD"),
+            new SyntaxHighlights(@"#(?<=^(?:""(?:\\.|[^""\\\r\n])*""|'[^'\r\n]*'|[^""'\r\n])*#).*", "#9E9E9E", "#BDBDBD"), //only when the comment marker is not inside a string
             };
         }
     }
@@ -140,8 +140,8 @@ namespace TextControlBoxNS.Languages
             // Brackets [ and ]
             new SyntaxHighlights(@"\[|\]", "#5C6BC0", "#9FA8DA"),
             
-            // Keys before : (Klipper uses colons)
-            new SyntaxHighlights(@"(?m)^\s*([a-zA-Z_][\w]*?)(?=\s*:)", "#E65100", "#FFB74D"),
+            // Keys before : or =
+            new SyntaxHighlights(@"(?m)^[ \t]*[a-zA-Z_]\w*(?=[ \t]*[:=])", "#E65100", "#FFB74D"),
             
             // Pin names and hardware references (e.g., PA1, ar54, ^PA2, ~!PB3)
             new SyntaxHighlights(@"(?<=[:\s])([~^!]*[PZ][A-Z]\d+|ar\d+)\b", "#00897B", "#4DB6AC"),
@@ -164,8 +164,8 @@ namespace TextControlBoxNS.Languages
             // Commas in lists
             new SyntaxHighlights(@",", "#5C6BC0", "#9FA8DA"),
             
-            // Comments starting with #
-            new SyntaxHighlights(@"#.*", "#9E9E9E", "#BDBDBD"),
+            // Comments starting with # or ;
+            new SyntaxHighlights(@"[#;].*", "#9E9E9E", "#BDBDBD"),
             };
         }
     }
@@ -224,7 +224,7 @@ namespace TextControlBoxNS.Languages
 
                 new SyntaxHighlights(
                     // Line comments (// ...)
-                    @"//.*",
+                    @"//(?<=^(?:""(?:\\.|[^""\\\r\n])*""|'(?:\\.|[^'\\\r\n])*'|[^""'\r\n])*//).*", //only when the comment marker is not inside a string
                     "#6B6A6A", "#646464"
                 ),
             };
@@ -257,7 +257,7 @@ namespace TextControlBoxNS.Languages
                 new SyntaxHighlights("\\b[a-zA-Z_]\\w*(?=\\()", "#880088", "#ffbb00"),
             
                 //C# Keywords
-                new SyntaxHighlights("\\b(abstract|as|async|await|base|bool|break|byte|case|catch|char|checked|class|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|external|false|final|finally|fixed|float|for|foreach|get|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|partial|private|protected|public|readonly|ref|return|sbyte|sealed|set|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|value|var|virtual|void|volatile|while)\\b", "#0066bb", "#00ffff"),
+                new SyntaxHighlights("\\b(abstract|as|async|await|base|bool|break|byte|case|catch|char|checked|class|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|external|false|final|finally|fixed|float|for|foreach|get|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|partial|private|protected|public|readonly|ref|return|sbyte|sealed|set|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|value|var|virtual|void|volatile|while|yield)\\b", "#0066bb", "#00ffff"),
             
                 //Common C# Types
                 new SyntaxHighlights("\\b(List|Color|Console|Debug|Dictionary|Stack|Queue|GC)\\b", "#008000", "#ff9900"),
@@ -273,10 +273,10 @@ namespace TextControlBoxNS.Languages
                 new SyntaxHighlights("@\".*?\"|\"(?:\\\\.|[^\"\\\\])*\"", "#ff5500", "#00FF00"),
             
                 //Character Literals
-                new SyntaxHighlights("'[^\\n]*?'", "#ff5500", "#00FF00"),
+                new SyntaxHighlights(@"'(?:\\.|[^'\\\r\n])*'", "#ff5500", "#00FF00"),
             
                 //Single-line Comments
-                new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
+                new SyntaxHighlights(@"//(?<=^(?:@""(?:""""|[^""\r\n])*""|""(?:\\.|[^""\\\r\n])*""|'(?:\\.|[^'\\\r\n])*'|[^""'\r\n])*//).*", "#888888", "#646464"), //only when the comment marker is not inside a string
             
                 //Multi-line Comments
                 new SyntaxHighlights("/\\*(?:[^*]|\\*[^/])*\\*/", "#888888", "#646464"),
@@ -300,7 +300,7 @@ namespace TextControlBoxNS.Languages
                 new SyntaxHighlights("\\b(E|F)(?=(\\-.|\\.|[0-9]|(\\+|\\-)[0-9]))", "#ffAA00", "#ffAA00"),
                 new SyntaxHighlights("\\b(S|T)(?=(\\-.|\\.|[0-9]|(\\+|\\-)[0-9]))", "#ffff00", "#ffff00"),
                 new SyntaxHighlights("([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?", "#ff00ff", "#9f009f"),
-                new SyntaxHighlights("[G|M][0-999].*?[\\s|\\n]", "#00aaaa", "#00ffff"),
+                new SyntaxHighlights(@"\b[GM]\d+(?:\.\d+)?\b", "#00aaaa", "#00ffff"),
                 new SyntaxHighlights("(;|\\/\\/|\\brem\\b).*", "#888888", "#888888"),
             };
         }
@@ -334,16 +334,17 @@ namespace TextControlBoxNS.Languages
             this.Author = "Finn Freitag";
             this.Filter = new string[2] { ".hex", ".bin" };
             this.Description = "Syntaxhighlighting for hex and binary code.";
+            // The renderer colors the whole match, so every field is matched on its own with lookarounds.
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("\\:", "#FFFF00", "#FFFF00"),
-                new SyntaxHighlights("\\:([0-9A-Fa-f]{2})", "#00FF00", "#00FF00"),
-                new SyntaxHighlights("\\:[0-9A-Fa-f]{2}([0-9A-Fa-f]{4})", "#00FF00", "#00FF00"),
-                new SyntaxHighlights("\\:[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})", "#FF5500", "#FF5500"),
-                new SyntaxHighlights("\\:[0-9A-Fa-f]{8}([0-9A-Fa-f]*)[0-9A-Fa-f]{2}", "#00FFFF", "#00FFFF"),
-                new SyntaxHighlights("\\:[0-9A-Fa-f]{8}[0-9A-Fa-f]*([0-9A-Fa-f]{2})", "#666666", "#666666"),
+                new SyntaxHighlights(@"\:", "#FFFF00", "#FFFF00"),
+                new SyntaxHighlights(@"(?<=^:)[0-9A-Fa-f]{2}", "#00FF00", "#00FF00"), //byte count
+                new SyntaxHighlights(@"(?<=^:[0-9A-Fa-f]{2})[0-9A-Fa-f]{4}", "#00FF00", "#00FF00"), //address
+                new SyntaxHighlights(@"(?<=^:[0-9A-Fa-f]{6})[0-9A-Fa-f]{2}", "#FF5500", "#FF5500"), //record type
+                new SyntaxHighlights(@"(?<=^:[0-9A-Fa-f]{8})[0-9A-Fa-f]+(?=[0-9A-Fa-f]{2}(?![0-9A-Fa-f]))", "#00FFFF", "#00FFFF"), //data
+                new SyntaxHighlights(@"[0-9A-Fa-f]{2}(?![0-9A-Fa-f])(?<=^:[0-9A-Fa-f]{10,})", "#666666", "#666666"), //checksum
                 new SyntaxHighlights("//.*", "#666666", "#666666"),
-                new SyntaxHighlights("[^0-9A-Fa-f\\:\\n]", "#FF0000", "#FF0000", false, false, true),
+                new SyntaxHighlights(@"[^0-9A-Fa-f\:\r\n]", "#FF0000", "#FF0000", false, false, true),
             };
         }
     }
@@ -358,15 +359,32 @@ namespace TextControlBoxNS.Languages
 
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#dd00dd", "#ff00ff"),
-                new SyntaxHighlights("[-A-Za-z_]+\\=", "#00CA00", "#Ff0000"),
-                new SyntaxHighlights("<([^ >!\\/]+)[^>]*>", "#969696", "#0099ff"),
-                new SyntaxHighlights("<+[/]+[a-zA-Z0-9:?\\-_]+>", "#969696", "#0099ff"),
-                new SyntaxHighlights("<[a-zA-Z0-9:?\\-]+?.*\\/>", "#969696", "#0099ff"),
-                new SyntaxHighlights("\"[^\\n]*?\"", "#00CA00", "#00FF00"),
-                new SyntaxHighlights("'[^\\n]*?'", "#00CA00", "#00FF00"),
-                new SyntaxHighlights("[0-9]+(px|rem|em|vh|vw|px|pt|pc|in|mm|cm|deg|%)", "#ff00ff", "#dd00dd"),
-                new SyntaxHighlights("<!--[\\s\\S]*?-->", "#888888", "#888888"),
+                // Numbers
+                new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#098658", "#B5CEA8"),
+                
+                // Opening tags
+                new SyntaxHighlights("<([^ >!\\/<]+)[^><]*>", "#800000", "#569CD6"),
+                
+                // Closing tags
+                new SyntaxHighlights("<+[/]+[a-zA-Z0-9:?\\-_]+>", "#800000", "#569CD6"),
+                
+                // Self-closing tags
+                new SyntaxHighlights(@"<[a-zA-Z0-9:?\-]+[^<>]*/>", "#800000", "#569CD6"),
+                
+                // Attributes
+                new SyntaxHighlights(@"(?<![-A-Za-z_])[-A-Za-z_]+=", "#E50000", "#9CDCFE"),
+                
+                // Double-quoted attribute values
+                new SyntaxHighlights(@"(?<==\s*)""[^""\r\n]*""", "#A31515", "#CE9178"),
+                
+                // Single-quoted attribute values
+                new SyntaxHighlights(@"(?<==\s*)'[^'\r\n]*'", "#A31515", "#CE9178"),
+                
+                // CSS Units
+                new SyntaxHighlights("[0-9]+(px|rem|em|vh|vw|px|pt|pc|in|mm|cm|deg|%)", "#811F3F", "#C586C0"),
+                
+                // Comments
+                new SyntaxHighlights("<!--[\\s\\S]*?-->", "#6E7781", "#6A9955"),
             };
         }
     }
@@ -389,13 +407,13 @@ namespace TextControlBoxNS.Languages
             this.Highlights = new SyntaxHighlights[]
             {
                 new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#ff00ff", "#ff00ff"),
-                new SyntaxHighlights("(?<!(def\\s))(?<=^|\\s|.)[a-zA-Z_][\\w_]*(?=\\()", "#880088", "#ffbb00"),
+                new SyntaxHighlights(@"\b[a-zA-Z_]\w*(?=\()", "#880088", "#ffbb00"),
                 new SyntaxHighlights("\\b(System.out|System|Math)\\b", "#008000", "#ff9900"),
                 new SyntaxHighlights("\\b(abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|extends|final|finally|float|for|goto|if|implements|import|instanceof|int|interface|long|native|new|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|try|void|volatile|while|exports|modle|non-sealed|open|opens|permits|provides|record|requires|sealed|to|transitive|uses|var|with|yield|true|false|null)\\b", "#0066bb", "#00ffff"),
-                new SyntaxHighlights("\"[^\\n]*?\"", "#ff5500", "#00FF00"),
-                new SyntaxHighlights("'[^\\n]*?'", "#00CA00", "#00FF00"),
+                new SyntaxHighlights(@"""(?:\\.|[^""\\\r\n])*""", "#ff5500", "#00FF00"),
+                new SyntaxHighlights(@"'(?:\\.|[^'\\\r\n])*'", "#00CA00", "#00FF00"),
                 new SyntaxHighlights("/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/", "#888888", "#646464"),
-                new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
+                new SyntaxHighlights(@"//(?<=^(?:""(?:\\.|[^""\\\r\n])*""|'(?:\\.|[^'\\\r\n])*'|[^""'\r\n])*//).*", "#888888", "#646464"), //only when the comment marker is not inside a string
             };
         }
     }
@@ -419,17 +437,18 @@ namespace TextControlBoxNS.Languages
 
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("\\W", "#990033", "#CC0066"),
+                new SyntaxHighlights(@"[^\w\s]+", "#990033", "#CC0066"),
                 new SyntaxHighlights("(\\+|\\-|\\*|/|%|\\=|\\:|\\!|>|\\<|\\?|&|\\||\\~|\\^)", "#77FF77", "#77FF77"),
                 new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#ff00ff", "#ff00ff"),
-                new SyntaxHighlights("(?<!(def\\s))(?<=^|\\s|.)[a-zA-Z_][\\w_]*(?=\\()", "#880088", "#ffbb00"),
+                new SyntaxHighlights(@"\b[a-zA-Z_]\w*(?=\()", "#880088", "#ffbb00"),
                 new SyntaxHighlights("\\b(goto|in|instanceof|static|arguments|public|do|else|const|function|class|return|let|eval|for|if|this|break|debugger|yield|extends|enum|continue|export|null|switch|private|new|throw|while|case|await|delete|super|default|void|var|protected|package|interface|false|typeof|implements|with|import|true)\\b", "#0066bb", "#00ffff"),
                 new SyntaxHighlights("\\b(document|window|screen)\\b", "#008000", "#33BB00"),
                 new SyntaxHighlights("\\b(try|catch|finally)\\b", "#9922ff", "#6666ff"),
-                new SyntaxHighlights("/[^\\n]*/i{0,1}", "#FFFF00", "#FFFF00"),
-                new SyntaxHighlights("[\"'][^\\n]*?[\"']", "#ff5500", "#00FF00"),
+                //a regex literal can only stand where a value is expected, otherwise the slash is a division
+                new SyntaxHighlights(@"/(?<=(?:^|[=(,:;!&|?{}\[]|\breturn)\s*/)(?![/*])(?:\\.|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\r\n\[])+/[gimsuyd]*", "#FFFF00", "#FFFF00"),
+                new SyntaxHighlights(@"""(?:\\.|[^""\\\r\n])*""|'(?:\\.|[^'\\\r\n])*'|`(?:\\.|[^`\\])*`", "#ff5500", "#00FF00"),
                 new SyntaxHighlights("/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/", "#888888", "#646464"),
-                new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
+                new SyntaxHighlights(@"//(?<=^(?:""(?:\\.|[^""\\\r\n])*""|'(?:\\.|[^'\\\r\n])*'|`(?:\\.|[^`\\\r\n])*`|[^""'`\r\n])*//).*", "#888888", "#646464"), //only when the comment marker is not inside a string
             };
         }
     }
@@ -452,13 +471,14 @@ namespace TextControlBoxNS.Languages
             this.Highlights = new SyntaxHighlights[]
             {
                 new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#dd00dd", "#ff00ff"),
-                new SyntaxHighlights("(null|true|false)", "#00AADD", "#0099ff"),
+                new SyntaxHighlights(@"\b(null|true|false)\b", "#00AADD", "#0099ff"),
                 new SyntaxHighlights("(,|{|}|\\[|\\])", "#969696", "#646464"),
-                new SyntaxHighlights("(\".+\")\\:", "#00CA00", "#dddd00"),
                 new SyntaxHighlights("/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/", "#888888", "#646464"),
                 new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
-                new SyntaxHighlights("'[^\\n]*?'", "#00CA00", "#00FF00"),
-                new SyntaxHighlights("\"[^\\n]*?\"", "#00CA00", "#00FF00"),
+                //one rule for both quote styles, so a quote inside the other kind of string does not start a new one
+                new SyntaxHighlights(@"""(?:\\.|[^""\\\r\n])*""|'(?:\\.|[^'\\\r\n])*'", "#00CA00", "#00FF00"),
+                //keys last, otherwise the string rule paints over them (the greedy "(\".+\")\\:" was quadratic on long lines)
+                new SyntaxHighlights("(?<!\\\\)\"(?:[^\"\\\\\\r\\n]|\\\\.)*\"\\s*\\:", "#00CA00", "#dddd00"),
             };
         }
     }
@@ -478,18 +498,19 @@ namespace TextControlBoxNS.Languages
 
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("\\<\\?php", "#FF0000", "#FF0000"),
-                new SyntaxHighlights("\\?\\>", "#FF0000", "#FF0000"),
-                new SyntaxHighlights("(?<!(def\\s))(?<=^|\\s|.)[a-zA-Z_][\\w_]*(?=\\()", "#3300FF", "#aa00FF"),
-                new SyntaxHighlights("\\b(echo|if|case|while|else|switch|foreach|function|default|break|null|true|false)\\b", "#0077FF", "#0077FF"),
+                new SyntaxHighlights(@"\b[a-zA-Z_]\w*(?=\()", "#3300FF", "#aa00FF"),
+                new SyntaxHighlights("\\b(echo|if|elseif|case|while|do|for|else|switch|foreach|as|function|fn|default|break|continue|return|null|true|false|class|interface|trait|extends|implements|abstract|final|public|private|protected|static|const|new|try|catch|finally|throw|use|namespace|require|require_once|include|include_once|isset|unset|empty|array|match|instanceof|global)\\b", "#0077FF", "#0077FF"),
                 new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#ff00ff", "#ff00ff"),
                 new SyntaxHighlights("(\\+|\\-|\\*|/|%|\\=|\\:|\\!|>|\\<|\\?|&|\\||\\~|\\^)", "#77FF77", "#77FF77"),
+                //the tags after the operators, which would otherwise paint over "<?" and "?>"
+                new SyntaxHighlights("\\<\\?php", "#FF0000", "#FF0000"),
+                new SyntaxHighlights("\\?\\>", "#FF0000", "#FF0000"),
                 new SyntaxHighlights("\\$\\w+", "#440044", "#FFBBFF"),
-                new SyntaxHighlights("\"[^\\n]*?\"", "#ff5500", "#00FF00"),
-                new SyntaxHighlights("\\'[^\\n]*?\\'", "#ff5500", "#00FF00"),
+                new SyntaxHighlights(@"""(?:\\.|[^""\\\r\n])*""", "#ff5500", "#00FF00"),
+                new SyntaxHighlights(@"'(?:\\.|[^'\\\r\n])*'", "#ff5500", "#00FF00"),
                 new SyntaxHighlights("\"/[^\\n]*/i{0,1}\"", "#ff5500", "#00FF00"),
                 new SyntaxHighlights("/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/", "#888888", "#646464"),
-                new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
+                new SyntaxHighlights(@"//(?<=^(?:""(?:\\.|[^""\\\r\n])*""|'(?:\\.|[^'\\\r\n])*'|[^""'\r\n])*//).*", "#888888", "#646464"), //only when the comment marker is not inside a string
             };
         }
     }
@@ -512,10 +533,11 @@ namespace TextControlBoxNS.Languages
 
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("\\W", "#BB0000", "#BB0000"),
-                new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
+                new SyntaxHighlights(@"[^\w\s]+", "#BB0000", "#BB0000"),
                 new SyntaxHighlights("\\b(namespace|open|operation|using|let|H|M|Reset|return)\\b", "#0066bb", "#00ffff"),
                 new SyntaxHighlights("\\b(Qubit|Result)\\b", "#00bb66", "#00ff00"),
+                //last, so nothing inside a comment is highlighted
+                new SyntaxHighlights("\\/\\/.*", "#888888", "#646464"),
             };
         }
     }
@@ -529,29 +551,30 @@ namespace TextControlBoxNS.Languages
             this.Description = "Syntax highlighting for Xml language";
             this.Highlights = new SyntaxHighlights[]
             {
-                //numeric values (handles floating point and scientific notation)
-                new SyntaxHighlights("[+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?", "#dd00dd", "#ff00ff"),
+            //numeric values (handles floating point and scientific notation)
+            new SyntaxHighlights("[+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?", "#098658", "#B5CEA8"),
             
-                //opening tags
-                new SyntaxHighlights("<([a-zA-Z_:][\\w:.-]*)[^>]*>", "#969696", "#0099ff"),
+            //opening tags
+            new SyntaxHighlights("<([a-zA-Z_:][\\w:.-]*)[^>]*>", "#800000", "#4EC9B0"),
             
-                //Closing tags
-                new SyntaxHighlights("</([a-zA-Z_:][\\w:.-]*)>", "#969696", "#0099ff"),
+            //Closing tags
+            new SyntaxHighlights("</([a-zA-Z_:][\\w:.-]*)>", "#800000", "#4EC9B0"),
             
-                //Self-closing tags
-                new SyntaxHighlights("<([a-zA-Z_:][\\w:.-]*)[^>]*/>", "#969696", "#0099ff"),
+            //Self-closing tags
+            new SyntaxHighlights("<([a-zA-Z_:][\\w:.-]*)[^>]*/>", "#800000", "#4EC9B0"),
             
-                //Attributes
-                new SyntaxHighlights("[a-zA-Z_:][\\w:.-]*=", "#00CA00", "#ff0000"),
+            //Attributes
+            //only starts at the beginning of a name, otherwise a long word is scanned again from every character
+            new SyntaxHighlights(@"(?<![\w:.-])[a-zA-Z_:][\w:.-]*=", "#E50000", "#9CDCFE"),
             
-                //Double-quoted attribute values
-                new SyntaxHighlights("\"[^\n]*?\"", "#00CA00", "#00FF00"),
+            //Double-quoted attribute values
+            new SyntaxHighlights("\"[^\n]*?\"", "#A31515", "#CE9178"),
             
-                //Single-quoted attribute values
-                new SyntaxHighlights("'[^\n]*?'", "#00CA00", "#00FF00"),
+            //Single-quoted attribute values
+            new SyntaxHighlights("'[^\n]*?'", "#A31515", "#CE9178"),
             
-                //Comments
-                new SyntaxHighlights("<!--[\\s\\S]*?-->", "#888888", "#888888"),
+            //Comments
+            new SyntaxHighlights("<!--[\\s\\S]*?-->", "#6E7781", "#6A9955"),
             };
         }
     }
@@ -578,9 +601,9 @@ namespace TextControlBoxNS.Languages
                 new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#dd00dd", "#ff00ff"),
                 new SyntaxHighlights("\\b(and|as|assert|break|class|continue|def|del|elif|else|except|False|finally|for|from|global|if|import|in|is|lambda|None|nonlocal|not|or|pass|raise|return|True|try|while|with|yield)\\b", "#aa00cc", "#cc00ff"),
                 new SyntaxHighlights("\\b(?<=def )\\w+(?=\\()|\\b\\w+(?=\\()", "#cc9900", "#ffbb00"),
-                new SyntaxHighlights("\"[^\\n]*?\"", "#ff5500", "#00FF00"),
-                new SyntaxHighlights("'[^\\n]*?'", "#00CA00", "#00FF00"),
-                new SyntaxHighlights("\\#.*", "#888888", "#646464"),
+                new SyntaxHighlights(@"""(?:\\.|[^""\\\r\n])*""", "#ff5500", "#00FF00"),
+                new SyntaxHighlights(@"'(?:\\.|[^'\\\r\n])*'", "#00CA00", "#00FF00"),
+                new SyntaxHighlights(@"#(?<=^(?:""(?:\\.|[^""\\\r\n])*""|'(?:\\.|[^'\\\r\n])*'|[^""'\r\n])*#).*", "#888888", "#646464"), //only when the comment marker is not inside a string
                 new SyntaxHighlights(@"\""\""\""[\s\S]*?\""\""\""", "#888888", "#646464"),
             };
         }
@@ -628,11 +651,12 @@ namespace TextControlBoxNS.Languages
             this.Description = "Syntax highlighting for LaTex language";
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("\\\\[a-z]+", "#0033aa", "#0088ff"),
-                new SyntaxHighlights("%.*", "#888888", "#646464"),
+                new SyntaxHighlights(@"\\(?:[a-zA-Z@]+|[^a-zA-Z\s])", "#0033aa", "#0088ff"),
                 new SyntaxHighlights("[\\[\\]]", "#FFFF00", "#FFFF00"),
                 new SyntaxHighlights("[\\{\\}]", "#FF0000", "#FF0000"),
-                new SyntaxHighlights("\\$", "#00bb00", "#00FF00")
+                new SyntaxHighlights("\\$", "#00bb00", "#00FF00"),
+                //a % that is not escaped by a backslash, last so nothing inside the comment is highlighted
+                new SyntaxHighlights(@"(?<=(?:^|[^\\])(?:\\\\)*)%.*", "#888888", "#646464")
             };
         }
     }
@@ -649,13 +673,13 @@ namespace TextControlBoxNS.Languages
             // Headers (#, ##, ### etc.) - vibrant purple
             new SyntaxHighlights(@"(?m)^#{1,6} .*$", "#FF2E7E", "#FF2E7E", true),
 
-            // Bold **text** or __text__ - bright pink
+            // Bold **text** or __text__ - bright pink (underscores only outside of words, like in snake_case)
             new SyntaxHighlights(@"\*\*(.*?)\*\*", "#E18800", "#E18800", true),
-            new SyntaxHighlights(@"__(.*?)__", "#E18800", "#E18800", true),
+            new SyntaxHighlights(@"\b__[^_\r\n]+__\b", "#E18800", "#E18800", true),
 
             // Italic *text* or _text_ - soft magenta
             new SyntaxHighlights(@"\*(.*?)\*", "#C61AFF", "#C61AFF", false, true),
-            new SyntaxHighlights(@"_(.*?)_", "#C61AFF", "#C61AFF", false, true),
+            new SyntaxHighlights(@"\b_[^_\r\n]+_\b", "#C61AFF", "#C61AFF", false, true),
 
             // Bold + Italic ***text*** or ___text___ - vibrant magenta
             new SyntaxHighlights(@"\*\*\*(.*?)\*\*\*", "#C61AFF", "#C61AFF", true, true),
@@ -663,9 +687,6 @@ namespace TextControlBoxNS.Languages
 
             // Inline code `code` - soft yellow
             new SyntaxHighlights(@"`.*?`", "#F1C40F", "#F1C40F"),
-
-            // Code blocks ```code``` - golden yellow
-            new SyntaxHighlights(@"```[\s\S]*?```", "#F39C12", "#F39C12"),
 
             // Blockquotes > text - soft teal
             new SyntaxHighlights(@"(?m)^> .*", "#8DA284", "#8DA284"),
@@ -681,7 +702,10 @@ namespace TextControlBoxNS.Languages
             new SyntaxHighlights(@"!\[.*?\]\(.*?\)", "#FF6F61", "#FF6F61"),
 
             // Inline special characters - soft red
-            new SyntaxHighlights(@"[~`_\^\*\+\-\!\|]", "#E74C3C", "#E74C3C")
+            new SyntaxHighlights(@"[~`_\^\*\+\-\!\|]", "#E74C3C", "#E74C3C"),
+
+            // Code blocks ```code``` - golden yellow, last so nothing inside them is highlighted as markdown
+            new SyntaxHighlights(@"```[\s\S]*?```", "#F39C12", "#F39C12")
             };
         }
     }
@@ -705,14 +729,16 @@ namespace TextControlBoxNS.Languages
             {
                 new SyntaxHighlights("[a-zA-Z-]+.*;", "#ff5500", "#00ffff"),//properties
                 new SyntaxHighlights("\\b([a-zA-Z_-][a-zA-Z0-9_-]*)(?=\\()", "#bb00bb", "#00ff99"),//functions
-                new SyntaxHighlights(":[a-z].*(?={)", "#0033ff", "#fffd00"),//pseudo classes/elements
-                new SyntaxHighlights("(.|#|^).*\\s*{", "#227700", "#44ff00"),//classname
+                //only starts at a line start or behind "}" and never rescans the same text, so long lines stay linear
+                new SyntaxHighlights("(?:^|(?<=\\}))(?>[^{}\\r\\n]*)\\s*{", "#227700", "#44ff00"),//classname
                 new SyntaxHighlights("(?<=\\d)(?:px|%|em|rem|in|cm|mm|pt|pc|ex|ch|vw|vh|vmin|vmax|ms|s)", "#cc0000", "#ff0000"),//units
                 new SyntaxHighlights("\\b-?\\d+(?:\\.\\d+)?", "#0000ff", "#cc00ff"),//numbers
                 new SyntaxHighlights("@([^ ]+)", "#8800ff", "#ff0000"),//first word after the @
                 new SyntaxHighlights("#[0-9A-Fa-f]{1,8}\\b", "#00bb55", "#cc00ff"),//hexadecimal
                 new SyntaxHighlights("(\".+?\"|\'.+?\')", "#00aaff", "#ff8800"),//strings
                 new SyntaxHighlights("(;|:|{|}|,)", "#777777", "#bbbbbb"),//special characters
+                //after the class names and special characters, which would otherwise paint over it
+                new SyntaxHighlights(@"::?[a-zA-Z-]+(?:\([^)\r\n]*\))?(?=[^{};\r\n]*\{)", "#0033ff", "#fffd00"),//pseudo classes/elements
                 new SyntaxHighlights("\\/\\*(.|\\n)*?\\*\\/", "#555555", "#888888"),//comments
             };
         }
@@ -727,12 +753,14 @@ namespace TextControlBoxNS.Languages
             this.Description = "Syntax highlightung for SQL";
             this.Highlights = new SyntaxHighlights[]
             {
-                new SyntaxHighlights("\\b(ADD|ADD CONSTRAINT|ALL|ALTER|ALTER COLUMN|ALTER TABLE|AND|ANY|AS|ASC|BACKUP DATABASE|BETWEEN|CASE|CHECK|COLUMN|CONSTRAINT|CREATE|CREATE DATABASE|CREATE INDEX|CREATE OR REPLACE VIEW|CREATE TABLE|CREATE PROCEDURE|CREATE UNIQUE INDEX|CREATE VIEW|DATABASE|DEFAULT|DELETE|DESC|DISTINCT|DROP|DROP COLUMN|DROP CONSTRAINT|DROP DATABASE|DROP DEFAULT|DROP INDEX|DROP TABLE|DROP VIEW|EXEC|EXISTS|FOREIGN KEY|FROM|FULL OUTER JOIN|GROUP BY|HAVING|IN|INDEX|INNER JOIN|INSERT INTO|INSERT INTO SELECT|IS NULL|IS NOT NULL|JOIN|LEFT JOIN|LIKE|LIMIT|NOT|NOT NULL|OR|ORDER BY|OUTER JOIN|PRIMARY KEY|PROCEDURE|RIGHT JOIN|ROWNUM|SELECT|SELECT DISTINCT|SELECT INTO|SELCET TOP|SET|TABLE|TOP|TRUNCATE TABLE|UNION|UNION ALL|UNIQUE|UPDATE|USE|VALUES|VIEW|WHERE)\\b","#FF6A00","#FF6A00",true,true),
+                new SyntaxHighlights("(?i)\\b(ADD|ADD CONSTRAINT|ALL|ALTER|ALTER COLUMN|ALTER TABLE|AND|ANY|AS|ASC|BACKUP DATABASE|BETWEEN|CASE|CHECK|COLUMN|CONSTRAINT|CREATE|CREATE DATABASE|CREATE INDEX|CREATE OR REPLACE VIEW|CREATE TABLE|CREATE PROCEDURE|CREATE UNIQUE INDEX|CREATE VIEW|DATABASE|DEFAULT|DELETE|DESC|DISTINCT|DROP|DROP COLUMN|DROP CONSTRAINT|DROP DATABASE|DROP DEFAULT|DROP INDEX|DROP TABLE|DROP VIEW|EXEC|EXISTS|FOREIGN KEY|FROM|FULL OUTER JOIN|GROUP BY|HAVING|IN|INDEX|INNER JOIN|INSERT INTO|INSERT INTO SELECT|IS NULL|IS NOT NULL|JOIN|LEFT JOIN|LIKE|LIMIT|NOT|NOT NULL|OR|ORDER BY|OUTER JOIN|PRIMARY KEY|PROCEDURE|RIGHT JOIN|ROWNUM|SELECT|SELECT DISTINCT|SELECT INTO|SELECT TOP|SET|TABLE|TOP|TRUNCATE TABLE|UNION|UNION ALL|UNIQUE|UPDATE|USE|VALUES|VIEW|WHERE)\\b","#FF6A00","#FF6A00",true,true),
                 new SyntaxHighlights("\"[^\\n]*?\"","#42C22B","#42C22B"),
                 new SyntaxHighlights("'[^\\n]*?'","#42C22B","#42C22B"),
                 new SyntaxHighlights("\\b([+-]?(?=\\.\\d|\\d)(?:\\d+)?(?:\\.?\\d*))(?:[eE]([+-]?\\d+))?\\b", "#2B3BFF","#2B3BFF"),
-                new SyntaxHighlights("\\b(MIN|MAX|COUNT|SUM|AVG)\\b","#11C9DB","#11C9DB",false,true),
-                new SyntaxHighlights("\\.","#901F9E","#901F9E",true)
+                new SyntaxHighlights("(?i)\\b(MIN|MAX|COUNT|SUM|AVG)\\b","#11C9DB","#11C9DB",false,true),
+                new SyntaxHighlights("\\.","#901F9E","#901F9E",true),
+                new SyntaxHighlights(@"--(?<=^(?:'(?:''|[^'\r\n])*'|""[^""\r\n]*""|[^""'\r\n])*--).*", "#008000", "#57A64A"), //only when the comment marker is not inside a string
+                new SyntaxHighlights(@"/\*[\s\S]*?\*/", "#008000", "#57A64A"),
             };
         }
     }
@@ -770,10 +798,10 @@ namespace TextControlBoxNS.Languages
             new SyntaxHighlights("'([^'\\\\]|\\\\.)*'", "#00CA00", "#00FF00"),
 
             // Comments (single-line starting with `--`)
-            new SyntaxHighlights("--.*", "#888888", "#646464"),
+            new SyntaxHighlights(@"--(?<=^(?:""(?:\\.|[^""\\\r\n])*""|'(?:\\.|[^'\\\r\n])*'|[^""'\r\n])*--).*", "#888888", "#646464"), //only when the comment marker is not inside a string
 
             // Multi-line comments (between --[[ and ]])
-            new SyntaxHighlights("--\\[\\[(.|\\r|\\n)*?\\]\\]", "#888888", "#646464")
+            new SyntaxHighlights(@"--\[\[[\s\S]*?\]\]", "#888888", "#646464")
             };
         }
     }
@@ -795,11 +823,8 @@ namespace TextControlBoxNS.Languages
                     // Negation (lines starting with !) - High priority/Warning color
                     new SyntaxHighlights(@"^!.*", "#D32F2F", "#EF5350"),
 
-                    // Comments (lines starting with #)
-                    new SyntaxHighlights(@"#.*", "#9E9E9E", "#BDBDBD"),
-
                     // Directories (entries ending with / or containing /)
-                    new SyntaxHighlights(@"[\w\-\.]+(?=/)|(?<=/ )[\w\-\.]+", "#1976D2", "#64B5F6"),
+                    new SyntaxHighlights(@"(?<![\w\-\.])[\w\-\.]+(?=/)|(?<=/ )[\w\-\.]+", "#1976D2", "#64B5F6"),
                     new SyntaxHighlights(@"/", "#5C6BC0", "#9FA8DA"),
 
                     // Wildcards (*, **, ?)
@@ -813,6 +838,164 @@ namespace TextControlBoxNS.Languages
             
                     // Trailing spaces (often a mistake in .gitignore)
                     new SyntaxHighlights(@"\s+$", "#C62828", "#FF5252"),
+
+                    // Comments, only a # at the start of a line starts one. Last, so nothing inside them is highlighted
+                    new SyntaxHighlights(@"^#.*", "#9E9E9E", "#BDBDBD"),
+            };
+        }
+    }
+    // Language independent highlighting for files without a matching language: only patterns that mean the
+    // same in almost every format (numbers, strings, comments at the line start, operators, dates, ...).
+    // Keywords are left out on purpose, in plain text every "if" or "for" would be colored.
+    internal class GenericHighlighter : SyntaxHighlightLanguage
+    {
+        public GenericHighlighter()
+        {
+            this.Name = "Generic";
+            this.Filter = new[] { ".txt", ".conf", ".cfg", ".env" };
+            this.Description = "Language independent highlighting for numbers, strings, comments, operators and common values";
+            this.AutoPairingPair = new AutoPairingPair[]
+            {
+            new AutoPairingPair("[", "]"),
+            new AutoPairingPair("(", ")"),
+            new AutoPairingPair("{", "}"),
+            new AutoPairingPair("\"", "\""),
+            new AutoPairingPair("'", "'")
+            };
+            //later rules win over earlier ones
+            this.Highlights = new SyntaxHighlights[]
+            {
+            // Operators and brackets
+            new SyntaxHighlights(@"[=+\-*/<>!&|^%~?]+", "#AF00DB", "#C586C0"),
+            new SyntaxHighlights(@"[(){}\[\]]", "#A16900", "#FFD700"),
+
+            // Numbers: hex, decimal, exponent, with an optional unit (10px, 5ms, 50%). Digits inside words (file2) are not numbers.
+            new SyntaxHighlights(@"\b(?:0[xX][0-9A-Fa-f]+\b|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(?:[a-zA-Z]{1,3}\b|%|\b))", "#098658", "#B5CEA8"),
+
+            // Keys at the line start: key = value, key: value (not a protocol like https://)
+            new SyntaxHighlights(@"(?m)^[ \t]*[\w.\-]+(?=[ \t]*(?:=|:(?!//|:)))", "#001080", "#9CDCFE"),
+
+            // Constants
+            new SyntaxHighlights(@"\b(?:true|false|null|nil|undefined|True|False|None|TRUE|FALSE|NULL)\b", "#0000FF", "#569CD6"),
+
+            // Values: dates and times, IPv4 addresses, GUIDs, hex colors
+            new SyntaxHighlights(@"\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:[.,]\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?\b|\b\d{1,2}:\d{2}(?::\d{2})?\b", "#267F99", "#4EC9B0"),
+            new SyntaxHighlights(@"\b(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?\b", "#267F99", "#4EC9B0"),
+            new SyntaxHighlights(@"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b", "#267F99", "#4EC9B0"),
+            new SyntaxHighlights(@"#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b", "#267F99", "#4EC9B0"),
+
+            // URLs and email addresses
+            new SyntaxHighlights(@"\b[\w.+\-]+@[\w\-]+(?:\.[\w\-]+)+\b|https?://[^\s""'<>]+", "#3949AB", "#7986CB"),
+
+            // Block comments within a line
+            new SyntaxHighlights(@"/\*.*?\*/", "#008000", "#6A9955"),
+
+            // Strings, an apostrophe inside a word (can't) does not start one
+            new SyntaxHighlights(@"""(?:\\.|[^""\\\r\n])*""|(?<!\w)'(?:\\.|[^'\\\r\n])*'(?!\w)", "#A31515", "#CE9178"),
+
+            // Line comments, only at the line start: a # or ; in the middle of a line is usually a value (#fff, a;b)
+            new SyntaxHighlights(@"(?m)^[ \t]*(?://|#|;).*", "#008000", "#6A9955"),
+
+            // Markers, also inside comments
+            new SyntaxHighlights(@"\b(?:TODO|FIXME|HACK|XXX|BUG|NOTE|ERROR|WARNING|WARN|INFO|DEBUG)\b", "#CD3131", "#F44747"),
+            };
+        }
+    }
+    internal class LogHighlighter : SyntaxHighlightLanguage
+    {
+        public LogHighlighter()
+        {
+            this.Name = "Log";
+            this.Filter = new[] { ".log", ".out", ".err" };
+            this.Description = "Generic syntax highlighting for log files";
+            this.AutoPairingPair = new AutoPairingPair[]
+            {
+            new AutoPairingPair("[", "]"),
+            new AutoPairingPair("(", ")"),
+            new AutoPairingPair("{", "}"),
+            new AutoPairingPair("\"", "\""),
+            new AutoPairingPair("'", "'")
+            };
+            this.Highlights = new SyntaxHighlights[]
+            {
+            // ==========================================
+            // 1. BASE CONTAINERS & PUNCTUATION (Lowest Precedence)
+            // ==========================================
+
+            // Generic bracket contents [Thread-1] (overridden by specific rules below)
+            new SyntaxHighlights(@"(?<=\[)[^\]\r\n]+(?=\])", "#546E7A", "#B0BEC5"),
+            new SyntaxHighlights(@"\[|\]", "#78909C", "#90A4AE"),
+
+            // Delimiters (only standalone operators, not colons inside timestamps/protocols)
+            new SyntaxHighlights(@"(=>|->|[|=]|(?<=\s)[:](?=\s))", "#757575", "#9E9E9E"),
+
+            // Quoted strings ("..." or '...')
+            //an apostrophe inside a word (can't) does not start a string
+            new SyntaxHighlights(@"""(?:\\.|[^""\\\r\n])*""|(?<!\w)'(?:\\.|[^'\\\r\n])*'(?!\w)", "#558B2F", "#AED581"),
+
+            // ==========================================
+            // 2. STRUCTURAL DATA & PATHS
+            // ==========================================
+
+            // File paths and URLs
+            new SyntaxHighlights(@"(https?:\/\/[^\s""'<>]+|\b[a-zA-Z]:\\[^\s""':;]+|\/(?:[a-zA-Z0-9_\.-]+\/)+[a-zA-Z0-9_\.-]*)", "#3949AB", "#7986CB"),
+
+            // IPv4 and IPv6 addresses
+            new SyntaxHighlights(@"\b(?:\d{1,3}\.){3}\d{1,3}(:\d+)?\b|\b([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b", "#00796B", "#80CBC4"),
+
+            // UUID / GUID
+            new SyntaxHighlights(@"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b", "#5E35B1", "#B39DDB"),
+
+            // Hex values, memory addresses, and units/timings (0x7ffd, 12ms, 64MB)
+            new SyntaxHighlights(@"\b0x[0-9a-fA-F]+\b|\b\d+(\.\d+)?(ms|ns|µs|s|m|MB|GB|KB|B)\b", "#E65100", "#FFB74D"),
+
+            // ==========================================
+            // 3. TIMESTAMPS (Overrides brackets and delimiters)
+            // ==========================================
+
+            // ISO 8601, standard YYYY-MM-DD HH:MM:SS.fff, or standalone time
+            new SyntaxHighlights(@"\b\d{4}[-/.]\d{2}[-/.]\d{2}([T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?)?\b|\b\d{2}:\d{2}:\d{2}(\.\d+)?\b", "#00838F", "#4DD0E1"),
+
+            // Syslog month timestamps (e.g. Sep 25 14:02:11)
+            new SyntaxHighlights(@"(?i)\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\b", "#00838F", "#4DD0E1"),
+
+            // ==========================================
+            // 4. HTTP PROTOCOL & STATUS CODES
+            // ==========================================
+
+            // HTTP Verbs
+            new SyntaxHighlights(@"\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS|CONNECT)\b", "#0288D1", "#4FC3F7"),
+
+            // HTTP Status Codes
+            new SyntaxHighlights(@"(?<=HTTP/\d(?:\.\d)?[""\s]+)5\d{2}\b", "#C62828", "#EF5350"), // 5xx Server Error
+            new SyntaxHighlights(@"(?<=HTTP/\d(?:\.\d)?[""\s]+)4\d{2}\b", "#F57C00", "#FFB74D"), // 4xx Client Error
+            new SyntaxHighlights(@"(?<=HTTP/\d(?:\.\d)?[""\s]+)3\d{2}\b", "#1976D2", "#64B5F6"), // 3xx Redirection
+            new SyntaxHighlights(@"(?<=HTTP/\d(?:\.\d)?[""\s]+)2\d{2}\b", "#388E3C", "#81C784"), // 2xx Success
+
+            // ==========================================
+            // 5. STACKTRACES & LOG LEVELS (Highest Precedence)
+            // ==========================================
+
+            // Debug / Verbose / Trace
+            new SyntaxHighlights(@"(?i)\b(DEBUG|TRACE|VERBOSE|FINE(R|ST)?)\b", "#7B1FA2", "#BA68C8"),
+
+            // Information / Notice
+            new SyntaxHighlights(@"(?i)\b(INFO(RMATION)?|NOTICE)\b", "#1976D2", "#42A5F5"),
+
+            // Success / OK / Pass
+            new SyntaxHighlights(@"(?i)\b(SUCCESS|OK|PASSED|DONE)\b", "#2E7D32", "#66BB6A"),
+
+            // Warnings
+            new SyntaxHighlights(@"(?i)\b(WARN(ING)?)\b", "#F57C00", "#FFB74D"),
+
+            // Errors / Failures / Exceptions
+            new SyntaxHighlights(@"(?i)\b(ERR(OR)?|FAILURE|FAIL|EXCEPTION|FAULT)\b", "#D32F2F", "#EF5350"),
+
+            // Critical / Fatal / Emergency
+            new SyntaxHighlights(@"(?i)\b(FATAL|CRITICAL|EMERGENCY|EMERG|PANIC|ALERT)\b", "#B71C1C", "#FF5252"),
+
+            // Stacktrace lines (e.g. at ... in ...:line 42)
+            new SyntaxHighlights(@"(?m)^[ \t]+at\s+.*|^[ \t]*Caused by:.*", "#C62828", "#E57373")
             };
         }
     }

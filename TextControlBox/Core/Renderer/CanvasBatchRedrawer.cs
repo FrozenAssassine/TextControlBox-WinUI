@@ -1,37 +1,16 @@
-﻿using Microsoft.Graphics.Canvas.UI.Xaml;
-using Microsoft.UI.Dispatching;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.Graphics.Canvas.UI.Xaml;
 
 namespace TextControlBoxNS.Core.Renderer
 {
     internal class CanvasBatchRedrawer
     {
-        private readonly HashSet<CanvasControl> _redrawRequests = new();
-        private readonly DispatcherQueueTimer _timer;
-
-        public CanvasBatchRedrawer(int batchIntervalMs = 16)
-        {
-            _timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
-            _timer.Interval = TimeSpan.FromMilliseconds(batchIntervalMs);
-            _timer.Tick += (s, e) =>
-            {
-                foreach (var canvas in _redrawRequests)
-                {
-                    canvas.Invalidate();
-                }
-                _redrawRequests.Clear();
-                _timer.Stop();
-            };
-        }
-
+        // Invalidate right away: CanvasControl already merges all invalidations until its next frame into one
+        // Draw. The previous 16 ms DispatcherTimer added a whole timer tick (often 30 ms) to every keystroke and,
+        // because timer messages only run when no input is waiting, fast typing could hold back the redraw
+        // until the typing paused, so words appeared late.
         public void RequestRedraw(CanvasControl canvas)
         {
-            _redrawRequests.Add(canvas);
-
-            if (!_timer.IsRunning)
-                _timer.Start();
+            canvas.Invalidate();
         }
     }
 }

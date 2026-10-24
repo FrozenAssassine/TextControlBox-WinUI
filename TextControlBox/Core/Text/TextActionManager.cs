@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Input;
+using Collections.Pooled;
+using Microsoft.UI.Input;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -33,6 +34,8 @@ namespace TextControlBoxNS.Core.Text
         private readonly DeleteTextAction deleteTextAction = new DeleteTextAction();
         private readonly AddNewLineTextAction addNewLineTextAction = new AddNewLineTextAction();
         private readonly RemoveTextAction removeTextAction = new RemoveTextAction();
+        //text of the last line copy (Ctrl+C / Ctrl+X without selection); null if the last copy was a selection
+        private static string _lineCopyText = null;
 
         public void Init(
             CoreTextControlBox coreTextbox,
@@ -69,11 +72,12 @@ namespace TextControlBoxNS.Core.Text
             removeTextAction.Init(textManager, undoRedo, currentLineManager, longestLineManager, cursorManager);
             deleteTextAction.Init(textManager, coreTextbox, undoRedo, currentLineManager, longestLineManager, cursorManager);
             addCharacterTextAction.Init(textManager, coreTextbox, undoRedo, currentLineManager, longestLineManager, cursorManager, selectionManager, canvasUpdateHelper);
-            addNewLineTextAction.Init(textManager, undoRedo, currentLineManager, cursorManager, eventsManager, canvasUpdateManager, selectionManager, autoIndentionManager, this);
+            addNewLineTextAction.Init(textManager, undoRedo, currentLineManager, cursorManager, eventsManager, canvasUpdateManager, selectionManager, autoIndentionManager, this, longestLineManager);
         }
 
         public void SelectAll()
         {
+            undoRedo.EndBatch();
             //No selection can be shown
             if (textManager.LinesCount == 1 && textManager.GetLineLength(0) == 0)
                 return;
@@ -93,6 +97,9 @@ namespace TextControlBoxNS.Core.Text
                 selectionManager.SetSelection(selection);
             else
                 selectionManager.ClearSelection();
+
+            //the stored positions can point behind the document, when other edits were not recorded the same way
+            selectionManager.ClampToDocument();
         }
 
         public void Undo()
@@ -107,6 +114,7 @@ namespace TextControlBoxNS.Core.Text
             coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
 
             longestLineManager.needsRecalculation = true;
+            coreTextbox.textRenderer.InvalidateWrapMetrics();
 
             ResetUndoRedoSelection(cursor, selection);
 
@@ -125,6 +133,7 @@ namespace TextControlBoxNS.Core.Text
             coreTextbox.ChangeCursor(InputSystemCursorShape.IBeam);
 
             longestLineManager.needsRecalculation = true;
+            coreTextbox.textRenderer.InvalidateWrapMetrics();
 
             ResetUndoRedoSelection(cursor, selection);
 
@@ -135,13 +144,26 @@ namespace TextControlBoxNS.Core.Text
         //Trys running the code and clears the memory if OutOfMemoryException gets thrown
         public async void Safe_Paste(bool handleException = true)
         {
+            undoRedo.EndBatch();
             if (textManager._IsReadOnly)
                 return;
 
             try
             {
-                DataPackageView dataPackageView = Clipboard.GetContent();
-                if (dataPackageView.Contains(StandardDataFormats.Text))
+                DataPackageView dataPackageView;
+                bool containsText;
+                try
+                {
+                    dataPackageView = Clipboard.GetContent();
+                    containsText = dataPackageView.Contains(StandardDataFormats.Text);
+                }
+                catch (Exception ex) when (ex is not OutOfMemoryException) //the clipboard can be locked by another application
+                {
+                    Debug.WriteLine("Clipboard exception: " + ex.Message);
+                    return;
+                }
+
+                if (containsText)
                 {
                     string text = null;
                     try
@@ -154,7 +176,25 @@ namespace TextControlBoxNS.Core.Text
                         return;
                     }
 
-                    AddCharacter(stringManager.CleanUpString(text));
+                    //the state can have changed while waiting for the clipboard
+                    if (text == null || textManager._IsReadOnly || textManager.LinesCount == 0)
+                        return;
+
+                    selectionManager.ClampToDocument();
+                    string cleaned = stringManager.CleanUpString(text);
+                    //only treat the clipboard as a line copy, if it still holds the line that was copied here
+                    bool isOwnLineCopy = _lineCopyText != null && string.Equals(cleaned, stringManager.CleanUpString(_lineCopyText), StringComparison.Ordinal);
+                    bool isLineCopy = !selectionManager.HasSelection &&
+                        (isOwnLineCopy || (cleaned.EndsWith(textManager.NewLineCharacter, StringComparison.Ordinal) && !cleaned.StartsWith(textManager.NewLineCharacter)));
+
+                    if (isLineCopy)
+                    {
+                        PasteLine(cleaned);
+                    }
+                    else
+                    {
+                        AddCharacter(cleaned);
+                    }
                 }
             }
             catch (OutOfMemoryException)
@@ -167,6 +207,58 @@ namespace TextControlBoxNS.Core.Text
                 }
                 throw new OutOfMemoryException();
             }
+            catch (Exception ex) when (coreTextbox.HandleInternalError(ex))
+            {
+                //an exception after the await of an async void method would end the process
+            }
+        }
+
+        private static bool TrySetClipboard(DataPackage dataPackage)
+        {
+            try
+            {
+                Clipboard.SetContent(dataPackage);
+                return true;
+            }
+            catch (Exception ex) when (ex is not OutOfMemoryException) //the clipboard can be locked by another application
+            {
+                Debug.WriteLine("Clipboard exception: " + ex.Message);
+                return false;
+            }
+        }
+        public void PasteLine(string text)
+        {
+            if (textManager._IsReadOnly || textManager.LinesCount == 0)
+                return;
+
+            selectionManager.ClampToDocument();
+            cursorManager.ResetPreferredPosition();
+
+            string cleaned = stringManager.CleanUpString(text);
+            if (cleaned.EndsWith(textManager.NewLineCharacter, StringComparison.Ordinal))
+            {
+                cleaned = cleaned.Substring(0, cleaned.Length - textManager.NewLineCharacter.Length);
+            }
+            string[] linesToInsert = cleaned.Split(textManager.NewLineCharacter);
+            if (linesToInsert.Length == 0)
+                return;
+
+            int insertAtLine = Math.Clamp(cursorManager.LineNumber, 0, textManager.LinesCount);
+            int cursorChar = cursorManager.CharacterPosition;
+
+            longestLineManager.needsRecalculation = true;
+
+            undoRedo.RecordUndoAction(() =>
+            {
+                textManager.InsertOrAddRange(linesToInsert, insertAtLine);
+                cursorManager.SetCursorPosition(insertAtLine + linesToInsert.Length, cursorChar);
+            }, insertAtLine, 0, linesToInsert.Length);
+
+            currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
+            eventsManager.CallTextChanged();
+            coreTextbox.textRenderer.MarkLineWrapDirty(cursorManager.LineNumber);
+            scrollManager.UpdateScrollToShowCursor(false);
+            canvasUpdateManager.UpdateAll();
         }
         public string Safe_Gettext(bool handleException = true)
         {
@@ -186,20 +278,32 @@ namespace TextControlBoxNS.Core.Text
         }
         public void Safe_Cut(bool handleException = true)
         {
+            undoRedo.EndBatch();
             if (textManager._IsReadOnly)
                 return;
 
             try
             {
+                selectionManager.ClampToDocument();
                 DataPackage dataPackage = new DataPackage();
-                dataPackage.SetText(coreTextbox.SelectedText);
+                bool isLineCopy = !selectionManager.HasSelection;
+                string textToCut = !isLineCopy
+                    ? coreTextbox.SelectedText
+                    : (textManager.LinesCount > 0 && cursorManager.LineNumber >= 0 && cursorManager.LineNumber < textManager.LinesCount
+                        ? textManager.GetLineText(cursorManager.LineNumber) + textManager.NewLineCharacter
+                        : string.Empty);
+                dataPackage.SetText(textToCut);
+                dataPackage.RequestedOperation = DataPackageOperation.Move;
+
+                //only remove the text, when it really made it to the clipboard
+                if (!TrySetClipboard(dataPackage))
+                    return;
+
+                _lineCopyText = isLineCopy && !string.IsNullOrEmpty(textToCut) ? textToCut : null;
                 if (!selectionManager.HasSelection)
                     DeleteLine(cursorManager.LineNumber); //Delete the line
                 else
                     DeleteText(); //Delete the selected text
-
-                dataPackage.RequestedOperation = DataPackageOperation.Move;
-                Clipboard.SetContent(dataPackage);
 
                 selectionManager.ClearSelection();
                 canvasUpdateManager.UpdateAll();
@@ -219,10 +323,18 @@ namespace TextControlBoxNS.Core.Text
         {
             try
             {
+                selectionManager.ClampToDocument();
                 DataPackage dataPackage = new DataPackage();
-                dataPackage.SetText(coreTextbox.SelectedText);
+                bool isLineCopy = !selectionManager.HasSelection;
+                string textToCopy = !isLineCopy
+                    ? coreTextbox.SelectedText
+                    : (textManager.LinesCount > 0 && cursorManager.LineNumber >= 0 && cursorManager.LineNumber < textManager.LinesCount
+                        ? textManager.GetLineText(cursorManager.LineNumber) + textManager.NewLineCharacter
+                        : string.Empty);
+                dataPackage.SetText(textToCopy);
                 dataPackage.RequestedOperation = DataPackageOperation.Copy;
-                Clipboard.SetContent(dataPackage);
+                if (TrySetClipboard(dataPackage))
+                    _lineCopyText = isLineCopy && !string.IsNullOrEmpty(textToCopy) ? textToCopy : null;
             }
             catch (OutOfMemoryException)
             {
@@ -235,8 +347,24 @@ namespace TextControlBoxNS.Core.Text
                 throw new OutOfMemoryException();
             }
         }
+
+        //LoadText, LoadLines and SetText do not raise TextChanged, so the search lines need a manual refresh
+        private void UpdateSearchLinesIfNeeded()
+        {
+            if (coreTextbox.searchManager.IsSearchOpen)
+                coreTextbox.searchManager.UpdateSearchLines();
+        }
+
+        PooledList<string> allLinesBuffer = new();
+
+        private void LoadLines(IEnumerable<string> lines)
+        {
+             this.allLinesBuffer = new(lines);
+        }
+
         public void Safe_LoadLines(IEnumerable<string> lines, bool autodetectTabsSpaces = true, LineEnding lineEnding = LineEnding.CRLF, bool HandleException = true)
         {
+            undoRedo.EndBatch();
             try
             {
                 if (lines == null)
@@ -264,8 +392,13 @@ namespace TextControlBoxNS.Core.Text
                 }
 
                 cursorManager.SetToTextEnd();
+                UpdateSearchLinesIfNeeded();
 
                 longestLineManager.needsRecalculation = true;
+                coreTextbox.textRenderer.InvalidateWrapMetrics();
+                coreTextbox.textRenderer.NeedsUpdateTextLayout = true;
+                coreTextbox.textRenderer.OldRenderedText = null;
+                coreTextbox.textRenderer.InvalidateRenderedText();
                 canvasUpdateManager.UpdateAll();
 
                 eventsManager.CallTextLoaded();
@@ -283,6 +416,7 @@ namespace TextControlBoxNS.Core.Text
         }
         public void Safe_LoadText(string text, bool autodetectTabsSpaces = true, bool handleException = true)
         {
+            undoRedo.EndBatch();
             try
             {
                 if (text == null)
@@ -306,6 +440,10 @@ namespace TextControlBoxNS.Core.Text
                 undoRedo.ClearAll();
 
                 longestLineManager.needsRecalculation = true;
+                coreTextbox.textRenderer.InvalidateWrapMetrics();
+                coreTextbox.textRenderer.NeedsUpdateTextLayout = true;
+                coreTextbox.textRenderer.OldRenderedText = null;
+                coreTextbox.textRenderer.InvalidateRenderedText();
 
                 if (text.Length == 0)
                     textManager.ClearText(true);
@@ -313,6 +451,7 @@ namespace TextControlBoxNS.Core.Text
                     selectionManager.ReplaceLines(0, textManager.LinesCount, stringManager.CleanUpString(text).Split(textManager.NewLineCharacter));
 
                 cursorManager.SetToTextEnd();
+                UpdateSearchLinesIfNeeded();
 
                 canvasUpdateManager.UpdateAll();
                 eventsManager.CallTextLoaded();
@@ -330,6 +469,7 @@ namespace TextControlBoxNS.Core.Text
         }
         public void Safe_SetText(string text, bool handleException = true)
         {
+            undoRedo.EndBatch();
             try
             {
                 if (text == null)
@@ -339,11 +479,17 @@ namespace TextControlBoxNS.Core.Text
                 }
 
                 longestLineManager.needsRecalculation = true;
+                coreTextbox.textRenderer.InvalidateWrapMetrics();
+                coreTextbox.textRenderer.NeedsUpdateTextLayout = true;
+
+                string cleanedText = stringManager.CleanUpString(text);
+                int redoCount = cleanedText.CountLines(textManager.NewLineCharacter);
+
                 undoRedo.RecordUndoAction(() =>
                 {
                     selectionManager.ClearSelection();
 
-                    var splitted = stringManager.CleanUpString(text).Split(textManager.NewLineCharacter);
+                    var splitted = cleanedText.Split(textManager.NewLineCharacter);
                     selectionManager.ReplaceLines(0, textManager.LinesCount, splitted);
 
                     if (textManager.LinesCount == 0) 
@@ -351,8 +497,9 @@ namespace TextControlBoxNS.Core.Text
 
                     cursorManager.SetToTextEnd();
 
-                }, 0, textManager.LinesCount, text.CountLines(textManager.NewLineCharacter));
+                }, 0, textManager.LinesCount, redoCount);
 
+                UpdateSearchLinesIfNeeded();
                 canvasUpdateManager.UpdateAll();
             }
             catch (OutOfMemoryException)
@@ -369,13 +516,16 @@ namespace TextControlBoxNS.Core.Text
 
         public void DeleteSelection()
         {
+            undoRedo.EndBatch();
+            selectionManager.ClampToDocument();
             if (!selectionManager.HasSelection)
                 return;
 
             //line gets deleted -> recalculate the longest line:
             longestLineManager.CheckSelection();
+            coreTextbox.textRenderer.InvalidateWrapMetrics();
 
-            bool wholeLineSelected = selectionManager.WholeLineSelected();
+            bool wholeLineSelected = selectionManager.WholeLineSelected() && textManager.LinesCount > 1;
 
             undoRedo.RecordUndoAction(() =>
             {
@@ -383,12 +533,16 @@ namespace TextControlBoxNS.Core.Text
                 selectionManager.ClearSelection();
             }, selectionManager.currentTextSelection, wholeLineSelected ? 0 : 1, wholeLineSelected ? 1 : -1);
 
+            canvasUpdateManager.UpdateText();
             canvasUpdateManager.UpdateSelection();
             canvasUpdateManager.UpdateCursor();
         }
 
         public void RemoveText(bool controlIsPressed = false)
         {
+            undoRedo.EndBatch();
+            selectionManager.ClampToDocument();
+            cursorManager.ResetPreferredPosition();
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
             if (textManager._IsReadOnly)
@@ -404,6 +558,7 @@ namespace TextControlBoxNS.Core.Text
             }
 
             eventsManager.CallTextChanged();
+            coreTextbox.textRenderer.MarkLineWrapDirty(cursorManager.LineNumber);
 
             scrollManager.UpdateScrollToShowCursor(false);
             canvasUpdateManager.UpdateText();
@@ -411,6 +566,9 @@ namespace TextControlBoxNS.Core.Text
         }
         public void AddNewLine()
         {
+            undoRedo.EndBatch();
+            selectionManager.ClampToDocument();
+            cursorManager.ResetPreferredPosition();
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
             if (textManager._IsReadOnly)
@@ -447,6 +605,9 @@ namespace TextControlBoxNS.Core.Text
         }
         public void DeleteText(bool controlIsPressed = false, bool shiftIsPressed = false)
         {
+            undoRedo.EndBatch();
+            selectionManager.ClampToDocument();
+            cursorManager.ResetPreferredPosition();
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
             if (textManager._IsReadOnly)
@@ -466,21 +627,32 @@ namespace TextControlBoxNS.Core.Text
             }
 
             eventsManager.CallTextChanged();
+            coreTextbox.textRenderer.MarkLineWrapDirty(cursorManager.LineNumber);
             scrollManager.UpdateScrollToShowCursor();
+            canvasUpdateManager.UpdateText();
+            canvasUpdateManager.UpdateCursor();
         }
 
         public void AddCharacter(string text, bool ignoreSelection = false, bool ignoreIsReadOnly = false)
         {
+            if (text == null)
+                return;
+
+            cursorManager.ResetPreferredPosition();
             if (!ignoreIsReadOnly && textManager._IsReadOnly)
                 return;
 
+            selectionManager.ClampToDocument();
             currentLineManager.UpdateCurrentLine(cursorManager.LineNumber);
 
             if (ignoreSelection)
                 selectionManager.ClearSelection();
 
-            int splittedTextLength = addCharacterTextAction.CalculateSplitTextLength(text);
             bool hasSelection = selectionManager.HasSelection;
+            if (!hasSelection && text.Length == 0)
+                return;
+
+            int splittedTextLength = addCharacterTextAction.CalculateSplitTextLength(text);
 
             if (!hasSelection && splittedTextLength == 1) //add single line text -> no selection
             {
@@ -500,6 +672,7 @@ namespace TextControlBoxNS.Core.Text
             }
 
             eventsManager.CallTextChanged();
+            coreTextbox.textRenderer.MarkLineWrapDirty(cursorManager.LineNumber);
             // Keep the caret visible after typing using the same helper every other edit
             // operation uses. Backspace, Delete, AddNewLine, Undo and Redo all call
             // UpdateScrollToShowCursor; AddCharacter was the only one still using the
@@ -514,6 +687,7 @@ namespace TextControlBoxNS.Core.Text
 
         public bool DeleteLine(int line)
         {
+            undoRedo.EndBatch();
             if (line >= textManager.LinesCount || line < 0)
                 return false;
 
@@ -526,16 +700,26 @@ namespace TextControlBoxNS.Core.Text
                 else
                     textManager.totalLines.RemoveAt(line);
 
+                //cursor and selection can point to the removed line or behind a now shorter line
+                selectionManager.ClampToDocument();
+
             }, line, 1, textManager.LinesCount == 1 ? 1 : 0);
 
 
+            if (cursorManager.LineNumber >= textManager.LinesCount)
+            {
+                cursorManager.LineNumber = Math.Max(0, textManager.LinesCount - 1);
+                cursorManager.CharacterPosition = Math.Min(cursorManager.CharacterPosition, textManager.GetLineLength(cursorManager.LineNumber));
+            }
+
             eventsManager.CallTextChanged();
-            canvasUpdateManager.UpdateText();
+            canvasUpdateManager.UpdateAll();
             return true;
         }
 
         public bool AddLine(int line, string text)
         {
+            undoRedo.EndBatch();
             if (line > textManager.LinesCount || line < 0)
                 return false;
 
@@ -550,6 +734,7 @@ namespace TextControlBoxNS.Core.Text
             undoRedo.RecordUndoAction(() =>
             {
                 textManager.InsertOrAdd(line, stringManager.CleanUpString(text));
+                selectionManager.ClampToDocument();
 
             }, line, 1, 2);
 
@@ -560,14 +745,24 @@ namespace TextControlBoxNS.Core.Text
 
         public bool AddLines(int atLine, string[] lines)
         {
-            if (atLine > textManager.LinesCount || atLine < 0)
+            undoRedo.EndBatch();
+            if (lines == null || atLine > textManager.LinesCount || atLine < 0)
                 return false;
+
+            //same rules as AddLine: a line break inside a line or a null line breaks the line model
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (stringManager.HasMultilineCharacters(lines[i]))
+                    throw new ArgumentException("The text contains multiline characters, which are not allowed.");
+            }
+            string[] linesToAdd = Array.ConvertAll(lines, line => line ?? string.Empty);
 
             longestLineManager.needsRecalculation = true;
 
             undoRedo.RecordUndoAction(() =>
             {
-                textManager.InsertOrAddRange(lines, atLine);
+                textManager.InsertOrAddRange(linesToAdd, atLine);
+                selectionManager.ClampToDocument();
 
             }, atLine, 0, lines.Length);
 
@@ -579,6 +774,7 @@ namespace TextControlBoxNS.Core.Text
 
         public bool SetLineText(int line, string text)
         {
+            undoRedo.EndBatch();
             if (line >= textManager.LinesCount || line < 0)
                 return false;
 
@@ -593,7 +789,10 @@ namespace TextControlBoxNS.Core.Text
             undoRedo.RecordUndoAction(() =>
             {
                 textManager.SetLineText(line, stringManager.CleanUpString(text));
+                selectionManager.ClampToDocument();
             }, line, 1, 1);
+
+            coreTextbox.textRenderer.MarkLineWrapDirty(line);
 
             eventsManager.CallTextChanged();
             canvasUpdateManager.UpdateText();
@@ -602,11 +801,16 @@ namespace TextControlBoxNS.Core.Text
 
         public void DuplicateLine(int line)
         {
+            undoRedo.EndBatch();
+            if (line >= textManager.LinesCount || line < 0)
+                return;
+
             longestLineManager.needsRecalculation = true;
             undoRedo.RecordUndoAction(() =>
             {
                 textManager.InsertOrAdd(line, textManager.GetLineText(line));
                 cursorManager.LineNumber += 1;
+                selectionManager.ClampToDocument();
             }, line, 1, 2);
 
             if (textRenderer.OutOfRenderedArea(line))
